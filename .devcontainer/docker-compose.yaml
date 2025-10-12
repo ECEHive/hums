@@ -19,4 +19,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hive
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - hive-scheduler-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  hive-scheduler-postgres-data:
+    name: hive-scheduler-postgres-data
