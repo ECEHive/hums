@@ -10,12 +10,13 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 export type AuthUser = {
 	id: number;
 	name: string | null;
 	email: string | null;
-	role: string | null;
+	permissions: string[];
 	// allow other fields if needed
 	[key: string]: unknown;
 };
@@ -83,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		setToken(null);
 	}, [setToken]);
 
-	// Optional: react to UNAUTHORIZED errors by clearing token
 	useEffect(() => {
 		if (!error) return;
 		const code = error.name ?? error.message;
@@ -111,8 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	return (
 		<AuthContext.Provider value={value}>
 			{gateLoading ? (
-				<div className="p-4 text-sm text-muted-foreground">
-					Loading your account…
+				<div className="flex flex-col h-screen w-screen items-center justify-center bg-background">
+					<Spinner />
+					<div className="p-4 text-sm text-muted-foreground">
+						Loading your account…
+					</div>
 				</div>
 			) : (
 				children
@@ -148,16 +151,14 @@ export function RequireAuth({
 	return <>{children}</>;
 }
 
-// Helper to require a role (when authenticated)
-export function RequireRole({
-	role,
-	roles,
+// Helper to require a permission (when authenticated)
+export function RequirePermission({
+	permission,
 	children,
 	to = "/",
 	forbiddenFallback,
 }: {
-	role?: string;
-	roles?: string[];
+	permission: string;
 	children: React.ReactNode;
 	to?: string;
 	forbiddenFallback?: React.ReactNode;
@@ -167,20 +168,18 @@ export function RequireRole({
 
 	useEffect(() => {
 		if (status === "authenticated" && user) {
-			const allowed = roles?.length
-				? roles.includes(String(user.role))
-				: user.role === role;
+			const allowed = user.permissions.includes(permission);
 			if (!allowed && !forbiddenFallback) {
 				// Navigate away if no fallback provided
 				void router.navigate({ to });
 			}
 		}
-	}, [status, user, role, roles, router, to, forbiddenFallback]);
+	}, [status, user, permission, router, to, forbiddenFallback]);
 
 	if (status !== "authenticated") return null;
-	const allowed = roles?.length
-		? roles.includes(String(user?.role))
-		: user?.role === role;
+
+	const allowed = user ? user.permissions.includes(permission) : false;
+
 	if (!user) return null;
 	if (!allowed) return <>{forbiddenFallback ?? null}</>;
 	return <>{children}</>;
