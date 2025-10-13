@@ -5,11 +5,7 @@
 		"./client": "./client/index.ts",
 		"./server": "./server/index.ts"
 	},
-	"scripts": {
-		"check": "biome check --write"
-	},
 	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
 		"@ecehive/config": "workspace:*",
 		"vite": "^7.1.7"
 	},

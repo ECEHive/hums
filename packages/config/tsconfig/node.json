@@ -5,7 +5,7 @@
 	"compilerOptions": {
 		"types": ["@types/node"],
 		"lib": ["DOM"],
-		"moduleResolution": "nodenext",
-		"module": "nodenext"
+		"module": "ESNext",
+		"moduleResolution": "Bundler"
 	}
 }

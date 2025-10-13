@@ -3,8 +3,7 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
-		"push": "drizzle-kit push",
-		"check": "biome check --write"
+		"push": "drizzle-kit push"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
@@ -13,7 +12,6 @@
 		"pg": "^8.16.3"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
 		"@ecehive/config": "workspace:*",
 		"@types/node": "^24.5.2",
 		"@types/pg": "^8.15.5",

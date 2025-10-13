@@ -2,16 +2,12 @@
 	"name": "@ecehive/auth",
 	"type": "module",
 	"main": "./src/index.ts",
-	"scripts": {
-		"check": "biome check --write"
-	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
 		"fast-xml-parser": "^5.2.5",
 		"jose": "^6.1.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
 		"@ecehive/config": "workspace:*"
 	}
 }
