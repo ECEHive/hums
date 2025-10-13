@@ -2,13 +2,20 @@ import { generateToken, validateTicket } from "@ecehive/auth";
 import { db, users } from "@ecehive/drizzle";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
-import type { TLoginSchema } from "./login.schema";
+import z from "zod";
+
+export const ZLoginSchema = z.object({
+	ticket: z.string(),
+	service: z.string(),
+});
+
+export type TLoginSchema = z.infer<typeof ZLoginSchema>;
 
 export type TLoginOptions = {
 	input: TLoginSchema;
 };
 
-export default async function loginHandler(options: TLoginOptions) {
+export async function loginHandler(options: TLoginOptions) {
 	const { ticket, service } = options.input;
 
 	const username = await validateTicket(ticket, service);

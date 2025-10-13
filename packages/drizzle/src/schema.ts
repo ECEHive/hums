@@ -33,7 +33,6 @@ export const roles = pgTable("roles", {
 	id: serial("id").primaryKey(),
 
 	name: text("name").notNull().unique(),
-	prettyName: text("pretty_name").notNull(),
 
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -48,7 +47,6 @@ export const permissions = pgTable("permissions", {
 	id: serial("id").primaryKey(),
 
 	name: text("name").notNull().unique(),
-	prettyName: text("pretty_name").notNull(),
 
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
