@@ -14,4 +14,5 @@ pnpm dev
 
 | Variable | Default | Description |
 | - | - | - |
-| `VITE_PUBLIC_API_URL` | `http://localhost:8080/trpc` | URL of the TRPC API. |
+| `VITE_PUBLIC_API_URL` | `/` | Public URL of the API server. |
+| `VITE_PRIVATE_API_URL` | `http://localhost:8080` | Private (internal) URL of the API server. Only used by the development proxy. |

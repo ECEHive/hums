@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
 			host: "0.0.0.0",
 			https: {},
 			proxy: {
-				"/trpc": {
+				"/api": {
 					target: env.VITE_PRIVATE_API_URL,
 					changeOrigin: true,
 				},
