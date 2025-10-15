@@ -22,28 +22,31 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
+import { permissions as adminPagePermissions } from "@/routes/app/admin";
+import { permissions as appIndexPagePermissions } from "@/routes/app/index";
+import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
 
 // Removed ModeToggle button in favor of options inside the user dropdown
 
 // Menu items.
-const items = [
+export const items = [
 	{
 		title: "Home",
 		url: "/app",
 		icon: Home,
-		permissions: [],
+		permissions: appIndexPagePermissions,
 	},
 	{
 		title: "Scheduling",
 		url: "/app/scheduling",
 		icon: Calendar,
-		permissions: [],
+		permissions: schedulingPagePermissions,
 	},
 	{
 		title: "Admin",
 		url: "/app/admin",
 		icon: ShieldUser,
-		permissions: ["admin"], // Example, will be changed based on real permissions
+		permissions: adminPagePermissions, // Example, will be changed based on real permissions
 	},
 ];
 
