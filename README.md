@@ -4,7 +4,7 @@ Shift scheduling system for The Hive Makerspace at Georgia Tech.
 
 ## Structure
 
-- `apps/` Separate applications. For example, the client and the API.
+- `apps/` Separate applications. For example, the client and the server.
 - `packages/` Shared code between applications.
 
 ## Setup
@@ -32,9 +32,9 @@ Shift scheduling system for The Hive Makerspace at Georgia Tech.
 	```
 	cd ./apps/api && pnpm start
 	```
-2. Run the client,
+2. Run the server,
 	```
-	cd ./apps/client && pnpm dev
+	cd ./apps/server && pnpm dev
 	```
 
 > You will receive an HTTPS warning when visiting the client. You can ignore this warning and proceed to the site.

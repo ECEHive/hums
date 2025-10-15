@@ -14,5 +14,10 @@ pnpm dev
 
 | Variable | Default | Description |
 | - | - | - |
-| `VITE_PUBLIC_API_URL` | `/` | Public URL of the API server. |
-| `VITE_PRIVATE_API_URL` | `http://localhost:8080` | Private (internal) URL of the API server. Only used by the development proxy. |
+| `VITE_PUBLIC_SERVER_URL` | `""` | Public URL of the server. |
+
+### Development Variables
+
+| Variable | Default | Description |
+| - | - | - |
+| `PROXY_PRIVATE_SERVER_URL` | `"http://localhost:8080"` | Internal URL of the server for the proxy to serve. |

@@ -1,6 +1,6 @@
-# Hive Scheduler API
+# Hive Scheduler Server
 
-Backend API for the Hive Shift Scheduler.
+Backend server for the Hive Shift Scheduler.
 
 ## Running
 
