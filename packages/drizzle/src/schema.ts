@@ -128,29 +128,6 @@ export const periods = pgTable("periods", {
 });
 
 /**
- * Table that maps roles to periods (many-to-many).
- *
- * Determines which roles have access to register for shifts in a period.
- */
-export const periodRoles = pgTable(
-	"period_roles",
-	{
-		id: serial("id").primaryKey(),
-
-		periodId: integer("period_id")
-			.notNull()
-			.references(() => periods.id, { onDelete: "cascade" }),
-		roleId: integer("role_id")
-			.notNull()
-			.references(() => roles.id, { onDelete: "cascade" }),
-
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
-	},
-	(t) => [unique().on(t.periodId, t.roleId)],
-);
-
-/**
  * Shift Types define the types of shifts available in a period.
  *
  * For example, "3D Printing" or "Front Desk".
@@ -167,12 +144,6 @@ export const shiftTypes = pgTable("shift_types", {
 	description: text("description"),
 	color: text("color"),
 	icon: text("icon"),
-
-	dayOfWeek: integer("day_of_week").array().notNull(),
-	duration: integer("duration").notNull(),
-	startTime: time("start_time").notNull(),
-	endTime: time("end_time").notNull(),
-	slots: integer("slots").notNull().default(1),
 
 	isBalancedAcrossOverlap: boolean("is_balanced_across_overlap")
 		.notNull()
@@ -219,7 +190,7 @@ export const shiftTypeRoles = pgTable(
 /**
  * Shift Schedules define the recurring shift schedule for a shift type.
  *
- * For example, "Every Monday from 9am to 12pm".
+ * For example, "Every Monday from 9am to 12pm, slot 0".
  */
 export const shiftSchedules = pgTable(
 	"shift_schedules",
@@ -230,6 +201,7 @@ export const shiftSchedules = pgTable(
 			.notNull()
 			.references(() => shiftTypes.id, { onDelete: "cascade" }),
 
+		slot: integer("slot").notNull().default(0),
 		dayOfWeek: integer("day_of_week").notNull(),
 		startTime: time("start_time").notNull(),
 		endTime: time("end_time").notNull(),
@@ -244,7 +216,7 @@ export const shiftSchedules = pgTable(
  * Shift Occurrences are individual instances of a shift schedule.
  *
  * These are generated from the shift schedules for a given period.
- * For example, "Monday, January 1st, 2025 from 10:00am to 10:30am".
+ * For example, "3D printing on Monday, January 1st, 2025 from 10:00am to 10:30am, slot 0".
  */
 export const shiftOccurrences = pgTable(
 	"shift_occurrences",
@@ -266,7 +238,7 @@ export const shiftOccurrences = pgTable(
  * Assignments link users to shift schedules.
  *
  * These are used to assign users to recurring shifts.
- * For example, "User A is assigned to a 3D printing shift every Monday 9am-12pm".
+ * For example, "User A is assigned to a 3D printing shift every Monday 9am-12pm, slot 0".
  */
 export const shiftScheduleAssignments = pgTable(
 	"shift_schedule_assignments",
