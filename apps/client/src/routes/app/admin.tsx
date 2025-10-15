@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ExitWithoutPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/admin")({
