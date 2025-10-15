@@ -16,9 +16,9 @@ import {
 export const users = pgTable("users", {
 	id: serial("id").primaryKey(),
 
-	username: text("username").notNull(),
+	username: text("username").notNull().unique(),
 	name: text("name").notNull(),
-	email: text("email").notNull(),
+	email: text("email").notNull().unique(),
 
 	isSystemUser: boolean("is_system_user").notNull().default(false),
 

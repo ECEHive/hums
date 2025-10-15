@@ -11,6 +11,7 @@ import {
 	useState,
 } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { checkPermissions } from "@/lib/permissions";
 
 export type AuthUser = {
 	id: number;
@@ -178,9 +179,7 @@ export function RequirePermissions({
 
 	useEffect(() => {
 		if (status === "authenticated" && user) {
-			const allowed = permissions.every((perm) =>
-				user.permissions.includes(perm),
-			);
+			const allowed = checkPermissions(user, permissions);
 			if (!allowed && !forbiddenFallback) {
 				// Navigate away if no fallback provided
 				void router.navigate({ to });
@@ -192,9 +191,7 @@ export function RequirePermissions({
 
 	if (status !== "authenticated") return null;
 
-	const allowed = user
-		? permissions.every((perm) => user.permissions.includes(perm))
-		: false;
+	const allowed = user && checkPermissions(user, permissions);
 
 	if (!user) return null;
 	if (!allowed) return <>{forbiddenFallback ?? null}</>;

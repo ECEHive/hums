@@ -6,6 +6,7 @@
 		"check": "biome check --write"
 	},
 	"dependencies": {
+		"@ecehive/drizzle": "workspace:*",
 		"@ecehive/env": "workspace:*",
 		"@ecehive/trpc": "workspace:*",
 		"@fastify/cors": "^11.1.0",

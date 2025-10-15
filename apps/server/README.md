@@ -16,3 +16,4 @@ pnpm start
 | - | - | - |
 | `PORT` | `8080` | Port to run the server on. |
 | `AUTH_CAS_SERVER` | `https://login.gatech.edu` | URL of the CAS authentication server. |
+| `SYSTEM_USERS` | `` | Comma-separated list of email addresses for default users with admin access. |
