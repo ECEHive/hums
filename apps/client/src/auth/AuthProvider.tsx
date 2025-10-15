@@ -131,7 +131,11 @@ export function useAuth() {
 	return ctx;
 }
 
-// Helper to require authenticated user; redirects to /login by default
+/**
+ * Helper to require authentication to view a page.
+ *
+ * Redirects to `to` if not authenticated.
+ */
 export function RequireAuth({
 	children,
 	to = "/login",
@@ -152,14 +156,19 @@ export function RequireAuth({
 	return <>{children}</>;
 }
 
-// Helper to require a permission (when authenticated)
-export function RequirePermission({
-	permission,
+/**
+ * Require the user to have all given permissions to view the children.
+ *
+ * If not authenticated, redirects to `to`.
+ * If authenticated but missing permissions, shows `forbiddenFallback` if provided.
+ */
+export function RequirePermissions({
+	permissions,
 	children,
-	to = "/",
+	to = "/login",
 	forbiddenFallback,
 }: {
-	permission: string;
+	permissions: string[];
 	children: React.ReactNode;
 	to?: string;
 	forbiddenFallback?: React.ReactNode;
@@ -169,17 +178,23 @@ export function RequirePermission({
 
 	useEffect(() => {
 		if (status === "authenticated" && user) {
-			const allowed = user.permissions.includes(permission);
+			const allowed = permissions.every((perm) =>
+				user.permissions.includes(perm),
+			);
 			if (!allowed && !forbiddenFallback) {
 				// Navigate away if no fallback provided
 				void router.navigate({ to });
 			}
+		} else if (status === "unauthenticated") {
+			void router.navigate({ to });
 		}
-	}, [status, user, permission, router, to, forbiddenFallback]);
+	}, [status, user, permissions, router, to, forbiddenFallback]);
 
 	if (status !== "authenticated") return null;
 
-	const allowed = user ? user.permissions.includes(permission) : false;
+	const allowed = user
+		? permissions.every((perm) => user.permissions.includes(perm))
+		: false;
 
 	if (!user) return null;
 	if (!allowed) return <>{forbiddenFallback ?? null}</>;
@@ -189,6 +204,7 @@ export function RequirePermission({
 export function useCurrentUser() {
 	return useAuth().user;
 }
+
 export function useAuthToken() {
 	return useAuth().token;
 }
