@@ -8,6 +8,7 @@ import tsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
+
 	return {
 		server: {
 			port: 4483,
@@ -17,6 +18,7 @@ export default defineConfig(({ mode }) => {
 				"/api": {
 					target: env.VITE_PRIVATE_API_URL,
 					changeOrigin: true,
+					rewrite: (path) => path.replace(/^\/api/, ""),
 				},
 			},
 		},
