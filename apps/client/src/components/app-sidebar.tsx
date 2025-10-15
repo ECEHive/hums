@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Calendar, ChevronUp, Home, User2 } from "lucide-react";
+import { Calendar, ChevronUp, Home, ShieldUser, User2 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
 import { useTheme } from "@/components/theme-provider"; // Import useTheme from theme-provider
 import {
@@ -21,6 +21,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { checkPermissions } from "@/lib/permissions";
 
 // Removed ModeToggle button in favor of options inside the user dropdown
 
@@ -30,11 +31,19 @@ const items = [
 		title: "Home",
 		url: "/app",
 		icon: Home,
+		permissions: [],
 	},
 	{
 		title: "Scheduling",
 		url: "/app/scheduling",
 		icon: Calendar,
+		permissions: [],
+	},
+	{
+		title: "Admin",
+		url: "/app/admin",
+		icon: ShieldUser,
+		permissions: ["admin"], // Example, will be changed based on real permissions
 	},
 ];
 
@@ -49,16 +58,18 @@ export function AppSidebar() {
 					<SidebarGroupLabel>Hive Shift Scheduler</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{items.map((item) => (
-								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton asChild>
-										<Link to={item.url}>
-											<item.icon />
-											<span>{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
+							{items
+								.filter((item) => checkPermissions(user, item.permissions))
+								.map((item) => (
+									<SidebarMenuItem key={item.title}>
+										<SidebarMenuButton asChild>
+											<Link to={item.url}>
+												<item.icon />
+												<span>{item.title}</span>
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								))}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>

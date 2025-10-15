@@ -17,6 +17,7 @@ export type AuthUser = {
 	name: string | null;
 	email: string | null;
 	permissions: string[];
+	isSystemUser: boolean;
 	// allow other fields if needed
 	[key: string]: unknown;
 };
