@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ExitWithoutPermissions } from "@/lib/permissions";
+import { RequirePermissions } from "@/auth";
+import { MissingPermissions } from "@/components/missing-permissions";
 
 export const Route = createFileRoute("/app/")({
-	component: () => ExitWithoutPermissions(permissions, <AppIndexLayout />),
+	component: () =>
+		RequirePermissions({
+			permissions,
+			children: <AppIndexLayout />,
+			forbiddenFallback: <MissingPermissions />,
+		}),
 });
 
 export const permissions = [];
