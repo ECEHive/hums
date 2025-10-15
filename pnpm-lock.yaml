@@ -114,6 +114,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@ecehive/drizzle':
+        specifier: workspace:*
+        version: link:../../packages/drizzle
       '@ecehive/env':
         specifier: workspace:*
         version: link:../../packages/env
