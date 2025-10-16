@@ -3,8 +3,11 @@ import {
 	CalendarIcon,
 	ChevronUpIcon,
 	HomeIcon,
+	NotebookTextIcon,
+	ShieldIcon,
 	ShieldUserIcon,
 	User2Icon,
+	UserIcon,
 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
 import { useTheme } from "@/components/theme-provider"; // Import useTheme from theme-provider
@@ -60,9 +63,27 @@ export const items = [
 		name: "Admin",
 		items: [
 			{
-				title: "Admin",
+				title: "Roles",
 				url: "/app/admin",
-				icon: ShieldUserIcon,
+				icon: ShieldIcon,
+				permissions: adminPagePermissions, // Example, will be changed based on real permissions
+			},
+			{
+				title: "Users",
+				url: "/app/admin",
+				icon: UserIcon,
+				permissions: adminPagePermissions, // Example, will be changed based on real permissions
+			},
+			{
+				title: "Periods",
+				url: "/app/admin",
+				icon: CalendarIcon,
+				permissions: adminPagePermissions, // Example, will be changed based on real permissions
+			},
+			{
+				title: "Reports",
+				url: "/app/admin",
+				icon: NotebookTextIcon,
 				permissions: adminPagePermissions, // Example, will be changed based on real permissions
 			},
 		],
