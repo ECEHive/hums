@@ -3,6 +3,7 @@
 	"type": "module",
 	"scripts": {
 		"start": "tsx ./src/index.ts",
+		"dev": "nodemon",
 		"check": "biome check --write"
 	},
 	"dependencies": {
@@ -16,6 +17,7 @@
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
+		"nodemon": "^3.1.10",
 		"tsx": "^4.20.5"
 	}
 }

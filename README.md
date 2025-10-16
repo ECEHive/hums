@@ -28,27 +28,28 @@ Shift scheduling system for The Hive Makerspace at Georgia Tech.
 
 ## Running
 
-1. Run the API,
-	```
-	cd ./apps/api && pnpm start
-	```
-2. Run the server,
-	```
-	cd ./apps/server && pnpm dev
-	```
+Start both the client and the server with hot-reloads,
+
+```sh
+pnpm run -r dev
+```
+
+If you wish to run without hot-reloads,
+
+```sh
+pnpm run -r start
+```
 
 > You will receive an HTTPS warning when visiting the client. You can ignore this warning and proceed to the site.
-
-> Safari may have issues when making API requests, so use a Firefox or Chromium based browser when testing.
-
-Both the client and the server must be running for everything to be functional. The client will hot-reload, the server will not.
 
 ## Contributing
 
 1. Before you commit, run the required code checks,
+
 	```sh
 	pnpm check
 	```
+
 2. Create a pull request with your changes.
 
 ![Alt](https://repobeats.axiom.co/api/embed/4f681a06b224ae315d44b257b17f52576bc6eefc.svg "Repobeats analytics image")

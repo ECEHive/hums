@@ -1,0 +1,13 @@
+{
+	"name": "@ecehive/features",
+	"type": "module",
+	"main": "./src/index.ts",
+	"dependencies": {
+		"@ecehive/drizzle": "workspace:*",
+		"@ecehive/env": "workspace:*",
+		"drizzle-orm": "^0.44.5"
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*"
+	}
+}
