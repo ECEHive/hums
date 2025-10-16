@@ -68,7 +68,7 @@ function Login() {
 		if (!current.searchParams.get("returnTo"))
 			current.searchParams.set("returnTo", returnTo);
 		const redirect = encodeURIComponent(current.toString());
-		const casUrl = `https://sites.gatech.edu/lemons/cas-d?redirect=${redirect}`;
+		const casUrl = `${import.meta.env.VITE_CAS_PROXY_URL}?redirect=${redirect}`;
 		window.location.href = casUrl;
 	};
 

@@ -15,6 +15,7 @@ pnpm dev
 | Variable | Default | Description |
 | - | - | - |
 | `VITE_PUBLIC_SERVER_URL` | `""` | Public URL of the server. |
+| `VITE_CAS_PROXY_URL` | `""` | URL that the user will be redirected to for CAS authentication. | 
 
 ### Development Variables
 
