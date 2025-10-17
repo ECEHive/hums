@@ -14,7 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppSchedulingRouteImport } from './routes/app/scheduling'
-import { Route as AppAdminRouteImport } from './routes/app/admin'
+import { Route as AppRolesRouteImport } from './routes/app/roles'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -41,9 +41,9 @@ const AppSchedulingRoute = AppSchedulingRouteImport.update({
   path: '/scheduling',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AppRolesRoute = AppRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -51,14 +51,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
   '/app': typeof AppIndexRoute
 }
@@ -67,7 +67,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
   '/app/': typeof AppIndexRoute
 }
@@ -77,17 +77,17 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
-    | '/app/admin'
+    | '/app/roles'
     | '/app/scheduling'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/app/admin' | '/app/scheduling' | '/app'
+  to: '/' | '/login' | '/app/roles' | '/app/scheduling' | '/app'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/login'
-    | '/app/admin'
+    | '/app/roles'
     | '/app/scheduling'
     | '/app/'
   fileRoutesById: FileRoutesById
@@ -135,24 +135,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSchedulingRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/admin': {
-      id: '/app/admin'
-      path: '/admin'
-      fullPath: '/app/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
+    '/app/roles': {
+      id: '/app/roles'
+      path: '/roles'
+      fullPath: '/app/roles'
+      preLoaderRoute: typeof AppRolesRouteImport
       parentRoute: typeof AppRoute
     }
   }
 }
 
 interface AppRouteChildren {
-  AppAdminRoute: typeof AppAdminRoute
+  AppRolesRoute: typeof AppRolesRoute
   AppSchedulingRoute: typeof AppSchedulingRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAdminRoute: AppAdminRoute,
+  AppRolesRoute: AppRolesRoute,
   AppSchedulingRoute: AppSchedulingRoute,
   AppIndexRoute: AppIndexRoute,
 }
