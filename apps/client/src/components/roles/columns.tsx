@@ -1,9 +1,9 @@
+import type { AppRouter } from "@ecehive/trpc/server";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "@ecehive/trpc/server";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
-type Role = RouterOutput['roles']['list'];
+type Role = RouterOutput["roles"]["list"];
 
 export const columns: ColumnDef<Role>[] = [
 	{

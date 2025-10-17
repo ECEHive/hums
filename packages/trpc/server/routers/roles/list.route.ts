@@ -1,4 +1,4 @@
-import { db, roles, rolePermissions, permissions } from "@ecehive/drizzle";
+import { db, roles, rolePermissions, permissions, userRoles } from "@ecehive/drizzle";
 import { and, count, eq, like, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
@@ -26,37 +26,63 @@ export async function listHandler(options: TListOptions) {
 		filters.push(like(roles.name, `%${search.replaceAll("%", "\\%")}%`));
 	}
 
-	const result = await db
+	const rolesResult = await db
 		.select()
 		.from(roles)
-		.innerJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
-		.innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-		/*.where(and(...filters))
+		.leftJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+		.leftJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+		.where(and(...filters))
 		.limit(limit)
 		.offset(offset)
-		.orderBy(roles.name);*/
+		.orderBy(roles.name);
 
-	console.log(result);
+	console.log("Selecting from userRoles");
+	const rows = await db.select().from(userRoles);
+	console.log(rows); // should show your single row
+
+	const q = db
+		.select({
+			roleId: userRoles.roleId,
+			userCount: count(userRoles.userId).as("userCount"),
+		})
+		.from(userRoles)
+		.groupBy(userRoles.roleId);
+
+	const userCountsResult = await q;
+
+	console.log(q.toSQL());
+	console.log(userCountsResult);
 
 	const rolesMap = new Map<
 		number,
-		{ id: number; name: string; permissions: SelectPermission[] }
+		{ id: number; name: string; permissions: SelectPermission[], userCount: number }
 	>();
 
-	result.forEach((row) => {
+	rolesResult.forEach((row) => {
 		const roleId = row.roles.id;
 		if (!rolesMap.has(roleId)) {
 			rolesMap.set(roleId, {
 				id: row.roles.id,
 				name: row.roles.name,
 				permissions: [],
+				userCount: 0,
 			});
 		}
 		const role = rolesMap.get(roleId);
-		if (role && row.permissions.name) {
+		if (role && row.permissions) {
 			role.permissions.push(row.permissions);
 		}
 	})
+
+	// Attach user counts to roles
+	const userCountsMap = new Map<number, number>();
+	userCountsResult.forEach((row) => {
+		userCountsMap.set(row.roleId, Number(row.userCount));
+	});
+
+	rolesMap.forEach((role) => {
+		role["userCount"] = userCountsMap.get(role.id) || 0;
+	});
 
 	const [total] = await db
 		.select({ count: count(roles.id) })
