@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@ecehive/auth": "workspace:*",
 		"@ecehive/drizzle": "workspace:*",
+		"@ecehive/features": "workspace:*",
 		"@trpc/client": "^11.5.1",
 		"@trpc/server": "^11.5.1",
 		"drizzle-orm": "^0.44.5",

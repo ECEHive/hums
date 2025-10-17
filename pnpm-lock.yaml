@@ -251,6 +251,9 @@ importers:
       '@ecehive/drizzle':
         specifier: workspace:*
         version: link:../drizzle
+      '@ecehive/features':
+        specifier: workspace:*
+        version: link:../features
       '@trpc/client':
         specifier: ^11.5.1
         version: 11.5.1(@trpc/server@11.5.1(typescript@5.9.2))(typescript@5.9.2)
