@@ -2,6 +2,8 @@ import type { AppRouter } from "@ecehive/trpc/server";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { inferRouterOutputs } from "@trpc/server";
 import { PermissionsDialog } from "../roles/permissionsDialog";
+import { RenameDialog } from "../roles/renameDialog";
+import { DeleteDialog } from "../roles/deleteDialog";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Role = RouterOutput["roles"]["list"];
@@ -21,13 +23,21 @@ export const columns: ColumnDef<Role>[] = [
 		cell: ({ row }) => {
 			const permissions = row.original.permissions as { id: number; name: string }[];
 
-			if (!permissions?.length) {
-				return <span className="text-muted-foreground italic">No permissions</span>;
-			}
-
 			return (
 				<PermissionsDialog roleName={row.original.name as string} roleId={row.original.id as number} permissions={permissions} />
 			);
 		},
 	},
+	{
+		accessorKey: "modify",
+		header: "Modify",
+		cell: ({ row }) => {
+			return (
+				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+					<RenameDialog roleId={row.original.id} currentName={row.original.name} />
+					<DeleteDialog roleId={row.original.id} roleName={row.original.name} />
+				</div>
+			);
+		}
+	}
 ];

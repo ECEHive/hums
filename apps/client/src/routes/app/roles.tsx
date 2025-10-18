@@ -5,6 +5,7 @@ import { RequirePermissions } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { columns } from "@/components/roles/columns";
 import { DataTable } from "@/components/roles/data-table";
+import { CreateDialog } from "@/components/roles/createDialog";
 
 export const Route = createFileRoute("/app/roles")({
 	component: () =>
@@ -27,8 +28,9 @@ function Roles() {
 	});
 
 	return (
-		<div className="container mx-auto py-10">
+		<div className="container p-4 space-y-3">
 			<DataTable columns={columns} data={data?.roles ?? []} />
+			<CreateDialog />
 		</div>
 	);
 }

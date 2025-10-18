@@ -14,30 +14,35 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { getAllPermissions } from "@/lib/permissions";
 import type { SelectPermission } from "@ecehive/drizzle";
 import { trpc } from "@ecehive/trpc/client";
-import type { TDeleteByIds } from "@ecehive/trpc/server/routers/rolePermissions/delete.route";
+import { useQueryClient } from "@tanstack/react-query";
+import { JSX } from "react/jsx-runtime";
 
 type PermissionsDialogProps = {
     roleName: string;
     roleId: number;
     permissions: SelectPermission[];
 };
-async function updateRolePermission(roleId: number, permissionId: number, assigned: boolean): Promise<void> {
-    console.log(`Role ID: ${roleId}, Permission ID: ${permissionId}, Assigned: ${assigned}`);
-    try {
-        if (assigned) {
-            // Use mutateAsync and cast to any if the generated types don't match the expected payload shape
-            const res = await trpc.rolePermissions.create.mutate({ roleId: roleId, permissionId: permissionId });
-            console.log(res);
-        } else {
-            const res = await trpc.rolePermissions.delete.mutate({ roleId: roleId, permissionId: permissionId });
-            console.log(res);
-        }
-    } catch (err) {
-        console.error("Failed to update role permission:", err);
-    }
-}
 
 export function PermissionsDialog({ roleName, roleId, permissions }: PermissionsDialogProps): JSX.Element {
+
+    const queryClient = useQueryClient();
+
+    const updateRolePermission = async (roleId: number, permissionId: number, assigned: boolean) => {
+        try {
+            if (assigned) {
+                await trpc.rolePermissions.create.mutate({ roleId: roleId, permissionId: permissionId });
+            }
+            else {
+                await trpc.rolePermissions.delete.mutate({ roleId: roleId, permissionId: permissionId });
+            }
+
+            // Invalidate the roles query to refresh data
+            queryClient.invalidateQueries({ queryKey: ["roles"] });
+        }
+        catch (err) {
+            console.error("Failed to update role permission:", err);
+        }
+    }
 
     const allPermissions = getAllPermissions();
     const rolePermissions = new Map<string, (SelectPermission & { assigned: boolean })[]>();

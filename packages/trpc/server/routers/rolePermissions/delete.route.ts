@@ -15,15 +15,17 @@ export type TDeleteOptions = {
 };
 
 export async function deleteHandler(options: TDeleteOptions) {
-	if ("roleId" in options && "permissionId" in options.input) {
+	if ("roleId" in options.input && "permissionId" in options.input) {
 		const { roleId, permissionId } = options.input;
 
-		await db.delete(rolePermissions).where(
+		const res = db.delete(rolePermissions).where(
 			and(
 				eq(rolePermissions.roleId, roleId),
 				eq(rolePermissions.permissionId, permissionId),
 			),
 		);
+
+		await res;
 
 		return { success: true };
 	}
