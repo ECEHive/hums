@@ -4,8 +4,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RequirePermissions } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { columns } from "@/components/roles/columns";
-import { DataTable } from "@/components/roles/data-table";
 import { CreateDialog } from "@/components/roles/createDialog";
+import { DataTable } from "@/components/roles/data-table";
 
 export const Route = createFileRoute("/app/roles")({
 	component: () =>
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/app/roles")({
 export const permissions = [];
 
 function Roles() {
-	const { data, isLoading, error } = useQuery({
+	const { data } = useQuery({
 		queryKey: ["roles"],
 		queryFn: async () => {
 			return await trpc.roles.list.query({});
