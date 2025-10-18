@@ -21,9 +21,7 @@ function Roles() {
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["roles"],
 		queryFn: async () => {
-			const res = await trpc.roles.list.query({});
-			console.log(res);
-			return res;
+			return await trpc.roles.list.query({});
 		},
 		retry: false,
 	});

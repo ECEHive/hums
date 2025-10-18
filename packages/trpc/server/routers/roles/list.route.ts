@@ -36,22 +36,13 @@ export async function listHandler(options: TListOptions) {
 		.offset(offset)
 		.orderBy(roles.name);
 
-	console.log("Selecting from userRoles");
-	const rows = await db.select().from(userRoles);
-	console.log(rows); // should show your single row
-
-	const q = db
+	const userCountsResult = await db
 		.select({
 			roleId: userRoles.roleId,
 			userCount: count(userRoles.userId).as("userCount"),
 		})
 		.from(userRoles)
 		.groupBy(userRoles.roleId);
-
-	const userCountsResult = await q;
-
-	console.log(q.toSQL());
-	console.log(userCountsResult);
 
 	const rolesMap = new Map<
 		number,

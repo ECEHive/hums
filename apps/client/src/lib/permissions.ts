@@ -1,4 +1,7 @@
 import type { AuthUser } from "@/auth";
+import { trpc } from "@ecehive/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import type { SelectPermission } from "@ecehive/drizzle";
 
 /**
  * Ensure the provided user has all given permissions.
@@ -16,4 +19,27 @@ export function checkPermissions(
 ): boolean {
 	if (user?.isSystemUser) return true;
 	return requiredPermissions.every((perm) => user?.permissions.includes(perm));
+}
+
+export function getAllPermissions(): Map<string, SelectPermission[]> {
+	const permissionsMap = new Map<string, SelectPermission[]>();
+
+	const { data } = useQuery({
+		queryKey: ["permissions"],
+		queryFn: async () => {
+			const res = await trpc.permissions.list.query({});
+			return res;
+		},
+		retry: false,
+	});
+
+	data?.permissions?.forEach((perm) => {
+		const [type, ] = perm.name.split(".");
+		if (!permissionsMap.has(type)) {
+			permissionsMap.set(type, []);
+		}
+		permissionsMap.get(type)?.push(perm);
+	});
+
+	return permissionsMap;
 }
