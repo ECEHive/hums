@@ -30,7 +30,7 @@ export async function deleteHandler(options: TDeleteOptions) {
 		return { success: true };
 	}
 	else {
-		const { id } = options.input;
+		const { id } = options.input as { id: number };
 
 		await db.delete(rolePermissions).where(eq(rolePermissions.id, id));
 
