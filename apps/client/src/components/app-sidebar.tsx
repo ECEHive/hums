@@ -69,19 +69,19 @@ export const items = [
 			},
 			{
 				title: "Users",
-				url: "/app/users",
+				url: "/app/users", // To be implemented
 				icon: UserIcon,
 				permissions: [], // Example, will be changed based on real permissions
 			},
 			{
 				title: "Periods",
-				url: "/app/periods",
+				url: "/app/periods", // To be implemented
 				icon: CalendarIcon,
 				permissions: [], // Example, will be changed based on real permissions
 			},
 			{
 				title: "Reports",
-				url: "/app/reports",
+				url: "/app/reports", // To be implemented
 				icon: NotebookTextIcon,
 				permissions: [], // Example, will be changed based on real permissions
 			},

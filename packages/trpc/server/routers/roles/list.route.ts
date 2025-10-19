@@ -33,13 +33,18 @@ export async function listHandler(options: TListOptions) {
 	}
 
 	// Step 1: Get paginated role IDs
-	const pagedRoleIdsResult = await db
+	const pagedRoleIdsQuery = db
 		.select({ id: roles.id })
 		.from(roles)
 		.where(and(...filters))
 		.orderBy(roles.name)
-		.limit(limit)
 		.offset(offset);
+
+	if (limit) {
+		pagedRoleIdsQuery.limit(limit);
+	}
+
+	const pagedRoleIdsResult = await pagedRoleIdsQuery;
 
 	const pagedRoleIds = pagedRoleIdsResult.map((r) => r.id);
 
@@ -55,18 +60,22 @@ export async function listHandler(options: TListOptions) {
 						permissions,
 						eq(permissions.id, rolePermissions.permissionId),
 					)
-					.where(
-						// Only fetch roles in pagedRoleIds
-						inArray(roles.id, pagedRoleIds),
-					)
+					.where(inArray(roles.id, pagedRoleIds))
 					.orderBy(roles.name);
-	const userCountsResult = await db
+
+	const userCountsQuery = db
 		.select({
 			roleId: userRoles.roleId,
 			userCount: count(userRoles.userId).as("userCount"),
 		})
 		.from(userRoles)
 		.groupBy(userRoles.roleId);
+
+	if (pagedRoleIds.length > 0) {
+		userCountsQuery.where(inArray(userRoles.roleId, pagedRoleIds));
+	}
+
+	const userCountsResult = await userCountsQuery;
 
 	const rolesMap = new Map<
 		number,

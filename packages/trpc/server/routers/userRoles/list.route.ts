@@ -25,13 +25,18 @@ export async function listHandler(options: TListOptions) {
 	if (userId) filters.push(eq(userRoles.userId, userId));
 	if (roleId) filters.push(eq(userRoles.roleId, roleId));
 
-	const result = await db
+	const query = db
 		.select()
 		.from(userRoles)
 		.where(and(...filters))
-		.limit(limit)
 		.offset(offset)
 		.orderBy(userRoles.id);
+
+	if (limit) {
+		query.limit(limit);
+	}
+
+	const result = await query;
 
 	const [total] = await db
 		.select({ count: count(userRoles.id) })

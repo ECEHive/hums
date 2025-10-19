@@ -24,13 +24,18 @@ export async function listHandler(options: TListOptions) {
 		filters.push(like(permissions.name, `%${search.replaceAll("%", "\\%")}%`));
 	}
 
-	const result = await db
+	const query = db
 		.select()
 		.from(permissions)
 		.where(and(...filters))
-		.limit(limit)
 		.offset(offset)
 		.orderBy(permissions.name);
+
+	if (limit) {
+		query.limit(limit);
+	}
+
+	const result = await query;
 
 	const [total] = await db
 		.select({ count: count(permissions.id) })

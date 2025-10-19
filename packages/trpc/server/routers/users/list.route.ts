@@ -31,13 +31,18 @@ export async function listHandler(options: TListOptions) {
 		);
 	}
 
-	const result = await db
+	const query = db
 		.select()
 		.from(users)
 		.where(and(...filters))
-		.limit(limit)
 		.offset(offset)
 		.orderBy(users.name);
+
+	if (limit) {
+		query.limit(limit);
+	}
+
+	const result = await query;
 
 	const [total] = await db
 		.select({

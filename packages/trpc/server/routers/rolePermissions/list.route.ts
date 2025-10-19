@@ -21,13 +21,18 @@ export async function listHandler(options: TListOptions) {
 
 	const filters = [eq(rolePermissions.roleId, roleId)] as (SQL | undefined)[];
 
-	const result = await db
+	const query = db
 		.select()
 		.from(rolePermissions)
 		.where(and(...filters))
-		.limit(limit)
 		.offset(offset)
 		.orderBy(rolePermissions.id);
+
+	if (limit) {
+		query.limit(limit);
+	}
+
+	const result = await query;
 
 	const [total] = await db
 		.select({ count: count(rolePermissions.id) })
