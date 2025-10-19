@@ -47,9 +47,6 @@ export function PermissionsDialog({
 					permissionId: permissionId,
 				});
 			}
-
-			// Invalidate the roles query to refresh data
-			queryClient.invalidateQueries({ queryKey: ["roles"] });
 		} catch (err) {
 			console.error("Failed to update role permission:", err);
 		}
@@ -75,11 +72,16 @@ export function PermissionsDialog({
 	});
 
 	return (
-		<Dialog>
+		<Dialog
+			onOpenChange={(open) => {
+				if (!open) queryClient.invalidateQueries({ queryKey: ["roles"] });
+			}}
+		>
 			<form>
 				<DialogTrigger asChild>
 					<Button variant="outline">
-						Edit {permissions.length} permissions
+						Edit {permissions.length} permission
+						{permissions.length !== 1 ? "s" : ""}
 					</Button>
 				</DialogTrigger>
 				<DialogContent className="sm:max-w-[425px]">
