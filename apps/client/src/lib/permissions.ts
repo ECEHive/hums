@@ -20,7 +20,9 @@ export function checkPermissions(
 	return requiredPermissions.every((perm) => user?.permissions.includes(perm));
 }
 
-export async function getAllPermissions(): Promise<Map<string, SelectPermission[]>> {
+export async function getAllPermissions(): Promise<
+	Map<string, SelectPermission[]>
+> {
 	const permissionsMap = new Map<string, SelectPermission[]>();
 
 	const data = await trpc.permissions.list.query({});

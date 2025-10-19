@@ -54,16 +54,16 @@ export function PermissionsDialog({
 			console.error("Failed to update role permission:", err);
 		}
 	};
-	
-    const rolePermissions = new Map<
+
+	const rolePermissions = new Map<
 		string,
 		(SelectPermission & { assigned: boolean })[]
 	>();
 
-    const { data } = useQuery({
-        queryKey: ["permissions"],
-        queryFn: getAllPermissions,
-    });
+	const { data } = useQuery({
+		queryKey: ["permissions"],
+		queryFn: getAllPermissions,
+	});
 
 	// Iterate through permissions to mark assigned ones in rolePermissions map
 	data?.forEach((perms, type) => {

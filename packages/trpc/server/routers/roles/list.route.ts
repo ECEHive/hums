@@ -6,7 +6,7 @@ import {
 	roles,
 	userRoles,
 } from "@ecehive/drizzle";
-import { and, count, eq, like, inArray, type SQL } from "drizzle-orm";
+import { and, count, eq, inArray, like, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -41,21 +41,25 @@ export async function listHandler(options: TListOptions) {
 		.limit(limit)
 		.offset(offset);
 
-	const pagedRoleIds = pagedRoleIdsResult.map(r => r.id);
+	const pagedRoleIds = pagedRoleIdsResult.map((r) => r.id);
 
 	// Step 2: Get roles and their permissions for paginated IDs
-	const rolesResult = pagedRoleIds.length === 0
-		? []
-		: await db
-			.select()
-			.from(roles)
-			.leftJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
-			.leftJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-			.where(
-				// Only fetch roles in pagedRoleIds
-				inArray(roles.id, pagedRoleIds)
-			)
-			.orderBy(roles.name);
+	const rolesResult =
+		pagedRoleIds.length === 0
+			? []
+			: await db
+					.select()
+					.from(roles)
+					.leftJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+					.leftJoin(
+						permissions,
+						eq(permissions.id, rolePermissions.permissionId),
+					)
+					.where(
+						// Only fetch roles in pagedRoleIds
+						inArray(roles.id, pagedRoleIds),
+					)
+					.orderBy(roles.name);
 	const userCountsResult = await db
 		.select({
 			roleId: userRoles.roleId,
