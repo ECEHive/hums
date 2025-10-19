@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label";
 export function CreateDialog(): JSX.Element {
 	const queryClient = useQueryClient();
 	const nameInputId = useId();
+
+	const [roleName, setRoleName] = useState("");
 
 	const createRole = async (roleName: string) => {
 		try {
@@ -38,18 +40,19 @@ export function CreateDialog(): JSX.Element {
 				</DialogTrigger>
 				<DialogContent className="sm:max-w-[425px]">
 					<DialogHeader>
-						<DialogTitle>Creating New Role</DialogTitle>
+						<DialogTitle>Creating new role</DialogTitle>
 						<DialogDescription>
 							Enter a name for the new role.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="flex flex-wrap gap-1">
-						<Label htmlFor="roleName">Role Name</Label>
+						<Label htmlFor={nameInputId}>Role Name</Label>
 						<input
 							type="text"
 							id={nameInputId}
 							name="roleName"
-							defaultValue={undefined}
+							value={roleName}
+							onChange={(e) => setRoleName(e.target.value)}
 							className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						/>
 					</div>
@@ -57,11 +60,7 @@ export function CreateDialog(): JSX.Element {
 						<DialogClose asChild>
 							<Button
 								onClick={() => {
-									const inputElement = document.getElementById(
-										nameInputId,
-									) as HTMLInputElement;
-									const name = inputElement.value;
-									createRole(name);
+									createRole(roleName);
 								}}
 							>
 								Create

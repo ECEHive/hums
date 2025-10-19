@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +27,8 @@ export function RenameDialog({
 	const queryClient = useQueryClient();
 	const nameInputId = useId();
 
+	const [newName, setNewName] = useState(currentName);
+
 	const updateRoleName = async (newName: string) => {
 		try {
 			await trpc.roles.update.mutate({ id: roleId, name: newName });
@@ -50,12 +52,13 @@ export function RenameDialog({
 						<DialogDescription>Press rename to save changes.</DialogDescription>
 					</DialogHeader>
 					<div className="flex flex-wrap gap-1">
-						<Label htmlFor="roleName">Role Name</Label>
+						<Label htmlFor={nameInputId}>Role Name</Label>
 						<input
 							type="text"
 							id={nameInputId}
 							name="roleName"
-							defaultValue={currentName}
+							onChange={(e) => setNewName(e.target.value)}
+							value={newName}
 							className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						/>
 					</div>
@@ -63,10 +66,6 @@ export function RenameDialog({
 						<DialogClose asChild>
 							<Button
 								onClick={() => {
-									const inputElement = document.getElementById(
-										nameInputId,
-									) as HTMLInputElement;
-									const newName = inputElement.value;
 									updateRoleName(newName);
 								}}
 							>

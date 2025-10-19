@@ -1,6 +1,6 @@
 import type { SelectPermission } from "@ecehive/drizzle";
 import { trpc } from "@ecehive/trpc/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSX } from "react/jsx-runtime";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -54,15 +54,19 @@ export function PermissionsDialog({
 			console.error("Failed to update role permission:", err);
 		}
 	};
-
-	const allPermissions = getAllPermissions();
-	const rolePermissions = new Map<
+	
+    const rolePermissions = new Map<
 		string,
 		(SelectPermission & { assigned: boolean })[]
 	>();
 
+    const { data } = useQuery({
+        queryKey: ["permissions"],
+        queryFn: getAllPermissions,
+    });
+
 	// Iterate through permissions to mark assigned ones in rolePermissions map
-	allPermissions.forEach((perms, type) => {
+	data?.forEach((perms, type) => {
 		const permsWithAssignment = perms.map((perm) => ({
 			...perm,
 			assigned: permissions.some((p) => p.id === perm.id),
@@ -98,7 +102,7 @@ export function PermissionsDialog({
 													updateRolePermission(
 														roleId,
 														perm.id,
-														checked as boolean,
+														checked === true,
 													)
 												}
 												defaultChecked={perm.assigned}

@@ -6,7 +6,7 @@ import { PermissionsDialog } from "../roles/permissionsDialog";
 import { RenameDialog } from "../roles/renameDialog";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
-type Role = RouterOutput["roles"]["list"];
+type Role = RouterOutput["roles"]["list"]["roles"][number];
 
 export const columns: ColumnDef<Role>[] = [
 	{
