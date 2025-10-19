@@ -1,8 +1,14 @@
-import { db, roles, rolePermissions, permissions, userRoles } from "@ecehive/drizzle";
+import type { SelectPermission } from "@ecehive/drizzle";
+import {
+	db,
+	permissions,
+	rolePermissions,
+	roles,
+	userRoles,
+} from "@ecehive/drizzle";
 import { and, count, eq, like, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
-import type { SelectPermission } from "@ecehive/drizzle";
 
 export const ZListSchema = z.object({
 	limit: z.number().min(1).max(100).optional(),
@@ -46,7 +52,12 @@ export async function listHandler(options: TListOptions) {
 
 	const rolesMap = new Map<
 		number,
-		{ id: number; name: string; permissions: SelectPermission[], userCount: number }
+		{
+			id: number;
+			name: string;
+			permissions: SelectPermission[];
+			userCount: number;
+		}
 	>();
 
 	rolesResult.forEach((row) => {
@@ -63,7 +74,7 @@ export async function listHandler(options: TListOptions) {
 		if (role && row.permissions) {
 			role.permissions.push(row.permissions);
 		}
-	})
+	});
 
 	// Attach user counts to roles
 	const userCountsMap = new Map<number, number>();
@@ -72,7 +83,7 @@ export async function listHandler(options: TListOptions) {
 	});
 
 	rolesMap.forEach((role) => {
-		role["userCount"] = userCountsMap.get(role.id) || 0;
+		role.userCount = userCountsMap.get(role.id) || 0;
 	});
 
 	const [total] = await db
