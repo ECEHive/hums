@@ -17,7 +17,7 @@ export type TListOptions = {
 };
 
 export async function listHandler(options: TListOptions) {
-	const { search, limit = 10, offset = 0 } = options.input;
+	const { search, limit, offset = 0 } = options.input;
 
 	const filters = [] as (SQL | undefined)[];
 
