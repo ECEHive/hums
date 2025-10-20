@@ -2,6 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDownIcon } from "lucide-react";
+import React from "react";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { generateColumns } from "@/components/roles/columns";
@@ -28,8 +29,6 @@ export const Route = createFileRoute("/app/roles")({
 });
 
 export const permissions = ["roles.list"];
-
-import React from "react";
 
 function Roles() {
 	const [page, setPage] = React.useState(1);
