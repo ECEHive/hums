@@ -1,6 +1,5 @@
-import type { SelectPermission } from "@ecehive/drizzle";
 import { trpc } from "@ecehive/trpc/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { JSX } from "react/jsx-runtime";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,43 +17,45 @@ import { Label } from "@/components/ui/label";
 import { getAllPermissions } from "@/lib/permissions";
 
 type PermissionsDialogProps = {
-	roleName: string;
-	roleId: number;
-	permissions: SelectPermission[];
+	role: {
+		id: number;
+		name: string;
+		permissions: { id: number; name: string }[];
+	};
 };
 
 export function PermissionsDialog({
-	roleName,
-	roleId,
-	permissions,
+	role,
 }: PermissionsDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
 
-	const updateRolePermission = async (
-		roleId: number,
-		permissionId: number,
-		assigned: boolean,
-	) => {
-		try {
+	const updateRolePermissionMutation = useMutation({
+		mutationFn: async ({
+			roleId,
+			permissionId,
+			assigned,
+		}: {
+			roleId: number;
+			permissionId: number;
+			assigned: boolean;
+		}) => {
 			if (assigned) {
-				await trpc.rolePermissions.create.mutate({
+				return await trpc.rolePermissions.create.mutate({
 					roleId: roleId,
 					permissionId: permissionId,
 				});
 			} else {
-				await trpc.rolePermissions.delete.mutate({
+				return await trpc.rolePermissions.delete.mutate({
 					roleId: roleId,
 					permissionId: permissionId,
 				});
 			}
-		} catch (err) {
-			console.error("Failed to update role permission:", err);
-		}
-	};
+		},
+	});
 
 	const rolePermissions = new Map<
 		string,
-		(SelectPermission & { assigned: boolean })[]
+		{ id: number; name: string; assigned: boolean }[]
 	>();
 
 	const { data } = useQuery({
@@ -66,7 +67,7 @@ export function PermissionsDialog({
 	data?.forEach((perms, type) => {
 		const permsWithAssignment = perms.map((perm) => ({
 			...perm,
-			assigned: permissions.some((p) => p.id === perm.id),
+			assigned: role.permissions.some((p) => p.id === perm.id),
 		}));
 		rolePermissions.set(type, permsWithAssignment);
 	});
@@ -80,19 +81,26 @@ export function PermissionsDialog({
 			<form>
 				<DialogTrigger asChild>
 					<Button variant="outline">
-						Edit {permissions.length} permission
-						{permissions.length !== 1 ? "s" : ""}
+						Edit {role.permissions.length} permission
+						{role.permissions.length !== 1 ? "s" : ""}
 					</Button>
 				</DialogTrigger>
 				<DialogContent className="sm:max-w-[425px]">
 					<DialogHeader>
-						<DialogTitle>Permissions for {roleName}</DialogTitle>
+						<DialogTitle>Permissions for {role.name}</DialogTitle>
 						<DialogDescription>Changes saved automatically.</DialogDescription>
 					</DialogHeader>
 					<div className="flex flex-wrap gap-1">
 						{Array.from(rolePermissions.entries()).map(([type, perms]) => (
 							<div key={type} className="w-full">
-								<h3 className="font-medium mt-4 mb-2">{type}</h3>
+								<h3 className="font-medium mt-4 mb-2">
+									{type
+										.replace(/[_-]/g, " ")
+										.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+										.split(" ")
+										.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+										.join(" ")}
+								</h3>
 								<div className="grid grid-cols-2 gap-2">
 									{perms.map((perm) => (
 										<Label
@@ -101,11 +109,11 @@ export function PermissionsDialog({
 										>
 											<Checkbox
 												onCheckedChange={(checked) =>
-													updateRolePermission(
-														roleId,
-														perm.id,
-														checked === true,
-													)
+													updateRolePermissionMutation.mutate({
+														roleId: role.id,
+														permissionId: perm.id,
+														assigned: checked === true,
+													})
 												}
 												defaultChecked={perm.assigned}
 											/>

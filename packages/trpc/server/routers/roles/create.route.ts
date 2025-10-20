@@ -1,6 +1,5 @@
 import { db, roles } from "@ecehive/drizzle";
 import { TRPCError } from "@trpc/server";
-import type { DrizzleQueryError } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 

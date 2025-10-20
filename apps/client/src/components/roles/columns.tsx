@@ -1,14 +1,19 @@
-import type { AppRouter } from "@ecehive/trpc/server";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { inferRouterOutputs } from "@trpc/server";
 import type { AuthUser } from "@/auth";
 import { checkPermissions } from "@/lib/permissions";
 import { DeleteDialog } from "./delete-dialog";
 import { PermissionsDialog } from "./permissions-dialog";
 import { RenameDialog } from "./rename-dialog";
 
-type RouterOutput = inferRouterOutputs<AppRouter>;
-type Role = RouterOutput["roles"]["list"]["roles"][number];
+type Role = {
+	id: number;
+	name: string;
+	userCount: number;
+	permissions: {
+		id: number;
+		name: string;
+	}[];
+};
 
 export function generateColumns(user: AuthUser | null): ColumnDef<Role>[] {
 	if (user === null) return [];
@@ -33,19 +38,8 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Role>[] {
 			accessorKey: "permissions",
 			header: "Permissions",
 			cell: ({ row }) => {
-				const permissions = row.original.permissions as {
-					id: number;
-					name: string;
-				}[];
-
 				return (
-					(canEditPermissions && (
-						<PermissionsDialog
-							roleName={row.original.name as string}
-							roleId={row.original.id as number}
-							permissions={permissions}
-						/>
-					)) || (
+					(canEditPermissions && <PermissionsDialog role={row.original} />) || (
 						<span style={{ fontStyle: "italic", color: "#888" }}>
 							No actions available
 						</span>
