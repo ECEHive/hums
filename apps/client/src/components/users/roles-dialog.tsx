@@ -2,6 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { JSX } from "react/jsx-runtime";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -13,6 +14,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { checkPermissions } from "@/lib/permissions";
 import { Spinner } from "../ui/spinner";
 import { type Role, RoleMultiSelect } from "./role-multiselect";
 
@@ -48,6 +50,19 @@ export function RolesDialog({ user, trigger }: RolesDialogProps): JSX.Element {
 		}
 		setOpen(nextOpen);
 	};
+
+	const currentUser = useAuth().user;
+	const canCreate =
+		currentUser && checkPermissions(currentUser, ["userRoles.create"]);
+	const canDelete =
+		currentUser && checkPermissions(currentUser, ["userRoles.delete"]);
+
+	// compute what would be added/removed from current selection
+	const added = roles.filter((r) => !user.roles.find((p) => p.id === r.id));
+	const removed = user.roles.filter((r) => !roles.find((p) => p.id === r.id));
+
+	const permissionDisabled =
+		(added.length > 0 && !canCreate) || (removed.length > 0 && !canDelete);
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -134,10 +149,16 @@ export function RolesDialog({ user, trigger }: RolesDialogProps): JSX.Element {
 								setIsSaving(false);
 							}
 						}}
-						disabled={isSaving}
+						disabled={isSaving || permissionDisabled}
 					>
 						{isSaving ? <Spinner /> : "Save"}
 					</Button>
+					{permissionDisabled && (
+						<p className="text-sm text-muted-foreground mt-2">
+							You don't have the permissions required to apply these role
+							changes.
+						</p>
+					)}
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

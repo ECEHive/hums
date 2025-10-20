@@ -2,6 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
+	checkPermissions,
 	formatPermissionName,
 	formatPermissionType,
 	getAllPermissions,
@@ -33,6 +35,16 @@ export function PermissionsDialog({
 	role,
 }: PermissionsDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
+
+	const currentUser = useAuth().user;
+	const canListRolePermissions =
+		currentUser && checkPermissions(currentUser, ["rolePermissions.list"]);
+	const canEditRolePermissions =
+		currentUser &&
+		checkPermissions(currentUser, [
+			"rolePermissions.create",
+			"rolePermissions.delete",
+		]);
 
 	const { data } = useQuery({
 		queryKey: ["permissions"],
@@ -143,7 +155,7 @@ export function PermissionsDialog({
 		>
 			<form>
 				<DialogTrigger asChild>
-					<Button variant="outline">
+					<Button variant="outline" disabled={!canListRolePermissions}>
 						Edit {role.permissions.length} permission
 						{role.permissions.length !== 1 ? "s" : ""}
 					</Button>
@@ -162,9 +174,13 @@ export function PermissionsDialog({
 										variant="ghost"
 										size="sm"
 										onClick={async () => {
+											if (!canEditRolePermissions) return;
 											await toggleAllInSection(perms);
 										}}
-										disabled={updateRolePermissionMutation.isPending}
+										disabled={
+											updateRolePermissionMutation.isPending ||
+											!canEditRolePermissions
+										}
 									>
 										{areAllSelected(perms) ? "Deselect all" : "Select all"}
 									</Button>
@@ -177,6 +193,7 @@ export function PermissionsDialog({
 										>
 											<Checkbox
 												onCheckedChange={(checked) => {
+													if (!canEditRolePermissions) return;
 													// Optimistic local update
 													setAssignedById((prev) => ({
 														...prev,
@@ -188,7 +205,10 @@ export function PermissionsDialog({
 														assigned: checked === true,
 													});
 												}}
-												disabled={updateRolePermissionMutation.isPending}
+												disabled={
+													updateRolePermissionMutation.isPending ||
+													!canEditRolePermissions
+												}
 												checked={assignedById[perm.id] ?? perm.assigned}
 											/>
 											<span>{formatPermissionName(perm.name)}</span>

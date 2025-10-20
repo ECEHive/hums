@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,6 +19,7 @@ import {
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { checkPermissions } from "@/lib/permissions";
 
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(100),
@@ -94,10 +96,14 @@ export function UserUpdateDialog({
 		[form],
 	);
 
+	const currentUser = useAuth().user;
+	const canUpdate =
+		currentUser && checkPermissions(currentUser, ["users.update"]);
+
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm">
+				<Button variant="outline" size="sm" disabled={!canUpdate}>
 					Update
 				</Button>
 			</DialogTrigger>
@@ -173,7 +179,10 @@ export function UserUpdateDialog({
 								Cancel
 							</Button>
 						</DialogClose>
-						<Button type="submit" disabled={isSubmitting || !canSubmit}>
+						<Button
+							type="submit"
+							disabled={isSubmitting || !canSubmit || !canUpdate}
+						>
 							{isSubmitting ? <Spinner /> : "Save"}
 						</Button>
 					</DialogFooter>

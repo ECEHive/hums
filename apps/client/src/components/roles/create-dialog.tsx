@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -15,6 +16,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { checkPermissions } from "@/lib/permissions";
 import { Field, FieldError, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import { Spinner } from "../ui/spinner";
@@ -67,6 +69,9 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 	const canSubmit = useStore(form.store, (state) => state.canSubmit);
 
+	const user = useAuth().user;
+	const canCreate = user && checkPermissions(user, ["roles.create"]);
+
 	const handleDialogChange = useCallback(
 		(nextOpen: boolean) => {
 			setOpen(nextOpen);
@@ -81,7 +86,9 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline">Create Role</Button>
+				<Button variant="outline" disabled={!canCreate}>
+					Create Role
+				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
@@ -131,7 +138,10 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								Cancel
 							</Button>
 						</DialogClose>
-						<Button type="submit" disabled={isSubmitting || !canSubmit}>
+						<Button
+							type="submit"
+							disabled={isSubmitting || !canSubmit || !canCreate}
+						>
 							{isSubmitting ? <Spinner /> : "Create"}
 						</Button>
 					</DialogFooter>

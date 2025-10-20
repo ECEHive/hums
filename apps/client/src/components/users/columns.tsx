@@ -1,6 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Pencil } from "lucide-react";
+import type { AuthUser } from "@/auth";
 import { Badge } from "@/components/ui/badge";
+import { checkPermissions } from "@/lib/permissions";
 import { Button } from "../ui/button";
 import { RolesDialog } from "./roles-dialog";
 import { UserUpdateDialog } from "./update-dialog";
@@ -19,7 +21,14 @@ type User = {
 	}[];
 };
 
-export function generateColumns(): ColumnDef<User>[] {
+export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
+	if (user === null) return [];
+
+	const canManageRoles = checkPermissions(user, [
+		"userRoles.create",
+		"userRoles.delete",
+	]);
+
 	return [
 		{
 			accessorKey: "name",
@@ -51,6 +60,7 @@ export function generateColumns(): ColumnDef<User>[] {
 									variant="ghost"
 									size="icon"
 									aria-label={`Edit roles for ${user.username}`}
+									disabled={!canManageRoles}
 								>
 									<Pencil />
 								</Button>

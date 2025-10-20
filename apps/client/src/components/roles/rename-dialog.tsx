@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -15,6 +16,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { checkPermissions } from "@/lib/permissions";
 import { Field, FieldError, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import { Spinner } from "../ui/spinner";
@@ -85,10 +87,16 @@ export function RenameDialog({
 		[form],
 	);
 
+	const currentUser = useAuth().user;
+	const canRename =
+		currentUser && checkPermissions(currentUser, ["roles.update"]);
+
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline">Rename</Button>
+				<Button variant="outline" disabled={!canRename}>
+					Rename
+				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
@@ -138,7 +146,10 @@ export function RenameDialog({
 								Cancel
 							</Button>
 						</DialogClose>
-						<Button type="submit" disabled={isSubmitting || !canSubmit}>
+						<Button
+							type="submit"
+							disabled={isSubmitting || !canSubmit || !canRename}
+						>
 							{isSubmitting ? <Spinner /> : "Rename"}
 						</Button>
 					</DialogFooter>

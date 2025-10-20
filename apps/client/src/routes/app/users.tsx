@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDownIcon } from "lucide-react";
 import React from "react";
-import { RequirePermissions } from "@/auth";
+import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { TablePagination } from "@/components/table-pagination";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ function Users() {
 		retry: false,
 	});
 
-	const columns = generateColumns();
+	const columns = generateColumns(useAuth().user);
 	const total = data?.total || 0;
 	const totalPages = Math.ceil(total / pageSize) || 1;
 

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,6 +19,7 @@ import {
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { checkPermissions } from "@/lib/permissions";
 
 const formSchema = z.object({
 	username: z.string().min(1, "Username is required").max(100),
@@ -78,10 +80,15 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		[form],
 	);
 
+	const user = useAuth().user;
+	const canCreate = user && checkPermissions(user, ["users.create"]);
+
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline">Create User</Button>
+				<Button variant="outline" disabled={!canCreate}>
+					Create User
+				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
@@ -178,7 +185,10 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								Cancel
 							</Button>
 						</DialogClose>
-						<Button type="submit" disabled={isSubmitting || !canSubmit}>
+						<Button
+							type="submit"
+							disabled={isSubmitting || !canSubmit || !canCreate}
+						>
 							{isSubmitting ? <Spinner /> : "Create"}
 						</Button>
 					</DialogFooter>
