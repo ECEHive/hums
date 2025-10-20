@@ -19,9 +19,9 @@ Shift scheduling system for The Hive Makerspace at Georgia Tech.
 	```sh
 	pnpm install
 	```
-6. Push the database schema,
+6. Push the database schema and seed the permissions,
 	```sh
-	cd ./packages/drizzle && pnpm push
+	cd ./packages/drizzle && pnpm migrate
 	```
 
 7. Setup environmental variables in the `apps/client` and `apps/api` directories by copying the `.env.sample` to `.env` and modifying as needed. Reference each app's READMEs for each variable.
