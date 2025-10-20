@@ -3,9 +3,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AuthUser } from "@/auth";
 import { checkPermissions } from "@/lib/permissions";
-import { DeleteDialog } from "../roles/deleteDialog";
-import { PermissionsDialog } from "../roles/permissionsDialog";
-import { RenameDialog } from "../roles/renameDialog";
+import { DeleteDialog } from "./delete-dialog";
+import { PermissionsDialog } from "./permissions-dialog";
+import { RenameDialog } from "./rename-dialog";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
 type Role = RouterOutput["roles"]["list"]["roles"][number];
@@ -59,12 +59,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Role>[] {
 			cell: ({ row }) => {
 				return (
 					<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-						{canRename && (
-							<RenameDialog
-								roleId={row.original.id}
-								currentName={row.original.name}
-							/>
-						)}
+						{canRename && <RenameDialog role={row.original} />}
 						{canDelete && (
 							<DeleteDialog
 								roleId={row.original.id}
