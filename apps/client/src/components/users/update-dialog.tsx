@@ -16,47 +16,63 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions } from "@/lib/permissions";
-import { Field, FieldError, FieldLabel } from "../ui/field";
-import { Input } from "../ui/input";
-import { Spinner } from "../ui/spinner";
 
 const formSchema = z.object({
-	name: z
-		.string()
-		.min(1, "Role name is required.")
-		.max(50, "Role name must be at most 50 characters."),
+	name: z.string().min(1, "Name is required").max(100),
+	email: z.email("Email must be valid"),
 });
 
-type CreateDialogProps = {
+type UpdateDialogProps = {
+	user: {
+		id: number;
+		username: string;
+		name: string;
+		email: string;
+	};
 	onUpdate?: () => void;
 };
 
-export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
+export function UserUpdateDialog({
+	user,
+	onUpdate,
+}: UpdateDialogProps): JSX.Element {
 	const [open, setOpen] = useState(false);
 	const [serverError, setServerError] = useState<string | null>(null);
 	const queryClient = useQueryClient();
 	const formId = useId();
 
-	const createRoleMutation = useMutation({
-		mutationFn: ({ name }: { name: string }) => {
-			return trpc.roles.create.mutate({ name });
+	const updateUserMutation = useMutation({
+		mutationFn: ({
+			id,
+			name,
+			email,
+		}: {
+			id: number;
+			name: string;
+			email: string;
+		}) => {
+			return trpc.users.update.mutate({ id, name, email });
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["roles"] });
+			queryClient.invalidateQueries({ queryKey: ["users"] });
 		},
 	});
 
 	const form = useForm({
 		defaultValues: {
-			name: "",
+			name: user.name,
+			email: user.email,
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await createRoleMutation.mutateAsync({ name: value.name });
+				await updateUserMutation.mutateAsync({ id: user.id, ...value });
 				setOpen(false);
 				onUpdate?.();
 			} catch (err) {
@@ -69,9 +85,6 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 	const canSubmit = useStore(form.store, (state) => state.canSubmit);
 
-	const user = useAuth().user;
-	const canCreate = user && checkPermissions(user, ["roles.create"]);
-
 	const handleDialogChange = useCallback(
 		(nextOpen: boolean) => {
 			setOpen(nextOpen);
@@ -83,15 +96,23 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		[form],
 	);
 
+	const currentUser = useAuth().user;
+	const canUpdate =
+		currentUser && checkPermissions(currentUser, ["users.update"]);
+
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button disabled={!canCreate}>Create Role</Button>
+				<Button variant="outline" size="sm" disabled={!canUpdate}>
+					Update
+				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[425px]">
+			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>Create Role</DialogTitle>
-					<DialogDescription>Press create to save.</DialogDescription>
+					<DialogTitle>Update {user.username}</DialogTitle>
+					<DialogDescription>
+						Edit user details and press save.
+					</DialogDescription>
 				</DialogHeader>
 				<form
 					id={formId}
@@ -116,9 +137,31 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 										value={field.state.value}
 										onBlur={field.handleBlur}
 										onChange={(e) => field.handleChange(e.target.value)}
-										aria-invalid={isInvalid}
-										placeholder="Enter role name"
-										autoComplete="off"
+										placeholder="Enter full name"
+										autoComplete="name"
+									/>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					/>
+
+					<form.Field
+						name="email"
+						children={(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Email</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="user@example.com"
+										autoComplete="email"
 									/>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>
@@ -138,9 +181,9 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 						</DialogClose>
 						<Button
 							type="submit"
-							disabled={isSubmitting || !canSubmit || !canCreate}
+							disabled={isSubmitting || !canSubmit || !canUpdate}
 						>
-							{isSubmitting ? <Spinner /> : "Create"}
+							{isSubmitting ? <Spinner /> : "Save"}
 						</Button>
 					</DialogFooter>
 				</form>

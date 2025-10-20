@@ -29,7 +29,10 @@ export async function listHandler(options: TListOptions) {
 	const filters = [] as (SQL | undefined)[];
 
 	if (search) {
-		filters.push(ilike(roles.name, `%${search.replaceAll("%", "\\%")}%`));
+		const escapeLike = (s: string) =>
+			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+		const pattern = `%${escapeLike(search)}%`;
+		filters.push(ilike(roles.name, pattern));
 	}
 
 	// Step 1: Get paginated role IDs

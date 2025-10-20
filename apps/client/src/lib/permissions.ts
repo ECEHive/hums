@@ -1,4 +1,3 @@
-import type { SelectPermission } from "@ecehive/drizzle";
 import { trpc } from "@ecehive/trpc/client";
 import type { AuthUser } from "@/auth";
 
@@ -21,9 +20,9 @@ export function checkPermissions(
 }
 
 export async function getAllPermissions(): Promise<
-	Map<string, SelectPermission[]>
+	Map<string, { id: number; name: string }[]>
 > {
-	const permissionsMap = new Map<string, SelectPermission[]>();
+	const permissionsMap = new Map<string, { id: number; name: string }[]>();
 
 	const data = await trpc.permissions.list.query({});
 
@@ -36,4 +35,36 @@ export async function getAllPermissions(): Promise<
 	});
 
 	return permissionsMap;
+}
+
+/**
+ * Convert identifiers like "userRoles", "user_roles", or "user-roles" to a
+ * human-friendly form like "User Roles".
+ */
+export function humanizeIdentifier(input: string): string {
+	if (!input) return "";
+	const spaced = input
+		.replace(/[_-]/g, " ")
+		.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+	return spaced
+		.split(/\s+/)
+		.filter(Boolean)
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+		.join(" ");
+}
+
+/**
+ * Format a permission type key (the prefix before the dot) for display.
+ */
+export function formatPermissionType(type: string): string {
+	return humanizeIdentifier(type);
+}
+
+/**
+ * Format a permission full name like "users.create" or "shiftTypes.read"
+ * into a human-friendly action label like "Create" or "Read" (uses last segment).
+ */
+export function formatPermissionName(name: string): string {
+	const last = (name?.split(".").pop() ?? name) || "";
+	return humanizeIdentifier(last);
 }

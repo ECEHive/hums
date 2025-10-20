@@ -11,8 +11,12 @@ export type InsertUser = InferInsertModel<typeof schema.users>;
 export type SelectPeriod = InferSelectModel<typeof schema.periods>;
 export type InsertPeriod = InferInsertModel<typeof schema.periods>;
 
-export type SelectShiftSchedule = InferSelectModel<typeof schema.shiftSchedule>;
-export type InsertShiftSchedule = InferInsertModel<typeof schema.shiftSchedule>;
+export type SelectShiftSchedule = InferSelectModel<
+	typeof schema.shiftSchedules
+>;
+export type InsertShiftSchedule = InferInsertModel<
+	typeof schema.shiftSchedules
+>;
 
 export type SelectShiftOccurrences = InferSelectModel<
 	typeof schema.shiftOccurrences
@@ -41,3 +45,6 @@ export type InsertShiftAttendances = InferInsertModel<
 
 export type SelectPermission = InferSelectModel<typeof schema.permissions>;
 export type InsertPermission = InferInsertModel<typeof schema.permissions>;
+
+export type SelectRole = InferSelectModel<typeof schema.roles>;
+export type InsertRole = InferInsertModel<typeof schema.roles>;

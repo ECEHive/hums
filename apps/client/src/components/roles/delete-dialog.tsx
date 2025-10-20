@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import type { JSX } from "react/jsx-runtime";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -12,6 +13,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { checkPermissions } from "@/lib/permissions";
 
 type DeleteDialogProps = {
 	roleId: number;
@@ -23,6 +25,10 @@ export function DeleteDialog({
 	roleName,
 }: DeleteDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
+
+	const currentUser = useAuth().user;
+	const canDelete =
+		currentUser && checkPermissions(currentUser, ["roles.delete"]);
 
 	const deleteRole = async (roleId: number) => {
 		try {
@@ -39,7 +45,9 @@ export function DeleteDialog({
 		<Dialog>
 			<form>
 				<DialogTrigger asChild>
-					<Button variant="destructive">Delete</Button>
+					<Button variant="destructive" disabled={!canDelete}>
+						Delete
+					</Button>
 				</DialogTrigger>
 				<DialogContent className="sm:max-w-[425px]">
 					<DialogHeader>
@@ -50,7 +58,11 @@ export function DeleteDialog({
 					</DialogHeader>
 					<DialogFooter>
 						<DialogClose asChild>
-							<Button onClick={() => deleteRole(roleId)} variant="destructive">
+							<Button
+								onClick={() => deleteRole(roleId)}
+								variant="destructive"
+								disabled={!canDelete}
+							>
 								Delete
 							</Button>
 						</DialogClose>

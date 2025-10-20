@@ -16,16 +16,15 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions } from "@/lib/permissions";
-import { Field, FieldError, FieldLabel } from "../ui/field";
-import { Input } from "../ui/input";
-import { Spinner } from "../ui/spinner";
 
 const formSchema = z.object({
-	name: z
-		.string()
-		.min(1, "Role name is required.")
-		.max(50, "Role name must be at most 50 characters."),
+	username: z.string().min(1, "Username is required").max(100),
+	name: z.string().min(1, "Name is required").max(100),
+	email: z.email("Email must be valid"),
 });
 
 type CreateDialogProps = {
@@ -38,25 +37,26 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
 	const formId = useId();
 
-	const createRoleMutation = useMutation({
-		mutationFn: ({ name }: { name: string }) => {
-			return trpc.roles.create.mutate({ name });
-		},
+	const createUserMutation = useMutation({
+		mutationFn: (input: { username: string; name: string; email: string }) =>
+			trpc.users.create.mutate(input),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["roles"] });
+			queryClient.invalidateQueries({ queryKey: ["users"] });
 		},
 	});
 
 	const form = useForm({
 		defaultValues: {
+			username: "",
 			name: "",
+			email: "",
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await createRoleMutation.mutateAsync({ name: value.name });
+				await createUserMutation.mutateAsync(value);
 				setOpen(false);
 				onUpdate?.();
 			} catch (err) {
@@ -69,9 +69,6 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 	const canSubmit = useStore(form.store, (state) => state.canSubmit);
 
-	const user = useAuth().user;
-	const canCreate = user && checkPermissions(user, ["roles.create"]);
-
 	const handleDialogChange = useCallback(
 		(nextOpen: boolean) => {
 			setOpen(nextOpen);
@@ -83,15 +80,20 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		[form],
 	);
 
+	const user = useAuth().user;
+	const canCreate = user && checkPermissions(user, ["users.create"]);
+
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button disabled={!canCreate}>Create Role</Button>
+				<Button disabled={!canCreate}>Create User</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[425px]">
+			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>Create Role</DialogTitle>
-					<DialogDescription>Press create to save.</DialogDescription>
+					<DialogTitle>Create User</DialogTitle>
+					<DialogDescription>
+						Fill in the details to create a new user.
+					</DialogDescription>
 				</DialogHeader>
 				<form
 					id={formId}
@@ -102,6 +104,29 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 					}}
 					noValidate
 				>
+					<form.Field
+						name="username"
+						children={(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Username</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="Enter username"
+										autoComplete="off"
+									/>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					/>
+
 					<form.Field
 						name="name"
 						children={(field) => {
@@ -116,9 +141,31 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 										value={field.state.value}
 										onBlur={field.handleBlur}
 										onChange={(e) => field.handleChange(e.target.value)}
-										aria-invalid={isInvalid}
-										placeholder="Enter role name"
-										autoComplete="off"
+										placeholder="Enter full name"
+										autoComplete="name"
+									/>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					/>
+
+					<form.Field
+						name="email"
+						children={(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Email</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="user@example.com"
+										autoComplete="email"
 									/>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>
