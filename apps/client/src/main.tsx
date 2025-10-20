@@ -1,4 +1,6 @@
+import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
@@ -35,6 +37,14 @@ if (!rootElement.innerHTML) {
 				<ThemeProvider defaultTheme="dark" storageKey="ui-theme">
 					<RouterProvider router={router} />
 				</ThemeProvider>
+				<TanStackDevtools
+					plugins={[
+						{
+							name: "TanStack Query",
+							render: <ReactQueryDevtoolsPanel />,
+						},
+					]}
+				/>
 			</QueryClientProvider>
 		</StrictMode>,
 	);

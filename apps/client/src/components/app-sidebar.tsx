@@ -36,11 +36,7 @@ import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
 import { Logo } from "./logo";
 
-// Removed ModeToggle button in favor of options inside the user dropdown
-
-// Menu items.
-// Grouped menu items. Each group has an optional `name` and an `items` array.
-// If a group's items are all filtered out by permissions, the whole group will be hidden.
+// Sidebar menu items, grouped by section
 export const items = [
 	{
 		items: [
