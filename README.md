@@ -69,7 +69,7 @@ Notes:
 
 ## Contributing
 
-We welcome contributions. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for the code of conduct, branch/PR expectations, and developer workflow.
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on contributing (branching, commits, pull requests, and reviews). Also read and follow our [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) to help keep the community respectful and collaborative.
 
 ## License
 
