@@ -1,5 +1,6 @@
-import { db, users } from "@ecehive/drizzle";
-import { and, count, like, or, type SQL } from "drizzle-orm";
+import type { SelectRole } from "@ecehive/drizzle";
+import { db, roles, userRoles, users } from "@ecehive/drizzle";
+import { and, count, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -22,27 +23,85 @@ export async function listHandler(options: TListOptions) {
 	const filters = [] as (SQL | undefined)[];
 
 	if (search) {
+		const escapeLike = (s: string) =>
+			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+		const pattern = `%${escapeLike(search)}%`;
 		filters.push(
 			or(
-				like(users.name, `%${search.replaceAll("%", "\\%")}%`),
-				like(users.username, `%${search.replaceAll("%", "\\%")}%`),
-				like(users.email, `%${search.replaceAll("%", "\\%")}%`),
+				ilike(users.name, pattern),
+				ilike(users.username, pattern),
+				ilike(users.email, pattern),
 			),
 		);
 	}
 
-	const query = db
-		.select()
+	// Step 1: Get paginated user IDs
+	const pagedUserIdsResult = await db
+		.select({ id: users.id })
 		.from(users)
 		.where(and(...filters))
+		.orderBy(users.name)
 		.offset(offset)
-		.orderBy(users.name);
+		.limit(limit ?? 20);
 
-	if (limit) {
-		query.limit(limit);
+	const pagedUserIds = pagedUserIdsResult.map((u) => u.id);
+
+	if (pagedUserIds.length === 0) {
+		const [total] = await db
+			.select({
+				count: count(users.id),
+			})
+			.from(users)
+			.where(and(...filters));
+
+		return {
+			users: [],
+			total: total?.count ?? 0,
+		};
 	}
 
-	const result = await query;
+	// Step 2: Get users and their roles for paginated IDs
+	const usersResult = await db
+		.select()
+		.from(users)
+		.leftJoin(userRoles, eq(userRoles.userId, users.id))
+		.leftJoin(roles, eq(roles.id, userRoles.roleId))
+		.where(inArray(users.id, pagedUserIds))
+		.orderBy(users.name);
+
+	const usersMap = new Map<
+		number,
+		{
+			id: number;
+			name: string;
+			username: string;
+			email: string;
+			isSystemUser: boolean;
+			createdAt: Date;
+			updatedAt: Date;
+			roles: SelectRole[];
+		}
+	>();
+
+	usersResult.forEach((row) => {
+		const userId = row.users.id;
+		if (!usersMap.has(userId)) {
+			usersMap.set(userId, {
+				id: row.users.id,
+				name: row.users.name,
+				username: row.users.username,
+				email: row.users.email,
+				isSystemUser: row.users.isSystemUser,
+				createdAt: row.users.createdAt,
+				updatedAt: row.users.updatedAt,
+				roles: [],
+			});
+		}
+		const user = usersMap.get(userId);
+		if (user && row.roles) {
+			user.roles.push(row.roles);
+		}
+	});
 
 	const [total] = await db
 		.select({
@@ -52,7 +111,7 @@ export async function listHandler(options: TListOptions) {
 		.where(and(...filters));
 
 	return {
-		users: result,
+		users: Array.from(usersMap.values()),
 		total: total?.count ?? 0,
 	};
 }
