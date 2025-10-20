@@ -1,9 +1,12 @@
 import { db, rolePermissions } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-export const ZDeleteSchema = z.object({ id: z.number().min(1) });
+export const ZDeleteSchema = z.union([
+	z.object({ id: z.number().min(1) }),
+	z.object({ roleId: z.number().min(1), permissionId: z.number().min(1) }),
+]);
 export type TDeleteSchema = z.infer<typeof ZDeleteSchema>;
 
 export type TDeleteOptions = {
@@ -12,9 +15,26 @@ export type TDeleteOptions = {
 };
 
 export async function deleteHandler(options: TDeleteOptions) {
-	const { id } = options.input;
+	if ("roleId" in options.input && "permissionId" in options.input) {
+		const { roleId, permissionId } = options.input;
 
-	await db.delete(rolePermissions).where(eq(rolePermissions.id, id));
+		const res = db
+			.delete(rolePermissions)
+			.where(
+				and(
+					eq(rolePermissions.roleId, roleId),
+					eq(rolePermissions.permissionId, permissionId),
+				),
+			);
 
-	return { success: true };
+		await res;
+
+		return { success: true };
+	} else {
+		const { id } = options.input as { id: number };
+
+		await db.delete(rolePermissions).where(eq(rolePermissions.id, id));
+
+		return { success: true };
+	}
 }

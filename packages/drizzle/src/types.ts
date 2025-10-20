@@ -38,3 +38,6 @@ export type SelectShiftAttendances = InferSelectModel<
 export type InsertShiftAttendances = InferInsertModel<
 	typeof schema.shiftAttendances
 >;
+
+export type SelectPermission = InferSelectModel<typeof schema.permissions>;
+export type InsertPermission = InferInsertModel<typeof schema.permissions>;

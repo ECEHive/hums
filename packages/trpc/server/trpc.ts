@@ -78,7 +78,8 @@ export const permissionProtectedProcedure = (permissionName: string) =>
 			})
 			.from(userRoles)
 			.innerJoin(roles, eq(userRoles.roleId, roles.id))
-			.innerJoin(permissions, eq(userRoles.roleId, rolePermissions.roleId))
+			.innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+			.innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
 			.where(
 				and(
 					eq(userRoles.userId, opts.ctx.userId),

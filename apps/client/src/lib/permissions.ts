@@ -1,3 +1,5 @@
+import type { SelectPermission } from "@ecehive/drizzle";
+import { trpc } from "@ecehive/trpc/client";
 import type { AuthUser } from "@/auth";
 
 /**
@@ -16,4 +18,22 @@ export function checkPermissions(
 ): boolean {
 	if (user?.isSystemUser) return true;
 	return requiredPermissions.every((perm) => user?.permissions.includes(perm));
+}
+
+export async function getAllPermissions(): Promise<
+	Map<string, SelectPermission[]>
+> {
+	const permissionsMap = new Map<string, SelectPermission[]>();
+
+	const data = await trpc.permissions.list.query({});
+
+	data?.permissions?.forEach((perm) => {
+		const [type] = perm.name.split(".");
+		if (!permissionsMap.has(type)) {
+			permissionsMap.set(type, []);
+		}
+		permissionsMap.get(type)?.push(perm);
+	});
+
+	return permissionsMap;
 }

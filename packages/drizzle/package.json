@@ -3,7 +3,9 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
-		"push": "drizzle-kit push"
+		"push": "drizzle-kit push",
+		"seed": "ts-node scripts/seed-permissions.ts",
+		"migrate": "pnpm push && pnpm seed"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
@@ -15,6 +17,8 @@
 		"@ecehive/config": "workspace:*",
 		"@types/node": "^24.5.2",
 		"@types/pg": "^8.15.5",
-		"drizzle-kit": "^0.31.4"
+		"drizzle-kit": "^0.31.4",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.9.2"
 	}
 }

@@ -5,7 +5,6 @@ import {
 	HomeIcon,
 	NotebookTextIcon,
 	ShieldIcon,
-	ShieldUserIcon,
 	User2Icon,
 	UserIcon,
 } from "lucide-react";
@@ -32,8 +31,8 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
-import { permissions as adminPagePermissions } from "@/routes/app/admin";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
+import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
 import { Logo } from "./logo";
 
@@ -64,27 +63,27 @@ export const items = [
 		items: [
 			{
 				title: "Roles",
-				url: "/app/admin",
+				url: "/app/roles",
 				icon: ShieldIcon,
-				permissions: adminPagePermissions, // Example, will be changed based on real permissions
+				permissions: rolesPagePermissions, // Example, will be changed based on real permissions
 			},
 			{
 				title: "Users",
-				url: "/app/admin",
+				url: "/app/users", // To be implemented
 				icon: UserIcon,
-				permissions: adminPagePermissions, // Example, will be changed based on real permissions
+				permissions: [], // Example, will be changed based on real permissions
 			},
 			{
 				title: "Periods",
-				url: "/app/admin",
+				url: "/app/periods", // To be implemented
 				icon: CalendarIcon,
-				permissions: adminPagePermissions, // Example, will be changed based on real permissions
+				permissions: [], // Example, will be changed based on real permissions
 			},
 			{
 				title: "Reports",
-				url: "/app/admin",
+				url: "/app/reports", // To be implemented
 				icon: NotebookTextIcon,
-				permissions: adminPagePermissions, // Example, will be changed based on real permissions
+				permissions: [], // Example, will be changed based on real permissions
 			},
 		],
 	},

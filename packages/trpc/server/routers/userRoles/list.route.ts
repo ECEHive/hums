@@ -18,20 +18,25 @@ export type TListOptions = {
 };
 
 export async function listHandler(options: TListOptions) {
-	const { userId, roleId, limit = 10, offset = 0 } = options.input;
+	const { userId, roleId, limit, offset = 0 } = options.input;
 
 	const filters = [] as (SQL | undefined)[];
 
 	if (userId) filters.push(eq(userRoles.userId, userId));
 	if (roleId) filters.push(eq(userRoles.roleId, roleId));
 
-	const result = await db
+	const query = db
 		.select()
 		.from(userRoles)
 		.where(and(...filters))
-		.limit(limit)
 		.offset(offset)
 		.orderBy(userRoles.id);
+
+	if (limit) {
+		query.limit(limit);
+	}
+
+	const result = await query;
 
 	const [total] = await db
 		.select({ count: count(userRoles.id) })
