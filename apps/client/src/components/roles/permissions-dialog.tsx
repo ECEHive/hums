@@ -1,5 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,7 +15,11 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { getAllPermissions } from "@/lib/permissions";
+import {
+	formatPermissionName,
+	formatPermissionType,
+	getAllPermissions,
+} from "@/lib/permissions";
 
 type PermissionsDialogProps = {
 	role: {
@@ -28,6 +33,11 @@ export function PermissionsDialog({
 	role,
 }: PermissionsDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
+
+	const { data } = useQuery({
+		queryKey: ["permissions"],
+		queryFn: getAllPermissions,
+	});
 
 	const updateRolePermissionMutation = useMutation({
 		mutationFn: async ({
@@ -53,24 +63,77 @@ export function PermissionsDialog({
 		},
 	});
 
-	const rolePermissions = new Map<
-		string,
-		{ id: number; name: string; assigned: boolean }[]
-	>();
+	const rolePermissions = useMemo(() => {
+		const map = new Map<
+			string,
+			{ id: number; name: string; assigned: boolean }[]
+		>();
+		if (data) {
+			data.forEach((perms, type) => {
+				const permsWithAssignment = perms.map((perm) => ({
+					...perm,
+					assigned: role.permissions.some((p) => p.id === perm.id),
+				}));
+				map.set(type, permsWithAssignment);
+			});
+		}
+		return map;
+	}, [data, role.permissions]);
 
-	const { data } = useQuery({
-		queryKey: ["permissions"],
-		queryFn: getAllPermissions,
-	});
+	// Local assignment state for optimistic UI updates
+	const [assignedById, setAssignedById] = useState<Record<number, boolean>>({});
 
-	// Iterate through permissions to mark assigned ones in rolePermissions map
-	data?.forEach((perms, type) => {
-		const permsWithAssignment = perms.map((perm) => ({
-			...perm,
-			assigned: role.permissions.some((p) => p.id === perm.id),
-		}));
-		rolePermissions.set(type, permsWithAssignment);
-	});
+	useEffect(() => {
+		const next: Record<number, boolean> = {};
+		rolePermissions.forEach((perms) => {
+			perms.forEach((p) => {
+				next[p.id] = p.assigned;
+			});
+		});
+		setAssignedById(next);
+	}, [rolePermissions]);
+
+	// Determine if an entire section is selected
+	const areAllSelected = useCallback(
+		(perms: { id: number; name: string; assigned: boolean }[]) =>
+			perms.every((p) => (assignedById[p.id] ?? p.assigned) === true),
+		[assignedById],
+	);
+
+	// Toggle all in a section: selects all if any unselected, otherwise deselects all
+	const toggleAllInSection = useCallback(
+		async (perms: { id: number; name: string; assigned: boolean }[]) => {
+			const allSelected = areAllSelected(perms);
+			const targets = perms.filter(
+				(p) =>
+					allSelected
+						? (assignedById[p.id] ?? p.assigned) === true // deselect these
+						: (assignedById[p.id] ?? p.assigned) !== true, // select these
+			);
+
+			if (targets.length === 0) return;
+
+			// Optimistic local update
+			setAssignedById((prev) => {
+				const next = { ...prev };
+				targets.forEach((p) => {
+					next[p.id] = !allSelected;
+				});
+				return next;
+			});
+
+			await Promise.all(
+				targets.map((p) =>
+					updateRolePermissionMutation.mutateAsync({
+						roleId: role.id,
+						permissionId: p.id,
+						assigned: !allSelected,
+					}),
+				),
+			);
+		},
+		[areAllSelected, assignedById, role.id, updateRolePermissionMutation],
+	);
 
 	return (
 		<Dialog
@@ -85,7 +148,7 @@ export function PermissionsDialog({
 						{role.permissions.length !== 1 ? "s" : ""}
 					</Button>
 				</DialogTrigger>
-				<DialogContent className="sm:max-w-[425px]">
+				<DialogContent className="sm:max-w-[425px] overflow-y-auto max-h-full">
 					<DialogHeader>
 						<DialogTitle>Permissions for {role.name}</DialogTitle>
 						<DialogDescription>Changes saved automatically.</DialogDescription>
@@ -93,14 +156,19 @@ export function PermissionsDialog({
 					<div className="flex flex-wrap gap-1">
 						{Array.from(rolePermissions.entries()).map(([type, perms]) => (
 							<div key={type} className="w-full">
-								<h3 className="font-medium mt-4 mb-2">
-									{type
-										.replace(/[_-]/g, " ")
-										.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-										.split(" ")
-										.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-										.join(" ")}
-								</h3>
+								<div className="flex items-center justify-between mt-4 mb-2">
+									<h3 className="font-medium">{formatPermissionType(type)}</h3>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={async () => {
+											await toggleAllInSection(perms);
+										}}
+										disabled={updateRolePermissionMutation.isPending}
+									>
+										{areAllSelected(perms) ? "Deselect all" : "Select all"}
+									</Button>
+								</div>
 								<div className="grid grid-cols-2 gap-2">
 									{perms.map((perm) => (
 										<Label
@@ -108,16 +176,22 @@ export function PermissionsDialog({
 											className="flex items-center space-x-2"
 										>
 											<Checkbox
-												onCheckedChange={(checked) =>
+												onCheckedChange={(checked) => {
+													// Optimistic local update
+													setAssignedById((prev) => ({
+														...prev,
+														[perm.id]: checked === true,
+													}));
 													updateRolePermissionMutation.mutate({
 														roleId: role.id,
 														permissionId: perm.id,
 														assigned: checked === true,
-													})
-												}
-												defaultChecked={perm.assigned}
+													});
+												}}
+												disabled={updateRolePermissionMutation.isPending}
+												checked={assignedById[perm.id] ?? perm.assigned}
 											/>
-											<span>{perm.name.split(".").pop()}</span>
+											<span>{formatPermissionName(perm.name)}</span>
 										</Label>
 									))}
 								</div>
