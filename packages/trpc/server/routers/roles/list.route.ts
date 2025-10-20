@@ -6,7 +6,7 @@ import {
 	roles,
 	userRoles,
 } from "@ecehive/drizzle";
-import { and, count, eq, inArray, like, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, inArray, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -29,7 +29,7 @@ export async function listHandler(options: TListOptions) {
 	const filters = [] as (SQL | undefined)[];
 
 	if (search) {
-		filters.push(like(roles.name, `%${search.replaceAll("%", "\\%")}%`));
+		filters.push(ilike(roles.name, `%${search.replaceAll("%", "\\%")}%`));
 	}
 
 	// Step 1: Get paginated role IDs
