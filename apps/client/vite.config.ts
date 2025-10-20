@@ -1,5 +1,6 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
+import { devtools } from "@tanstack/devtools-vite";
 import router from "@tanstack/router-plugin/vite";
 import basicSSL from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react";
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => {
 			},
 		},
 		plugins: [
+			devtools(),
 			tsConfigPaths(),
 			router({
 				target: "react",
