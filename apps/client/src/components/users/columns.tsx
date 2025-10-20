@@ -74,6 +74,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 									{display.map((r) => (
 										<Badge
 											key={r.id}
+											variant="secondary"
 											className="inline-flex items-center gap-1"
 										>
 											{r.name}

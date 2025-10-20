@@ -86,9 +86,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" disabled={!canCreate}>
-					Create Role
-				</Button>
+				<Button disabled={!canCreate}>Create Role</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
