@@ -9,7 +9,6 @@ export const ZUpdateSchema = z
 	.object({
 		id: z.number().min(1),
 		name: z.string().min(1).max(100).optional(),
-		description: z.string().max(500).optional().nullable(),
 		start: z.date().optional(),
 		end: z.date().optional(),
 	})
@@ -32,7 +31,7 @@ export type TUpdateOptions = {
 };
 
 export async function updateHandler(options: TUpdateOptions) {
-	const { id, name, description, start, end } = options.input;
+	const { id, name, start, end } = options.input;
 
 	return await db.transaction(async (tx) => {
 		const [existing] = await tx
@@ -82,10 +81,6 @@ export async function updateHandler(options: TUpdateOptions) {
 
 		if (name !== undefined) {
 			updates.name = name;
-		}
-
-		if (description !== undefined) {
-			updates.description = description;
 		}
 
 		if (start !== undefined) {

@@ -9,7 +9,6 @@ export const ZCreateSchema = z
 	.object({
 		periodId: z.number().min(1),
 		name: z.string().min(1).max(100),
-		description: z.string().max(500).optional().nullable(),
 		start: z.date(),
 		end: z.date(),
 	})
@@ -32,7 +31,7 @@ export type TCreateOptions = {
 };
 
 export async function createHandler(options: TCreateOptions) {
-	const { periodId, name, description, start, end } = options.input;
+	const { periodId, name, start, end } = options.input;
 
 	return await db.transaction(async (tx) => {
 		// Verify the period exists
@@ -62,7 +61,6 @@ export async function createHandler(options: TCreateOptions) {
 			.values({
 				periodId,
 				name,
-				description: description ?? null,
 				start,
 				end,
 			})

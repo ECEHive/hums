@@ -141,7 +141,6 @@ export const periodExceptions = pgTable("period_exceptions", {
 		.references(() => periods.id, { onDelete: "cascade" }),
 
 	name: text("name").notNull(),
-	description: text("description"),
 
 	start: timestamp("start").notNull(),
 	end: timestamp("end").notNull(),
