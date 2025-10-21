@@ -1,4 +1,8 @@
-import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
+import {
+	db,
+	shiftSchedules,
+	shiftTypes,
+} from "@ecehive/drizzle";
 import {
 	generateShiftScheduleShiftOccurrences,
 	parseTimeString,

@@ -11,6 +11,13 @@ export type InsertUser = InferInsertModel<typeof schema.users>;
 export type SelectPeriod = InferSelectModel<typeof schema.periods>;
 export type InsertPeriod = InferInsertModel<typeof schema.periods>;
 
+export type SelectPeriodException = InferSelectModel<
+	typeof schema.periodExceptions
+>;
+export type InsertPeriodException = InferInsertModel<
+	typeof schema.periodExceptions
+>;
+
 export type SelectShiftSchedule = InferSelectModel<
 	typeof schema.shiftSchedules
 >;

@@ -128,6 +128,29 @@ export const periods = pgTable("periods", {
 });
 
 /**
+ * Period Exceptions define time slots within a period where no shifts should occur.
+ *
+ * For example, holidays, or breaks.
+ * Any shift occurrences that fall within these time ranges should not be generated.
+ */
+export const periodExceptions = pgTable("period_exceptions", {
+	id: serial("id").primaryKey(),
+
+	periodId: integer("period_id")
+		.notNull()
+		.references(() => periods.id, { onDelete: "cascade" }),
+
+	name: text("name").notNull(),
+	description: text("description"),
+
+	start: timestamp("start").notNull(),
+	end: timestamp("end").notNull(),
+
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
  * Shift Types define the types of shifts available in a period.
  *
  * For example, "3D Printing" or "Front Desk".

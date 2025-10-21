@@ -1,4 +1,5 @@
 import { authRouter } from "./routers/auth/_route";
+import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
 import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
 import { rolePermissionsRouter } from "./routers/rolePermissions/_route";
@@ -19,6 +20,7 @@ export const appRouter = router({
 	rolePermissions: rolePermissionsRouter,
 	permissions: permissionsRouter,
 	periods: periodsRouter,
+	periodExceptions: periodExceptionsRouter,
 	shiftTypes: shiftTypesRouter,
 	shiftTypeRoles: shiftTypeRolesRouter,
 	shiftSchedules: shiftSchedulesRouter,

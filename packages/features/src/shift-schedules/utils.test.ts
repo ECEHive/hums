@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
 	compareTimestamps,
+	filterExceptionPeriods,
 	findNextDayOfWeek,
 	generateOccurrenceTimestamps,
 	parseTimeString,
@@ -326,20 +327,20 @@ describe("compareTimestamps", () => {
 		expect(result.timestampsToDelete).toHaveLength(2);
 
 		// Expected timestamps should be created
-		expect(result.timestampsToCreate.map((d) => d.toISOString())).toContain(
-			"2024-01-01T09:00:00.000Z",
-		);
-		expect(result.timestampsToCreate.map((d) => d.toISOString())).toContain(
-			"2024-01-08T09:00:00.000Z",
-		);
+		expect(
+			result.timestampsToCreate.map((d) => d.toISOString()),
+		).toContain("2024-01-01T09:00:00.000Z");
+		expect(
+			result.timestampsToCreate.map((d) => d.toISOString()),
+		).toContain("2024-01-08T09:00:00.000Z");
 
 		// Existing timestamps should be deleted
-		expect(result.timestampsToDelete.map((d) => d.toISOString())).toContain(
-			"2024-01-15T09:00:00.000Z",
-		);
-		expect(result.timestampsToDelete.map((d) => d.toISOString())).toContain(
-			"2024-01-22T09:00:00.000Z",
-		);
+		expect(
+			result.timestampsToDelete.map((d) => d.toISOString()),
+		).toContain("2024-01-15T09:00:00.000Z");
+		expect(
+			result.timestampsToDelete.map((d) => d.toISOString()),
+		).toContain("2024-01-22T09:00:00.000Z");
 	});
 
 	it("should handle empty arrays", () => {
@@ -375,5 +376,198 @@ describe("compareTimestamps", () => {
 		expect(result.timestampsToCreate[0].toISOString()).toBe(
 			"2024-01-01T09:00:00.999Z",
 		);
+	});
+});
+
+describe("filterExceptionPeriods", () => {
+	it("should return all timestamps when there are no exceptions", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-08T09:00:00Z"),
+			new Date("2024-01-15T09:00:00Z"),
+		];
+
+		const result = filterExceptionPeriods(timestamps, []);
+
+		expect(result).toHaveLength(3);
+		expect(result).toEqual(timestamps);
+	});
+
+	it("should filter out timestamps that fall within a single exception period", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-08T09:00:00Z"), // Within exception
+			new Date("2024-01-15T09:00:00Z"),
+		];
+
+		const exceptions = [
+			{
+				start: new Date("2024-01-07T00:00:00Z"),
+				end: new Date("2024-01-10T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(2);
+		expect(result.map((d) => d.toISOString())).toEqual([
+			"2024-01-01T09:00:00.000Z",
+			"2024-01-15T09:00:00.000Z",
+		]);
+	});
+
+	it("should filter out timestamps within multiple exception periods", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-08T09:00:00Z"), // Within first exception
+			new Date("2024-01-15T09:00:00Z"),
+			new Date("2024-01-22T09:00:00Z"), // Within second exception
+			new Date("2024-01-29T09:00:00Z"),
+		];
+
+		const exceptions = [
+			{
+				start: new Date("2024-01-07T00:00:00Z"),
+				end: new Date("2024-01-09T23:59:59Z"),
+			},
+			{
+				start: new Date("2024-01-21T00:00:00Z"),
+				end: new Date("2024-01-23T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(3);
+		expect(result.map((d) => d.toISOString())).toEqual([
+			"2024-01-01T09:00:00.000Z",
+			"2024-01-15T09:00:00.000Z",
+			"2024-01-29T09:00:00.000Z",
+		]);
+	});
+
+	it("should filter timestamps at the exact start of exception period", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-08T00:00:00Z"), // Exact start of exception
+			new Date("2024-01-15T09:00:00Z"),
+		];
+
+		const exceptions = [
+			{
+				start: new Date("2024-01-08T00:00:00Z"),
+				end: new Date("2024-01-10T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(2);
+		expect(result.map((d) => d.toISOString())).not.toContain(
+			"2024-01-08T00:00:00.000Z",
+		);
+	});
+
+	it("should filter timestamps at the exact end of exception period", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-08T09:00:00Z"),
+			new Date("2024-01-10T23:59:59Z"), // Exact end of exception
+		];
+
+		const exceptions = [
+			{
+				start: new Date("2024-01-08T00:00:00Z"),
+				end: new Date("2024-01-10T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].toISOString()).toBe("2024-01-01T09:00:00.000Z");
+	});
+
+	it("should not filter timestamps just before exception period", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-07T23:59:59Z"), // Just before exception
+			new Date("2024-01-15T09:00:00Z"),
+		];
+
+		const exceptions = [
+			{
+				start: new Date("2024-01-08T00:00:00Z"),
+				end: new Date("2024-01-10T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(3);
+		expect(result).toEqual(timestamps);
+	});
+
+	it("should not filter timestamps just after exception period", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-11T00:00:00Z"), // Just after exception
+			new Date("2024-01-15T09:00:00Z"),
+		];
+
+		const exceptions = [
+			{
+				start: new Date("2024-01-08T00:00:00Z"),
+				end: new Date("2024-01-10T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(3);
+		expect(result).toEqual(timestamps);
+	});
+
+	it("should handle overlapping exception periods", () => {
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"),
+			new Date("2024-01-08T09:00:00Z"), // Within both exceptions
+			new Date("2024-01-09T09:00:00Z"), // Within both exceptions
+			new Date("2024-01-15T09:00:00Z"),
+		];
+
+		const exceptions = [
+			{
+				start: new Date("2024-01-07T00:00:00Z"),
+				end: new Date("2024-01-10T23:59:59Z"),
+			},
+			{
+				start: new Date("2024-01-08T00:00:00Z"),
+				end: new Date("2024-01-12T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(2);
+		expect(result.map((d) => d.toISOString())).toEqual([
+			"2024-01-01T09:00:00.000Z",
+			"2024-01-15T09:00:00.000Z",
+		]);
+	});
+
+	it("should handle empty timestamp array", () => {
+		const timestamps: Date[] = [];
+		const exceptions = [
+			{
+				start: new Date("2024-01-07T00:00:00Z"),
+				end: new Date("2024-01-10T23:59:59Z"),
+			},
+		];
+
+		const result = filterExceptionPeriods(timestamps, exceptions);
+
+		expect(result).toHaveLength(0);
+		expect(result).toEqual([]);
 	});
 });
