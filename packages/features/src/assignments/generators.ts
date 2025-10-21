@@ -134,6 +134,7 @@ export async function assignUserToScheduleOccurrences(
 		.returning();
 
 	// Verify all assignments were created
+	// If this fails, the entire transaction will be rolled back automatically
 	if (result.length !== occurrencesToAssign.length) {
 		throw new TRPCError({
 			code: "INTERNAL_SERVER_ERROR",
@@ -167,7 +168,10 @@ export async function unassignUserFromScheduleOccurrences(
 		.limit(1);
 
 	if (!schedule) {
-		throw new Error(`Shift schedule with ID ${shiftScheduleId} not found`);
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: `Shift schedule with ID ${shiftScheduleId} not found`,
+		});
 	}
 
 	// Get all occurrences for this schedule

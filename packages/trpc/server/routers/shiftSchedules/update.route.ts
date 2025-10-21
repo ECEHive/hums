@@ -15,6 +15,7 @@ export const ZUpdateSchema = z
 	.object({
 		id: z.number().min(1),
 		shiftTypeId: z.number().min(1).optional(),
+		slot: z.number().min(0).optional(),
 		dayOfWeek: z.number().min(0).max(6).optional(),
 		startTime: timeStringSchema.optional(),
 		endTime: timeStringSchema.optional(),
@@ -42,7 +43,8 @@ export type TUpdateOptions = {
 };
 
 export async function updateHandler(options: TUpdateOptions) {
-	const { id, shiftTypeId, dayOfWeek, startTime, endTime } = options.input;
+	const { id, shiftTypeId, slot, dayOfWeek, startTime, endTime } =
+		options.input;
 
 	const [existing] = await db
 		.select()
@@ -89,6 +91,10 @@ export async function updateHandler(options: TUpdateOptions) {
 			updates.shiftTypeId = shiftTypeId;
 		}
 
+		if (slot !== undefined) {
+			updates.slot = slot;
+		}
+
 		if (dayOfWeek !== undefined) {
 			updates.dayOfWeek = dayOfWeek;
 		}
@@ -112,6 +118,8 @@ export async function updateHandler(options: TUpdateOptions) {
 		}
 
 		// Re-generate shift occurrences for this schedule
+		// This will create new occurrences with the updated slot count
+		// and remove obsolete occurrences
 		await generateShiftScheduleShiftOccurrences(tx, updated.id);
 
 		return { shiftSchedule: updated };

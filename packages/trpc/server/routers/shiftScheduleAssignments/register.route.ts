@@ -7,7 +7,7 @@ import {
 } from "@ecehive/drizzle";
 import { assignUserToScheduleOccurrences } from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -50,6 +50,9 @@ export async function registerHandler(options: TRegisterOptions) {
 		}
 
 		// Check if registration is open
+		// Note: The period's visibleStart/visibleEnd windows control when the period
+		// is visible in the UI (frontend concern), while scheduleSignupStart/scheduleSignupEnd
+		// control when users can actually register for shifts (backend validation).
 		const now = new Date();
 		const signupStart = scheduleInfo.scheduleSignupStart;
 		const signupEnd = scheduleInfo.scheduleSignupEnd;
@@ -72,7 +75,12 @@ export async function registerHandler(options: TRegisterOptions) {
 		const [existing] = await tx
 			.select()
 			.from(shiftScheduleAssignments)
-			.where(eq(shiftScheduleAssignments.userId, userId))
+			.where(
+				and(
+					eq(shiftScheduleAssignments.shiftScheduleId, shiftScheduleId),
+					eq(shiftScheduleAssignments.userId, userId),
+				),
+			)
 			.limit(1);
 
 		if (existing) {
@@ -84,6 +92,9 @@ export async function registerHandler(options: TRegisterOptions) {
 
 		// Check if shift schedule has reached capacity
 		// slot value represents max index (0-indexed), so capacity is slot + 1
+		// Note: There's a unique constraint on (shiftScheduleId, userId) in the database
+		// which will prevent duplicate registrations even in concurrent scenarios.
+		// However, we still check capacity here to provide a better error message.
 		const maxCapacity = scheduleInfo.slot + 1;
 		const currentAssignments = await tx
 			.select()

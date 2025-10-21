@@ -88,14 +88,55 @@ export async function generateShiftScheduleShiftOccurrences(
 		existingOccurrences.map((occ) => occ.timestamp),
 	);
 
-	// Find the IDs of occurrences to delete (all slots for those timestamps)
-	const occurrenceIdsToDelete = existingOccurrences
-		.filter((occ) =>
-			timestampsToDelete.some(
-				(ts) => ts.toISOString() === occ.timestamp.toISOString(),
-			),
-		)
-		.map((occ) => occ.id);
+	// Also check for slot count changes - need to delete/create occurrences
+	// when the slot count has changed
+	const numSlots = schedule.slot + 1; // slot is 0-indexed, so add 1
+
+	// Find occurrences with invalid slot numbers (slot >= numSlots)
+	const occurrencesWithInvalidSlots = existingOccurrences.filter(
+		(occ) => occ.slot >= numSlots,
+	);
+
+	// Find timestamps that need new slots created (not enough slots for the current count)
+	const timestampSlotCounts = new Map<string, number>();
+	for (const occ of existingOccurrences) {
+		const tsKey = occ.timestamp.toISOString();
+		const maxSlot = timestampSlotCounts.get(tsKey) ?? -1;
+		timestampSlotCounts.set(tsKey, Math.max(maxSlot, occ.slot));
+	}
+
+	const timestampsNeedingMoreSlots: Date[] = [];
+	for (const tsKey of Array.from(timestampSlotCounts.keys())) {
+		const maxSlot = timestampSlotCounts.get(tsKey);
+		if (maxSlot === undefined) continue;
+
+		// If max slot in DB is less than what we need, we need to create more
+		if (maxSlot < schedule.slot) {
+			const timestamp = new Date(tsKey);
+			// Only if this timestamp is still valid (not being deleted)
+			if (
+				!timestampsToDelete.some(
+					(ts) => ts.toISOString() === timestamp.toISOString(),
+				)
+			) {
+				timestampsNeedingMoreSlots.push(timestamp);
+			}
+		}
+	}
+
+	// Find the IDs of occurrences to delete
+	const occurrenceIdsToDelete = [
+		// Occurrences for deleted timestamps
+		...existingOccurrences
+			.filter((occ) =>
+				timestampsToDelete.some(
+					(ts) => ts.toISOString() === occ.timestamp.toISOString(),
+				),
+			)
+			.map((occ) => occ.id),
+		// Occurrences with invalid slot numbers
+		...occurrencesWithInvalidSlots.map((occ) => occ.id),
+	];
 
 	// Delete obsolete occurrences
 	if (occurrenceIdsToDelete.length > 0) {
@@ -104,22 +145,36 @@ export async function generateShiftScheduleShiftOccurrences(
 			.where(inArray(shiftOccurrences.id, occurrenceIdsToDelete));
 	}
 
-	// Create new occurrences - one for each slot
-	// If slot = 3, create occurrences with slot 0, 1, 2 for each timestamp
-	if (timestampsToCreate.length > 0) {
-		const occurrencesToInsert = [];
-		const numSlots = schedule.slot + 1; // slot is 0-indexed, so add 1
+	// Create new occurrences
+	const occurrencesToInsert = [];
 
-		for (const timestamp of timestampsToCreate) {
-			for (let slotNum = 0; slotNum < numSlots; slotNum++) {
-				occurrencesToInsert.push({
-					shiftScheduleId: shiftScheduleId,
-					timestamp: timestamp,
-					slot: slotNum,
-				});
-			}
+	// Create occurrences for brand new timestamps (all slots)
+	for (const timestamp of timestampsToCreate) {
+		for (let slotNum = 0; slotNum < numSlots; slotNum++) {
+			occurrencesToInsert.push({
+				shiftScheduleId: shiftScheduleId,
+				timestamp: timestamp,
+				slot: slotNum,
+			});
 		}
+	}
 
+	// Create additional slot occurrences for existing timestamps that need more slots
+	for (const timestamp of timestampsNeedingMoreSlots) {
+		const tsKey = timestamp.toISOString();
+		const currentMaxSlot = timestampSlotCounts.get(tsKey) ?? -1;
+
+		// Create missing slots (from currentMaxSlot + 1 to schedule.slot)
+		for (let slotNum = currentMaxSlot + 1; slotNum < numSlots; slotNum++) {
+			occurrencesToInsert.push({
+				shiftScheduleId: shiftScheduleId,
+				timestamp: timestamp,
+				slot: slotNum,
+			});
+		}
+	}
+
+	if (occurrencesToInsert.length > 0) {
 		const result = await tx
 			.insert(shiftOccurrences)
 			.values(occurrencesToInsert)
