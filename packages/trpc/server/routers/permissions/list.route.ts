@@ -1,5 +1,5 @@
 import { db, permissions } from "@ecehive/drizzle";
-import { and, count, like, type SQL } from "drizzle-orm";
+import { and, count, ilike, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -21,7 +21,8 @@ export async function listHandler(options: TListOptions) {
 	const filters = [] as (SQL | undefined)[];
 
 	if (search) {
-		filters.push(like(permissions.name, `%${search.replaceAll("%", "\\%")}%`));
+		const pattern = `%${search.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+		filters.push(ilike(permissions.name, pattern));
 	}
 
 	const query = db

@@ -44,8 +44,10 @@ export async function listHandler(options: TListOptions) {
 	const filters = [] as (SQL | undefined)[];
 
 	if (search) {
-		const searchPattern = `%${search.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
-		filters.push(ilike(periods.name, searchPattern));
+		const escapeLike = (s: string) =>
+			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+		const pattern = `%${escapeLike(search)}%`;
+		filters.push(ilike(periods.name, pattern));
 	}
 
 	if (startsAfter) {

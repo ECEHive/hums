@@ -1,5 +1,5 @@
 import { db, shiftTypes } from "@ecehive/drizzle";
-import { and, count, eq, like, or, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -27,10 +27,14 @@ export async function listHandler(options: TListOptions) {
 	}
 
 	if (search) {
-		const pattern = `%${search.replaceAll("%", "\\%")}%`;
-		filters.push(
-			or(like(shiftTypes.name, pattern), like(shiftTypes.location, pattern)),
-		);
+		const escapeLike = (s: string) =>
+			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+		const pattern = `%${escapeLike(search)}%`;
+		filters.push(or(
+			ilike(shiftTypes.name, pattern),
+			ilike(shiftTypes.description, pattern),
+			ilike(shiftTypes.location, pattern)
+		));
 	}
 
 	const whereClause = and(...filters);

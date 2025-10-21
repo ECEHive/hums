@@ -1,5 +1,5 @@
 import { db, periodExceptions } from "@ecehive/drizzle";
-import { and, count, eq, like, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -26,8 +26,10 @@ export async function listHandler(options: TListOptions) {
 	)[];
 
 	if (search) {
-		const pattern = `%${search.replaceAll("%", "\\%")}%`;
-		filters.push(like(periodExceptions.name, pattern));
+		const escapeLike = (s: string) =>
+			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+		const pattern = `%${escapeLike(search)}%`;
+		filters.push(ilike(periodExceptions.name, pattern));
 	}
 
 	const whereClause = and(...filters);
