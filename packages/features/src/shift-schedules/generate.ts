@@ -90,11 +90,11 @@ export async function generateShiftScheduleShiftOccurrences(
 
 	// Also check for slot count changes - need to delete/create occurrences
 	// when the slot count has changed
-	const numSlots = schedule.slot + 1; // slot is 0-indexed, so add 1
+	const totalSlots = schedule.slot + 1; // slot is 0-indexed, so add 1
 
-	// Find occurrences with invalid slot numbers (slot >= numSlots)
+	// Find occurrences with invalid slot numbers (slot >= totalSlots)
 	const occurrencesWithInvalidSlots = existingOccurrences.filter(
-		(occ) => occ.slot >= numSlots,
+		(occ) => occ.slot >= totalSlots,
 	);
 
 	// Find timestamps that need new slots created (not enough slots for the current count)
@@ -150,7 +150,7 @@ export async function generateShiftScheduleShiftOccurrences(
 
 	// Create occurrences for brand new timestamps (all slots)
 	for (const timestamp of timestampsToCreate) {
-		for (let slotNum = 0; slotNum < numSlots; slotNum++) {
+		for (let slotNum = 0; slotNum < totalSlots; slotNum++) {
 			occurrencesToInsert.push({
 				shiftScheduleId: shiftScheduleId,
 				timestamp: timestamp,
@@ -165,7 +165,7 @@ export async function generateShiftScheduleShiftOccurrences(
 		const currentMaxSlot = timestampSlotCounts.get(tsKey) ?? -1;
 
 		// Create missing slots (from currentMaxSlot + 1 to schedule.slot)
-		for (let slotNum = currentMaxSlot + 1; slotNum < numSlots; slotNum++) {
+		for (let slotNum = currentMaxSlot + 1; slotNum < totalSlots; slotNum++) {
 			occurrencesToInsert.push({
 				shiftScheduleId: shiftScheduleId,
 				timestamp: timestamp,

@@ -220,7 +220,10 @@ export async function regenerateScheduleOccurrenceAssignments(
 		.limit(1);
 
 	if (!schedule) {
-		throw new Error(`Shift schedule with ID ${shiftScheduleId} not found`);
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: `Shift schedule with ID ${shiftScheduleId} not found`,
+		});
 	}
 
 	// Get all users assigned to this schedule
@@ -238,9 +241,10 @@ export async function regenerateScheduleOccurrenceAssignments(
 				assignment.userId,
 			);
 		} catch (error) {
-			throw new Error(
-				`Failed to regenerate assignments for user ${assignment.userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
-			);
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: `Failed to assign user ${assignment.userId} to occurrences of shift schedule ${shiftScheduleId}`,
+			});
 		}
 	}
 }
