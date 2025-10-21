@@ -7,8 +7,7 @@ import type { AppRouter } from "../server/router";
 export const trpc = createTRPCClient<AppRouter>({
 	links: [
 		httpBatchLink({
-			// Don't use the env package here, as this is in the client bundle
-			url: import.meta.env.VITE_PUBLIC_API_URL ?? "/trpc",
+			url: `${import.meta.env.VITE_PUBLIC_SERVER_URL}/api/trpc`,
 			transformer: superjson,
 			headers() {
 				if (typeof window === "undefined") return {};

@@ -5,17 +5,14 @@
 		"./client": "./client/index.ts",
 		"./server": "./server/index.ts"
 	},
-	"scripts": {
-		"check": "biome check --write"
-	},
 	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
 		"@ecehive/config": "workspace:*",
 		"vite": "^7.1.7"
 	},
 	"dependencies": {
 		"@ecehive/auth": "workspace:*",
 		"@ecehive/drizzle": "workspace:*",
+		"@ecehive/features": "workspace:*",
 		"@trpc/client": "^11.5.1",
 		"@trpc/server": "^11.5.1",
 		"drizzle-orm": "^0.44.5",

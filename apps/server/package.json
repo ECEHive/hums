@@ -1,0 +1,23 @@
+{
+	"name": "@ecehive/server",
+	"type": "module",
+	"scripts": {
+		"start": "tsx ./src/index.ts",
+		"dev": "nodemon",
+		"check": "biome check --write"
+	},
+	"dependencies": {
+		"@ecehive/drizzle": "workspace:*",
+		"@ecehive/env": "workspace:*",
+		"@ecehive/trpc": "workspace:*",
+		"@fastify/cors": "^11.1.0",
+		"@fastify/websocket": "^11.2.0",
+		"@trpc/server": "^11.5.1",
+		"fastify": "^5.6.0"
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"nodemon": "^3.1.10",
+		"tsx": "^4.20.5"
+	}
+}

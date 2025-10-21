@@ -1,6 +1,17 @@
-import { db, users } from "@ecehive/drizzle";
-import { initTRPC, TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import {
+	db,
+	permissions,
+	rolePermissions,
+	roles,
+	userRoles,
+	users,
+} from "@ecehive/drizzle";
+import {
+	type inferProcedureBuilderResolverOptions,
+	initTRPC,
+	TRPCError,
+} from "@trpc/server";
+import { and, eq } from "drizzle-orm";
 import superjson from "superjson";
 import type { Context } from "./context";
 
@@ -11,6 +22,9 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
+/**
+ * A procedure that requires the user to be authenticated.
+ */
 export const protectedProcedure = t.procedure.use(async (opts) => {
 	if (!opts.ctx.userId) {
 		throw new TRPCError({
@@ -40,3 +54,51 @@ export const protectedProcedure = t.procedure.use(async (opts) => {
 		},
 	});
 });
+
+export type TProtectedProcedureContext = inferProcedureBuilderResolverOptions<
+	typeof protectedProcedure
+>["ctx"];
+
+/**
+ * Produce a procedure that checks for a specific permission before allowing access.
+ * @param permissionName The name of the permission to check for.
+ * @returns A procedure that checks for the specified permission.
+ */
+export const permissionProtectedProcedure = (permissionName: string) =>
+	protectedProcedure.use(async (opts) => {
+		// System users bypass permission checks
+		if (opts.ctx.user.isSystemUser) {
+			return opts.next();
+		}
+
+		// Check if the user has the required permission
+		const userPermissions = await db
+			.select({
+				name: permissions.name,
+			})
+			.from(userRoles)
+			.innerJoin(roles, eq(userRoles.roleId, roles.id))
+			.innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
+			.innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+			.where(
+				and(
+					eq(userRoles.userId, opts.ctx.userId),
+					eq(permissions.name, permissionName),
+				),
+			);
+
+		// If no permissions found, throw an error
+		if (userPermissions.length === 0) {
+			throw new TRPCError({
+				code: "FORBIDDEN",
+				message: "You do not have permission to perform this action",
+			});
+		}
+
+		return opts.next();
+	});
+
+export type TPermissionProtectedProcedureContext =
+	inferProcedureBuilderResolverOptions<
+		ReturnType<typeof permissionProtectedProcedure>
+	>["ctx"];

@@ -2,11 +2,7 @@
 	"name": "@ecehive/env",
 	"type": "module",
 	"main": "./src/index.ts",
-	"scripts": {
-		"check": "biome check --write"
-	},
 	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
 		"@ecehive/config": "workspace:*"
 	},
 	"dependencies": {

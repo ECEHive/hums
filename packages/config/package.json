@@ -8,9 +8,6 @@
 		"tsconfig/next-app.json",
 		"tsconfig/react-lib.json"
 	],
-	"scripts": {
-		"check": "biome check --write"
-	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
 		"@types/node": "^24.5.2"

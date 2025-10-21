@@ -1,5 +1,18 @@
-import { Link } from "@tanstack/react-router";
-import { Calendar, ChevronUp, Home, User2 } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import {
+	BugIcon,
+	CalendarIcon,
+	ChevronUpIcon,
+	DoorOpenIcon,
+	HomeIcon,
+	MoonIcon,
+	NotebookTextIcon,
+	ShieldIcon,
+	SunIcon,
+	SunMoonIcon,
+	User2Icon,
+	UserIcon,
+} from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
 import { useTheme } from "@/components/theme-provider"; // Import useTheme from theme-provider
 import {
@@ -17,24 +30,63 @@ import {
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
+	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { checkPermissions } from "@/lib/permissions";
+import { permissions as appIndexPagePermissions } from "@/routes/app/index";
+import { permissions as rolesPagePermissions } from "@/routes/app/roles";
+import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
+import { Logo } from "./logo";
 
-// Removed ModeToggle button in favor of options inside the user dropdown
-
-// Menu items.
-const items = [
+// Sidebar menu items, grouped by section
+export const items = [
 	{
-		title: "Home",
-		url: "/app",
-		icon: Home,
+		items: [
+			{
+				title: "Home",
+				url: "/app",
+				icon: HomeIcon,
+				permissions: appIndexPagePermissions,
+			},
+			{
+				title: "Scheduling",
+				url: "/app/scheduling",
+				icon: CalendarIcon,
+				permissions: schedulingPagePermissions,
+			},
+		],
 	},
 	{
-		title: "Scheduling",
-		url: "/app/scheduling",
-		icon: Calendar,
+		name: "Admin",
+		items: [
+			{
+				title: "Roles",
+				url: "/app/roles",
+				icon: ShieldIcon,
+				permissions: rolesPagePermissions, // Example, will be changed based on real permissions
+			},
+			{
+				title: "Users",
+				url: "/app/users", // To be implemented
+				icon: UserIcon,
+				permissions: [], // Example, will be changed based on real permissions
+			},
+			{
+				title: "Periods",
+				url: "/app/periods", // To be implemented
+				icon: CalendarIcon,
+				permissions: [], // Example, will be changed based on real permissions
+			},
+			{
+				title: "Reports",
+				url: "/app/reports", // To be implemented
+				icon: NotebookTextIcon,
+				permissions: [], // Example, will be changed based on real permissions
+			},
+		],
 	},
 ];
 
@@ -42,36 +94,79 @@ export function AppSidebar() {
 	const user = useCurrentUser();
 	const { logout } = useAuth();
 	const { setTheme } = useTheme();
+	const location = useLocation();
+	const pathname = location?.pathname ?? "/";
+
+	// Collect all visible items across all groups to find the best match
+	const allVisibleItems = items.flatMap((group) =>
+		group.items.filter((item) => checkPermissions(user, item.permissions)),
+	);
+
+	const isPathActive = (itemUrl: string) => {
+		// Normalize trailing slashes for comparison
+		const normalize = (p: string) => p.replace(/\/+$/, "");
+		const nPath = normalize(pathname);
+		const nItem = normalize(itemUrl);
+
+		// Check if this item matches the current path
+		const matches = nPath === nItem || nPath.startsWith(`${nItem}/`);
+		if (!matches) return false;
+
+		// Find the longest matching item URL (most specific)
+		const longestMatch = allVisibleItems
+			.map((item) => normalize(item.url))
+			.filter((url) => nPath === url || nPath.startsWith(`${url}/`))
+			.sort((a, b) => b.length - a.length)[0];
+
+		// Only active if this is the longest (most specific) match
+		return nItem === longestMatch;
+	};
+
 	return (
 		<Sidebar>
+			<SidebarHeader>
+				<Logo className="h-8" />
+			</SidebarHeader>
 			<SidebarContent>
-				<SidebarGroup>
-					<SidebarGroupLabel>Hive Shift Scheduler</SidebarGroupLabel>
-					<SidebarGroupContent>
-						<SidebarMenu>
-							{items.map((item) => (
-								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton asChild>
-										<Link to={item.url}>
-											<item.icon />
-											<span>{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
-						</SidebarMenu>
-					</SidebarGroupContent>
-				</SidebarGroup>
+				{items.map((group) => {
+					const visibleItems = group.items.filter((item) =>
+						checkPermissions(user, item.permissions),
+					);
+					if (visibleItems.length === 0) return null;
+					return (
+						<SidebarGroup key={group.name || "group"}>
+							{group.name && (
+								<SidebarGroupLabel>{group.name}</SidebarGroupLabel>
+							)}
+							<SidebarGroupContent>
+								<SidebarMenu>
+									{visibleItems.map((item) => (
+										<SidebarMenuItem key={item.title}>
+											<SidebarMenuButton
+												asChild
+												isActive={isPathActive(item.url)}
+											>
+												<Link to={item.url}>
+													<item.icon />
+													<span>{item.title}</span>
+												</Link>
+											</SidebarMenuButton>
+										</SidebarMenuItem>
+									))}
+								</SidebarMenu>
+							</SidebarGroupContent>
+						</SidebarGroup>
+					);
+				})}
 			</SidebarContent>
 			<SidebarFooter>
-				{/* User dropdown with theme options */}
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<SidebarMenuButton>
-									<User2 /> {user?.name ?? user?.email ?? "Account"}
-									<ChevronUp className="ml-auto" />
+									<User2Icon /> {user?.name ?? user?.email ?? "Account"}
+									<ChevronUpIcon className="ml-auto" />
 								</SidebarMenuButton>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
@@ -80,23 +175,37 @@ export function AppSidebar() {
 							>
 								<DropdownMenuLabel>Theme</DropdownMenuLabel>
 								<DropdownMenuItem onSelect={() => setTheme("light")}>
+									<SunIcon />
 									Light
 								</DropdownMenuItem>
 								<DropdownMenuItem onSelect={() => setTheme("dark")}>
+									<MoonIcon />
 									Dark
 								</DropdownMenuItem>
 								<DropdownMenuItem onSelect={() => setTheme("system")}>
+									<SunMoonIcon />
 									System
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
+								<a
+									href="https://github.com/ECEHive/scheduler/issues"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<DropdownMenuItem>
+										<BugIcon />
+										Report an Issue
+									</DropdownMenuItem>
+								</a>
+								<DropdownMenuSeparator />
 								<DropdownMenuItem onSelect={() => logout()}>
+									<DoorOpenIcon />
 									Sign out
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</SidebarMenuItem>
 				</SidebarMenu>
-				{/* Removed ModeToggle button */}
 			</SidebarFooter>
 		</Sidebar>
 	);

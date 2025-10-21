@@ -10,12 +10,15 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { Spinner } from "@/components/ui/spinner";
+import { checkPermissions } from "@/lib/permissions";
 
 export type AuthUser = {
 	id: number;
 	name: string | null;
 	email: string | null;
-	role: string | null;
+	permissions: string[];
+	isSystemUser: boolean;
 	// allow other fields if needed
 	[key: string]: unknown;
 };
@@ -83,7 +86,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		setToken(null);
 	}, [setToken]);
 
-	// Optional: react to UNAUTHORIZED errors by clearing token
 	useEffect(() => {
 		if (!error) return;
 		const code = error.name ?? error.message;
@@ -111,8 +113,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	return (
 		<AuthContext.Provider value={value}>
 			{gateLoading ? (
-				<div className="p-4 text-sm text-muted-foreground">
-					Loading your account…
+				<div className="flex flex-col h-screen w-screen items-center justify-center bg-background">
+					<Spinner />
+					<div className="p-4 text-sm text-muted-foreground">
+						Loading your account…
+					</div>
 				</div>
 			) : (
 				children
@@ -127,7 +132,11 @@ export function useAuth() {
 	return ctx;
 }
 
-// Helper to require authenticated user; redirects to /login by default
+/**
+ * Helper to require authentication to view a page.
+ *
+ * Redirects to `to` if not authenticated.
+ */
 export function RequireAuth({
 	children,
 	to = "/login",
@@ -148,16 +157,19 @@ export function RequireAuth({
 	return <>{children}</>;
 }
 
-// Helper to require a role (when authenticated)
-export function RequireRole({
-	role,
-	roles,
+/**
+ * Require the user to have all given permissions to view the children.
+ *
+ * If not authenticated, redirects to `to`.
+ * If authenticated but missing permissions, shows `forbiddenFallback` if provided.
+ */
+export function RequirePermissions({
+	permissions,
 	children,
-	to = "/",
+	to = "/login",
 	forbiddenFallback,
 }: {
-	role?: string;
-	roles?: string[];
+	permissions: string[];
 	children: React.ReactNode;
 	to?: string;
 	forbiddenFallback?: React.ReactNode;
@@ -167,20 +179,20 @@ export function RequireRole({
 
 	useEffect(() => {
 		if (status === "authenticated" && user) {
-			const allowed = roles?.length
-				? roles.includes(String(user.role))
-				: user.role === role;
+			const allowed = checkPermissions(user, permissions);
 			if (!allowed && !forbiddenFallback) {
 				// Navigate away if no fallback provided
 				void router.navigate({ to });
 			}
+		} else if (status === "unauthenticated") {
+			void router.navigate({ to });
 		}
-	}, [status, user, role, roles, router, to, forbiddenFallback]);
+	}, [status, user, permissions, router, to, forbiddenFallback]);
 
 	if (status !== "authenticated") return null;
-	const allowed = roles?.length
-		? roles.includes(String(user?.role))
-		: user?.role === role;
+
+	const allowed = user && checkPermissions(user, permissions);
+
 	if (!user) return null;
 	if (!allowed) return <>{forbiddenFallback ?? null}</>;
 	return <>{children}</>;
@@ -189,6 +201,7 @@ export function RequireRole({
 export function useCurrentUser() {
 	return useAuth().user;
 }
+
 export function useAuthToken() {
 	return useAuth().token;
 }

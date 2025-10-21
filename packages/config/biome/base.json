@@ -1,17 +1,19 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
-	"files": {
-		"includes": [
-			"./**/*.{js,ts,tsx,json,md,css,scss}",
-			"!./node_modules/**/*",
-			"!./dist/**/*"
-		]
-	},
 	"formatter": {
 		"enabled": true
 	},
 	"linter": {
-		"enabled": true
+		"enabled": true,
+		"rules": {
+			"suspicious": {
+				"noUnknownAtRules": "off"
+			},
+			"correctness": {
+				"noChildrenProp": "off",
+				"useExhaustiveDependencies": "off"
+			}
+		}
 	},
 	"json": {
 		"formatter": {

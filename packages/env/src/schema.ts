@@ -15,6 +15,13 @@ export const ZEnvSchema = z.object({
 			return new Uint8Array(buffer);
 		}),
 	AUTH_CAS_SERVER: z.url(),
+	SYSTEM_USERS: z
+		.string()
+		.regex(
+			/^(\s*|\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b(,\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b)*)$/,
+		)
+		.default("")
+		.describe("Comma-separated list of email addresses"),
 });
 
 export type TEnvSchema = z.infer<typeof ZEnvSchema>;

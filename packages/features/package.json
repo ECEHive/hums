@@ -1,0 +1,19 @@
+{
+	"name": "@ecehive/features",
+	"type": "module",
+	"main": "./src/index.ts",
+	"scripts": {
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"@ecehive/drizzle": "workspace:*",
+		"@ecehive/env": "workspace:*",
+		"@trpc/server": "^11.6.0",
+		"dayjs": "^1.11.18",
+		"drizzle-orm": "^0.44.5"
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"vitest": "^3.2.4"
+	}
+}
