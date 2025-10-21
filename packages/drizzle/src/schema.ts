@@ -149,6 +149,12 @@ export const periodExceptions = pgTable("period_exceptions", {
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const shiftTypeRoleRequirement = pgEnum("shift_type_role_requirement", [
+	"disabled",
+	"all",
+	"any",
+]);
+
 /**
  * Shift Types define the types of shifts available in a period.
  *
@@ -178,7 +184,9 @@ export const shiftTypes = pgTable("shift_types", {
 		.default(false),
 	canSelfAssign: boolean("allow_self_assign").notNull().default(true),
 
-	doRequireRoles: boolean("do_require_roles").notNull().default(false),
+	doRequireRoles: shiftTypeRoleRequirement("do_require_roles")
+		.notNull()
+		.default("disabled"),
 
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),

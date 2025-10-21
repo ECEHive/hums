@@ -54,7 +54,7 @@ export async function registerHandler(options: TRegisterOptions) {
 		}
 
 		// Check if the shift type requires specific roles
-		if (scheduleInfo.doRequireRoles) {
+		if (scheduleInfo.doRequireRoles !== "disabled") {
 			// Get required roles for this shift type
 			const requiredRoles = await tx
 				.select({
@@ -73,16 +73,35 @@ export async function registerHandler(options: TRegisterOptions) {
 					.where(eq(userRoles.userId, userId));
 
 				const userRoleIds = new Set(userRolesData.map((ur) => ur.roleId));
-				const hasRequiredRole = requiredRoles.some((rr) =>
-					userRoleIds.has(rr.roleId),
-				);
+				const requiredRoleIds = requiredRoles.map((rr) => rr.roleId);
 
-				if (!hasRequiredRole) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message:
-							"You do not have the required role to register for this shift",
-					});
+				// Check based on requirement type
+				if (scheduleInfo.doRequireRoles === "all") {
+					// User must have ALL required roles
+					const hasAllRoles = requiredRoleIds.every((roleId) =>
+						userRoleIds.has(roleId),
+					);
+
+					if (!hasAllRoles) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message:
+								"You do not have all the required roles to register for this shift",
+						});
+					}
+				} else if (scheduleInfo.doRequireRoles === "any") {
+					// User must have AT LEAST ONE required role
+					const hasAnyRole = requiredRoleIds.some((roleId) =>
+						userRoleIds.has(roleId),
+					);
+
+					if (!hasAnyRole) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message:
+								"You do not have any of the required roles to register for this shift",
+						});
+					}
 				}
 			}
 		}
