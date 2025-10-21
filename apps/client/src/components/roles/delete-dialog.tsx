@@ -45,7 +45,7 @@ export function DeleteDialog({
 		<Dialog>
 			<form>
 				<DialogTrigger asChild>
-					<Button variant="destructive" disabled={!canDelete}>
+					<Button variant="destructive" size="sm" disabled={!canDelete}>
 						Delete
 					</Button>
 				</DialogTrigger>

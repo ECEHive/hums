@@ -94,7 +94,7 @@ export function RenameDialog({
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" disabled={!canRename}>
+				<Button variant="outline" size="sm" disabled={!canRename}>
 					Rename
 				</Button>
 			</DialogTrigger>
