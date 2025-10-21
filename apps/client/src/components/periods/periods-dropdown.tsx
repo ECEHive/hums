@@ -30,9 +30,7 @@ type Period = {
 };
 
 export function PeriodsDropdown() {
-	const [selectedPeriod, setSelectedPeriod] = React.useState<Period | null>(
-		null,
-	);
+	const [, setSelectedPeriod] = React.useState<Period | null>(null);
 
 	const { data = { periods: [] }, isLoading } = useQuery({
 		queryKey: ["periods"],
