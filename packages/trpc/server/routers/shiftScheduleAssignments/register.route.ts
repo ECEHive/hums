@@ -3,7 +3,9 @@ import {
 	periods,
 	shiftScheduleAssignments,
 	shiftSchedules,
+	shiftTypeRoles,
 	shiftTypes,
+	userRoles,
 } from "@ecehive/drizzle";
 import { assignUserToScheduleOccurrences } from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
@@ -27,11 +29,13 @@ export async function registerHandler(options: TRegisterOptions) {
 	const userId = options.ctx.user.id;
 
 	return await db.transaction(async (tx) => {
-		// Get the shift schedule with period info and slot count
+		// Get the shift schedule with period info, slot count, and role requirements
 		const [scheduleInfo] = await tx
 			.select({
 				scheduleId: shiftSchedules.id,
 				slot: shiftSchedules.slot,
+				shiftTypeId: shiftTypes.id,
+				doRequireRoles: shiftTypes.doRequireRoles,
 				periodId: periods.id,
 				scheduleSignupStart: periods.scheduleSignupStart,
 				scheduleSignupEnd: periods.scheduleSignupEnd,
@@ -47,6 +51,40 @@ export async function registerHandler(options: TRegisterOptions) {
 				code: "BAD_REQUEST",
 				message: "Shift schedule not found",
 			});
+		}
+
+		// Check if the shift type requires specific roles
+		if (scheduleInfo.doRequireRoles) {
+			// Get required roles for this shift type
+			const requiredRoles = await tx
+				.select({
+					roleId: shiftTypeRoles.roleId,
+				})
+				.from(shiftTypeRoles)
+				.where(eq(shiftTypeRoles.shiftTypeId, scheduleInfo.shiftTypeId));
+
+			if (requiredRoles.length > 0) {
+				// Get user's roles
+				const userRolesData = await tx
+					.select({
+						roleId: userRoles.roleId,
+					})
+					.from(userRoles)
+					.where(eq(userRoles.userId, userId));
+
+				const userRoleIds = new Set(userRolesData.map((ur) => ur.roleId));
+				const hasRequiredRole = requiredRoles.some((rr) =>
+					userRoleIds.has(rr.roleId),
+				);
+
+				if (!hasRequiredRole) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message:
+							"You do not have the required role to register for this shift",
+					});
+				}
+			}
 		}
 
 		// Check if registration is open

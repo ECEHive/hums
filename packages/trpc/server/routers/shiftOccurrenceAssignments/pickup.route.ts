@@ -4,7 +4,9 @@ import {
 	shiftOccurrenceAssignments,
 	shiftOccurrences,
 	shiftSchedules,
+	shiftTypeRoles,
 	shiftTypes,
+	userRoles,
 } from "@ecehive/drizzle";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
@@ -27,11 +29,13 @@ export async function pickupHandler(options: TPickupOptions) {
 	const userId = options.ctx.user.id;
 
 	return await db.transaction(async (tx) => {
-		// Get the shift occurrence with period info
+		// Get the shift occurrence with period info and role requirements
 		const [occurrenceInfo] = await tx
 			.select({
 				occurrenceId: shiftOccurrences.id,
 				timestamp: shiftOccurrences.timestamp,
+				shiftTypeId: shiftTypes.id,
+				doRequireRoles: shiftTypes.doRequireRoles,
 				periodId: periods.id,
 				scheduleModifyStart: periods.scheduleModifyStart,
 				scheduleModifyEnd: periods.scheduleModifyEnd,
@@ -51,6 +55,39 @@ export async function pickupHandler(options: TPickupOptions) {
 				code: "BAD_REQUEST",
 				message: "Shift occurrence not found",
 			});
+		}
+
+		// Check if the shift type requires specific roles
+		if (occurrenceInfo.doRequireRoles) {
+			// Get required roles for this shift type
+			const requiredRoles = await tx
+				.select({
+					roleId: shiftTypeRoles.roleId,
+				})
+				.from(shiftTypeRoles)
+				.where(eq(shiftTypeRoles.shiftTypeId, occurrenceInfo.shiftTypeId));
+
+			if (requiredRoles.length > 0) {
+				// Get user's roles
+				const userRolesData = await tx
+					.select({
+						roleId: userRoles.roleId,
+					})
+					.from(userRoles)
+					.where(eq(userRoles.userId, userId));
+
+				const userRoleIds = new Set(userRolesData.map((ur) => ur.roleId));
+				const hasRequiredRole = requiredRoles.some((rr) =>
+					userRoleIds.has(rr.roleId),
+				);
+
+				if (!hasRequiredRole) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "You do not have the required role to pick up this shift",
+					});
+				}
+			}
 		}
 
 		// Check if modifications are allowed for this period
