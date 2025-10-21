@@ -30,11 +30,13 @@ export async function listHandler(options: TListOptions) {
 		const escapeLike = (s: string) =>
 			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
 		const pattern = `%${escapeLike(search)}%`;
-		filters.push(or(
-			ilike(shiftTypes.name, pattern),
-			ilike(shiftTypes.description, pattern),
-			ilike(shiftTypes.location, pattern)
-		));
+		filters.push(
+			or(
+				ilike(shiftTypes.name, pattern),
+				ilike(shiftTypes.description, pattern),
+				ilike(shiftTypes.location, pattern),
+			),
+		);
 	}
 
 	const whereClause = and(...filters);
