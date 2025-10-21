@@ -10,7 +10,8 @@
 				"noUnknownAtRules": "off"
 			},
 			"correctness": {
-				"noChildrenProp": "off"
+				"noChildrenProp": "off",
+				"useExhaustiveDependencies": "off"
 			}
 		}
 	},
