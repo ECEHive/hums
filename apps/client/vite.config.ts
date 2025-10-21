@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), ["VITE_", "PROXY_"]);
 
 	return {
+		publicDir: "public",
 		server: {
 			port: 4483,
 			host: "0.0.0.0",
