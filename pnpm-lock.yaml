@@ -256,6 +256,9 @@ importers:
       '@ecehive/env':
         specifier: workspace:*
         version: link:../env
+      '@trpc/server':
+        specifier: ^11.6.0
+        version: 11.6.0(typescript@5.9.2)
       dayjs:
         specifier: ^1.11.18
         version: 1.11.18

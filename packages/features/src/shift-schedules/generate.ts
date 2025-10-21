@@ -5,6 +5,7 @@ import {
 	shiftSchedules,
 	shiftTypes,
 } from "@ecehive/drizzle";
+import { TRPCError } from "@trpc/server";
 import { eq, inArray } from "drizzle-orm";
 import type { Transaction } from "../types/transaction";
 import {
@@ -24,6 +25,7 @@ import {
  *
  * @param tx - The database transaction to use.
  * @param shiftScheduleId - The ID of the shift schedule to generate shift occurrences for.
+ * @throws Error if the shift schedule doesn't exist or if occurrence generation fails
  */
 export async function generateShiftScheduleShiftOccurrences(
 	tx: Transaction,
@@ -48,7 +50,10 @@ export async function generateShiftScheduleShiftOccurrences(
 		.where(eq(shiftSchedules.id, shiftScheduleId));
 
 	if (!schedule) {
-		return;
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: `Shift schedule with ID ${shiftScheduleId} not found`,
+		});
 	}
 
 	// Get period exceptions
@@ -101,11 +106,22 @@ export async function generateShiftScheduleShiftOccurrences(
 
 	// Create new occurrences
 	if (timestampsToCreate.length > 0) {
-		await tx.insert(shiftOccurrences).values(
-			timestampsToCreate.map((timestamp) => ({
-				shiftScheduleId: shiftScheduleId,
-				timestamp: timestamp,
-			})),
-		);
+		const result = await tx
+			.insert(shiftOccurrences)
+			.values(
+				timestampsToCreate.map((timestamp) => ({
+					shiftScheduleId: shiftScheduleId,
+					timestamp: timestamp,
+				})),
+			)
+			.returning();
+
+		// Verify all occurrences were created
+		if (result.length !== timestampsToCreate.length) {
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: `Failed to create all shift occurrences. Expected ${timestampsToCreate.length}, created ${result.length}`,
+			});
+		}
 	}
 }

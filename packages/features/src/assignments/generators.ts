@@ -2,7 +2,9 @@ import {
 	shiftOccurrenceAssignments,
 	shiftOccurrences,
 	shiftScheduleAssignments,
+	shiftSchedules,
 } from "@ecehive/drizzle";
+import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import type { Transaction } from "../types/transaction";
 
@@ -16,12 +18,27 @@ import type { Transaction } from "../types/transaction";
  * @param tx - The database transaction to use
  * @param shiftScheduleId - The ID of the shift schedule
  * @param userId - The ID of the user to assign
+ * @throws Error if the shift schedule doesn't exist or if assignment creation fails
  */
 export async function assignUserToScheduleOccurrences(
 	tx: Transaction,
 	shiftScheduleId: number,
 	userId: number,
 ) {
+	// Verify the shift schedule exists
+	const [schedule] = await tx
+		.select()
+		.from(shiftSchedules)
+		.where(eq(shiftSchedules.id, shiftScheduleId))
+		.limit(1);
+
+	if (!schedule) {
+		throw new TRPCError({
+			code: "NOT_FOUND",
+			message: `Shift schedule with ID ${shiftScheduleId} not found`,
+		});
+	}
+
 	// Get all occurrences for this schedule
 	const occurrences = await tx
 		.select()
@@ -52,13 +69,24 @@ export async function assignUserToScheduleOccurrences(
 	}
 
 	// Create assignments for all occurrences
-	await tx.insert(shiftOccurrenceAssignments).values(
-		occurrencesToAssign.map((occurrence) => ({
-			shiftOccurrenceId: occurrence.id,
-			userId,
-			status: "assigned" as const,
-		})),
-	);
+	const result = await tx
+		.insert(shiftOccurrenceAssignments)
+		.values(
+			occurrencesToAssign.map((occurrence) => ({
+				shiftOccurrenceId: occurrence.id,
+				userId,
+				status: "assigned" as const,
+			})),
+		)
+		.returning();
+
+	// Verify all assignments were created
+	if (result.length !== occurrencesToAssign.length) {
+		throw new TRPCError({
+			code: "INTERNAL_SERVER_ERROR",
+			message: `Failed to assign user ${userId} to all occurrences of shift schedule ${shiftScheduleId}`,
+		});
+	}
 }
 
 /**
@@ -71,12 +99,24 @@ export async function assignUserToScheduleOccurrences(
  * @param tx - The database transaction to use
  * @param shiftScheduleId - The ID of the shift schedule
  * @param userId - The ID of the user to unassign
+ * @throws Error if the shift schedule doesn't exist
  */
 export async function unassignUserFromScheduleOccurrences(
 	tx: Transaction,
 	shiftScheduleId: number,
 	userId: number,
 ) {
+	// Verify the shift schedule exists
+	const [schedule] = await tx
+		.select()
+		.from(shiftSchedules)
+		.where(eq(shiftSchedules.id, shiftScheduleId))
+		.limit(1);
+
+	if (!schedule) {
+		throw new Error(`Shift schedule with ID ${shiftScheduleId} not found`);
+	}
+
 	// Get all occurrences for this schedule
 	const occurrences = await tx
 		.select()
@@ -109,11 +149,23 @@ export async function unassignUserFromScheduleOccurrences(
  *
  * @param tx - The database transaction to use
  * @param shiftScheduleId - The ID of the shift schedule
+ * @throws Error if the shift schedule doesn't exist or if any assignment fails
  */
 export async function regenerateScheduleOccurrenceAssignments(
 	tx: Transaction,
 	shiftScheduleId: number,
 ) {
+	// Verify the shift schedule exists
+	const [schedule] = await tx
+		.select()
+		.from(shiftSchedules)
+		.where(eq(shiftSchedules.id, shiftScheduleId))
+		.limit(1);
+
+	if (!schedule) {
+		throw new Error(`Shift schedule with ID ${shiftScheduleId} not found`);
+	}
+
 	// Get all users assigned to this schedule
 	const scheduleAssignments = await tx
 		.select()
@@ -122,10 +174,16 @@ export async function regenerateScheduleOccurrenceAssignments(
 
 	// For each assigned user, ensure they're assigned to all occurrences
 	for (const assignment of scheduleAssignments) {
-		await assignUserToScheduleOccurrences(
-			tx,
-			shiftScheduleId,
-			assignment.userId,
-		);
+		try {
+			await assignUserToScheduleOccurrences(
+				tx,
+				shiftScheduleId,
+				assignment.userId,
+			);
+		} catch (error) {
+			throw new Error(
+				`Failed to regenerate assignments for user ${assignment.userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+			);
+		}
 	}
 }
