@@ -45,6 +45,8 @@ const permissions = [
 
 	// Shift Occurrence Assignments
 	"shiftOccurrenceAssignments.list",
+	"shiftOccurrenceAssignments.drop",
+	"shiftOccurrenceAssignments.pickup",
 
 	// Shift Occurrences
 	"shiftOccurrences.list",
@@ -52,6 +54,7 @@ const permissions = [
 
 	// Shift Schedule Assignments
 	"shiftScheduleAssignments.register",
+	"shiftScheduleAssignments.unregister",
 	"shiftScheduleAssignments.create",
 	"shiftScheduleAssignments.delete",
 

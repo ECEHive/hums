@@ -8,7 +8,9 @@ export const shiftScheduleAssignmentsRouter = router({
 	register: permissionProtectedProcedure("shiftScheduleAssignments.register")
 		.input(ZRegisterSchema)
 		.mutation(registerHandler),
-	unregister: permissionProtectedProcedure("shiftScheduleAssignments.register")
+	unregister: permissionProtectedProcedure(
+		"shiftScheduleAssignments.unregister",
+	)
 		.input(ZUnregisterSchema)
 		.mutation(unregisterHandler),
 	create: permissionProtectedProcedure("shiftScheduleAssignments.create")
