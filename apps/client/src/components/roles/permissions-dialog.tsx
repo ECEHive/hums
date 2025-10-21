@@ -155,7 +155,11 @@ export function PermissionsDialog({
 		>
 			<form>
 				<DialogTrigger asChild>
-					<Button variant="outline" disabled={!canListRolePermissions}>
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={!canListRolePermissions}
+					>
 						Edit {role.permissions.length} permission
 						{role.permissions.length !== 1 ? "s" : ""}
 					</Button>

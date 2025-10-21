@@ -240,7 +240,7 @@ export async function regenerateScheduleOccurrenceAssignments(
 				shiftScheduleId,
 				assignment.userId,
 			);
-		} catch (error) {
+		} catch {
 			throw new TRPCError({
 				code: "INTERNAL_SERVER_ERROR",
 				message: `Failed to assign user ${assignment.userId} to occurrences of shift schedule ${shiftScheduleId}`,

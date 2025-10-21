@@ -31,7 +31,7 @@ export async function loginHandler(options: TLoginOptions) {
 	const findUserResponse = await db
 		.select()
 		.from(users)
-		.where(eq(users.name, username));
+		.where(eq(users.username, username));
 	let user = findUserResponse[0];
 
 	if (!user) {
