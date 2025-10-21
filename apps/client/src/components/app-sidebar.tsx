@@ -1,10 +1,15 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+	BugIcon,
 	CalendarIcon,
 	ChevronUpIcon,
+	DoorOpenIcon,
 	HomeIcon,
+	MoonIcon,
 	NotebookTextIcon,
 	ShieldIcon,
+	SunIcon,
+	SunMoonIcon,
 	User2Icon,
 	UserIcon,
 } from "lucide-react";
@@ -170,16 +175,31 @@ export function AppSidebar() {
 							>
 								<DropdownMenuLabel>Theme</DropdownMenuLabel>
 								<DropdownMenuItem onSelect={() => setTheme("light")}>
+									<SunIcon />
 									Light
 								</DropdownMenuItem>
 								<DropdownMenuItem onSelect={() => setTheme("dark")}>
+									<MoonIcon />
 									Dark
 								</DropdownMenuItem>
 								<DropdownMenuItem onSelect={() => setTheme("system")}>
+									<SunMoonIcon />
 									System
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
+								<a
+									href="https://github.com/ECEHive/scheduler/issues"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<DropdownMenuItem>
+										<BugIcon />
+										Report an Issue
+									</DropdownMenuItem>
+								</a>
+								<DropdownMenuSeparator />
 								<DropdownMenuItem onSelect={() => logout()}>
+									<DoorOpenIcon />
 									Sign out
 								</DropdownMenuItem>
 							</DropdownMenuContent>
