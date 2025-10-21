@@ -1,4 +1,5 @@
 import { db, periods } from "@ecehive/drizzle";
+import { generatePeriodShiftOccurrences } from "@ecehive/features";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -96,7 +97,16 @@ export async function createHandler(options: TCreateOptions) {
 		scheduleModifyEnd: scheduleModifyEnd ?? null,
 	};
 
-	const inserted = await db.insert(periods).values(values).returning();
+	return await db.transaction(async (tx) => {
+		const [inserted] = await tx.insert(periods).values(values).returning();
 
-	return { period: inserted[0] };
+		if (!inserted) {
+			return { period: undefined };
+		}
+
+		// Generate shift occurrences for all schedules in this period
+		await generatePeriodShiftOccurrences(tx, inserted.id);
+
+		return { period: inserted };
+	});
 }

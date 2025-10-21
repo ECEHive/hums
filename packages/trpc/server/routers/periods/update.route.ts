@@ -1,4 +1,5 @@
 import { db, periods } from "@ecehive/drizzle";
+import { generatePeriodShiftOccurrences } from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
@@ -108,7 +109,7 @@ export async function updateHandler(options: TUpdateOptions) {
 	if (nextStart >= nextEnd) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
-			message: "start must be before end",
+			message: "Start must be before end",
 		});
 	}
 
@@ -119,7 +120,7 @@ export async function updateHandler(options: TUpdateOptions) {
 	) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
-			message: "visibleStart must be before visibleEnd",
+			message: "Visible start must be before visible end",
 		});
 	}
 
@@ -130,7 +131,7 @@ export async function updateHandler(options: TUpdateOptions) {
 	) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
-			message: "scheduleSignupStart must be before scheduleSignupEnd",
+			message: "Schedule signup start must be before schedule signup end",
 		});
 	}
 
@@ -141,7 +142,7 @@ export async function updateHandler(options: TUpdateOptions) {
 	) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
-			message: "scheduleModifyStart must be before scheduleModifyEnd",
+			message: "Schedule modify start must be before schedule modify end",
 		});
 	}
 
@@ -175,9 +176,8 @@ export async function updateHandler(options: TUpdateOptions) {
 			updated.start.getTime() !== existing.start.getTime() ||
 			updated.end.getTime() !== existing.end.getTime()
 		) {
-			// TODO:
-			//   - Delete all shift occurrences that fall outside the new period
-			//   - Re-generate occurrences for all schedules in this period
+			// Re-generate occurrences for all schedules in this period
+			await generatePeriodShiftOccurrences(tx, updated.id);
 		}
 
 		return { period: updated };

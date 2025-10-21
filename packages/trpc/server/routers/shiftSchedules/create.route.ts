@@ -1,20 +1,14 @@
+import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
 import {
-	db,
-	periods,
-	shiftOccurrences,
-	shiftSchedules,
-	shiftTypes,
-} from "@ecehive/drizzle";
-import {
-	generateOccurrenceTimestamps,
-	parseTime,
-	TIME_REGEX,
+	generateShiftScheduleShiftOccurrences,
+	parseTimeString,
 } from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
+const TIME_REGEX = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
 const timeStringSchema = z.string().regex(TIME_REGEX, "Invalid time format");
 
 export const ZCreateSchema = z
@@ -47,66 +41,37 @@ export async function createHandler(options: TCreateOptions) {
 	const { shiftTypeId, dayOfWeek, startTime, endTime } = options.input;
 
 	return await db.transaction(async (tx) => {
-		const [lookup] = await tx
-			.select({
-				periodId: periods.id,
-				periodStart: periods.start,
-				periodEnd: periods.end,
-			})
+		// Verify the shift type exists
+		const [shiftType] = await tx
+			.select()
 			.from(shiftTypes)
-			.innerJoin(periods, eq(shiftTypes.periodId, periods.id))
 			.where(eq(shiftTypes.id, shiftTypeId))
 			.limit(1);
 
-		if (!lookup) {
+		if (!shiftType) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message: "Shift type not found",
 			});
 		}
 
-		const insertedSchedules = await tx
+		const [schedule] = await tx
 			.insert(shiftSchedules)
 			.values({ shiftTypeId, dayOfWeek, startTime, endTime })
 			.returning();
 
-		const schedule = insertedSchedules[0];
-
 		if (!schedule) {
-			return { shiftSchedule: undefined, occurrences: [] };
+			return { shiftSchedule: undefined };
 		}
 
-		const period = {
-			id: lookup.periodId,
-			start: lookup.periodStart,
-			end: lookup.periodEnd,
-		};
+		// Generate shift occurrences for this schedule
+		await generateShiftScheduleShiftOccurrences(tx, schedule.id);
 
-		const occurrences = generateOccurrenceTimestamps({ period, schedule });
-
-		if (occurrences.length === 0) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message:
-					"Shift schedule does not produce any occurrences within the period",
-			});
-		}
-
-		const insertedOccurrences = await tx
-			.insert(shiftOccurrences)
-			.values(
-				occurrences.map((timestamp) => ({
-					shiftScheduleId: schedule.id,
-					timestamp,
-				})),
-			)
-			.returning();
-
-		return { shiftSchedule: schedule, occurrences: insertedOccurrences };
+		return { shiftSchedule: schedule };
 	});
 }
 
 function timeToSeconds(time: string) {
-	const { hours, minutes, seconds } = parseTime(time);
+	const { hours, minutes, seconds } = parseTimeString(time);
 	return hours * 3600 + minutes * 60 + seconds;
 }

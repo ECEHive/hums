@@ -1,5 +1,5 @@
 import { db, periods } from "@ecehive/drizzle";
-import { and, count, gte, like, lte, type SQL } from "drizzle-orm";
+import { and, count, gte, ilike, lte, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -44,7 +44,8 @@ export async function listHandler(options: TListOptions) {
 	const filters = [] as (SQL | undefined)[];
 
 	if (search) {
-		filters.push(like(periods.name, `%${search.replaceAll("%", "\\%")}%`));
+		const searchPattern = `%${search.replace(/%/g, "\\%").replace(/_/g, "\\_")}%`;
+		filters.push(ilike(periods.name, searchPattern));
 	}
 
 	if (startsAfter) {
