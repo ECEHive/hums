@@ -1,4 +1,9 @@
-import { db, shiftOccurrences } from "@ecehive/drizzle";
+import {
+	db,
+	shiftOccurrenceAssignments,
+	shiftOccurrences,
+	users,
+} from "@ecehive/drizzle";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
@@ -22,5 +27,24 @@ export async function getHandler(options: TGetOptions) {
 		.from(shiftOccurrences)
 		.where(eq(shiftOccurrences.id, id));
 
-	return { shiftOccurrence };
+	if (!shiftOccurrence) {
+		return { shiftOccurrence: undefined, assignedUsers: [] };
+	}
+
+	// Get assigned users
+	const assignments = await db
+		.select({
+			user: users,
+			status: shiftOccurrenceAssignments.status,
+		})
+		.from(shiftOccurrenceAssignments)
+		.innerJoin(users, eq(shiftOccurrenceAssignments.userId, users.id))
+		.where(eq(shiftOccurrenceAssignments.shiftOccurrenceId, id));
+
+	const assignedUsers = assignments.map((a) => ({
+		...a.user,
+		assignmentStatus: a.status,
+	}));
+
+	return { shiftOccurrence, assignedUsers };
 }

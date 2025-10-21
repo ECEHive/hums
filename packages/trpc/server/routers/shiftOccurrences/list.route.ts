@@ -1,5 +1,9 @@
-import { db, shiftOccurrences } from "@ecehive/drizzle";
-import { and, count, eq, gte, lte, type SQL } from "drizzle-orm";
+import {
+	db,
+	shiftOccurrenceAssignments,
+	shiftOccurrences,
+} from "@ecehive/drizzle";
+import { and, count, eq, gte, lte, sql, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -43,18 +47,31 @@ export async function listHandler(options: TListOptions) {
 
 	const whereClause = and(...filters);
 
-	const result = await db
-		.select()
+	const rows = await db
+		.select({
+			occurrence: shiftOccurrences,
+			assignedCount: sql<number>`cast(count(distinct ${shiftOccurrenceAssignments.id}) as int)`,
+		})
 		.from(shiftOccurrences)
+		.leftJoin(
+			shiftOccurrenceAssignments,
+			eq(shiftOccurrences.id, shiftOccurrenceAssignments.shiftOccurrenceId),
+		)
 		.where(whereClause)
+		.groupBy(shiftOccurrences.id)
 		.limit(limit)
 		.offset(offset)
 		.orderBy(shiftOccurrences.timestamp);
+
+	const occurrencesWithCounts = rows.map((row) => ({
+		...row.occurrence,
+		assignedUserCount: row.assignedCount,
+	}));
 
 	const [total] = await db
 		.select({ count: count(shiftOccurrences.id) })
 		.from(shiftOccurrences)
 		.where(whereClause);
 
-	return { shiftOccurrences: result, total: total?.count ?? 0 };
+	return { shiftOccurrences: occurrencesWithCounts, total: total?.count ?? 0 };
 }

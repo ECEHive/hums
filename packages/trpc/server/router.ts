@@ -4,7 +4,9 @@ import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
 import { rolePermissionsRouter } from "./routers/rolePermissions/_route";
 import { rolesRouter } from "./routers/roles/_route";
+import { shiftOccurrenceAssignmentsRouter } from "./routers/shiftOccurrenceAssignments/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
+import { shiftScheduleAssignmentsRouter } from "./routers/shiftScheduleAssignments/_route";
 import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
 import { shiftTypeRolesRouter } from "./routers/shiftTypeRoles/_route";
 import { shiftTypesRouter } from "./routers/shiftTypes/_route";
@@ -24,7 +26,9 @@ export const appRouter = router({
 	shiftTypes: shiftTypesRouter,
 	shiftTypeRoles: shiftTypeRolesRouter,
 	shiftSchedules: shiftSchedulesRouter,
+	shiftScheduleAssignments: shiftScheduleAssignmentsRouter,
 	shiftOccurrences: shiftOccurrencesRouter,
+	shiftOccurrenceAssignments: shiftOccurrenceAssignmentsRouter,
 });
 
 export type AppRouter = typeof appRouter;
