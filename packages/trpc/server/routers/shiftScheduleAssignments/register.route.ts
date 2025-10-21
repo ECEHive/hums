@@ -71,9 +71,7 @@ export async function registerHandler(options: TRegisterOptions) {
 		const [existing] = await tx
 			.select()
 			.from(shiftScheduleAssignments)
-			.where(
-				eq(shiftScheduleAssignments.shiftScheduleId, shiftScheduleId),
-			)
+			.where(eq(shiftScheduleAssignments.shiftScheduleId, shiftScheduleId))
 			.limit(1);
 
 		if (existing) {

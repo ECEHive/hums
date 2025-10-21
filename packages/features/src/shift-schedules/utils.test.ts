@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
 	compareTimestamps,
 	filterExceptionPeriods,
@@ -327,20 +327,20 @@ describe("compareTimestamps", () => {
 		expect(result.timestampsToDelete).toHaveLength(2);
 
 		// Expected timestamps should be created
-		expect(
-			result.timestampsToCreate.map((d) => d.toISOString()),
-		).toContain("2024-01-01T09:00:00.000Z");
-		expect(
-			result.timestampsToCreate.map((d) => d.toISOString()),
-		).toContain("2024-01-08T09:00:00.000Z");
+		expect(result.timestampsToCreate.map((d) => d.toISOString())).toContain(
+			"2024-01-01T09:00:00.000Z",
+		);
+		expect(result.timestampsToCreate.map((d) => d.toISOString())).toContain(
+			"2024-01-08T09:00:00.000Z",
+		);
 
 		// Existing timestamps should be deleted
-		expect(
-			result.timestampsToDelete.map((d) => d.toISOString()),
-		).toContain("2024-01-15T09:00:00.000Z");
-		expect(
-			result.timestampsToDelete.map((d) => d.toISOString()),
-		).toContain("2024-01-22T09:00:00.000Z");
+		expect(result.timestampsToDelete.map((d) => d.toISOString())).toContain(
+			"2024-01-15T09:00:00.000Z",
+		);
+		expect(result.timestampsToDelete.map((d) => d.toISOString())).toContain(
+			"2024-01-22T09:00:00.000Z",
+		);
 	});
 
 	it("should handle empty arrays", () => {

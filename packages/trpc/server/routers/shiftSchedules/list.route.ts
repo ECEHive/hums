@@ -3,9 +3,8 @@ import {
 	shiftScheduleAssignments,
 	shiftSchedules,
 	shiftTypes,
-	users,
 } from "@ecehive/drizzle";
-import { and, count, eq, sql, type SQL } from "drizzle-orm";
+import { and, count, eq, type SQL, sql } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 

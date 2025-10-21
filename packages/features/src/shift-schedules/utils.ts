@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -122,9 +122,7 @@ export function compareTimestamps(
 	timestampsToCreate: Date[];
 	timestampsToDelete: Date[];
 } {
-	const existingSet = new Set(
-		existingTimestamps.map((ts) => ts.toISOString()),
-	);
+	const existingSet = new Set(existingTimestamps.map((ts) => ts.toISOString()));
 
 	const expectedSet = new Set(expectedTimestamps.map((ts) => ts.toISOString()));
 
@@ -174,10 +172,7 @@ export function filterExceptionPeriods(
 			const exceptionEnd = dayjs(exception.end);
 
 			// If timestamp is within the exception period (inclusive), exclude it
-			if (
-				ts.isSameOrAfter(exceptionStart) &&
-				ts.isSameOrBefore(exceptionEnd)
-			) {
+			if (ts.isSameOrAfter(exceptionStart) && ts.isSameOrBefore(exceptionEnd)) {
 				return false;
 			}
 		}

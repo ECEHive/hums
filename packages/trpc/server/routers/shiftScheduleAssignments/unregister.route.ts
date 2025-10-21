@@ -63,7 +63,8 @@ export async function unregisterHandler(options: TUnregisterOptions) {
 		if (now < signupStart || now > signupEnd) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
-				message: "Registration changes are not currently allowed for this period",
+				message:
+					"Registration changes are not currently allowed for this period",
 			});
 		}
 
