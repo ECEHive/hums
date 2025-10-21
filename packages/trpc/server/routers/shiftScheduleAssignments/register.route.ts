@@ -27,10 +27,11 @@ export async function registerHandler(options: TRegisterOptions) {
 	const userId = options.ctx.user.id;
 
 	return await db.transaction(async (tx) => {
-		// Get the shift schedule with period info
+		// Get the shift schedule with period info and slot count
 		const [scheduleInfo] = await tx
 			.select({
 				scheduleId: shiftSchedules.id,
+				slot: shiftSchedules.slot,
 				periodId: periods.id,
 				scheduleSignupStart: periods.scheduleSignupStart,
 				scheduleSignupEnd: periods.scheduleSignupEnd,
@@ -71,13 +72,28 @@ export async function registerHandler(options: TRegisterOptions) {
 		const [existing] = await tx
 			.select()
 			.from(shiftScheduleAssignments)
-			.where(eq(shiftScheduleAssignments.shiftScheduleId, shiftScheduleId))
+			.where(eq(shiftScheduleAssignments.userId, userId))
 			.limit(1);
 
 		if (existing) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message: "Already registered for this shift schedule",
+			});
+		}
+
+		// Check if shift schedule has reached capacity
+		// slot value represents max index (0-indexed), so capacity is slot + 1
+		const maxCapacity = scheduleInfo.slot + 1;
+		const currentAssignments = await tx
+			.select()
+			.from(shiftScheduleAssignments)
+			.where(eq(shiftScheduleAssignments.shiftScheduleId, shiftScheduleId));
+
+		if (currentAssignments.length >= maxCapacity) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: "This shift schedule has reached its maximum capacity",
 			});
 		}
 

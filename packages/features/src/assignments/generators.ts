@@ -15,6 +15,10 @@ import type { Transaction } from "../types/transaction";
  * of the specified shift schedule. It should be called when a user registers
  * for a recurring shift schedule.
  *
+ * The function intelligently assigns the user to the next available slot for each
+ * timestamp. For example, if there are occurrences with slots 0, 1, 2 for a given
+ * timestamp, it will assign the user to the slot with the fewest assignments.
+ *
  * @param tx - The database transaction to use
  * @param shiftScheduleId - The ID of the shift schedule
  * @param userId - The ID of the user to assign
@@ -49,31 +53,80 @@ export async function assignUserToScheduleOccurrences(
 		return;
 	}
 
-	// Check if user is already assigned to any occurrences
+	// Get all existing assignments for these occurrences
+	const occurrenceIds = occurrences.map((occ) => occ.id);
 	const existingAssignments = await tx
 		.select()
 		.from(shiftOccurrenceAssignments)
-		.where(eq(shiftOccurrenceAssignments.userId, userId));
+		.where(
+			inArray(shiftOccurrenceAssignments.shiftOccurrenceId, occurrenceIds),
+		);
 
-	// Filter out occurrences where user is already assigned
-	const existingOccurrenceIds = new Set(
-		existingAssignments.map((a) => a.shiftOccurrenceId),
+	// Group occurrences by timestamp to handle slots intelligently
+	const occurrencesByTimestamp = new Map<string, typeof occurrences>();
+	for (const occ of occurrences) {
+		const tsKey = occ.timestamp.toISOString();
+		if (!occurrencesByTimestamp.has(tsKey)) {
+			occurrencesByTimestamp.set(tsKey, []);
+		}
+		occurrencesByTimestamp.get(tsKey)?.push(occ);
+	}
+
+	// Count existing assignments per occurrence
+	const assignmentCounts = new Map<number, number>();
+	for (const assignment of existingAssignments) {
+		assignmentCounts.set(
+			assignment.shiftOccurrenceId,
+			(assignmentCounts.get(assignment.shiftOccurrenceId) || 0) + 1,
+		);
+	}
+
+	// Check if user is already assigned to any occurrences
+	const userAssignedOccurrenceIds = new Set(
+		existingAssignments
+			.filter((a) => a.userId === userId)
+			.map((a) => a.shiftOccurrenceId),
 	);
 
-	const occurrencesToAssign = occurrences.filter(
-		(occ) => !existingOccurrenceIds.has(occ.id),
-	);
+	// For each timestamp, assign user to the slot with fewest assignments
+	const occurrencesToAssign: number[] = [];
+	for (const [_timestamp, occs] of Array.from(
+		occurrencesByTimestamp.entries(),
+	)) {
+		// Skip if user is already assigned to any slot for this timestamp
+		if (
+			occs.some((occ: (typeof occurrences)[0]) =>
+				userAssignedOccurrenceIds.has(occ.id),
+			)
+		) {
+			continue;
+		}
+
+		// Find the occurrence (slot) with the fewest assignments
+		let bestOccurrence = occs[0];
+		let minAssignments = assignmentCounts.get(bestOccurrence.id) || 0;
+
+		for (const occ of occs) {
+			const count = assignmentCounts.get(occ.id) || 0;
+			if (count < minAssignments) {
+				bestOccurrence = occ;
+				minAssignments = count;
+			}
+		}
+
+		occurrencesToAssign.push(bestOccurrence.id);
+	}
 
 	if (occurrencesToAssign.length === 0) {
 		return;
 	}
 
-	// Create assignments for all occurrences
+	// Create assignments for all selected occurrences
 	const result = await tx
 		.insert(shiftOccurrenceAssignments)
 		.values(
-			occurrencesToAssign.map((occurrence) => ({
-				shiftOccurrenceId: occurrence.id,
+			occurrencesToAssign.map((occurrenceId) => ({
+				shiftOccurrenceId: occurrenceId,
 				userId,
 				status: "assigned" as const,
 			})),

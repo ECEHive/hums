@@ -88,7 +88,7 @@ export async function generateShiftScheduleShiftOccurrences(
 		existingOccurrences.map((occ) => occ.timestamp),
 	);
 
-	// Find the IDs of occurrences to delete
+	// Find the IDs of occurrences to delete (all slots for those timestamps)
 	const occurrenceIdsToDelete = existingOccurrences
 		.filter((occ) =>
 			timestampsToDelete.some(
@@ -104,23 +104,32 @@ export async function generateShiftScheduleShiftOccurrences(
 			.where(inArray(shiftOccurrences.id, occurrenceIdsToDelete));
 	}
 
-	// Create new occurrences
+	// Create new occurrences - one for each slot
+	// If slot = 3, create occurrences with slot 0, 1, 2 for each timestamp
 	if (timestampsToCreate.length > 0) {
-		const result = await tx
-			.insert(shiftOccurrences)
-			.values(
-				timestampsToCreate.map((timestamp) => ({
+		const occurrencesToInsert = [];
+		const numSlots = schedule.slot + 1; // slot is 0-indexed, so add 1
+
+		for (const timestamp of timestampsToCreate) {
+			for (let slotNum = 0; slotNum < numSlots; slotNum++) {
+				occurrencesToInsert.push({
 					shiftScheduleId: shiftScheduleId,
 					timestamp: timestamp,
-				})),
-			)
+					slot: slotNum,
+				});
+			}
+		}
+
+		const result = await tx
+			.insert(shiftOccurrences)
+			.values(occurrencesToInsert)
 			.returning();
 
 		// Verify all occurrences were created
-		if (result.length !== timestampsToCreate.length) {
+		if (result.length !== occurrencesToInsert.length) {
 			throw new TRPCError({
 				code: "INTERNAL_SERVER_ERROR",
-				message: `Failed to create all shift occurrences. Expected ${timestampsToCreate.length}, created ${result.length}`,
+				message: `Failed to create all shift occurrences. Expected ${occurrencesToInsert.length}, created ${result.length}`,
 			});
 		}
 	}
