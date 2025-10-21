@@ -179,6 +179,12 @@ export function AppSidebar() {
 									System
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
+								<a href="https://github.com/ECEHive/scheduler/issues" target="_blank" rel="noopener noreferrer">
+									<DropdownMenuItem>
+										Report an Issue
+									</DropdownMenuItem>
+								</a>
+								<DropdownMenuSeparator />
 								<DropdownMenuItem onSelect={() => logout()}>
 									Sign out
 								</DropdownMenuItem>
