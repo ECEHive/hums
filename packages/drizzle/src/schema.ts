@@ -128,6 +128,28 @@ export const periods = pgTable("periods", {
 });
 
 /**
+ * Period Exceptions define time slots within a period where no shifts should occur.
+ *
+ * For example, holidays, or breaks.
+ * Any shift occurrences that fall within these time ranges should not be generated.
+ */
+export const periodExceptions = pgTable("period_exceptions", {
+	id: serial("id").primaryKey(),
+
+	periodId: integer("period_id")
+		.notNull()
+		.references(() => periods.id, { onDelete: "cascade" }),
+
+	name: text("name").notNull(),
+
+	start: timestamp("start").notNull(),
+	end: timestamp("end").notNull(),
+
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
  * Shift Types define the types of shifts available in a period.
  *
  * For example, "3D Printing" or "Front Desk".
@@ -217,6 +239,9 @@ export const shiftSchedules = pgTable(
  *
  * These are generated from the shift schedules for a given period.
  * For example, "3D printing on Monday, January 1st, 2025 from 10:00am to 10:30am, slot 0".
+ *
+ * If a shift schedule has multiple slots (e.g., slot=3), then multiple occurrences
+ * will be created for each timestamp, one for each slot (slot 0, 1, 2).
  */
 export const shiftOccurrences = pgTable(
 	"shift_occurrences",
@@ -227,11 +252,12 @@ export const shiftOccurrences = pgTable(
 			.notNull()
 			.references(() => shiftSchedules.id, { onDelete: "cascade" }),
 		timestamp: timestamp("timestamp").notNull(),
+		slot: integer("slot").notNull().default(0),
 
 		createdAt: timestamp("created_at").notNull().defaultNow(),
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 	},
-	(t) => [unique().on(t.shiftScheduleId, t.timestamp)],
+	(t) => [unique().on(t.shiftScheduleId, t.timestamp, t.slot)],
 );
 
 /**

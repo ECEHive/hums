@@ -1,5 +1,10 @@
-import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
-import { and, count, eq, type SQL } from "drizzle-orm";
+import {
+	db,
+	shiftScheduleAssignments,
+	shiftSchedules,
+	shiftTypes,
+} from "@ecehive/drizzle";
+import { and, count, eq, type SQL, sql } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -44,15 +49,26 @@ export async function listHandler(options: TListOptions) {
 	const whereClause = and(...filters);
 
 	const rows = await db
-		.select({ schedule: shiftSchedules })
+		.select({
+			schedule: shiftSchedules,
+			assignedCount: sql<number>`cast(count(distinct ${shiftScheduleAssignments.id}) as int)`,
+		})
 		.from(shiftSchedules)
 		.innerJoin(shiftTypes, eq(shiftSchedules.shiftTypeId, shiftTypes.id))
+		.leftJoin(
+			shiftScheduleAssignments,
+			eq(shiftSchedules.id, shiftScheduleAssignments.shiftScheduleId),
+		)
 		.where(whereClause)
+		.groupBy(shiftSchedules.id)
 		.limit(limit)
 		.offset(offset)
 		.orderBy(shiftSchedules.dayOfWeek, shiftSchedules.startTime);
 
-	const schedules = rows.map((row) => row.schedule);
+	const schedulesWithCounts = rows.map((row) => ({
+		...row.schedule,
+		assignedUserCount: row.assignedCount,
+	}));
 
 	const [total] = await db
 		.select({ count: count(shiftSchedules.id) })
@@ -60,5 +76,5 @@ export async function listHandler(options: TListOptions) {
 		.innerJoin(shiftTypes, eq(shiftSchedules.shiftTypeId, shiftTypes.id))
 		.where(whereClause);
 
-	return { shiftSchedules: schedules, total: total?.count ?? 0 };
+	return { shiftSchedules: schedulesWithCounts, total: total?.count ?? 0 };
 }

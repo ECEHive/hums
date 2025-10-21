@@ -1,26 +1,21 @@
+import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
 import {
-	db,
-	periods,
-	shiftOccurrences,
-	shiftSchedules,
-	shiftTypes,
-} from "@ecehive/drizzle";
-import {
-	generateOccurrenceTimestamps,
-	parseTime,
-	TIME_REGEX,
+	generateShiftScheduleShiftOccurrences,
+	parseTimeString,
 } from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
+const TIME_REGEX = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
 const timeStringSchema = z.string().regex(TIME_REGEX, "Invalid time format");
 
 export const ZUpdateSchema = z
 	.object({
 		id: z.number().min(1),
 		shiftTypeId: z.number().min(1).optional(),
+		slot: z.number().min(0).optional(),
 		dayOfWeek: z.number().min(0).max(6).optional(),
 		startTime: timeStringSchema.optional(),
 		endTime: timeStringSchema.optional(),
@@ -48,63 +43,37 @@ export type TUpdateOptions = {
 };
 
 export async function updateHandler(options: TUpdateOptions) {
-	const { id, shiftTypeId, dayOfWeek, startTime, endTime } = options.input;
+	const { id, shiftTypeId, slot, dayOfWeek, startTime, endTime } =
+		options.input;
 
 	const [existing] = await db
-		.select({
-			schedule: shiftSchedules,
-			periodId: periods.id,
-			periodStart: periods.start,
-			periodEnd: periods.end,
-		})
+		.select()
 		.from(shiftSchedules)
-		.innerJoin(shiftTypes, eq(shiftSchedules.shiftTypeId, shiftTypes.id))
-		.innerJoin(periods, eq(shiftTypes.periodId, periods.id))
 		.where(eq(shiftSchedules.id, id))
 		.limit(1);
 
 	if (!existing) {
-		return { shiftSchedule: undefined, occurrences: [] };
+		return { shiftSchedule: undefined };
 	}
 
-	const currentSchedule = existing.schedule;
-	let targetPeriod = {
-		id: existing.periodId,
-		start: existing.periodStart,
-		end: existing.periodEnd,
-	};
-
-	if (
-		shiftTypeId !== undefined &&
-		shiftTypeId !== currentSchedule.shiftTypeId
-	) {
-		const [lookup] = await db
-			.select({
-				periodId: periods.id,
-				periodStart: periods.start,
-				periodEnd: periods.end,
-			})
+	// If changing shift type, verify the new shift type exists
+	if (shiftTypeId !== undefined && shiftTypeId !== existing.shiftTypeId) {
+		const [shiftType] = await db
+			.select()
 			.from(shiftTypes)
-			.innerJoin(periods, eq(shiftTypes.periodId, periods.id))
 			.where(eq(shiftTypes.id, shiftTypeId))
 			.limit(1);
 
-		if (!lookup) {
+		if (!shiftType) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message: "Shift type not found",
 			});
 		}
-
-		targetPeriod = {
-			id: lookup.periodId,
-			start: lookup.periodStart,
-			end: lookup.periodEnd,
-		};
 	}
 
-	const nextStartTime = startTime ?? currentSchedule.startTime;
-	const nextEndTime = endTime ?? currentSchedule.endTime;
+	const nextStartTime = startTime ?? existing.startTime;
+	const nextEndTime = endTime ?? existing.endTime;
 
 	if (timeToSeconds(nextStartTime) >= timeToSeconds(nextEndTime)) {
 		throw new TRPCError({
@@ -113,9 +82,6 @@ export async function updateHandler(options: TUpdateOptions) {
 		});
 	}
 
-	const nextDayOfWeek = dayOfWeek ?? currentSchedule.dayOfWeek;
-	const nextShiftTypeId = shiftTypeId ?? currentSchedule.shiftTypeId;
-
 	return await db.transaction(async (tx) => {
 		const updates: Partial<typeof shiftSchedules.$inferInsert> = {
 			updatedAt: new Date(),
@@ -123,6 +89,10 @@ export async function updateHandler(options: TUpdateOptions) {
 
 		if (shiftTypeId !== undefined) {
 			updates.shiftTypeId = shiftTypeId;
+		}
+
+		if (slot !== undefined) {
+			updates.slot = slot;
 		}
 
 		if (dayOfWeek !== undefined) {
@@ -137,61 +107,26 @@ export async function updateHandler(options: TUpdateOptions) {
 			updates.endTime = endTime;
 		}
 
-		const updatedRows = await tx
+		const [updated] = await tx
 			.update(shiftSchedules)
 			.set(updates)
 			.where(eq(shiftSchedules.id, id))
 			.returning();
 
-		const updated = updatedRows[0];
-
 		if (!updated) {
-			return { shiftSchedule: undefined, occurrences: [] };
+			return { shiftSchedule: undefined };
 		}
 
-		await tx
-			.delete(shiftOccurrences)
-			.where(eq(shiftOccurrences.shiftScheduleId, updated.id));
+		// Re-generate shift occurrences for this schedule
+		// This will create new occurrences with the updated slot count
+		// and remove obsolete occurrences
+		await generateShiftScheduleShiftOccurrences(tx, updated.id);
 
-		const occurrences = generateOccurrenceTimestamps({
-			period: targetPeriod,
-			schedule: {
-				id: updated.id,
-				dayOfWeek: nextDayOfWeek,
-				startTime: updated.startTime,
-			},
-		});
-
-		if (occurrences.length === 0) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message:
-					"Shift schedule does not produce any occurrences within the period",
-			});
-		}
-
-		const insertedOccurrences = await tx
-			.insert(shiftOccurrences)
-			.values(
-				occurrences.map((timestamp) => ({
-					shiftScheduleId: updated.id,
-					timestamp,
-				})),
-			)
-			.returning();
-
-		return {
-			shiftSchedule: {
-				...updated,
-				shiftTypeId: nextShiftTypeId,
-				dayOfWeek: nextDayOfWeek,
-			},
-			occurrences: insertedOccurrences,
-		};
+		return { shiftSchedule: updated };
 	});
 }
 
 function timeToSeconds(time: string) {
-	const { hours, minutes, seconds } = parseTime(time);
+	const { hours, minutes, seconds } = parseTimeString(time);
 	return hours * 3600 + minutes * 60 + seconds;
 }

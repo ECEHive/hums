@@ -1,12 +1,12 @@
-import { db, shiftTypes } from "@ecehive/drizzle";
-import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
+import { db, periodExceptions } from "@ecehive/drizzle";
+import { and, count, eq, ilike, type SQL } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 export const ZListSchema = z.object({
 	limit: z.number().min(1).max(100).optional(),
 	offset: z.number().min(0).optional(),
-	periodId: z.number().min(1).optional(),
+	periodId: z.number().min(1),
 	search: z.string().min(1).max(100).optional(),
 });
 
@@ -20,39 +20,32 @@ export type TListOptions = {
 export async function listHandler(options: TListOptions) {
 	const { limit = 10, offset = 0, periodId, search } = options.input;
 
-	const filters = [] as (SQL | undefined)[];
-
-	if (periodId) {
-		filters.push(eq(shiftTypes.periodId, periodId));
-	}
+	const filters = [eq(periodExceptions.periodId, periodId)] as (
+		| SQL
+		| undefined
+	)[];
 
 	if (search) {
 		const escapeLike = (s: string) =>
 			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
 		const pattern = `%${escapeLike(search)}%`;
-		filters.push(
-			or(
-				ilike(shiftTypes.name, pattern),
-				ilike(shiftTypes.description, pattern),
-				ilike(shiftTypes.location, pattern),
-			),
-		);
+		filters.push(ilike(periodExceptions.name, pattern));
 	}
 
 	const whereClause = and(...filters);
 
 	const result = await db
 		.select()
-		.from(shiftTypes)
+		.from(periodExceptions)
 		.where(whereClause)
 		.limit(limit)
 		.offset(offset)
-		.orderBy(shiftTypes.name);
+		.orderBy(periodExceptions.start);
 
 	const [total] = await db
-		.select({ count: count(shiftTypes.id) })
-		.from(shiftTypes)
+		.select({ count: count(periodExceptions.id) })
+		.from(periodExceptions)
 		.where(whereClause);
 
-	return { shiftTypes: result, total: total?.count ?? 0 };
+	return { periodExceptions: result, total: total?.count ?? 0 };
 }
