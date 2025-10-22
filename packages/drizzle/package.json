@@ -4,8 +4,7 @@
 	"main": "./src/index.ts",
 	"scripts": {
 		"push": "drizzle-kit push",
-		"seed": "ts-node scripts/seed-permissions.ts",
-		"migrate": "pnpm push && pnpm seed"
+		"migrate": "drizzle-kit migrate"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
