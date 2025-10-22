@@ -1,9 +1,9 @@
 import { trpc } from "@ecehive/trpc/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { Trash2 } from "lucide-react";
+import { useState } from "react";
 import type { JSX } from "react/jsx-runtime";
-import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -15,7 +15,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { checkPermissions } from "@/lib/permissions";
 
 type DeleteDialogProps = {
 	periodId: number;
@@ -28,27 +27,28 @@ export function DeleteDialog({
 }: DeleteDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
 	const router = useRouter();
+	const [serverError, setServerError] = useState<string | null>(null);
 
-	const currentUser = useAuth().user;
-	const canDelete =
-		currentUser && checkPermissions(currentUser, ["periods.delete"]);
-
-	const deletePeriod = async (periodId: number) => {
-		try {
-			await trpc.periods.delete.mutate({ id: periodId });
-
+	const mutation = useMutation({
+		mutationFn: async (id: number) => trpc.periods.delete.mutate({ id }),
+		onSuccess: () => {
 			// Remove cached period list and the deleted period to avoid stale redirect
-			// Remove any cached "periods" queries (not exact so variants match)
 			queryClient.removeQueries({ queryKey: ["periods"], exact: false });
-			// Remove the specific period cache
 			queryClient.removeQueries({
 				queryKey: ["period", Number(periodId)],
 				exact: true,
 			});
-		} catch (err) {
+			// Navigate after cache is cleared so Periods won't redirect to the deleted id
+			void router.navigate({ to: "/app/periods" });
+		},
+		onError: (err) => {
+			const message = err instanceof Error ? err.message : String(err);
+			setServerError(message);
 			console.error("Failed to delete period:", err);
-		}
-	};
+		},
+	});
+
+	const [isProcessing, setIsProcessing] = useState(false);
 
 	return (
 		<Dialog>
@@ -66,23 +66,26 @@ export function DeleteDialog({
 						<DialogDescription>This action cannot be undone.</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
-						<DialogClose asChild>
-							<Button
-								onClick={async () => {
-									await deletePeriod(periodId);
-									// navigate after cache is cleared so Periods won't redirect to the deleted id
-									void router.navigate({ to: "/app/periods" });
-								}}
-								variant="destructive"
-								disabled={!canDelete}
-							>
-								Delete
-							</Button>
-						</DialogClose>
+						<Button
+							onClick={() => {
+								setServerError(null);
+								setIsProcessing(true);
+								mutation.mutate(periodId, {
+									onSettled: () => setIsProcessing(false),
+								});
+							}}
+							variant="destructive"
+							disabled={isProcessing}
+						>
+							{isProcessing ? "Deleting..." : "Delete"}
+						</Button>
 						<DialogClose asChild>
 							<Button variant="outline">Cancel</Button>
 						</DialogClose>
 					</DialogFooter>
+					{serverError && (
+						<p className="text-sm text-destructive px-6">{serverError}</p>
+					)}
 				</DialogContent>
 			</form>
 		</Dialog>

@@ -188,7 +188,7 @@ export function CreatePeriodSheet({
 									return (
 										<div className="grid gap-3">
 											<FieldLabel>Start Date</FieldLabel>
-											<DateField label={null} field={field} />
+											<DateField isInvalid={isInvalid} field={field} />
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
@@ -209,6 +209,7 @@ export function CreatePeriodSheet({
 											<DateField
 												label={null}
 												field={field}
+												isInvalid={isInvalid}
 												disabledDate={(date: Date) =>
 													startDate ? date <= startDate : false
 												}
@@ -242,7 +243,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Visible Start</FieldLabel>
-											<DateField label={null} field={field} />
+											<DateField field={field} />
 										</div>
 									)}
 								/>
@@ -251,7 +252,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Visible End</FieldLabel>
-											<DateField label={null} field={field} />
+											<DateField field={field} />
 										</div>
 									)}
 								/>
@@ -269,7 +270,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Signup Start</FieldLabel>
-											<DateField label={null} field={field} />
+											<DateField field={field} />
 										</div>
 									)}
 								/>
@@ -278,7 +279,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Signup End</FieldLabel>
-											<DateField label={null} field={field} />
+											<DateField field={field} />
 										</div>
 									)}
 								/>
@@ -296,7 +297,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Modify Start</FieldLabel>
-											<DateField label={null} field={field} />
+											<DateField field={field} />
 										</div>
 									)}
 								/>
@@ -305,7 +306,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Modify End</FieldLabel>
-											<DateField label={null} field={field} />
+											<DateField field={field} />
 										</div>
 									)}
 								/>

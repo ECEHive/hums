@@ -4,7 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
 import {
 	Popover,
 	PopoverContent,
@@ -31,24 +31,35 @@ type DateFieldProps = {
 	label?: React.ReactNode;
 	field: FormField<Date>;
 	disabledDate?: (date: Date) => boolean;
+	isInvalid?: boolean;
 };
 
-export function DateField({ label, field, disabledDate }: DateFieldProps) {
+export function DateField({ label, field, disabledDate, isInvalid }: DateFieldProps) {
 	const value: Date | null = field.state.value || null;
 	const [open, setOpen] = useState(false);
 
 	return (
-		<Field>
-			{label ? <FieldLabel htmlFor={field.name}>{label}</FieldLabel> : null}
+		<Field data-invalid={isInvalid}>
+			{label && (
+				<span
+					id={`${field.name}-label`}
+					className="text-sm font-medium block mb-1"
+				>
+					{label}
+				</span>
+			)}
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<Button
-						id={field.name}
 						type="button"
 						variant="outline"
+						aria-labelledby={label ? `${field.name}-label` : undefined}
+						aria-haspopup="dialog"
+						aria-invalid={isInvalid}
+						data-invalid={isInvalid}
 						className={`w-full justify-start text-left font-normal ${
 							!value ? "text-muted-foreground" : ""
-						}`}
+						} ${isInvalid ? "border-destructive" : ""}`}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
 						{value ? format(value, "PPP") : <span>Pick a date</span>}
