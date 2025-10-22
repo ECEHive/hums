@@ -34,7 +34,12 @@ type DateFieldProps = {
 	isInvalid?: boolean;
 };
 
-export function DateField({ label, field, disabledDate, isInvalid }: DateFieldProps) {
+export function DateField({
+	label,
+	field,
+	disabledDate,
+	isInvalid,
+}: DateFieldProps) {
 	const value: Date | null = field.state.value || null;
 	const [open, setOpen] = useState(false);
 
@@ -57,9 +62,7 @@ export function DateField({ label, field, disabledDate, isInvalid }: DateFieldPr
 						aria-haspopup="dialog"
 						aria-invalid={isInvalid}
 						data-invalid={isInvalid}
-						className={`w-full justify-start text-left font-normal ${
-							!value ? "text-muted-foreground" : ""
-						} ${isInvalid ? "border-destructive" : ""}`}
+						className={"w-full justify-start text-left font-normal"}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
 						{value ? format(value, "PPP") : <span>Pick a date</span>}

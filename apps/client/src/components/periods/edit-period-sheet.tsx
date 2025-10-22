@@ -216,7 +216,11 @@ export function EditPeriodSheet({
 										field.state.meta.isTouched && !field.state.meta.isValid;
 									return (
 										<div>
-											<DateField isInvalid={isInvalid} label="Start Date" field={field} />
+											<DateField
+												isInvalid={isInvalid}
+												label="Start Date"
+												field={field}
+											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}

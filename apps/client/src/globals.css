@@ -119,15 +119,6 @@
 	}
 }
 
-/* destructive border utility to match input's invalid state */
-@layer components {
-  .border-destructive {
-    border-color: var(--color-destructive) !important;
-    /* subtle outer ring similar to input's aria-invalid:ring-destructive/20 */
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-destructive) 20%, transparent);
-  }
-}
-
 /* Sidebar */
 @layer base {
 	:root {
