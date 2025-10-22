@@ -4,14 +4,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Calendar, Pencil } from "lucide-react";
 import React from "react";
-import { RequirePermissions } from "@/auth/AuthProvider";
+import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { CreatePeriodSheet } from "@/components/periods/create-period-sheet";
+import { DeleteDialog } from "@/components/periods/delete-dialog";
 import { EditPeriodSheet } from "@/components/periods/edit-period-sheet";
 import { PeriodsSelector } from "@/components/periods/periods-selector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/periods_/$periodId")({
 	component: () =>
@@ -35,6 +37,12 @@ function PeriodDetail() {
 			return trpc.periods.get.query({ id: Number(periodId) });
 		},
 	});
+
+	const currentUser = useCurrentUser();
+	const canEdit =
+		currentUser && checkPermissions(currentUser, ["periods.update"]);
+	const canDelete =
+		currentUser && checkPermissions(currentUser, ["periods.delete"]);
 
 	if (isLoading) {
 		return (
@@ -89,14 +97,21 @@ function PeriodDetail() {
 							<Calendar className="h-5 w-5" />
 							Period Information
 						</CardTitle>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setEditSheetOpen(true)}
-							aria-label="Edit period"
-						>
-							<Pencil className="h-4 w-4" />
-						</Button>
+						<div className="flex items-center gap-2">
+							{canEdit && (
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => setEditSheetOpen(true)}
+									aria-label="Edit period"
+								>
+									<Pencil className="h-4 w-4" />
+								</Button>
+							)}
+							{canDelete && (
+								<DeleteDialog periodId={period.id} periodName={period.name} />
+							)}
+						</div>
 					</div>
 				</CardHeader>
 				<CardContent className="space-y-6">
