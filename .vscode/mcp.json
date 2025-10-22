@@ -1,0 +1,8 @@
+{
+	"servers": {
+		"shadcn": {
+			"command": "pnpm",
+			"args": ["dlx", "shadcn@latest", "mcp", "-c", "./apps/client"]
+		}
+	}
+}
