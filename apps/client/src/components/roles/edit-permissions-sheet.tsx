@@ -3,19 +3,25 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+	Sheet,
+	SheetClose,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import {
 	checkPermissions,
 	formatPermissionName,
@@ -23,7 +29,7 @@ import {
 	getAllPermissions,
 } from "@/lib/permissions";
 
-type PermissionsDialogProps = {
+type EditPermissionsSheetProps = {
 	role: {
 		id: number;
 		name: string;
@@ -31,9 +37,9 @@ type PermissionsDialogProps = {
 	};
 };
 
-export function PermissionsDialog({
+export function EditPermissionsSheet({
 	role,
-}: PermissionsDialogProps): JSX.Element {
+}: EditPermissionsSheetProps): JSX.Element {
 	const queryClient = useQueryClient();
 
 	const currentUser = useAuth().user;
@@ -148,13 +154,13 @@ export function PermissionsDialog({
 	);
 
 	return (
-		<Dialog
+		<Sheet
 			onOpenChange={(open) => {
 				if (!open) queryClient.invalidateQueries({ queryKey: ["roles"] });
 			}}
 		>
 			<form>
-				<DialogTrigger asChild>
+				<SheetTrigger asChild>
 					<Button
 						variant="outline"
 						size="sm"
@@ -163,72 +169,95 @@ export function PermissionsDialog({
 						Edit {role.permissions.length} permission
 						{role.permissions.length !== 1 ? "s" : ""}
 					</Button>
-				</DialogTrigger>
-				<DialogContent className="sm:max-w-[425px] overflow-y-auto max-h-full">
-					<DialogHeader>
-						<DialogTitle>Permissions for {role.name}</DialogTitle>
-						<DialogDescription>Changes saved automatically.</DialogDescription>
-					</DialogHeader>
-					<div className="flex flex-wrap gap-1">
+				</SheetTrigger>
+				<SheetContent
+					side="right"
+					className="w-full sm:max-w-[540px] overflow-y-auto max-h-full"
+				>
+					<SheetHeader>
+						<SheetTitle>Permissions for {role.name}</SheetTitle>
+						<SheetDescription>Changes saved automatically.</SheetDescription>
+					</SheetHeader>
+					<Accordion type="multiple" className="space-y-2 px-4 sm:px-6">
 						{Array.from(rolePermissions.entries()).map(([type, perms]) => (
-							<div key={type} className="w-full">
-								<div className="flex items-center justify-between mt-4 mb-2">
-									<h3 className="font-medium">{formatPermissionType(type)}</h3>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={async () => {
-											if (!canEditRolePermissions) return;
-											await toggleAllInSection(perms);
-										}}
-										disabled={
-											updateRolePermissionMutation.isPending ||
-											!canEditRolePermissions
-										}
-									>
-										{areAllSelected(perms) ? "Deselect all" : "Select all"}
-									</Button>
-								</div>
-								<div className="grid grid-cols-2 gap-2">
-									{perms.map((perm) => (
-										<Label
-											key={perm.id}
-											className="flex items-center space-x-2"
-										>
-											<Checkbox
-												onCheckedChange={(checked) => {
+							<AccordionItem key={type} value={type}>
+								<AccordionTrigger className="items-center">
+									<div className="flex items-center gap-3 flex-1">
+										<div className="flex gap-3 flex-1">
+											<h3 className="font-medium leading-none">
+												{formatPermissionType(type)}
+											</h3>
+											<span className="text-sm text-muted-foreground leading-none">
+												{
+													perms.filter((p) => assignedById[p.id] ?? p.assigned)
+														.length
+												}
+												/{perms.length}
+											</span>
+										</div>
+										<div className="flex items-center">
+											<Button
+												variant="ghost"
+												size="sm"
+												className="py-1 leading-none"
+												onClick={async (e) => {
+													// Prevent trigger toggle when clicking the select all button
+													e.stopPropagation();
 													if (!canEditRolePermissions) return;
-													// Optimistic local update
-													setAssignedById((prev) => ({
-														...prev,
-														[perm.id]: checked === true,
-													}));
-													updateRolePermissionMutation.mutate({
-														roleId: role.id,
-														permissionId: perm.id,
-														assigned: checked === true,
-													});
+													await toggleAllInSection(perms);
 												}}
 												disabled={
 													updateRolePermissionMutation.isPending ||
 													!canEditRolePermissions
 												}
-												checked={assignedById[perm.id] ?? perm.assigned}
-											/>
-											<span>{formatPermissionName(perm.name)}</span>
-										</Label>
-									))}
-								</div>
-							</div>
+											>
+												{areAllSelected(perms) ? "Deselect all" : "Select all"}
+											</Button>
+										</div>
+									</div>
+								</AccordionTrigger>
+								<AccordionContent>
+									<div className="grid grid-cols-2 gap-2">
+										{perms.map((perm) => (
+											<Label
+												key={perm.id}
+												className="flex items-center space-x-2"
+											>
+												<Checkbox
+													onCheckedChange={(checked) => {
+														if (!canEditRolePermissions) return;
+														// Optimistic local update
+														setAssignedById((prev) => ({
+															...prev,
+															[perm.id]: checked === true,
+														}));
+														updateRolePermissionMutation.mutate({
+															roleId: role.id,
+															permissionId: perm.id,
+															assigned: checked === true,
+														});
+													}}
+													disabled={
+														updateRolePermissionMutation.isPending ||
+														!canEditRolePermissions
+													}
+													checked={assignedById[perm.id] ?? perm.assigned}
+												/>
+												<span>{formatPermissionName(perm.name)}</span>
+											</Label>
+										))}
+									</div>
+								</AccordionContent>
+							</AccordionItem>
 						))}
-					</div>
-					<DialogFooter>
-						<DialogClose asChild>
+					</Accordion>
+					<SheetFooter>
+						<SheetClose asChild>
 							<Button variant="outline">Close</Button>
-						</DialogClose>
-					</DialogFooter>
-				</DialogContent>
+						</SheetClose>
+					</SheetFooter>
+				</SheetContent>
 			</form>
-		</Dialog>
+		</Sheet>
 	);
 }
