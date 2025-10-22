@@ -181,11 +181,8 @@ export function EditPermissionsSheet({
 					<Accordion type="multiple" className="space-y-2 px-4 sm:px-6">
 						{Array.from(rolePermissions.entries()).map(([type, perms]) => (
 							<AccordionItem key={type} value={type}>
-								<AccordionTrigger>
-									<div
-										style={{ paddingBottom: "1.25%" }}
-										className="flex items-center gap-3 flex-1"
-									>
+								<AccordionTrigger className="items-center">
+									<div className="flex items-center gap-3 flex-1">
 										<div className="flex gap-3 flex-1">
 											<h3 className="font-medium leading-none">
 												{formatPermissionType(type)}
@@ -202,7 +199,7 @@ export function EditPermissionsSheet({
 											<Button
 												variant="ghost"
 												size="sm"
-												className="py-0 leading-none"
+												className="py-1 leading-none"
 												onClick={async (e) => {
 													// Prevent trigger toggle when clicking the select all button
 													e.stopPropagation();
