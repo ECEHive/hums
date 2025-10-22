@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CalendarIcon, Plus } from "lucide-react";
 import React from "react";
-import { RequirePermissions } from "@/auth/AuthProvider";
+import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { CreatePeriodSheet } from "@/components/periods/create-period-sheet";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/periods")({
 	component: () =>
@@ -31,6 +32,10 @@ export const permissions = ["periods.list"];
 function Periods() {
 	const navigate = useNavigate();
 	const [sheetOpen, setSheetOpen] = React.useState(false);
+
+	const currentUser = useCurrentUser();
+	const canCreate =
+		currentUser && checkPermissions(currentUser, ["periods.create"]);
 
 	const { data: periodsData, isLoading } = useQuery({
 		queryKey: ["periods", { limit: 100, offset: 0 }],
@@ -85,7 +90,7 @@ function Periods() {
 							open={sheetOpen}
 							onOpenChange={setSheetOpen}
 							trigger={
-								<Button>
+								<Button disabled={!canCreate}>
 									<Plus className="mr-2 h-4 w-4" />
 									Create Period
 								</Button>
