@@ -13,6 +13,7 @@ import { PeriodsSelector } from "@/components/periods/periods-selector";
 import { generateColumns } from "@/components/shift-types/columns";
 import { CreateShiftTypeSheet } from "@/components/shift-types/create-shift-type-sheet";
 import { DataTable } from "@/components/shift-types/data-table";
+import { TablePagination } from "@/components/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -35,6 +36,8 @@ function PeriodDetail() {
 	const [editSheetOpen, setEditSheetOpen] = React.useState(false);
 	const [createShiftTypeSheetOpen, setCreateShiftTypeSheetOpen] =
 		React.useState(false);
+	const [shiftTypesPage, setShiftTypesPage] = React.useState(1);
+	const shiftTypesLimit = 10;
 
 	const { data: periodData, isLoading } = useQuery({
 		queryKey: ["period", Number(periodId)],
@@ -44,12 +47,15 @@ function PeriodDetail() {
 	});
 
 	const { data: shiftTypesData, isLoading: shiftTypesLoading } = useQuery({
-		queryKey: ["shiftTypes", { periodId: Number(periodId) }],
+		queryKey: [
+			"shiftTypes",
+			{ periodId: Number(periodId), page: shiftTypesPage },
+		],
 		queryFn: async () => {
 			return trpc.shiftTypes.list.query({
 				periodId: Number(periodId),
-				limit: 100,
-				offset: 0,
+				limit: shiftTypesLimit,
+				offset: (shiftTypesPage - 1) * shiftTypesLimit,
 			});
 		},
 	});
@@ -282,6 +288,14 @@ function PeriodDetail() {
 						data={shiftTypesData?.shiftTypes ?? []}
 						isLoading={shiftTypesLoading}
 					/>
+					{shiftTypesData && shiftTypesData.total > shiftTypesLimit && (
+						<TablePagination
+							page={shiftTypesPage}
+							totalPages={Math.ceil(shiftTypesData.total / shiftTypesLimit)}
+							onPageChange={setShiftTypesPage}
+							className="mt-4"
+						/>
+					)}
 				</CardContent>
 			</Card>
 
