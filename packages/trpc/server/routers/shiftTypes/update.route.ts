@@ -23,7 +23,7 @@ export const ZUpdateSchema = z.object({
 	isBalancedAcrossDay: z.boolean().optional(),
 	isBalancedAcrossPeriod: z.boolean().optional(),
 	canSelfAssign: z.boolean().optional(),
-	doRequireRoles: z.boolean().optional(),
+	doRequireRoles: z.enum(["disabled", "all", "any"]).optional(),
 });
 
 export type TUpdateSchema = z.infer<typeof ZUpdateSchema>;

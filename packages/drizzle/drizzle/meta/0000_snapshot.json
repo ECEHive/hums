@@ -1,0 +1,1038 @@
+{
+	"id": "30217022-dcdf-4de6-a90a-52e53253ec56",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.period_exceptions": {
+			"name": "period_exceptions",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"period_id": {
+					"name": "period_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"start": {
+					"name": "start",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"end": {
+					"name": "end",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"period_exceptions_period_id_periods_id_fk": {
+					"name": "period_exceptions_period_id_periods_id_fk",
+					"tableFrom": "period_exceptions",
+					"tableTo": "periods",
+					"columnsFrom": ["period_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.periods": {
+			"name": "periods",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"start": {
+					"name": "start",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"end": {
+					"name": "end",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"visible_start": {
+					"name": "visible_start",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"visible_end": {
+					"name": "visible_end",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"schedule_signup_start": {
+					"name": "schedule_signup_start",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"schedule_signup_end": {
+					"name": "schedule_signup_end",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"schedule_modify_start": {
+					"name": "schedule_modify_start",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"schedule_modify_end": {
+					"name": "schedule_modify_end",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.permissions": {
+			"name": "permissions",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"permissions_name_unique": {
+					"name": "permissions_name_unique",
+					"nullsNotDistinct": false,
+					"columns": ["name"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.role_permissions": {
+			"name": "role_permissions",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"role_id": {
+					"name": "role_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"permission_id": {
+					"name": "permission_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"role_permissions_role_id_roles_id_fk": {
+					"name": "role_permissions_role_id_roles_id_fk",
+					"tableFrom": "role_permissions",
+					"tableTo": "roles",
+					"columnsFrom": ["role_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"role_permissions_permission_id_permissions_id_fk": {
+					"name": "role_permissions_permission_id_permissions_id_fk",
+					"tableFrom": "role_permissions",
+					"tableTo": "permissions",
+					"columnsFrom": ["permission_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"role_permissions_role_id_permission_id_unique": {
+					"name": "role_permissions_role_id_permission_id_unique",
+					"nullsNotDistinct": false,
+					"columns": ["role_id", "permission_id"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.roles": {
+			"name": "roles",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"roles_name_unique": {
+					"name": "roles_name_unique",
+					"nullsNotDistinct": false,
+					"columns": ["name"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.shift_attendances": {
+			"name": "shift_attendances",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"occurrence_assignment_id": {
+					"name": "occurrence_assignment_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"status": {
+					"name": "status",
+					"type": "shift_attendance_status",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'absent'"
+				},
+				"time_in": {
+					"name": "time_in",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"time_out": {
+					"name": "time_out",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"shift_attendances_occurrence_assignment_id_shift_occurrence_assignments_id_fk": {
+					"name": "shift_attendances_occurrence_assignment_id_shift_occurrence_assignments_id_fk",
+					"tableFrom": "shift_attendances",
+					"tableTo": "shift_occurrence_assignments",
+					"columnsFrom": ["occurrence_assignment_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.shift_occurrence_assignments": {
+			"name": "shift_occurrence_assignments",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"shift_occurrence_id": {
+					"name": "shift_occurrence_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"status": {
+					"name": "status",
+					"type": "shift_occurrence_assignment_status",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'assigned'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"shift_occurrence_assignments_shift_occurrence_id_shift_occurrences_id_fk": {
+					"name": "shift_occurrence_assignments_shift_occurrence_id_shift_occurrences_id_fk",
+					"tableFrom": "shift_occurrence_assignments",
+					"tableTo": "shift_occurrences",
+					"columnsFrom": ["shift_occurrence_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"shift_occurrence_assignments_user_id_users_id_fk": {
+					"name": "shift_occurrence_assignments_user_id_users_id_fk",
+					"tableFrom": "shift_occurrence_assignments",
+					"tableTo": "users",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"shift_occurrence_assignments_shift_occurrence_id_user_id_unique": {
+					"name": "shift_occurrence_assignments_shift_occurrence_id_user_id_unique",
+					"nullsNotDistinct": false,
+					"columns": ["shift_occurrence_id", "user_id"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.shift_occurrences": {
+			"name": "shift_occurrences",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"shift_schedule_id": {
+					"name": "shift_schedule_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"slot": {
+					"name": "slot",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"default": 0
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"shift_occurrences_shift_schedule_id_shift_schedules_id_fk": {
+					"name": "shift_occurrences_shift_schedule_id_shift_schedules_id_fk",
+					"tableFrom": "shift_occurrences",
+					"tableTo": "shift_schedules",
+					"columnsFrom": ["shift_schedule_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"shift_occurrences_shift_schedule_id_timestamp_slot_unique": {
+					"name": "shift_occurrences_shift_schedule_id_timestamp_slot_unique",
+					"nullsNotDistinct": false,
+					"columns": ["shift_schedule_id", "timestamp", "slot"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.shift_schedule_assignments": {
+			"name": "shift_schedule_assignments",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"shift_schedule_id": {
+					"name": "shift_schedule_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"shift_schedule_assignments_shift_schedule_id_shift_schedules_id_fk": {
+					"name": "shift_schedule_assignments_shift_schedule_id_shift_schedules_id_fk",
+					"tableFrom": "shift_schedule_assignments",
+					"tableTo": "shift_schedules",
+					"columnsFrom": ["shift_schedule_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"shift_schedule_assignments_user_id_users_id_fk": {
+					"name": "shift_schedule_assignments_user_id_users_id_fk",
+					"tableFrom": "shift_schedule_assignments",
+					"tableTo": "users",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"shift_schedule_assignments_shift_schedule_id_user_id_unique": {
+					"name": "shift_schedule_assignments_shift_schedule_id_user_id_unique",
+					"nullsNotDistinct": false,
+					"columns": ["shift_schedule_id", "user_id"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.shift_schedules": {
+			"name": "shift_schedules",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"shift_type_id": {
+					"name": "shift_type_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"slot": {
+					"name": "slot",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"default": 0
+				},
+				"day_of_week": {
+					"name": "day_of_week",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"start_time": {
+					"name": "start_time",
+					"type": "time",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"end_time": {
+					"name": "end_time",
+					"type": "time",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"shift_schedules_shift_type_id_shift_types_id_fk": {
+					"name": "shift_schedules_shift_type_id_shift_types_id_fk",
+					"tableFrom": "shift_schedules",
+					"tableTo": "shift_types",
+					"columnsFrom": ["shift_type_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"shift_schedules_shift_type_id_day_of_week_start_time_unique": {
+					"name": "shift_schedules_shift_type_id_day_of_week_start_time_unique",
+					"nullsNotDistinct": false,
+					"columns": ["shift_type_id", "day_of_week", "start_time"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.shift_type_roles": {
+			"name": "shift_type_roles",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"shift_type_id": {
+					"name": "shift_type_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"role_id": {
+					"name": "role_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"shift_type_roles_shift_type_id_shift_types_id_fk": {
+					"name": "shift_type_roles_shift_type_id_shift_types_id_fk",
+					"tableFrom": "shift_type_roles",
+					"tableTo": "shift_types",
+					"columnsFrom": ["shift_type_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"shift_type_roles_role_id_roles_id_fk": {
+					"name": "shift_type_roles_role_id_roles_id_fk",
+					"tableFrom": "shift_type_roles",
+					"tableTo": "roles",
+					"columnsFrom": ["role_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"shift_type_roles_shift_type_id_role_id_unique": {
+					"name": "shift_type_roles_shift_type_id_role_id_unique",
+					"nullsNotDistinct": false,
+					"columns": ["shift_type_id", "role_id"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.shift_types": {
+			"name": "shift_types",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"period_id": {
+					"name": "period_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"location": {
+					"name": "location",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"color": {
+					"name": "color",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"icon": {
+					"name": "icon",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"is_balanced_across_overlap": {
+					"name": "is_balanced_across_overlap",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"is_balanced_across_day": {
+					"name": "is_balanced_across_day",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"is_balanced_across_period": {
+					"name": "is_balanced_across_period",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"allow_self_assign": {
+					"name": "allow_self_assign",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": true
+				},
+				"do_require_roles": {
+					"name": "do_require_roles",
+					"type": "shift_type_role_requirement",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'disabled'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"shift_types_period_id_periods_id_fk": {
+					"name": "shift_types_period_id_periods_id_fk",
+					"tableFrom": "shift_types",
+					"tableTo": "periods",
+					"columnsFrom": ["period_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.user_roles": {
+			"name": "user_roles",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"role_id": {
+					"name": "role_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"user_roles_user_id_users_id_fk": {
+					"name": "user_roles_user_id_users_id_fk",
+					"tableFrom": "user_roles",
+					"tableTo": "users",
+					"columnsFrom": ["user_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"user_roles_role_id_roles_id_fk": {
+					"name": "user_roles_role_id_roles_id_fk",
+					"tableFrom": "user_roles",
+					"tableTo": "roles",
+					"columnsFrom": ["role_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"user_roles_user_id_role_id_unique": {
+					"name": "user_roles_user_id_role_id_unique",
+					"nullsNotDistinct": false,
+					"columns": ["user_id", "role_id"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.users": {
+			"name": "users",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"username": {
+					"name": "username",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"email": {
+					"name": "email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"is_system_user": {
+					"name": "is_system_user",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"users_username_unique": {
+					"name": "users_username_unique",
+					"nullsNotDistinct": false,
+					"columns": ["username"]
+				},
+				"users_email_unique": {
+					"name": "users_email_unique",
+					"nullsNotDistinct": false,
+					"columns": ["email"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {
+		"public.shift_attendance_status": {
+			"name": "shift_attendance_status",
+			"schema": "public",
+			"values": ["present", "absent", "arrived_late", "left_early"]
+		},
+		"public.shift_occurrence_assignment_status": {
+			"name": "shift_occurrence_assignment_status",
+			"schema": "public",
+			"values": ["assigned", "dropped", "picked_up"]
+		},
+		"public.shift_type_role_requirement": {
+			"name": "shift_type_role_requirement",
+			"schema": "public",
+			"values": ["disabled", "all", "any"]
+		}
+	},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
+}

@@ -19,7 +19,7 @@ export const ZCreateSchema = z.object({
 	isBalancedAcrossDay: z.boolean().optional(),
 	isBalancedAcrossPeriod: z.boolean().optional(),
 	canSelfAssign: z.boolean().optional(),
-	doRequireRoles: z.boolean().optional(),
+	doRequireRoles: z.enum(["disabled", "all", "any"]).optional(),
 });
 
 export type TCreateSchema = z.infer<typeof ZCreateSchema>;
@@ -67,8 +67,8 @@ export async function createHandler(options: TCreateOptions) {
 		isBalancedAcrossOverlap: isBalancedAcrossOverlap ?? false,
 		isBalancedAcrossDay: isBalancedAcrossDay ?? false,
 		isBalancedAcrossPeriod: isBalancedAcrossPeriod ?? false,
-		canSelfAssign: canSelfAssign ?? false,
-		doRequireRoles: doRequireRoles ?? false,
+		canSelfAssign: canSelfAssign ?? true,
+		doRequireRoles: doRequireRoles ?? "disabled",
 	};
 
 	const [inserted] = await db.insert(shiftTypes).values(values).returning();

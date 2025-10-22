@@ -2,7 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Calendar, Pencil } from "lucide-react";
+import { Calendar, Pencil, Plus } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
@@ -10,6 +10,10 @@ import { CreatePeriodSheet } from "@/components/periods/create-period-sheet";
 import { DeleteDialog } from "@/components/periods/delete-dialog";
 import { EditPeriodSheet } from "@/components/periods/edit-period-sheet";
 import { PeriodsSelector } from "@/components/periods/periods-selector";
+import { generateColumns } from "@/components/shift-types/columns";
+import { CreateShiftTypeSheet } from "@/components/shift-types/create-shift-type-sheet";
+import { DataTable } from "@/components/shift-types/data-table";
+import { TablePagination } from "@/components/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -30,6 +34,10 @@ function PeriodDetail() {
 	const { periodId } = Route.useParams();
 	const [createSheetOpen, setCreateSheetOpen] = React.useState(false);
 	const [editSheetOpen, setEditSheetOpen] = React.useState(false);
+	const [createShiftTypeSheetOpen, setCreateShiftTypeSheetOpen] =
+		React.useState(false);
+	const [shiftTypesPage, setShiftTypesPage] = React.useState(1);
+	const shiftTypesLimit = 10;
 
 	const { data: periodData, isLoading } = useQuery({
 		queryKey: ["period", Number(periodId)],
@@ -38,11 +46,27 @@ function PeriodDetail() {
 		},
 	});
 
+	const { data: shiftTypesData, isLoading: shiftTypesLoading } = useQuery({
+		queryKey: [
+			"shiftTypes",
+			{ periodId: Number(periodId), page: shiftTypesPage },
+		],
+		queryFn: async () => {
+			return trpc.shiftTypes.list.query({
+				periodId: Number(periodId),
+				limit: shiftTypesLimit,
+				offset: (shiftTypesPage - 1) * shiftTypesLimit,
+			});
+		},
+	});
+
 	const currentUser = useCurrentUser();
 	const canEdit =
 		currentUser && checkPermissions(currentUser, ["periods.update"]);
 	const canDelete =
 		currentUser && checkPermissions(currentUser, ["periods.delete"]);
+	const canCreateShiftTypes =
+		currentUser && checkPermissions(currentUser, ["shift_types.create"]);
 
 	if (isLoading) {
 		return (
@@ -129,13 +153,13 @@ function PeriodDetail() {
 								<div className="text-sm font-medium text-muted-foreground">
 									Start Date
 								</div>
-								<div>{format(period.start, "PPP")}</div>
+								<div>{format(period.start, "PPP p")}</div>
 							</div>
 							<div>
 								<div className="text-sm font-medium text-muted-foreground">
 									End Date
 								</div>
-								<div>{format(period.end, "PPP")}</div>
+								<div>{format(period.end, "PPP p")}</div>
 							</div>
 						</div>
 					</div>
@@ -150,7 +174,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.visibleStart
-											? format(period.visibleStart, "PPP")
+											? format(period.visibleStart, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -160,7 +184,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.visibleEnd
-											? format(period.visibleEnd, "PPP")
+											? format(period.visibleEnd, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -184,7 +208,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleSignupStart
-											? format(period.scheduleSignupStart, "PPP")
+											? format(period.scheduleSignupStart, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -194,7 +218,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleSignupEnd
-											? format(period.scheduleSignupEnd, "PPP")
+											? format(period.scheduleSignupEnd, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -218,7 +242,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleModifyStart
-											? format(period.scheduleModifyStart, "PPP")
+											? format(period.scheduleModifyStart, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -228,7 +252,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleModifyEnd
-											? format(period.scheduleModifyEnd, "PPP")
+											? format(period.scheduleModifyEnd, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -242,6 +266,39 @@ function PeriodDetail() {
 				</CardContent>
 			</Card>
 
+			<Card className="mt-6">
+				<CardHeader>
+					<div className="flex items-center justify-between">
+						<CardTitle>Shift Types</CardTitle>
+						{canCreateShiftTypes && (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setCreateShiftTypeSheetOpen(true)}
+							>
+								<Plus className="mr-2 h-4 w-4" />
+								Add Shift Type
+							</Button>
+						)}
+					</div>
+				</CardHeader>
+				<CardContent>
+					<DataTable
+						columns={generateColumns(currentUser)}
+						data={shiftTypesData?.shiftTypes ?? []}
+						isLoading={shiftTypesLoading}
+					/>
+					{shiftTypesData && shiftTypesData.total > shiftTypesLimit && (
+						<TablePagination
+							page={shiftTypesPage}
+							totalPages={Math.ceil(shiftTypesData.total / shiftTypesLimit)}
+							onPageChange={setShiftTypesPage}
+							className="mt-4"
+						/>
+					)}
+				</CardContent>
+			</Card>
+
 			<CreatePeriodSheet
 				open={createSheetOpen}
 				onOpenChange={setCreateSheetOpen}
@@ -250,6 +307,11 @@ function PeriodDetail() {
 				open={editSheetOpen}
 				onOpenChange={setEditSheetOpen}
 				period={editablePeriod}
+			/>
+			<CreateShiftTypeSheet
+				periodId={Number(periodId)}
+				open={createShiftTypeSheetOpen}
+				onOpenChange={setCreateShiftTypeSheetOpen}
 			/>
 		</div>
 	);
