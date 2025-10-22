@@ -2,7 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { AuthUser } from "@/auth";
 import { checkPermissions } from "@/lib/permissions";
 import { DeleteDialog } from "./delete-dialog";
-import { PermissionsDialog } from "./permissions-dialog";
+import { EditPermissionsSheet } from "./edit-permissions-sheet";
 import { RenameDialog } from "./rename-dialog";
 
 type Role = {
@@ -39,7 +39,9 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Role>[] {
 			header: "Permissions",
 			cell: ({ row }) => {
 				return (
-					(canEditPermissions && <PermissionsDialog role={row.original} />) || (
+					(canEditPermissions && (
+						<EditPermissionsSheet role={row.original} />
+					)) || (
 						<span style={{ fontStyle: "italic", color: "#888" }}>
 							No actions available
 						</span>
