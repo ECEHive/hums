@@ -1,8 +1,12 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
+import {
+	type Role,
+	RoleMultiSelect,
+} from "@/components/roles/role-multiselect";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -84,7 +88,43 @@ export function EditShiftTypeSheet({
 }: EditShiftTypeSheetProps) {
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
+	const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
 	const formId = useId();
+
+	// Fetch existing shift type roles
+	const { data: shiftTypeRolesData } = useQuery({
+		queryKey: ["shiftTypeRoles", { shiftTypeId: shiftType.id }],
+		queryFn: async () => {
+			const result = await trpc.shiftTypeRoles.list.query({
+				shiftTypeId: shiftType.id,
+				limit: 100,
+			});
+
+			// Fetch role details for each roleId
+			if (result.shiftTypeRoles.length > 0) {
+				const roleIds = result.shiftTypeRoles.map((str) => str.roleId);
+				const rolesResult = await trpc.roles.list.query({
+					limit: 100,
+				});
+				// Filter to only the roles we need
+				const roles = rolesResult.roles.filter((r) => roleIds.includes(r.id));
+				return {
+					...result,
+					roles: roles.map((r) => ({ id: r.id, name: r.name })),
+				};
+			}
+
+			return { ...result, roles: [] };
+		},
+		enabled: open,
+	});
+
+	// Initialize selected roles when data loads or when sheet opens
+	useEffect(() => {
+		if (open && shiftTypeRolesData?.roles) {
+			setSelectedRoles(shiftTypeRolesData.roles);
+		}
+	}, [open, shiftTypeRolesData]);
 
 	const updateShiftTypeMutation = useMutation({
 		mutationFn: async (input: {
@@ -107,6 +147,20 @@ export function EditShiftTypeSheet({
 		},
 	});
 
+	const createShiftTypeRolesMutation = useMutation({
+		mutationFn: async (input: { shiftTypeId: number; roleIds: number[] }) => {
+			if (input.roleIds.length === 0) return null;
+			return trpc.shiftTypeRoles.bulkCreate.mutate(input);
+		},
+	});
+
+	const deleteShiftTypeRolesMutation = useMutation({
+		mutationFn: async (input: { shiftTypeId: number; roleIds: number[] }) => {
+			if (input.roleIds.length === 0) return null;
+			return trpc.shiftTypeRoles.bulkDelete.mutate(input);
+		},
+	});
+
 	const form = useForm({
 		defaultValues: {
 			name: shiftType.name,
@@ -123,6 +177,7 @@ export function EditShiftTypeSheet({
 		},
 		onSubmit: async ({ value }) => {
 			try {
+				// Update the shift type
 				await updateShiftTypeMutation.mutateAsync({
 					id: shiftType.id,
 					name: value.name,
@@ -134,6 +189,35 @@ export function EditShiftTypeSheet({
 					canSelfAssign: value.canSelfAssign,
 					doRequireRoles: value.doRequireRoles,
 				});
+
+				// Sync shift type roles
+				const existingRoleIds =
+					shiftTypeRolesData?.roles.map((r) => r.id) ?? [];
+				const newRoleIds = selectedRoles.map((r) => r.id);
+
+				const rolesToAdd = newRoleIds.filter(
+					(id) => !existingRoleIds.includes(id),
+				);
+				const rolesToRemove = existingRoleIds.filter(
+					(id) => !newRoleIds.includes(id),
+				);
+
+				// Add new roles
+				if (rolesToAdd.length > 0) {
+					await createShiftTypeRolesMutation.mutateAsync({
+						shiftTypeId: shiftType.id,
+						roleIds: rolesToAdd,
+					});
+				}
+
+				// Remove roles
+				if (rolesToRemove.length > 0) {
+					await deleteShiftTypeRolesMutation.mutateAsync({
+						shiftTypeId: shiftType.id,
+						roleIds: rolesToRemove,
+					});
+				}
+
 				handleSheetChange(false);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
@@ -156,6 +240,7 @@ export function EditShiftTypeSheet({
 			onOpenChange(nextOpen);
 			if (!nextOpen) {
 				form.reset();
+				setSelectedRoles([]);
 				setServerError(null);
 			}
 		},
@@ -428,6 +513,32 @@ export function EditShiftTypeSheet({
 								)}
 							/>
 						</div>
+
+						{/* Shift Type Roles */}
+						<form.Subscribe
+							selector={(state) => state.values.doRequireRoles}
+							children={(doRequireRoles) => {
+								if (doRequireRoles === "disabled") return null;
+
+								return (
+									<div className="space-y-4">
+										<div className="space-y-2">
+											<FieldLabel>Required Roles</FieldLabel>
+											<RoleMultiSelect
+												value={selectedRoles}
+												onChange={setSelectedRoles}
+												placeholder="Select roles..."
+											/>
+											<FieldDescription>
+												{doRequireRoles === "all"
+													? "Users must have all of these roles to sign up"
+													: "Users must have at least one of these roles to sign up"}
+											</FieldDescription>
+										</div>
+									</div>
+								);
+							}}
+						/>
 
 						{serverError && (
 							<div className="rounded-md bg-destructive/10 p-3">

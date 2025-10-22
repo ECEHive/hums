@@ -3,6 +3,10 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useId, useState } from "react";
 import { z } from "zod";
+import {
+	type Role,
+	RoleMultiSelect,
+} from "@/components/roles/role-multiselect";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -67,6 +71,7 @@ export function CreateShiftTypeSheet({
 }: CreateShiftTypeSheetProps) {
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
+	const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
 	const formId = useId();
 
 	const createShiftTypeMutation = useMutation({
@@ -92,6 +97,13 @@ export function CreateShiftTypeSheet({
 		},
 	});
 
+	const createShiftTypeRolesMutation = useMutation({
+		mutationFn: async (input: { shiftTypeId: number; roleIds: number[] }) => {
+			if (input.roleIds.length === 0) return null;
+			return trpc.shiftTypeRoles.bulkCreate.mutate(input);
+		},
+	});
+
 	const form = useForm({
 		defaultValues: {
 			name: "",
@@ -108,7 +120,8 @@ export function CreateShiftTypeSheet({
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await createShiftTypeMutation.mutateAsync({
+				// First create the shift type
+				const shiftType = await createShiftTypeMutation.mutateAsync({
 					name: value.name,
 					location: value.location,
 					description: value.description,
@@ -118,6 +131,15 @@ export function CreateShiftTypeSheet({
 					canSelfAssign: value.canSelfAssign,
 					doRequireRoles: value.doRequireRoles,
 				});
+
+				// Then create the shift type roles if any are selected
+				if (selectedRoles.length > 0) {
+					await createShiftTypeRolesMutation.mutateAsync({
+						shiftTypeId: shiftType.shiftType.id,
+						roleIds: selectedRoles.map((r) => r.id),
+					});
+				}
+
 				handleSheetChange(false);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
@@ -134,6 +156,7 @@ export function CreateShiftTypeSheet({
 			onOpenChange(nextOpen);
 			if (!nextOpen) {
 				form.reset();
+				setSelectedRoles([]);
 				setServerError(null);
 			}
 		},
@@ -406,6 +429,32 @@ export function CreateShiftTypeSheet({
 								)}
 							/>
 						</div>
+
+						{/* Shift Type Roles */}
+						<form.Subscribe
+							selector={(state) => state.values.doRequireRoles}
+							children={(doRequireRoles) => {
+								if (doRequireRoles === "disabled") return null;
+
+								return (
+									<div className="space-y-4">
+										<div className="space-y-2">
+											<FieldLabel>Required Roles</FieldLabel>
+											<RoleMultiSelect
+												value={selectedRoles}
+												onChange={setSelectedRoles}
+												placeholder="Select roles..."
+											/>
+											<FieldDescription>
+												{doRequireRoles === "all"
+													? "Users must have all of these roles to sign up"
+													: "Users must have at least one of these roles to sign up"}
+											</FieldDescription>
+										</div>
+									</div>
+								);
+							}}
+						/>
 
 						{serverError && (
 							<div className="rounded-md bg-destructive/10 p-3">

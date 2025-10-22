@@ -1,5 +1,3 @@
-"use client";
-
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { CheckIcon, ChevronsUpDownIcon, XIcon } from "lucide-react";

@@ -15,8 +15,8 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { checkPermissions } from "@/lib/permissions";
+import { type Role, RoleMultiSelect } from "../roles/role-multiselect";
 import { Spinner } from "../ui/spinner";
-import { type Role, RoleMultiSelect } from "./role-multiselect";
 
 type User = {
 	id: number;
