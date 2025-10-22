@@ -5,7 +5,7 @@
 			"label": "Install Dependencies",
 			"type": "shell",
 			"command": "pnpm install",
-            "problemMatcher": []
+			"problemMatcher": []
 		},
 		{
 			"label": "Check",
