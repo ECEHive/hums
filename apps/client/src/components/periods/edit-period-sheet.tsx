@@ -1,12 +1,10 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import DateField from "@/components/ui/date-field";
 import {
 	Field,
 	FieldDescription,
@@ -14,11 +12,6 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import {
 	Sheet,
 	SheetContent,
@@ -29,7 +22,6 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
 	name: z
@@ -223,41 +215,12 @@ export function EditPeriodSheet({
 									const isInvalid =
 										field.state.meta.isTouched && !field.state.meta.isValid;
 									return (
-										<Field data-invalid={isInvalid}>
-											<FieldLabel>Start Date</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-															isInvalid && "border-destructive",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+										<div data-invalid={isInvalid}>
+											<DateField label="Start Date" field={field} />
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
-										</Field>
+										</div>
 									);
 								}}
 							/>
@@ -269,40 +232,14 @@ export function EditPeriodSheet({
 										field.state.meta.isTouched && !field.state.meta.isValid;
 									const startDate = form.getFieldValue("start");
 									return (
-										<Field data-invalid={isInvalid}>
-											<FieldLabel>End Date</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-															isInvalid && "border-destructive",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-														disabled={(date) =>
-															startDate ? date <= startDate : false
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+										<div data-invalid={isInvalid}>
+											<DateField
+												label="End Date"
+												field={field}
+												disabledDate={(date: Date) =>
+													startDate ? date <= startDate : false
+												}
+											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
@@ -315,7 +252,7 @@ export function EditPeriodSheet({
 														]}
 													/>
 												)}
-										</Field>
+										</div>
 									);
 								}}
 							/>
@@ -330,73 +267,13 @@ export function EditPeriodSheet({
 								<form.Field
 									name="visibleStart"
 									children={(field) => (
-										<Field>
-											<FieldLabel>Visible Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
+										<DateField label="Visible Start" field={field} />
 									)}
 								/>
 								<form.Field
 									name="visibleEnd"
 									children={(field) => (
-										<Field>
-											<FieldLabel>Visible End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
+										<DateField label="Visible End" field={field} />
 									)}
 								/>
 							</div>
@@ -411,73 +288,13 @@ export function EditPeriodSheet({
 								<form.Field
 									name="scheduleSignupStart"
 									children={(field) => (
-										<Field>
-											<FieldLabel>Signup Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
+										<DateField label="Signup Start" field={field} />
 									)}
 								/>
 								<form.Field
 									name="scheduleSignupEnd"
 									children={(field) => (
-										<Field>
-											<FieldLabel>Signup End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
+										<DateField label="Signup End" field={field} />
 									)}
 								/>
 							</div>
@@ -492,73 +309,13 @@ export function EditPeriodSheet({
 								<form.Field
 									name="scheduleModifyStart"
 									children={(field) => (
-										<Field>
-											<FieldLabel>Modify Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
+										<DateField label="Modify Start" field={field} />
 									)}
 								/>
 								<form.Field
 									name="scheduleModifyEnd"
 									children={(field) => (
-										<Field>
-											<FieldLabel>Modify End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
+										<DateField label="Modify End" field={field} />
 									)}
 								/>
 							</div>

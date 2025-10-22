@@ -2,23 +2,16 @@ import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import DateField from "@/components/ui/date-field";
 import {
 	FieldDescription,
 	FieldError,
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import {
 	Sheet,
 	SheetContent,
@@ -29,7 +22,6 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
 	name: z
@@ -196,35 +188,7 @@ export function CreatePeriodSheet({
 									return (
 										<div className="grid gap-3">
 											<FieldLabel>Start Date</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-															isInvalid && "border-destructive",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField label={null} field={field} />
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
@@ -242,38 +206,13 @@ export function CreatePeriodSheet({
 									return (
 										<div className="grid gap-3">
 											<FieldLabel>End Date</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-															isInvalid && "border-destructive",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-														disabled={(date) =>
-															startDate ? date <= startDate : false
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField
+												label={null}
+												field={field}
+												disabledDate={(date: Date) =>
+													startDate ? date <= startDate : false
+												}
+											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
@@ -303,34 +242,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Visible Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField label={null} field={field} />
 										</div>
 									)}
 								/>
@@ -339,34 +251,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Visible End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField label={null} field={field} />
 										</div>
 									)}
 								/>
@@ -384,34 +269,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Signup Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField label={null} field={field} />
 										</div>
 									)}
 								/>
@@ -420,34 +278,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Signup End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField label={null} field={field} />
 										</div>
 									)}
 								/>
@@ -465,34 +296,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Modify Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField label={null} field={field} />
 										</div>
 									)}
 								/>
@@ -501,34 +305,7 @@ export function CreatePeriodSheet({
 									children={(field) => (
 										<div className="grid gap-3">
 											<FieldLabel>Modify End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+											<DateField label={null} field={field} />
 										</div>
 									)}
 								/>
