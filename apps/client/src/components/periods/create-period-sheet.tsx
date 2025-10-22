@@ -4,8 +4,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useId, useState } from "react";
 import { z } from "zod";
+// DateField removed in favor of DateRangeSelector
+import DateRangeSelector from "@/components/date-range-selector";
 import { Button } from "@/components/ui/button";
-import DateField from "@/components/ui/date-field";
 import {
 	FieldDescription,
 	FieldError,
@@ -150,17 +151,18 @@ export function CreatePeriodSheet({
 						form.handleSubmit();
 					}}
 					noValidate
-					className="flex flex-1 flex-col"
 				>
-					<div className="grid flex-1 auto-rows-min gap-6 px-4">
+					<div className="space-y-6 px-4">
 						<form.Field
 							name="name"
 							children={(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
-									<div className="grid gap-3">
-										<FieldLabel htmlFor={field.name}>Name</FieldLabel>
+									<div className="space-y-2">
+										<FieldLabel htmlFor={field.name}>
+											Name <span className="text-destructive">*</span>
+										</FieldLabel>
 										<Input
 											id={field.name}
 											name={field.name}
@@ -179,24 +181,42 @@ export function CreatePeriodSheet({
 							}}
 						/>
 
-						<div className="grid gap-4 md:grid-cols-2">
+						<div className="space-y-2">
+							<FieldLabel>
+								Period Dates <span className="text-destructive">*</span>
+							</FieldLabel>
+							<form.Field
+								name="start"
+								children={(startField) => {
+									const start = form.getFieldValue("start");
+									const end = form.getFieldValue("end");
+									return (
+										<form.Field
+											name="end"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
+													}}
+													withTime
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
 							<form.Field
 								name="start"
 								children={(field) => {
 									const isInvalid =
 										field.state.meta.isTouched && !field.state.meta.isValid;
-									return (
-										<div className="grid gap-3">
-											<FieldLabel>Start Date</FieldLabel>
-											<DateField isInvalid={isInvalid} field={field} />
-											{isInvalid && (
-												<FieldError errors={field.state.meta.errors} />
-											)}
-										</div>
-									);
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
 								}}
 							/>
-
 							<form.Field
 								name="end"
 								children={(field) => {
@@ -204,16 +224,7 @@ export function CreatePeriodSheet({
 										field.state.meta.isTouched && !field.state.meta.isValid;
 									const startDate = form.getFieldValue("start");
 									return (
-										<div className="grid gap-3">
-											<FieldLabel>End Date</FieldLabel>
-											<DateField
-												label={null}
-												field={field}
-												isInvalid={isInvalid}
-												disabledDate={(date: Date) =>
-													startDate ? date <= startDate : false
-												}
-											/>
+										<>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
@@ -222,95 +233,124 @@ export function CreatePeriodSheet({
 												field.state.value <= startDate && (
 													<FieldError
 														errors={[
-															{ message: "End date must be after start date" },
+															{
+																message: "End date must be after start date",
+															},
 														]}
 													/>
 												)}
-										</div>
+										</>
 									);
 								}}
 							/>
 						</div>
 
-						<div className="space-y-3">
-							<h3 className="text-sm font-medium">Visibility Window</h3>
-							<FieldDescription>
-								Control when this period is visible to users.
-							</FieldDescription>
-							<div className="grid gap-4 md:grid-cols-2">
-								<form.Field
-									name="visibleStart"
-									children={(field) => (
-										<div className="grid gap-3">
-											<FieldLabel>Visible Start</FieldLabel>
-											<DateField field={field} />
-										</div>
-									)}
-								/>
-								<form.Field
-									name="visibleEnd"
-									children={(field) => (
-										<div className="grid gap-3">
-											<FieldLabel>Visible End</FieldLabel>
-											<DateField field={field} />
-										</div>
-									)}
-								/>
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<h3 className="text-sm font-medium">
+									Visibility Window{" "}
+									<span className="text-muted-foreground text-xs font-normal">
+										(optional)
+									</span>
+								</h3>
+								<FieldDescription>
+									Control when this period is visible to users.
+								</FieldDescription>
 							</div>
+							<form.Field
+								name="visibleStart"
+								children={(startField) => {
+									const start = form.getFieldValue("visibleStart");
+									const end = form.getFieldValue("visibleEnd");
+									return (
+										<form.Field
+											name="visibleEnd"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
+													}}
+													withTime
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
 						</div>
 
-						<div className="space-y-3">
-							<h3 className="text-sm font-medium">Signup Window</h3>
-							<FieldDescription>
-								Control when users can sign up for shifts.
-							</FieldDescription>
-							<div className="grid gap-4 md:grid-cols-2">
-								<form.Field
-									name="scheduleSignupStart"
-									children={(field) => (
-										<div className="grid gap-3">
-											<FieldLabel>Signup Start</FieldLabel>
-											<DateField field={field} />
-										</div>
-									)}
-								/>
-								<form.Field
-									name="scheduleSignupEnd"
-									children={(field) => (
-										<div className="grid gap-3">
-											<FieldLabel>Signup End</FieldLabel>
-											<DateField field={field} />
-										</div>
-									)}
-								/>
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<h3 className="text-sm font-medium">
+									Signup Window{" "}
+									<span className="text-muted-foreground text-xs font-normal">
+										(optional)
+									</span>
+								</h3>
+								<FieldDescription>
+									Control when users can sign up for shifts.
+								</FieldDescription>
 							</div>
+							<form.Field
+								name="scheduleSignupStart"
+								children={(startField) => {
+									const start = form.getFieldValue("scheduleSignupStart");
+									const end = form.getFieldValue("scheduleSignupEnd");
+									return (
+										<form.Field
+											name="scheduleSignupEnd"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
+													}}
+													withTime
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
 						</div>
 
-						<div className="space-y-3">
-							<h3 className="text-sm font-medium">Modification Window</h3>
-							<FieldDescription>
-								Control when users can modify their shift assignments.
-							</FieldDescription>
-							<div className="grid gap-4 md:grid-cols-2">
-								<form.Field
-									name="scheduleModifyStart"
-									children={(field) => (
-										<div className="grid gap-3">
-											<FieldLabel>Modify Start</FieldLabel>
-											<DateField field={field} />
-										</div>
-									)}
-								/>
-								<form.Field
-									name="scheduleModifyEnd"
-									children={(field) => (
-										<div className="grid gap-3">
-											<FieldLabel>Modify End</FieldLabel>
-											<DateField field={field} />
-										</div>
-									)}
-								/>
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<h3 className="text-sm font-medium">
+									Modification Window{" "}
+									<span className="text-muted-foreground text-xs font-normal">
+										(optional)
+									</span>
+								</h3>
+								<FieldDescription>
+									Control when users can modify their shift assignments.
+								</FieldDescription>
 							</div>
+							<form.Field
+								name="scheduleModifyStart"
+								children={(startField) => {
+									const start = form.getFieldValue("scheduleModifyStart");
+									const end = form.getFieldValue("scheduleModifyEnd");
+									return (
+										<form.Field
+											name="scheduleModifyEnd"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
+													}}
+													withTime
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
 						</div>
 
 						{serverError && (

@@ -129,13 +129,13 @@ function PeriodDetail() {
 								<div className="text-sm font-medium text-muted-foreground">
 									Start Date
 								</div>
-								<div>{format(period.start, "PPP")}</div>
+								<div>{format(period.start, "PPP p")}</div>
 							</div>
 							<div>
 								<div className="text-sm font-medium text-muted-foreground">
 									End Date
 								</div>
-								<div>{format(period.end, "PPP")}</div>
+								<div>{format(period.end, "PPP p")}</div>
 							</div>
 						</div>
 					</div>
@@ -150,7 +150,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.visibleStart
-											? format(period.visibleStart, "PPP")
+											? format(period.visibleStart, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -160,7 +160,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.visibleEnd
-											? format(period.visibleEnd, "PPP")
+											? format(period.visibleEnd, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -184,7 +184,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleSignupStart
-											? format(period.scheduleSignupStart, "PPP")
+											? format(period.scheduleSignupStart, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -194,7 +194,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleSignupEnd
-											? format(period.scheduleSignupEnd, "PPP")
+											? format(period.scheduleSignupEnd, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -218,7 +218,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleModifyStart
-											? format(period.scheduleModifyStart, "PPP")
+											? format(period.scheduleModifyStart, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
@@ -228,7 +228,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleModifyEnd
-											? format(period.scheduleModifyEnd, "PPP")
+											? format(period.scheduleModifyEnd, "PPP p")
 											: "Not set"}
 									</div>
 								</div>
