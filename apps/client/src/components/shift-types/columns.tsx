@@ -75,11 +75,6 @@ export function generateColumns(user: AuthUser | null): ColumnDef<ShiftType>[] {
 								periodId={row.original.periodId}
 							/>
 						)}
-						{!canEdit && !canDelete && (
-							<span className="text-sm italic text-muted-foreground">
-								No actions available
-							</span>
-						)}
 					</div>
 				);
 			},
