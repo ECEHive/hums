@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { CheckIcon, ChevronsUpDownIcon, XIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, Trash2, XIcon } from "lucide-react";
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,86 +88,99 @@ export function RoleMultiSelect({
 	}
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<Button
-					variant="outline"
-					role="combobox"
-					aria-expanded={open}
-					className="w-full justify-between whitespace-normal h-auto"
-				>
-					<div className="flex items-center gap-2 flex-wrap">
-						{value.length === 0 ? (
-							<span className="text-muted-foreground">{placeholder}</span>
-						) : null}
-						{value.map((r) => (
-							<Badge
-								key={r.id}
-								variant="secondary"
-								className="flex items-center gap-1"
-							>
-								<span>{r.name}</span>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										removeRole(r.id);
-									}}
-									aria-label={`Remove ${r.name}`}
-									className="-mr-1"
+		<div className="flex justify-between gap-2">
+			<Popover open={open} onOpenChange={setOpen}>
+				<PopoverTrigger asChild>
+					<Button
+						variant="outline"
+						role="combobox"
+						aria-expanded={open}
+						className="flex-grow justify-between whitespace-normal h-auto"
+					>
+						<div className="flex items-center gap-2 flex-wrap">
+							{value.length === 0 ? (
+								<span className="text-muted-foreground">{placeholder}</span>
+							) : null}
+							{value.map((r) => (
+								<Badge
+									key={r.id}
+									variant="secondary"
+									className="flex items-center gap-1"
 								>
-									<XIcon className="size-3" />
-								</button>
-							</Badge>
-						))}
-					</div>
-					<ChevronsUpDownIcon className="ml-2 size-4" />
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent className="w-[300px] p-0">
-				<Command>
-					<CommandInput
-						placeholder="Search roles..."
-						value={query}
-						onValueChange={setQuery}
-					/>
-					<CommandList>
-						{isLoading ? (
-							<CommandEmpty>Loading...</CommandEmpty>
-						) : options.length === 0 ? (
-							<CommandEmpty>No roles found.</CommandEmpty>
-						) : (
-							<CommandGroup>
-								{options.map((role) => {
-									const selected = Boolean(value.find((r) => r.id === role.id));
-									return (
-										<CommandItem
-											key={role.id}
-											value={String(role.id)}
-											onSelect={() => {
-												// Toggle selection: if selected, remove; otherwise add
-												if (selected) {
-													removeRole(role.id);
-												} else {
-													addRole(role);
-												}
-												// Keep the popover open for further selections
-											}}
-										>
-											{selected ? (
-												<CheckIcon className="mr-2 size-4" />
-											) : (
-												<span className="mr-2 w-4" />
-											)}
-											{role.name}
-										</CommandItem>
-									);
-								})}
-							</CommandGroup>
-						)}
-					</CommandList>
-				</Command>
-			</PopoverContent>
-		</Popover>
+									<span>{r.name}</span>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											removeRole(r.id);
+										}}
+										aria-label={`Remove ${r.name}`}
+										className="-mr-1"
+									>
+										<XIcon className="size-3" />
+									</button>
+								</Badge>
+							))}
+						</div>
+						<ChevronsUpDownIcon className="ml-2 size-4" />
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent className="w-[300px] p-0">
+					<Command>
+						<CommandInput
+							placeholder="Search roles..."
+							value={query}
+							onValueChange={setQuery}
+						/>
+						<CommandList>
+							{isLoading ? (
+								<CommandEmpty>Loading...</CommandEmpty>
+							) : options.length === 0 ? (
+								<CommandEmpty>No roles found.</CommandEmpty>
+							) : (
+								<CommandGroup>
+									{options.map((role) => {
+										const selected = Boolean(
+											value.find((r) => r.id === role.id),
+										);
+										return (
+											<CommandItem
+												key={role.id}
+												value={String(role.id)}
+												onSelect={() => {
+													// Toggle selection: if selected, remove; otherwise add
+													if (selected) {
+														removeRole(role.id);
+													} else {
+														addRole(role);
+													}
+													// Keep the popover open for further selections
+												}}
+											>
+												{selected ? (
+													<CheckIcon className="mr-2 size-4" />
+												) : (
+													<span className="mr-2 w-4" />
+												)}
+												{role.name}
+											</CommandItem>
+										);
+									})}
+								</CommandGroup>
+							)}
+						</CommandList>
+					</Command>
+				</PopoverContent>
+			</Popover>
+			<Button
+				className="h-auto"
+				variant="outline"
+				onClick={() => {
+					onChange([]);
+				}}
+			>
+				<Trash2 className="size-4" />
+			</Button>
+		</div>
 	);
 }

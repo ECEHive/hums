@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, Filter } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/missing-permissions";
@@ -14,9 +14,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import type { Role } from "@/components/users/columns";
 import { generateColumns } from "@/components/users/columns";
 import { CreateDialog } from "@/components/users/create-dialog";
 import { DataTable } from "@/components/users/data-table";
+import { FilterDialog } from "@/components/users/filter-dialog";
 import { useDebounce } from "@/lib/debounce";
 
 export const Route = createFileRoute("/app/users")({
@@ -34,6 +36,7 @@ function Users() {
 	const [page, setPage] = React.useState(1);
 	const [pageSize, setPageSize] = React.useState(10);
 	const [search, setSearch] = React.useState("");
+	const [filterRoles, setFilterRoles] = React.useState<Role[]>([]);
 	const debouncedSearch = useDebounce(search, 300);
 
 	const offset = (page - 1) * pageSize;
@@ -43,14 +46,22 @@ function Users() {
 			search:
 				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
 			offset,
+			filterRoles,
 			limit: pageSize,
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
 	const { data = { users: [], total: 0 }, isLoading } = useQuery({
-		queryKey: ["users", queryParams],
+		// filterRoles needs to be an array of IDs for the query key to work properly
+		queryKey: [
+			"users",
+			{ ...queryParams, filterRoles: filterRoles.map((r) => r.id) },
+		],
 		queryFn: async () => {
-			return await trpc.users.list.query(queryParams);
+			return await trpc.users.list.query({
+				...queryParams,
+				filterRoles: filterRoles.map((r) => r.id),
+			});
 		},
 		retry: false,
 	});
@@ -62,15 +73,29 @@ function Users() {
 	return (
 		<div className="container p-4 space-y-3">
 			<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-				<Input
-					placeholder="Search users..."
-					value={search}
-					onChange={(e) => {
-						setSearch(e.target.value);
-						setPage(1);
-					}}
-					className="max-w-xs"
-				/>
+				<div className="flex items-center gap-2">
+					<FilterDialog
+						onFilterChange={(newFilterRoles) => {
+							setPage(1);
+							setFilterRoles(newFilterRoles);
+						}}
+						filterRoles={filterRoles}
+						trigger={
+							<Button variant="outline">
+								<Filter className="size-4" />
+							</Button>
+						}
+					/>
+					<Input
+						placeholder="Search users..."
+						value={search}
+						onChange={(e) => {
+							setSearch(e.target.value);
+							setPage(1);
+						}}
+						className="max-w-xs"
+					/>
+				</div>
 				<div className="flex items-center gap-2">
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>

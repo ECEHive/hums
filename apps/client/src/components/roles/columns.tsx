@@ -5,7 +5,7 @@ import { DeleteDialog } from "./delete-dialog";
 import { EditPermissionsSheet } from "./edit-permissions-sheet";
 import { RenameDialog } from "./rename-dialog";
 
-type Role = {
+export type Role = {
 	id: number;
 	name: string;
 	userCount: number;
