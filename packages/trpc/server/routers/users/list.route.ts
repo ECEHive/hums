@@ -8,6 +8,7 @@ export const ZListSchema = z.object({
 	limit: z.number().min(1).max(100).optional(),
 	offset: z.number().min(0).optional(),
 	search: z.string().min(1).max(100).optional(),
+	filterRoles: z.array(z.number().min(1)).optional(),
 });
 
 export type TListSchema = z.infer<typeof ZListSchema>;
@@ -18,7 +19,7 @@ export type TListOptions = {
 };
 
 export async function listHandler(options: TListOptions) {
-	const { search, limit, offset = 0 } = options.input;
+	const { search, filterRoles, limit, offset = 0 } = options.input;
 
 	const filters = [] as (SQL | undefined)[];
 
@@ -35,10 +36,15 @@ export async function listHandler(options: TListOptions) {
 		);
 	}
 
+	if (filterRoles && filterRoles.length > 0) {
+		filters.push(inArray(userRoles.roleId, filterRoles));
+	}
+
 	// Step 1: Get paginated user IDs
 	const pagedUserIdsResult = await db
 		.select({ id: users.id })
 		.from(users)
+		.innerJoin(userRoles, eq(userRoles.userId, users.id))
 		.where(and(...filters))
 		.orderBy(users.name)
 		.offset(offset)
@@ -52,6 +58,7 @@ export async function listHandler(options: TListOptions) {
 				count: count(users.id),
 			})
 			.from(users)
+			.leftJoin(userRoles, eq(userRoles.userId, users.id))
 			.where(and(...filters));
 
 		return {
@@ -108,6 +115,7 @@ export async function listHandler(options: TListOptions) {
 			count: count(users.id),
 		})
 		.from(users)
+		.leftJoin(userRoles, eq(userRoles.userId, users.id))
 		.where(and(...filters));
 
 	return {
