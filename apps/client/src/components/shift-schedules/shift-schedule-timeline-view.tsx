@@ -216,7 +216,7 @@ export function ShiftScheduleTimelineView({
 						</Card>
 					) : (
 						<Card>
-							<CardContent className="p-6 max-h-[600px] overflow-scroll">
+							<CardContent className="p-6 max-h-[600px] overflow-auto">
 								{/* Scrollable container with max height */}
 								<div className="p-2 overflow-visible">
 									<div
