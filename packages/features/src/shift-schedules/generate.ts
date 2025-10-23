@@ -38,7 +38,7 @@ export async function generateShiftScheduleShiftOccurrences(
 			dayOfWeek: shiftSchedules.dayOfWeek,
 			startTime: shiftSchedules.startTime,
 			endTime: shiftSchedules.endTime,
-			slot: shiftSchedules.slot,
+			slots: shiftSchedules.slots,
 			shiftTypeId: shiftSchedules.shiftTypeId,
 			periodId: shiftTypes.periodId,
 			periodStart: periods.start,
@@ -90,7 +90,7 @@ export async function generateShiftScheduleShiftOccurrences(
 
 	// Also check for slot count changes - need to delete/create occurrences
 	// when the slot count has changed
-	const totalSlots = schedule.slot + 1; // slot is 0-indexed, so add 1
+	const totalSlots = schedule.slots;
 
 	// Find occurrences with invalid slot numbers (slot >= totalSlots)
 	const occurrencesWithInvalidSlots = existingOccurrences.filter(
@@ -111,7 +111,7 @@ export async function generateShiftScheduleShiftOccurrences(
 		if (maxSlot === undefined) continue;
 
 		// If max slot in DB is less than what we need, we need to create more
-		if (maxSlot < schedule.slot) {
+		if (maxSlot < schedule.slots - 1) {
 			const timestamp = new Date(tsKey);
 			// Only if this timestamp is still valid (not being deleted)
 			if (
