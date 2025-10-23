@@ -231,7 +231,7 @@ export const shiftSchedules = pgTable(
 			.notNull()
 			.references(() => shiftTypes.id, { onDelete: "cascade" }),
 
-		slot: integer("slot").notNull().default(0),
+		slots: integer("slots").notNull().default(1),
 		dayOfWeek: integer("day_of_week").notNull(),
 		startTime: time("start_time").notNull(),
 		endTime: time("end_time").notNull(),

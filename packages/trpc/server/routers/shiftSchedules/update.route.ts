@@ -15,7 +15,7 @@ export const ZUpdateSchema = z
 	.object({
 		id: z.number().min(1),
 		shiftTypeId: z.number().min(1).optional(),
-		slot: z.number().min(0).optional(),
+		slots: z.number().min(1).optional(),
 		dayOfWeek: z.number().min(0).max(6).optional(),
 		startTime: timeStringSchema.optional(),
 		endTime: timeStringSchema.optional(),
@@ -43,7 +43,7 @@ export type TUpdateOptions = {
 };
 
 export async function updateHandler(options: TUpdateOptions) {
-	const { id, shiftTypeId, slot, dayOfWeek, startTime, endTime } =
+	const { id, shiftTypeId, slots, dayOfWeek, startTime, endTime } =
 		options.input;
 
 	const [existing] = await db
@@ -91,8 +91,8 @@ export async function updateHandler(options: TUpdateOptions) {
 			updates.shiftTypeId = shiftTypeId;
 		}
 
-		if (slot !== undefined) {
-			updates.slot = slot;
+		if (slots !== undefined) {
+			updates.slots = slots;
 		}
 
 		if (dayOfWeek !== undefined) {
@@ -107,11 +107,14 @@ export async function updateHandler(options: TUpdateOptions) {
 			updates.endTime = endTime;
 		}
 
-		const [updated] = await tx
+		await tx
 			.update(shiftSchedules)
 			.set(updates)
-			.where(eq(shiftSchedules.id, id))
-			.returning();
+			.where(eq(shiftSchedules.id, id));
+
+		const updated = await tx.query.shiftSchedules.findFirst({
+			where: eq(shiftSchedules.id, id),
+		});
 
 		if (!updated) {
 			return { shiftSchedule: undefined };

@@ -2,7 +2,14 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Calendar, Pencil, Plus } from "lucide-react";
+import {
+	Calendar,
+	CalendarDays,
+	Clock,
+	LayoutList,
+	Pencil,
+	Plus,
+} from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
@@ -10,6 +17,11 @@ import { CreatePeriodSheet } from "@/components/periods/create-period-sheet";
 import { DeleteDialog } from "@/components/periods/delete-dialog";
 import { EditPeriodSheet } from "@/components/periods/edit-period-sheet";
 import { PeriodsSelector } from "@/components/periods/periods-selector";
+import { generateColumns as generateShiftScheduleColumns } from "@/components/shift-schedules/columns";
+import { CreateShiftScheduleSheet } from "@/components/shift-schedules/create-shift-schedule-sheet";
+import { DataTable as ShiftScheduleDataTable } from "@/components/shift-schedules/data-table";
+import { EditShiftScheduleSheet } from "@/components/shift-schedules/edit-shift-schedule-sheet";
+import { ShiftScheduleTimelineView } from "@/components/shift-schedules/shift-schedule-timeline-view";
 import { generateColumns } from "@/components/shift-types/columns";
 import { CreateShiftTypeSheet } from "@/components/shift-types/create-shift-type-sheet";
 import { DataTable } from "@/components/shift-types/data-table";
@@ -36,8 +48,20 @@ function PeriodDetail() {
 	const [editSheetOpen, setEditSheetOpen] = React.useState(false);
 	const [createShiftTypeSheetOpen, setCreateShiftTypeSheetOpen] =
 		React.useState(false);
+	const [createShiftScheduleSheetOpen, setCreateShiftScheduleSheetOpen] =
+		React.useState(false);
+	const [editShiftScheduleSheetOpen, setEditShiftScheduleSheetOpen] =
+		React.useState(false);
+	const [selectedScheduleId, setSelectedScheduleId] = React.useState<
+		number | null
+	>(null);
+	const [shiftScheduleView, setShiftScheduleView] = React.useState<
+		"timeline" | "table"
+	>("timeline");
 	const [shiftTypesPage, setShiftTypesPage] = React.useState(1);
+	const [shiftSchedulesPage, setShiftSchedulesPage] = React.useState(1);
 	const shiftTypesLimit = 10;
+	const shiftSchedulesLimit = 10;
 
 	const { data: periodData, isLoading } = useQuery({
 		queryKey: ["period", Number(periodId)],
@@ -60,6 +84,66 @@ function PeriodDetail() {
 		},
 	});
 
+	const { data: shiftSchedulesData, isLoading: shiftSchedulesLoading } =
+		useQuery({
+			queryKey: [
+				"shiftSchedules",
+				{ periodId: Number(periodId), page: shiftSchedulesPage },
+			],
+			queryFn: async () => {
+				const result = await trpc.shiftSchedules.list.query({
+					periodId: Number(periodId),
+					limit: shiftSchedulesLimit,
+					offset: (shiftSchedulesPage - 1) * shiftSchedulesLimit,
+				});
+
+				// Fetch shift type names for the table view
+				const shiftTypes = await trpc.shiftTypes.list.query({
+					periodId: Number(periodId),
+					limit: 100,
+				});
+
+				const shiftTypeMap = new Map(
+					shiftTypes.shiftTypes.map((st) => [st.id, st.name]),
+				);
+
+				return {
+					...result,
+					shiftSchedules: result.shiftSchedules.map((schedule) => ({
+						...schedule,
+						periodId: Number(periodId),
+						shiftTypeName: shiftTypeMap.get(schedule.shiftTypeId) ?? "Unknown",
+					})),
+				};
+			},
+			enabled: shiftScheduleView === "table",
+		});
+
+	const { data: selectedScheduleData } = useQuery({
+		queryKey: ["shiftSchedule", selectedScheduleId],
+		queryFn: async () => {
+			if (!selectedScheduleId) return null;
+			const result = await trpc.shiftSchedules.get.query({
+				id: selectedScheduleId,
+			});
+			if (!result.shiftSchedule) return null;
+			return {
+				shiftSchedule: {
+					id: result.shiftSchedule.id,
+					periodId: Number(periodId),
+					shiftTypeId: result.shiftSchedule.shiftTypeId,
+					slots: result.shiftSchedule.slots,
+					dayOfWeek: result.shiftSchedule.dayOfWeek,
+					startTime: result.shiftSchedule.startTime,
+					endTime: result.shiftSchedule.endTime,
+					createdAt: result.shiftSchedule.createdAt,
+					updatedAt: result.shiftSchedule.updatedAt,
+				},
+			};
+		},
+		enabled: !!selectedScheduleId,
+	});
+
 	const currentUser = useCurrentUser();
 	const canEdit =
 		currentUser && checkPermissions(currentUser, ["periods.update"]);
@@ -67,6 +151,8 @@ function PeriodDetail() {
 		currentUser && checkPermissions(currentUser, ["periods.delete"]);
 	const canCreateShiftTypes =
 		currentUser && checkPermissions(currentUser, ["shift_types.create"]);
+	const canCreateShiftSchedules =
+		currentUser && checkPermissions(currentUser, ["shiftSchedules.create"]);
 
 	if (isLoading) {
 		return (
@@ -299,6 +385,81 @@ function PeriodDetail() {
 				</CardContent>
 			</Card>
 
+			<Card className="mt-6">
+				<CardHeader>
+					<div className="flex items-center justify-between">
+						<CardTitle className="flex items-center gap-2">
+							<Clock className="h-5 w-5" />
+							Shift Schedules
+						</CardTitle>
+						<div className="flex items-center gap-2">
+							<div className="flex items-center border rounded-md">
+								<Button
+									variant={
+										shiftScheduleView === "timeline" ? "secondary" : "ghost"
+									}
+									size="sm"
+									onClick={() => setShiftScheduleView("timeline")}
+									className="rounded-r-none"
+								>
+									<CalendarDays className="h-4 w-4" />
+								</Button>
+								<Button
+									variant={
+										shiftScheduleView === "table" ? "secondary" : "ghost"
+									}
+									size="sm"
+									onClick={() => setShiftScheduleView("table")}
+									className="rounded-l-none"
+								>
+									<LayoutList className="h-4 w-4" />
+								</Button>
+							</div>
+							{canCreateShiftSchedules && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setCreateShiftScheduleSheetOpen(true)}
+								>
+									<Plus className="mr-2 h-4 w-4" />
+									Add Shift Schedule
+								</Button>
+							)}
+						</div>
+					</div>
+				</CardHeader>
+				<CardContent>
+					{shiftScheduleView === "timeline" ? (
+						<ShiftScheduleTimelineView
+							periodId={Number(periodId)}
+							onScheduleClick={(scheduleId) => {
+								setSelectedScheduleId(scheduleId);
+								setEditShiftScheduleSheetOpen(true);
+							}}
+						/>
+					) : (
+						<>
+							<ShiftScheduleDataTable
+								columns={generateShiftScheduleColumns(currentUser)}
+								data={shiftSchedulesData?.shiftSchedules ?? []}
+								isLoading={shiftSchedulesLoading}
+							/>
+							{shiftSchedulesData &&
+								shiftSchedulesData.total > shiftSchedulesLimit && (
+									<TablePagination
+										page={shiftSchedulesPage}
+										totalPages={Math.ceil(
+											shiftSchedulesData.total / shiftSchedulesLimit,
+										)}
+										onPageChange={setShiftSchedulesPage}
+										className="mt-4"
+									/>
+								)}
+						</>
+					)}
+				</CardContent>
+			</Card>
+
 			<CreatePeriodSheet
 				open={createSheetOpen}
 				onOpenChange={setCreateSheetOpen}
@@ -313,6 +474,18 @@ function PeriodDetail() {
 				open={createShiftTypeSheetOpen}
 				onOpenChange={setCreateShiftTypeSheetOpen}
 			/>
+			<CreateShiftScheduleSheet
+				periodId={Number(periodId)}
+				open={createShiftScheduleSheetOpen}
+				onOpenChange={setCreateShiftScheduleSheetOpen}
+			/>
+			{selectedScheduleData?.shiftSchedule && (
+				<EditShiftScheduleSheet
+					open={editShiftScheduleSheetOpen}
+					onOpenChange={setEditShiftScheduleSheetOpen}
+					shiftSchedule={selectedScheduleData.shiftSchedule}
+				/>
+			)}
 		</div>
 	);
 }

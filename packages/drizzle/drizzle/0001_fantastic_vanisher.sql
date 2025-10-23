@@ -1,0 +1,1 @@
+ALTER TABLE "shift_schedules" RENAME COLUMN "slot" TO "slots";
