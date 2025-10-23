@@ -36,7 +36,7 @@ export function FilterDialog({
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (!nextOpen) {
 			// revert to original roles when dialog closed without saving
-			onFilterChange(filterRoles);
+			setRoles(filterRoles);
 			setServerError(null);
 		}
 		setOpen(nextOpen);

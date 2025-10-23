@@ -49,7 +49,7 @@ function Users() {
 			filterRoles,
 			limit: pageSize,
 		};
-	}, [debouncedSearch, offset, pageSize]);
+	}, [debouncedSearch, offset, pageSize, filterRoles]);
 
 	const { data = { users: [], total: 0 }, isLoading } = useQuery({
 		// filterRoles needs to be an array of IDs for the query key to work properly

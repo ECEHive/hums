@@ -44,7 +44,7 @@ export async function listHandler(options: TListOptions) {
 	const pagedUserIdsResult = await db
 		.select({ id: users.id })
 		.from(users)
-		.leftJoin(userRoles, eq(userRoles.userId, users.id))
+		.innerJoin(userRoles, eq(userRoles.userId, users.id))
 		.where(and(...filters))
 		.orderBy(users.name)
 		.offset(offset)

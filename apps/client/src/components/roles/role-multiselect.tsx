@@ -175,6 +175,7 @@ export function RoleMultiSelect({
 			<Button
 				className="h-auto"
 				variant="outline"
+				aria-label="Clear all roles"
 				onClick={() => {
 					onChange([]);
 				}}
