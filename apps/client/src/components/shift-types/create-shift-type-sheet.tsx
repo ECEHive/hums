@@ -3,6 +3,7 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useId, useState } from "react";
 import { z } from "zod";
+import { ColorPicker } from "@/components/color-picker";
 import {
 	type Role,
 	RoleMultiSelect,
@@ -49,6 +50,10 @@ const formSchema = z.object({
 		.string()
 		.max(2000, "Description must be at most 2000 characters")
 		.nullable(),
+	color: z
+		.string()
+		.regex(/^#([0-9a-fA-F]{3}){1,2}$/)
+		.nullable(),
 	isBalancedAcrossOverlap: z.boolean(),
 	isBalancedAcrossDay: z.boolean(),
 	isBalancedAcrossPeriod: z.boolean(),
@@ -79,6 +84,7 @@ export function CreateShiftTypeSheet({
 			name: string;
 			location: string;
 			description: string | null;
+			color: string | null;
 			isBalancedAcrossOverlap: boolean;
 			isBalancedAcrossDay: boolean;
 			isBalancedAcrossPeriod: boolean;
@@ -114,6 +120,7 @@ export function CreateShiftTypeSheet({
 			isBalancedAcrossPeriod: false,
 			canSelfAssign: true,
 			doRequireRoles: "disabled" as "disabled" | "all" | "any",
+			color: null as string | null,
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -130,6 +137,7 @@ export function CreateShiftTypeSheet({
 					isBalancedAcrossPeriod: value.isBalancedAcrossPeriod,
 					canSelfAssign: value.canSelfAssign,
 					doRequireRoles: value.doRequireRoles,
+					color: value.color ?? null,
 				});
 
 				// Then create the shift type roles if any are selected
@@ -274,6 +282,51 @@ export function CreateShiftTypeSheet({
 											)}
 											<FieldDescription>
 												Additional details about this shift type
+											</FieldDescription>
+										</div>
+									);
+								}}
+							/>
+
+							<form.Field
+								name="color"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+
+									const hex = field.state.value as string | null;
+									const hexToRgb = (h: string | null) => {
+										if (!h) return { r: 110, g: 170, b: 230 };
+										const v = h.replace(/^#/, "");
+										const full =
+											v.length === 3
+												? v
+														.split("")
+														.map((c) => c + c)
+														.join("")
+												: v;
+										const r = Number.parseInt(full.substring(0, 2), 16);
+										const g = Number.parseInt(full.substring(2, 4), 16);
+										const b = Number.parseInt(full.substring(4, 6), 16);
+										return { r, g, b };
+									};
+
+									return (
+										<div className="space-y-2">
+											<FieldLabel htmlFor={field.name}>Color</FieldLabel>
+											<ColorPicker
+												initial={hexToRgb(hex)}
+												value={hex}
+												onChange={(_, __, hex) => field.handleChange(hex)}
+												optional
+												onClear={() => field.handleChange(null)}
+											/>
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
+											<FieldDescription>
+												Optional color used to render this shift type in
+												calendars and timelines
 											</FieldDescription>
 										</div>
 									);

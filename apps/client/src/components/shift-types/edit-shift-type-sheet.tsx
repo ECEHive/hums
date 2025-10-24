@@ -3,6 +3,7 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
+import { ColorPicker } from "@/components/color-picker";
 import {
 	type Role,
 	RoleMultiSelect,
@@ -48,6 +49,10 @@ const formSchema = z.object({
 	description: z
 		.string()
 		.max(2000, "Description must be at most 2000 characters")
+		.nullable(),
+	color: z
+		.string()
+		.regex(/^#([0-9a-fA-F]{3}){1,2}$/)
 		.nullable(),
 	isBalancedAcrossOverlap: z.boolean(),
 	isBalancedAcrossDay: z.boolean(),
@@ -132,6 +137,7 @@ export function EditShiftTypeSheet({
 			name: string;
 			location: string;
 			description: string | null;
+			color: string | null;
 			isBalancedAcrossOverlap: boolean;
 			isBalancedAcrossDay: boolean;
 			isBalancedAcrossPeriod: boolean;
@@ -166,6 +172,7 @@ export function EditShiftTypeSheet({
 			name: shiftType.name,
 			location: shiftType.location,
 			description: shiftType.description as string | null,
+			color: shiftType.color as string | null,
 			isBalancedAcrossOverlap: shiftType.isBalancedAcrossOverlap,
 			isBalancedAcrossDay: shiftType.isBalancedAcrossDay,
 			isBalancedAcrossPeriod: shiftType.isBalancedAcrossPeriod,
@@ -183,6 +190,7 @@ export function EditShiftTypeSheet({
 					name: value.name,
 					location: value.location,
 					description: value.description,
+					color: value.color,
 					isBalancedAcrossOverlap: value.isBalancedAcrossOverlap,
 					isBalancedAcrossDay: value.isBalancedAcrossDay,
 					isBalancedAcrossPeriod: value.isBalancedAcrossPeriod,
@@ -358,6 +366,51 @@ export function EditShiftTypeSheet({
 											)}
 											<FieldDescription>
 												Additional details about this shift type
+											</FieldDescription>
+										</div>
+									);
+								}}
+							/>
+
+							<form.Field
+								name="color"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+
+									const hex = field.state.value as string | null;
+									const hexToRgb = (h: string | null) => {
+										if (!h) return { r: 110, g: 170, b: 230 };
+										const v = h.replace(/^#/, "");
+										const full =
+											v.length === 3
+												? v
+														.split("")
+														.map((c) => c + c)
+														.join("")
+												: v;
+										const r = Number.parseInt(full.substring(0, 2), 16);
+										const g = Number.parseInt(full.substring(2, 4), 16);
+										const b = Number.parseInt(full.substring(4, 6), 16);
+										return { r, g, b };
+									};
+
+									return (
+										<div className="space-y-2">
+											<FieldLabel htmlFor={field.name}>Color</FieldLabel>
+											<ColorPicker
+												initial={hexToRgb(hex)}
+												value={hex}
+												onChange={(_, __, hex) => field.handleChange(hex)}
+												optional
+												onClear={() => field.handleChange(null)}
+											/>
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
+											<FieldDescription>
+												Optional color used to render this shift type in
+												calendars and timelines
 											</FieldDescription>
 										</div>
 									);
