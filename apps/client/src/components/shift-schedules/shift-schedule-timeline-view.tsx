@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 const BLOCK_HEIGHT_REM = 4;
+const MIN_BLOCK_WIDTH_REM = 8; // Minimum width per shift schedule block
+const BLOCK_GAP_REM = 0.125; // Visual spacing between shift schedule blocks (2px at default font size)
 
 const DAYS_OF_WEEK = [
 	{ value: 0, label: "Sunday", short: "Sun" },
@@ -364,8 +366,8 @@ export function ShiftScheduleTimelineView({
 												1,
 												...timelineItems.map((item) => item.totalOverlaps),
 											);
-											const minWidthRem = 8; // Minimum 8rem per block
-											const minContainerWidthRem = maxOverlaps * minWidthRem;
+											const minContainerWidthRem =
+												maxOverlaps * MIN_BLOCK_WIDTH_REM;
 
 											return (
 												<div
@@ -380,11 +382,7 @@ export function ShiftScheduleTimelineView({
 														const heightRem =
 															item.durationBlocks * BLOCK_HEIGHT_REM;
 
-														// Small spacing between blocks for visual separation
-														const gapRem = 0.125; // 2px at default font size
-
 														// Calculate horizontal position for overlapping items
-														const minWidthRem = 8; // Minimum 8rem per block
 														const widthPercent = 100 / item.totalOverlaps;
 														const leftPercent =
 															(item.offsetIndex * 100) / item.totalOverlaps;
@@ -394,11 +392,11 @@ export function ShiftScheduleTimelineView({
 														// and triggers horizontal scroll when compressed below minWidth
 														// Add small gaps for visual separation
 														const positionStyle: React.CSSProperties = {
-															top: `${topRem + gapRem}rem`,
-															height: `calc(${heightRem}rem - ${gapRem * 2}rem)`,
-															left: `calc(${leftPercent}% + ${gapRem}rem)`,
-															width: `calc(${widthPercent}% - ${gapRem * 2}rem)`,
-															minWidth: `${minWidthRem - gapRem * 2}rem`,
+															top: `${topRem + BLOCK_GAP_REM}rem`,
+															height: `calc(${heightRem}rem - ${BLOCK_GAP_REM * 2}rem)`,
+															left: `calc(${leftPercent}% + ${BLOCK_GAP_REM}rem)`,
+															width: `calc(${widthPercent}% - ${BLOCK_GAP_REM * 2}rem)`,
+															minWidth: `${MIN_BLOCK_WIDTH_REM - BLOCK_GAP_REM * 2}rem`,
 														};
 
 														// Calculate actual duration in minutes
