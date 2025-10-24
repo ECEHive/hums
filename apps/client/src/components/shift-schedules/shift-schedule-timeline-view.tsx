@@ -8,6 +8,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
+const BLOCK_HEIGHT_REM = 4;
+const MIN_BLOCK_WIDTH_REM = 8; // Minimum width per shift schedule block
+const BLOCK_GAP_REM = 0.125; // Visual spacing between shift schedule blocks (2px at default font size)
+
 const DAYS_OF_WEEK = [
 	{ value: 0, label: "Sunday", short: "Sun" },
 	{ value: 1, label: "Monday", short: "Mon" },
@@ -44,16 +48,89 @@ interface TimelineItem {
 	shiftType: ShiftTypeInfo;
 	startMinutes: number;
 	endMinutes: number;
+	durationBlocks: number;
 	offsetIndex: number;
 	totalOverlaps: number;
 }
 
+/**
+ * Parse time string (HH:MM) to minutes since midnight
+ */
 function parseTimeToMinutes(time: string): number {
 	const [hours, minutes] = time.split(":").map(Number);
 	return hours * 60 + minutes;
 }
 
-// Sort schedules by shift type name alphabetically
+/**
+ * Find the greatest common divisor of two numbers
+ */
+function gcd(a: number, b: number): number {
+	return b === 0 ? a : gcd(b, a % b);
+}
+
+/**
+ * Calculate the optimal block size based on shift durations
+ * Returns the GCD of all durations, ensuring it's a reasonable interval
+ */
+function calculateBlockSize(schedules: ShiftSchedule[]): number {
+	if (schedules.length === 0) return 30; // Default to 30 minutes
+
+	const durations = schedules.map((schedule) => {
+		const start = parseTimeToMinutes(schedule.startTime);
+		const end = parseTimeToMinutes(schedule.endTime);
+		return end - start;
+	});
+
+	// Find GCD of all durations
+	let blockSize = durations[0];
+	for (let i = 1; i < durations.length; i++) {
+		blockSize = gcd(blockSize, durations[i]);
+	}
+
+	// Ensure block size is at least 5 minutes and at most 60 minutes
+	blockSize = Math.max(5, Math.min(60, blockSize));
+
+	// Prefer common intervals: 5, 10, 15, 30, 60
+	const commonIntervals = [5, 10, 15, 30, 60];
+	for (const interval of commonIntervals) {
+		if (blockSize <= interval && interval % blockSize === 0) {
+			return interval;
+		}
+	}
+
+	return blockSize;
+}
+
+/**
+ * Round minutes down to nearest block
+ */
+function roundToBlock(minutes: number, blockSize: number): number {
+	return Math.floor(minutes / blockSize) * blockSize;
+}
+
+/**
+ * Calculate number of blocks for a duration
+ */
+function calculateBlocks(
+	startMinutes: number,
+	endMinutes: number,
+	blockSize: number,
+): number {
+	return Math.ceil((endMinutes - startMinutes) / blockSize);
+}
+
+/**
+ * Format minutes to HH:MM time string
+ */
+function formatTime(minutes: number): string {
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Sort schedules by shift type name alphabetically
+ */
 function sortSchedulesWithTypes(
 	schedules: ShiftSchedule[],
 	shiftTypesMap: Map<number, ShiftTypeInfo>,
@@ -66,17 +143,21 @@ function sortSchedulesWithTypes(
 		.filter((item) => item.shiftType !== undefined) as Array<{
 		schedule: ShiftSchedule;
 		shiftType: ShiftTypeInfo;
-	}>; // Filter out any missing shift types
+	}>;
 
 	return withTypes.sort((a, b) =>
 		a.shiftType.name.localeCompare(b.shiftType.name),
 	);
 }
 
-// Calculate overlaps and assign offset positions
+/**
+ * Calculate overlaps and assign offset positions for timeline items
+ * Each item is positioned to avoid overlapping with others
+ */
 function calculateTimelineLayout(
 	schedules: ShiftSchedule[],
 	shiftTypesMap: Map<number, ShiftTypeInfo>,
+	blockSize: number,
 ): TimelineItem[] {
 	const sorted = sortSchedulesWithTypes(schedules, shiftTypesMap);
 	const items: TimelineItem[] = [];
@@ -84,6 +165,7 @@ function calculateTimelineLayout(
 	for (const { schedule, shiftType } of sorted) {
 		const startMinutes = parseTimeToMinutes(schedule.startTime);
 		const endMinutes = parseTimeToMinutes(schedule.endTime);
+		const durationBlocks = calculateBlocks(startMinutes, endMinutes, blockSize);
 
 		// Find overlapping items (start time inclusive, end time exclusive)
 		const overlapping = items.filter((item) => {
@@ -113,6 +195,7 @@ function calculateTimelineLayout(
 			shiftType,
 			startMinutes,
 			endMinutes,
+			durationBlocks,
 			offsetIndex,
 			totalOverlaps,
 		});
@@ -161,25 +244,32 @@ export function ShiftScheduleTimelineView({
 		]),
 	);
 
-	const timelineItems = calculateTimelineLayout(schedules, shiftTypesMap);
+	// Calculate optimal block size based on shift durations
+	const blockSize = calculateBlockSize(schedules);
 
-	// Find earliest and latest times for the timeline
+	const timelineItems = calculateTimelineLayout(
+		schedules,
+		shiftTypesMap,
+		blockSize,
+	);
+
+	// Calculate timeline bounds - round to nearest blocks
 	const minTime =
 		timelineItems.length > 0
-			? Math.min(...timelineItems.map((item) => item.startMinutes))
+			? roundToBlock(
+					Math.min(...timelineItems.map((item) => item.startMinutes)),
+					blockSize,
+				)
 			: 0;
 	const maxTime =
 		timelineItems.length > 0
-			? Math.max(...timelineItems.map((item) => item.endMinutes))
+			? roundToBlock(
+					Math.max(...timelineItems.map((item) => item.endMinutes)),
+					blockSize,
+				) + blockSize
 			: 24 * 60;
 
-	const timelineHeight = maxTime - minTime;
-
-	// Calculate height
-	const thirtyMinuteBlocks = Math.ceil(timelineHeight / 30);
-	const heightPerBlock = 80; // Pixels per block
-	const calculatedHeight = thirtyMinuteBlocks * heightPerBlock;
-	const containerHeight = calculatedHeight;
+	const totalBlocks = (maxTime - minTime) / blockSize;
 
 	return (
 		<Tabs
@@ -190,8 +280,8 @@ export function ShiftScheduleTimelineView({
 			<TabsList className="grid w-full grid-cols-7">
 				{DAYS_OF_WEEK.map((day) => (
 					<TabsTrigger key={day.value} value={String(day.value)}>
-						<span className="hidden sm:inline">{day.label}</span>
-						<span className="sm:hidden">{day.short}</span>
+						<span className="hidden lg:inline">{day.label}</span>
+						<span className="lg:hidden">{day.short}</span>
 					</TabsTrigger>
 				))}
 			</TabsList>
@@ -215,129 +305,159 @@ export function ShiftScheduleTimelineView({
 							</CardContent>
 						</Card>
 					) : (
-						<Card>
-							<CardContent className="p-6 max-h-[600px] overflow-auto">
-								{/* Scrollable container with max height */}
-								<div className="p-2 overflow-visible">
+						<Card className="overflow-hidden">
+							<CardContent className="p-0">
+								<div className="overflow-auto max-h-[600px]">
+									{/* Timeline container with fixed block heights and padding to prevent clipping */}
 									<div
-										className="relative"
+										className="relative min-w-full py-4 px-4 md:px-6"
 										style={{
-											height: `${containerHeight}px`,
-											minWidth: "100%",
-											paddingTop: "12px",
-											paddingBottom: "12px",
+											height: `${totalBlocks * BLOCK_HEIGHT_REM + 2}rem`,
 										}}
 									>
-										{/* Time markers on the left */}
-										<div className="absolute left-0 top-0 bottom-0 w-20 pointer-events-none z-10 pt-3 pb-3">
-											{Array.from(
-												{
-													// Generate 30-minute increments
-													length: Math.floor((maxTime - minTime) / 30) + 1,
-												},
-												(_, i) => {
-													const minutes = minTime + i * 30;
-													const hours = Math.floor(minutes / 60);
-													const mins = minutes % 60;
-													const totalHeight = containerHeight - 24; // Account for padding
-													const top =
-														((minutes - minTime) / timelineHeight) *
-														totalHeight;
-
-													return (
-														<div
-															key={`time-marker-${minutes}`}
-															className="absolute left-0 right-0"
-															style={{ top: `${top}px` }}
-														>
-															<span className="absolute -top-2 left-0 text-xs font-medium text-muted-foreground pr-2">
-																{hours.toString().padStart(2, "0")}:
-																{mins.toString().padStart(2, "0")}
-															</span>
-														</div>
-													);
-												},
-											)}
-										</div>
-
-										{/* Timeline grid lines */}
-										<div className="absolute inset-0 pl-20 pointer-events-none pt-3 pb-3">
-											{Array.from(
-												{
-													length: Math.floor((maxTime - minTime) / 30) + 1,
-												},
-												(_, i) => {
-													const minutes = minTime + i * 30;
-													const totalHeight = containerHeight - 24; // Account for padding
-													const top =
-														((minutes - minTime) / timelineHeight) *
-														totalHeight;
-													const isHour = minutes % 60 === 0;
-
-													return (
-														<div
-															key={`grid-line-${minutes}`}
-															className={cn(
-																"absolute left-0 right-0 border-t",
-																isHour ? "border-border" : "border-border/30",
-															)}
-															style={{ top: `${top}px` }}
-														/>
-													);
-												},
-											)}
-										</div>
-
-										{/* Shift schedule blocks */}
-										<div className="absolute top-0 bottom-0 left-20 right-0 pt-3 pb-3">
-											{timelineItems.map((item) => {
-												const totalHeight = containerHeight - 24; // Account for padding
-												const top =
-													((item.startMinutes - minTime) / timelineHeight) *
-													totalHeight;
-												const height =
-													((item.endMinutes - item.startMinutes) /
-														timelineHeight) *
-													totalHeight;
-												const width = 100 / item.totalOverlaps;
-												const left =
-													(item.offsetIndex * 100) / item.totalOverlaps;
+										{/* Time markers - responsive width */}
+										<div className="absolute left-4 md:left-6 top-4 bottom-4 w-12 sm:w-16 md:w-20 pointer-events-none z-10">
+											{Array.from({ length: totalBlocks + 1 }, (_, i) => {
+												const minutes = minTime + i * blockSize;
+												const blockOffset = i;
 
 												return (
-													<button
-														key={item.schedule.id}
-														type="button"
-														onClick={() => onScheduleClick?.(item.schedule.id)}
-														className={cn(
-															"absolute rounded-lg border-2 p-2 overflow-hidden transition-all hover:z-10 hover:shadow-lg",
-															"bg-card hover:bg-accent/50",
-															"cursor-pointer text-left",
-														)}
+													<div
+														key={`time-${minutes}`}
+														className="absolute left-0 right-0"
 														style={{
-															top: `${top}px`,
-															height: `${height}px`,
-															left: `${left}%`,
-															width: `${width}%`,
-															borderColor: item.shiftType.color ?? "#888",
-															minHeight: "48px",
+															top: `${blockOffset * BLOCK_HEIGHT_REM}rem`,
 														}}
 													>
-														<div className="flex flex-col h-full justify-between">
-															<div className="font-semibold text-sm line-clamp-2 mb-1">
-																{item.shiftType.name}
-															</div>
-															<Badge
-																variant="secondary"
-																className="w-fit text-xs"
-															>
-																{item.schedule.slots}{" "}
-																{item.schedule.slots === 1 ? "slot" : "slots"}
-															</Badge>
-														</div>
-													</button>
+														<span className="absolute -translate-y-1/2 left-0 text-xs sm:text-sm font-medium text-muted-foreground pr-1 sm:pr-2">
+															{formatTime(minutes)}
+														</span>
+													</div>
 												);
 											})}
 										</div>
+
+										{/* Timeline grid lines */}
+										<div className="absolute top-4 bottom-4 left-0 right-0 pl-12 sm:pl-16 md:pl-20 ml-4 md:ml-6 pointer-events-none">
+											{Array.from({ length: totalBlocks + 1 }, (_, i) => {
+												const minutes = minTime + i * blockSize;
+												const blockOffset = i;
+												const isHour = minutes % 60 === 0;
+
+												return (
+													<div
+														key={`grid-${minutes}`}
+														className={cn(
+															"absolute left-0 right-0 border-t",
+															isHour ? "border-border" : "border-border/30",
+														)}
+														style={{
+															top: `${blockOffset * BLOCK_HEIGHT_REM}rem`,
+														}}
+													/>
+												);
+											})}
+										</div>
+
+										{/* Shift schedule blocks */}
+										{(() => {
+											// Calculate the maximum overlaps to determine minimum container width
+											const maxOverlaps = Math.max(
+												1,
+												...timelineItems.map((item) => item.totalOverlaps),
+											);
+											const minContainerWidthRem =
+												maxOverlaps * MIN_BLOCK_WIDTH_REM;
+
+											return (
+												<div
+													className="absolute top-4 bottom-4 left-12 sm:left-16 md:left-20 right-0 ml-4 md:ml-6"
+													style={{ minWidth: `${minContainerWidthRem}rem` }}
+												>
+													{timelineItems.map((item) => {
+														// Calculate position in blocks from timeline start
+														const blocksFromStart =
+															(item.startMinutes - minTime) / blockSize;
+														const topRem = blocksFromStart * BLOCK_HEIGHT_REM;
+														const heightRem =
+															item.durationBlocks * BLOCK_HEIGHT_REM;
+
+														// Calculate horizontal position for overlapping items
+														const widthPercent = 100 / item.totalOverlaps;
+														const leftPercent =
+															(item.offsetIndex * 100) / item.totalOverlaps;
+
+														// Use percentage-based positioning with minWidth
+														// This allows blocks to expand when space is available
+														// and triggers horizontal scroll when compressed below minWidth
+														// Add small gaps for visual separation
+														const positionStyle: React.CSSProperties = {
+															top: `${topRem + BLOCK_GAP_REM}rem`,
+															height: `calc(${heightRem}rem - ${BLOCK_GAP_REM * 2}rem)`,
+															left: `calc(${leftPercent}% + ${BLOCK_GAP_REM}rem)`,
+															width: `calc(${widthPercent}% - ${BLOCK_GAP_REM * 2}rem)`,
+															minWidth: `${MIN_BLOCK_WIDTH_REM - BLOCK_GAP_REM * 2}rem`,
+														};
+
+														// Calculate actual duration in minutes
+														const actualDurationMinutes =
+															item.endMinutes - item.startMinutes;
+														const isShortShift =
+															actualDurationMinutes < blockSize;
+
+														return (
+															<button
+																key={item.schedule.id}
+																type="button"
+																onClick={() =>
+																	onScheduleClick?.(item.schedule.id)
+																}
+																className={cn(
+																	"absolute rounded-lg border-2 transition-all hover:z-20 hover:shadow-lg",
+																	"bg-card hover:bg-accent cursor-pointer text-left",
+																	"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+																	"p-2",
+																)}
+																style={{
+																	...positionStyle,
+																	borderColor: item.shiftType.color ?? "#888",
+																}}
+																aria-label={`${item.shiftType.name} shift from ${item.schedule.startTime} to ${item.schedule.endTime}, ${item.schedule.slots} ${item.schedule.slots === 1 ? "slot" : "slots"}`}
+															>
+																{/* Duration indicator for short shifts */}
+																{isShortShift && (
+																	<div
+																		className="absolute bottom-0 left-0 rounded-bl-md"
+																		style={{
+																			width: `${(actualDurationMinutes / blockSize) * 100}%`,
+																			height: "3px",
+																			backgroundColor:
+																				item.shiftType.color ?? "#888",
+																			opacity: 0.8,
+																		}}
+																		aria-hidden="true"
+																	/>
+																)}
+																<div className="flex h-full flex-row items-center justify-between gap-1">
+																	{/* Shift type name */}
+																	<div className="font-semibold text-sm truncate flex-1">
+																		{item.shiftType.name}
+																	</div>
+
+																	{/* Slot count badge */}
+																	<Badge
+																		variant="secondary"
+																		className="shrink-0 h-4 px-1"
+																	>
+																		{item.schedule.slots}
+																	</Badge>
+																</div>
+															</button>
+														);
+													})}
+												</div>
+											);
+										})()}
 									</div>
 								</div>
 							</CardContent>
