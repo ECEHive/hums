@@ -1,6 +1,14 @@
 import type { SelectRole } from "@ecehive/drizzle";
 import { db, roles, userRoles, users } from "@ecehive/drizzle";
-import { and, count, eq, ilike, inArray, or, type SQL } from "drizzle-orm";
+import {
+	and,
+	countDistinct,
+	eq,
+	ilike,
+	inArray,
+	or,
+	type SQL,
+} from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -44,8 +52,9 @@ export async function listHandler(options: TListOptions) {
 	const pagedUserIdsResult = await db
 		.select({ id: users.id })
 		.from(users)
-		.innerJoin(userRoles, eq(userRoles.userId, users.id))
+		.leftJoin(userRoles, eq(userRoles.userId, users.id))
 		.where(and(...filters))
+		.groupBy(users.id)
 		.orderBy(users.name)
 		.offset(offset)
 		.limit(limit ?? 20);
@@ -55,7 +64,7 @@ export async function listHandler(options: TListOptions) {
 	if (pagedUserIds.length === 0) {
 		const [total] = await db
 			.select({
-				count: count(users.id),
+				count: countDistinct(users.id),
 			})
 			.from(users)
 			.leftJoin(userRoles, eq(userRoles.userId, users.id))
@@ -112,7 +121,7 @@ export async function listHandler(options: TListOptions) {
 
 	const [total] = await db
 		.select({
-			count: count(users.id),
+			count: countDistinct(users.id),
 		})
 		.from(users)
 		.leftJoin(userRoles, eq(userRoles.userId, users.id))
