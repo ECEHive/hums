@@ -77,4 +77,4 @@ See [LICENSE](./LICENSE) for license details.
 
 ---
 
-![Alt](https://repobeats.axiom.co/api/embed/4f681a06b224ae315d44b257b17f52576bc6eefc.svg "Repobeats analytics image")
+![Alt](https://repobeats.axiom.co/api/embed/3834aafc611c93e7601ae61b25dfc6e8cde6b986.svg "Repobeats analytics image")
