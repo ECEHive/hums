@@ -16,6 +16,7 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppUsersRouteImport } from './routes/app/users'
 import { Route as AppSchedulingRouteImport } from './routes/app/scheduling'
 import { Route as AppRolesRouteImport } from './routes/app/roles'
+import { Route as AppReportsRouteImport } from './routes/app/reports'
 import { Route as AppPeriodsRouteImport } from './routes/app/periods'
 import { Route as AppPeriodsPeriodIdRouteImport } from './routes/app/periods_.$periodId'
 
@@ -54,6 +55,11 @@ const AppRolesRoute = AppRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPeriodsRoute = AppPeriodsRouteImport.update({
   id: '/periods',
   path: '/periods',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/periods': typeof AppPeriodsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
   '/app/users': typeof AppUsersRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/periods': typeof AppPeriodsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
   '/app/users': typeof AppUsersRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/periods': typeof AppPeriodsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
   '/app/users': typeof AppUsersRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/periods'
+    | '/app/reports'
     | '/app/roles'
     | '/app/scheduling'
     | '/app/users'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/app/periods'
+    | '/app/reports'
     | '/app/roles'
     | '/app/scheduling'
     | '/app/users'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/periods'
+    | '/app/reports'
     | '/app/roles'
     | '/app/scheduling'
     | '/app/users'
@@ -190,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRolesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/periods': {
       id: '/app/periods'
       path: '/periods'
@@ -209,6 +228,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppPeriodsRoute: typeof AppPeriodsRoute
+  AppReportsRoute: typeof AppReportsRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSchedulingRoute: typeof AppSchedulingRoute
   AppUsersRoute: typeof AppUsersRoute
@@ -218,6 +238,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppPeriodsRoute: AppPeriodsRoute,
+  AppReportsRoute: AppReportsRoute,
   AppRolesRoute: AppRolesRoute,
   AppSchedulingRoute: AppSchedulingRoute,
   AppUsersRoute: AppUsersRoute,
