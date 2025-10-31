@@ -65,6 +65,8 @@ export function searchLdapRaw(
 				);
 			}
 		});
+
+		ldapProcess.on("error", (err) => reject(err));
 	});
 }
 

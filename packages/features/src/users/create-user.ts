@@ -28,7 +28,10 @@ export async function createUser(username: string) {
 			.returning();
 
 		if (!createUserResponse[0]) {
-			console.error("Database insert did not return a user object for username:", username);
+			console.error(
+				"Database insert did not return a user object for username:",
+				username,
+			);
 			throw new TRPCError({
 				code: "INTERNAL_SERVER_ERROR",
 				message: "Failed to create user",
