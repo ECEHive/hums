@@ -8,8 +8,7 @@ import { fetchUserInfo } from "./fetch-user-info";
  */
 export async function updateSystemUsers() {
 	// Parse system users list, trim whitespace and map to usernames
-	const systemUsers = env.SYSTEM_USERS
-		.split(",")
+	const systemUsers = env.SYSTEM_USERS.split(",")
 		.map((email) => {
 			const trimmed = email.trim();
 			// Handle both email and username formats
