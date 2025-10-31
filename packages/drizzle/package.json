@@ -4,7 +4,8 @@
 	"main": "./src/index.ts",
 	"scripts": {
 		"push": "drizzle-kit push",
-		"migrate": "drizzle-kit migrate"
+		"migrate": "drizzle-kit migrate",
+		"reset": "drizzle-kit push --force --config drizzle-reset.config.ts && drizzle-kit push"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
