@@ -1,0 +1,9 @@
+{
+	"name": "@ecehive/ldap",
+	"type": "module",
+	"main": "./src/index.ts",
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"@types/node": "^24.5.2"
+	}
+}
