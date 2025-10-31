@@ -8,11 +8,14 @@ import { fetchUserInfo } from "./fetch-user-info";
  */
 export async function updateSystemUsers() {
 	// Parse system users list, trim whitespace and map to usernames
-	const systemUsers = env.SYSTEM_USERS.split(",").map((email) => {
-		const trimmed = email.trim();
-		// Handle both email and username formats
-		return trimmed.includes("@") ? trimmed.split("@")[0] : trimmed;
-	});
+	const systemUsers = env.SYSTEM_USERS
+		.split(",")
+		.map((email) => {
+			const trimmed = email.trim();
+			// Handle both email and username formats
+			return trimmed.includes("@") ? trimmed.split("@")[0] : trimmed;
+		})
+		.filter(Boolean);
 
 	// Add or update system users in the database
 	for (const username of systemUsers) {
