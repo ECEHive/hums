@@ -5,7 +5,7 @@
 	"scripts": {
 		"push": "drizzle-kit push",
 		"migrate": "drizzle-kit migrate",
-		"reset": "drizzle-kit push --force --config drizzle-reset.config.ts && drizzle-kit push"
+		"reset": "tsx ./scripts/clear.ts && drizzle-kit migrate"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
@@ -19,6 +19,7 @@
 		"@types/pg": "^8.15.5",
 		"drizzle-kit": "^0.31.4",
 		"ts-node": "^10.9.2",
+		"tsx": "^4.20.5",
 		"typescript": "^5.9.2"
 	}
 }
