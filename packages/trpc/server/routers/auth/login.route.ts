@@ -1,7 +1,6 @@
 import { generateToken, validateTicket } from "@ecehive/auth";
-import { db, users } from "@ecehive/drizzle";
+import { findOrCreateUser } from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 
 export const ZLoginSchema = z.object({
@@ -27,31 +26,7 @@ export async function loginHandler(options: TLoginOptions) {
 		});
 	}
 
-	// Find or create the user
-	const findUserResponse = await db
-		.select()
-		.from(users)
-		.where(eq(users.username, username));
-	let user = findUserResponse[0];
-
-	if (!user) {
-		const createUserResponse = await db
-			.insert(users)
-			.values({
-				name: username,
-				username: username,
-				email: `${username}@gatech.edu`,
-			})
-			.returning();
-		user = createUserResponse[0];
-
-		if (!user) {
-			throw new TRPCError({
-				code: "INTERNAL_SERVER_ERROR",
-				message: "Failed to create user",
-			});
-		}
-	}
+	const user = await findOrCreateUser(username);
 
 	const token = await generateToken(user.id);
 
