@@ -8,7 +8,7 @@ export async function findUser(uid: string) {
 			.select()
 			.from(users)
 			.where(eq(users.username, uid));
-		return findUserResponse[0];
+		return findUserResponse[0] ?? null;
 	} catch {
 		throw new TRPCError({
 			code: "INTERNAL_SERVER_ERROR",
