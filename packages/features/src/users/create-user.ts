@@ -1,7 +1,6 @@
 import { db, users } from "@ecehive/drizzle";
-import { env } from "@ecehive/env";
-import { searchLdap } from "@ecehive/ldap";
 import { TRPCError } from "@trpc/server";
+import { fetchUserInfo } from "./fetch-user-info";
 
 export async function createUser(username: string) {
 	try {
@@ -11,24 +10,9 @@ export async function createUser(username: string) {
 
 		// Attempt to fetch user information from LDAP
 		try {
-			const ldapResponse = await searchLdap(
-				env.LDAP_HOST,
-				env.LDAP_BASE_DN,
-				`(uid=${username})`,
-			);
-			const mainLdapEntry = ldapResponse.entries[0];
-			if (mainLdapEntry) {
-				// Use displayName if available
-				name = mainLdapEntry.displayName?.toString() ?? name;
-
-				// But, prefer givenName + sn if available
-				if (mainLdapEntry.givenName && mainLdapEntry.sn) {
-					name =
-						`${mainLdapEntry.givenName.toString() ?? ""} ${mainLdapEntry.sn.toString() ?? ""}`.trim();
-				}
-
-				email = mainLdapEntry.mail?.toString() ?? email;
-			}
+			const userInfo = await fetchUserInfo(username);
+			name = userInfo.name;
+			email = userInfo.email;
 		} catch (error) {
 			// If LDAP fetch fails, proceed with defaults
 			console.error("LDAP fetch failed:", error);
