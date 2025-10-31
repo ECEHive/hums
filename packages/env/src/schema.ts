@@ -17,11 +17,8 @@ export const ZEnvSchema = z.object({
 	AUTH_CAS_SERVER: z.url(),
 	SYSTEM_USERS: z
 		.string()
-		.regex(
-			/^(\s*|\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b(,\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b)*)$/,
-		)
 		.default("")
-		.describe("Comma-separated list of email addresses"),
+		.describe("Comma-separated list of usernames"),
 	LDAP_HOST: z.string().default("whitepages.gatech.edu"),
 	LDAP_BASE_DN: z.string().default("dc=whitepages,dc=gatech,dc=edu"),
 });
