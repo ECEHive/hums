@@ -20,6 +20,8 @@ export const users = pgTable("users", {
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
 
+	cardNumber: text("card_number").unique(),
+
 	isSystemUser: boolean("is_system_user").notNull().default(false),
 
 	createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -358,6 +360,37 @@ export const shiftAttendances = pgTable("shift_attendances", {
 
 	timeIn: timestamp("time_in"),
 	timeOut: timestamp("time_out"),
+
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * Sessions represent a block of time that the user was physically logged in to the space.
+ * This is used for tracking attendance and usage statistics.
+ * Sessions are created and ended when the user taps their card on a kiosk.
+ */
+export const sessions = pgTable("sessions", {
+	id: serial("id").primaryKey(),
+
+	userId: integer("user_id")
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
+
+	startedAt: timestamp("started_at").notNull().defaultNow(),
+	endedAt: timestamp("ended_at"),
+});
+
+/**
+ * Kiosks represent physical kiosk devices that can be used for tap-in/tap-out.
+ * Each kiosk is identified by its IP address.
+ */
+export const kiosks = pgTable("kiosks", {
+	id: serial("id").primaryKey(),
+
+	name: text("name").notNull(),
+	ipAddress: text("ip_address").notNull().unique(),
+	isActive: boolean("is_active").notNull().default(true),
 
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),

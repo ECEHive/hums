@@ -55,3 +55,6 @@ export type InsertPermission = InferInsertModel<typeof schema.permissions>;
 
 export type SelectRole = InferSelectModel<typeof schema.roles>;
 export type InsertRole = InferInsertModel<typeof schema.roles>;
+
+export type SelectKiosk = InferSelectModel<typeof schema.kiosks>;
+export type InsertKiosk = InferInsertModel<typeof schema.kiosks>;

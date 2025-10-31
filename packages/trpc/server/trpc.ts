@@ -1,5 +1,6 @@
 import {
 	db,
+	kiosks,
 	permissions,
 	rolePermissions,
 	roles,
@@ -102,3 +103,41 @@ export type TPermissionProtectedProcedureContext =
 	inferProcedureBuilderResolverOptions<
 		ReturnType<typeof permissionProtectedProcedure>
 	>["ctx"];
+
+/**
+ * A procedure that requires the request to come from a registered kiosk IP address.
+ */
+export const kioskProtectedProcedure = t.procedure.use(async (opts) => {
+	// Get the client IP address from the request
+	const clientIp =
+		opts.ctx.req.headers["x-forwarded-for"] ||
+		opts.ctx.req.headers["x-real-ip"] ||
+		opts.ctx.req.socket.remoteAddress ||
+		"unknown";
+
+	const ip = Array.isArray(clientIp) ? clientIp[0] : clientIp;
+
+	// Check if this IP is registered as an active kiosk
+	const [kiosk] = await db
+		.select()
+		.from(kiosks)
+		.where(and(eq(kiosks.ipAddress, ip), eq(kiosks.isActive, true)))
+		.limit(1);
+
+	if (!kiosk) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: `Access denied. IP address ${ip} is not registered as a kiosk.`,
+		});
+	}
+
+	return opts.next({
+		ctx: {
+			...opts.ctx,
+			kiosk,
+		},
+	});
+});
+
+export type TKioskProtectedProcedureContext =
+	inferProcedureBuilderResolverOptions<typeof kioskProtectedProcedure>["ctx"];
