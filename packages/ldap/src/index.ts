@@ -13,8 +13,15 @@ export async function searchLdap(
 	baseDN: string,
 	filter: string,
 	attributes: string[] = [],
+	timeoutMs: number = 5000,
 ): Promise<ParsedLdapResponse> {
-	const ldapResponse = await searchLdapRaw(host, baseDN, filter, attributes);
+	const ldapResponse = await searchLdapRaw(
+		host,
+		baseDN,
+		filter,
+		attributes,
+		timeoutMs,
+	);
 	return parseLdapResponse(ldapResponse);
 }
 
@@ -31,6 +38,7 @@ export function searchLdapRaw(
 	baseDN: string,
 	filter: string,
 	attributes: string[] = [],
+	timeoutMs: number = 30000,
 ): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const args = [
@@ -47,6 +55,31 @@ export function searchLdapRaw(
 
 		let output = "";
 		let errorOutput = "";
+		let settled = false;
+
+		const cleanup = () => {
+			settled = true;
+			try {
+				ldapProcess.stdout.removeAllListeners("data");
+				ldapProcess.stderr.removeAllListeners("data");
+				ldapProcess.removeAllListeners("close");
+				ldapProcess.removeAllListeners("error");
+			} catch {
+				// ignore
+			}
+		};
+
+		const timer = setTimeout(() => {
+			if (settled) return;
+			// kill the child process and reject with timeout
+			try {
+				ldapProcess.kill();
+			} catch {
+				// ignore
+			}
+			cleanup();
+			reject(new Error(`ldapsearch timeout after ${timeoutMs}ms`));
+		}, timeoutMs);
 
 		ldapProcess.stdout.on("data", (data) => {
 			output += data.toString();
@@ -57,6 +90,9 @@ export function searchLdapRaw(
 		});
 
 		ldapProcess.on("close", (code) => {
+			if (settled) return;
+			clearTimeout(timer);
+			cleanup();
 			if (code === 0) {
 				resolve(output);
 			} else {
@@ -66,7 +102,12 @@ export function searchLdapRaw(
 			}
 		});
 
-		ldapProcess.on("error", (err) => reject(err));
+		ldapProcess.on("error", (err) => {
+			if (settled) return;
+			clearTimeout(timer);
+			cleanup();
+			reject(err);
+		});
 	});
 }
 
