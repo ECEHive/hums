@@ -15,6 +15,13 @@
 			"when": 1761244579289,
 			"tag": "0001_fantastic_vanisher",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1761963712072,
+			"tag": "0002_busy_emma_frost",
+			"breakpoints": true
 		}
 	]
 }

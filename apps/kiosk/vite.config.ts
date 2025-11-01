@@ -1,7 +1,6 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
-import router from "@tanstack/router-plugin/vite";
 import basicSSL from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
@@ -13,7 +12,7 @@ export default defineConfig(({ mode }) => {
 	return {
 		publicDir: "public",
 		server: {
-			port: 44831,
+			port: 44832,
 			host: "0.0.0.0",
 			https: {},
 			proxy: {
@@ -28,14 +27,10 @@ export default defineConfig(({ mode }) => {
 		plugins: [
 			devtools({
 				eventBusConfig: {
-					port: 42069,
+					port: 42067,
 				},
 			}),
 			tsConfigPaths(),
-			router({
-				target: "react",
-				autoCodeSplitting: true,
-			}),
 			react(),
 			tailwindcss(),
 			basicSSL(),

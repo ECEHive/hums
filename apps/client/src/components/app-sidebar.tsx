@@ -5,6 +5,7 @@ import {
 	ChevronUpIcon,
 	DoorOpenIcon,
 	HomeIcon,
+	LaptopMinimalCheckIcon,
 	MoonIcon,
 	NotebookTextIcon,
 	ShieldIcon,
@@ -37,8 +38,12 @@ import {
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
+// import { permissions as reportsPagePermissions } from "@/routes/app/reports"; --- To be implemented
+import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
+import { permissions as periodsPagePermissions } from "@/routes/app/periods";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
+import { permissions as usersPagePermissions } from "@/routes/app/users";
 import { Logo } from "./logo";
 
 // Sidebar menu items, grouped by section
@@ -66,25 +71,31 @@ export const items = [
 				title: "Roles",
 				url: "/app/roles",
 				icon: ShieldIcon,
-				permissions: rolesPagePermissions, // Example, will be changed based on real permissions
+				permissions: rolesPagePermissions,
 			},
 			{
 				title: "Users",
-				url: "/app/users", // To be implemented
+				url: "/app/users",
 				icon: UserIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				permissions: usersPagePermissions,
 			},
 			{
 				title: "Periods",
-				url: "/app/periods", // To be implemented
+				url: "/app/periods",
 				icon: CalendarIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				permissions: periodsPagePermissions,
 			},
 			{
 				title: "Reports",
 				url: "/app/reports", // To be implemented
 				icon: NotebookTextIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				permissions: [], //reportsPagePermissions,
+			},
+			{
+				title: "Kiosks",
+				url: "/app/kiosks",
+				icon: LaptopMinimalCheckIcon,
+				permissions: kiosksPagePermissions,
 			},
 		],
 	},
