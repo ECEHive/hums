@@ -20,40 +20,42 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 	const user = await findUserByCard(cardNumber);
 
-	// Get the most recent session for the user
-	const [mostRecentSession] = await db
-		.select()
-		.from(sessions)
-		.where(eq(sessions.userId, user.id))
-		.orderBy(desc(sessions.startedAt))
-		.limit(1);
+	return await db.transaction(async (tx) => {
+		// Get the most recent session for the user
+		const [mostRecentSession] = await tx
+			.select()
+			.from(sessions)
+			.where(eq(sessions.userId, user.id))
+			.orderBy(desc(sessions.startedAt))
+			.limit(1);
 
-	// If there is no session, or the most recent session has an endedAt, create a new session (tap in)
-	if (!mostRecentSession || mostRecentSession.endedAt) {
-		const session = await db
-			.insert(sessions)
-			.values({
-				userId: user.id,
-				startedAt: new Date(),
-			})
-			.returning();
+		// If there is no session, or the most recent session has an endedAt, create a new session (tap in)
+		if (!mostRecentSession || mostRecentSession.endedAt) {
+			const session = await tx
+				.insert(sessions)
+				.values({
+					userId: user.id,
+					startedAt: new Date(),
+				})
+				.returning();
 
-		return {
-			status: "tapped_in",
-			user,
-			session: session[0],
-		};
-	} else {
-		// Otherwise, update the most recent session to set endedAt (tap out)
-		const session = await db
-			.update(sessions)
-			.set({ endedAt: new Date() })
-			.where(eq(sessions.id, mostRecentSession.id))
-			.returning();
-		return {
-			status: "tapped_out",
-			user,
-			session: session[0],
-		};
-	}
+			return {
+				status: "tapped_in",
+				user,
+				session: session[0],
+			};
+		} else {
+			// Otherwise, update the most recent session to set endedAt (tap out)
+			const session = await tx
+				.update(sessions)
+				.set({ endedAt: new Date() })
+				.where(eq(sessions.id, mostRecentSession.id))
+				.returning();
+			return {
+				status: "tapped_out",
+				user,
+				session: session[0],
+			};
+		}
+	});
 }

@@ -370,16 +370,23 @@ export const shiftAttendances = pgTable("shift_attendances", {
  * This is used for tracking attendance and usage statistics.
  * Sessions are created and ended when the user taps their card on a kiosk.
  */
-export const sessions = pgTable("sessions", {
-	id: serial("id").primaryKey(),
+export const sessions = pgTable(
+	"sessions",
+	{
+		id: serial("id").primaryKey(),
 
-	userId: integer("user_id")
-		.notNull()
-		.references(() => users.id, { onDelete: "cascade" }),
+		userId: integer("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
 
-	startedAt: timestamp("started_at").notNull().defaultNow(),
-	endedAt: timestamp("ended_at"),
-});
+		startedAt: timestamp("started_at").notNull().defaultNow(),
+		endedAt: timestamp("ended_at"),
+	},
+	(t) => [
+		// Ensure a user can only have once active session at a time
+		unique().on(t.userId, t.endedAt),
+	],
+);
 
 /**
  * Kiosks represent physical kiosk devices that can be used for tap-in/tap-out.

@@ -12,7 +12,8 @@ CREATE TABLE "sessions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
 	"started_at" timestamp DEFAULT now() NOT NULL,
-	"ended_at" timestamp
+	"ended_at" timestamp,
+	CONSTRAINT "sessions_user_id_ended_at_unique" UNIQUE("user_id","ended_at")
 );
 --> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "card_number" text;--> statement-breakpoint

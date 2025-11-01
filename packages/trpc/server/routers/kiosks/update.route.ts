@@ -7,7 +7,7 @@ import type { TPermissionProtectedProcedureContext } from "../../trpc";
 export const ZUpdateSchema = z.object({
 	id: z.number().min(1),
 	name: z.string().min(1).max(100),
-	ipAddress: z.string().min(7).max(45), // IPv4 or IPv6
+	ipAddress: z.union([z.ipv4(), z.ipv6()]),
 	isActive: z.boolean(),
 });
 
