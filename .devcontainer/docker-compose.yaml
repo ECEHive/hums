@@ -36,12 +36,6 @@ services:
     environment:
       TZ: UTC
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "https://localhost:4483/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
 volumes:
   hums-dev-postgres-data:
