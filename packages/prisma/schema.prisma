@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// Enums
+//
+
+enum ShiftTypeRoleRequirement {
+  disabled
+  all
+  any
+}
+
+enum ShiftOccurrenceAssignmentStatus {
+  assigned
+  dropped
+  picked_up
+}
+
+enum ShiftAttendanceStatus {
+  present
+  absent
+  arrived_late
+  left_early
+}
+
+//
+// Models
+//
+
+model User {
+  id Int @id @default(autoincrement())
+
+  // fields
+  username     String  @unique
+  name         String
+  email        String  @unique
+  cardNumber   String? @unique
+  isSystemUser Boolean @default(false)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  roles            Role[]
+  shiftSchedules   ShiftSchedule[]
+  shiftOccurrences ShiftOccurrence[]
+
+  // One-to-many
+  sessions    Session[]
+  attendances ShiftAttendance[]
+}
+
+model Role {
+  id Int @id @default(autoincrement())
+
+  // fields
+  name String @unique
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  permissions Permission[]
+  users       User[]
+  shiftTypes  ShiftType[]
+}
+
+model Permission {
+  id Int @id @default(autoincrement())
+
+  // fields
+  name String @unique
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  roles Role[]
+}
+
+// RolePermission and UserRole converted to implicit many-to-many relations.
+
+model Period {
+  id Int @id @default(autoincrement())
+
+  // fields
+  name  String
+  start DateTime
+  end   DateTime
+
+  visibleStart DateTime?
+  visibleEnd   DateTime?
+
+  scheduleSignupStart DateTime?
+  scheduleSignupEnd   DateTime?
+
+  scheduleModifyStart DateTime?
+  scheduleModifyEnd   DateTime?
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  periodExceptions PeriodException[]
+  shiftTypes       ShiftType[]
+}
+
+model PeriodException {
+  id Int @id @default(autoincrement())
+
+  // fields
+  periodId Int
+  name     String
+  start    DateTime
+  end      DateTime
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  period Period @relation(fields: [periodId], references: [id], onDelete: Cascade)
+}
+
+model ShiftType {
+  id Int @id @default(autoincrement())
+
+  // fields
+  periodId    Int
+  name        String
+  location    String
+  description String?
+  color       String?
+  icon        String?
+
+  isBalancedAcrossOverlap Boolean @default(false)
+  isBalancedAcrossDay     Boolean @default(false)
+  isBalancedAcrossPeriod  Boolean @default(false)
+  canSelfAssign           Boolean @default(true)
+
+  doRequireRoles ShiftTypeRoleRequirement @default(disabled)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  period         Period          @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  roles          Role[]
+  shiftSchedules ShiftSchedule[]
+}
+
+model ShiftSchedule {
+  id Int @id @default(autoincrement())
+
+  // fields
+  shiftTypeId Int
+  slots       Int    @default(1)
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  shiftType        ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
+  shiftOccurrences ShiftOccurrence[]
+  users            User[]
+
+  // constraints
+  @@unique([shiftTypeId, dayOfWeek, startTime])
+}
+
+model ShiftOccurrence {
+  id Int @id @default(autoincrement())
+
+  // fields
+  shiftScheduleId Int
+  timestamp       DateTime
+  slot            Int      @default(0)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  shiftSchedule ShiftSchedule     @relation(fields: [shiftScheduleId], references: [id], onDelete: Cascade)
+  users         User[]
+  attendances   ShiftAttendance[]
+
+  // constraints
+  @@unique([shiftScheduleId, timestamp, slot])
+}
+
+model ShiftAttendance {
+  id Int @id @default(autoincrement())
+
+  // fields
+  shiftOccurrenceId Int
+  userId            Int
+  status            ShiftAttendanceStatus @default(absent)
+  timeIn            DateTime?
+  timeOut           DateTime?
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  shiftOccurrence ShiftOccurrence @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id Int @id @default(autoincrement())
+
+  // fields
+  userId    Int
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  // relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // constraints
+  @@unique([userId, endedAt])
+}
+
+model Kiosk {
+  id Int @id @default(autoincrement())
+
+  // fields
+  name      String
+  ipAddress String  @unique
+  isActive  Boolean @default(true)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}

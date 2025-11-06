@@ -1,5 +1,4 @@
-import { db, sessions } from "@ecehive/drizzle";
-import { and, countDistinct, desc, eq, type SQL } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -17,31 +16,24 @@ export type TListOptions = {
 };
 
 export async function listHandler(options: TListOptions) {
-	const { filterUserId, limit, offset = 0 } = options.input;
+	const { filterUserId, limit = 50, offset = 0 } = options.input;
 
-	const filters = [] as (SQL | undefined)[];
+	const where: Prisma.SessionWhereInput = filterUserId
+		? { userId: filterUserId }
+		: {};
 
-	if (filterUserId) {
-		filters.push(eq(sessions.userId, filterUserId));
-	}
-
-	const sessionsResult = await db
-		.select()
-		.from(sessions)
-		.where(and(...filters))
-		.limit(limit ?? 50)
-		.offset(offset)
-		.orderBy(desc(sessions.startedAt));
-
-	const [total] = await db
-		.select({
-			count: countDistinct(sessions.id),
-		})
-		.from(sessions)
-		.where(and(...filters));
+	const [sessions, total] = await Promise.all([
+		prisma.session.findMany({
+			where,
+			orderBy: { startedAt: "desc" },
+			skip: offset,
+			take: limit,
+		}),
+		prisma.session.count({ where }),
+	]);
 
 	return {
-		sessions: sessionsResult,
-		total: total?.count ?? 0,
+		sessions,
+		total,
 	};
 }

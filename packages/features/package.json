@@ -6,12 +6,11 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"@ecehive/drizzle": "workspace:*",
 		"@ecehive/env": "workspace:*",
 		"@ecehive/ldap": "workspace:*",
-		"@trpc/server": "^11.6.0",
-		"dayjs": "^1.11.18",
-		"drizzle-orm": "^0.44.5"
+		"@ecehive/prisma": "workspace:*",
+		"@trpc/server": "11.5.1",
+		"dayjs": "^1.11.18"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",

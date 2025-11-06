@@ -1,6 +1,5 @@
-import { db, periods, shiftTypes } from "@ecehive/drizzle";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -20,6 +19,7 @@ export const ZCreateSchema = z.object({
 	isBalancedAcrossPeriod: z.boolean().optional(),
 	canSelfAssign: z.boolean().optional(),
 	doRequireRoles: z.enum(["disabled", "all", "any"]).optional(),
+	roleIds: z.array(z.number().min(1)).optional(),
 });
 
 export type TCreateSchema = z.infer<typeof ZCreateSchema>;
@@ -42,13 +42,13 @@ export async function createHandler(options: TCreateOptions) {
 		isBalancedAcrossPeriod,
 		canSelfAssign,
 		doRequireRoles,
+		roleIds,
 	} = options.input;
 
-	const [period] = await db
-		.select({ id: periods.id })
-		.from(periods)
-		.where(eq(periods.id, periodId))
-		.limit(1);
+	const period = await prisma.period.findUnique({
+		where: { id: periodId },
+		select: { id: true },
+	});
 
 	if (!period) {
 		throw new TRPCError({
@@ -57,21 +57,33 @@ export async function createHandler(options: TCreateOptions) {
 		});
 	}
 
-	const values: typeof shiftTypes.$inferInsert = {
-		periodId,
-		name,
-		location,
-		description: description ?? null,
-		color: color ?? null,
-		icon: icon ?? null,
-		isBalancedAcrossOverlap: isBalancedAcrossOverlap ?? false,
-		isBalancedAcrossDay: isBalancedAcrossDay ?? false,
-		isBalancedAcrossPeriod: isBalancedAcrossPeriod ?? false,
-		canSelfAssign: canSelfAssign ?? true,
-		doRequireRoles: doRequireRoles ?? "disabled",
-	};
-
-	const [inserted] = await db.insert(shiftTypes).values(values).returning();
+	const inserted = await prisma.shiftType.create({
+		data: {
+			periodId,
+			name,
+			location,
+			description: description ?? null,
+			color: color ?? null,
+			icon: icon ?? null,
+			isBalancedAcrossOverlap: isBalancedAcrossOverlap ?? false,
+			isBalancedAcrossDay: isBalancedAcrossDay ?? false,
+			isBalancedAcrossPeriod: isBalancedAcrossPeriod ?? false,
+			canSelfAssign: canSelfAssign ?? true,
+			doRequireRoles: doRequireRoles ?? "disabled",
+			...(roleIds && roleIds.length > 0
+				? {
+						roles: {
+							connect: roleIds.map((id) => ({ id })),
+						},
+					}
+				: {}),
+		},
+		include: {
+			roles: {
+				orderBy: { name: "asc" },
+			},
+		},
+	});
 
 	return { shiftType: inserted };
 }

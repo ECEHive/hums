@@ -24,10 +24,7 @@ type User = {
 export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 	if (user === null) return [];
 
-	const canManageRoles = checkPermissions(user, [
-		"userRoles.create",
-		"userRoles.delete",
-	]);
+	const canManageRoles = checkPermissions(user, ["users.update"]);
 
 	return [
 		{

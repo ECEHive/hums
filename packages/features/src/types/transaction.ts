@@ -1,3 +1,6 @@
-import type { db } from "@ecehive/drizzle";
+import type { prisma } from "@ecehive/prisma";
 
-export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Transaction = Omit<
+	typeof prisma,
+	"$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;

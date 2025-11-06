@@ -1,5 +1,4 @@
-import { db, periodExceptions } from "@ecehive/drizzle";
-import { and, count, eq, ilike, type SQL } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -20,32 +19,23 @@ export type TListOptions = {
 export async function listHandler(options: TListOptions) {
 	const { limit = 10, offset = 0, periodId, search } = options.input;
 
-	const filters = [eq(periodExceptions.periodId, periodId)] as (
-		| SQL
-		| undefined
-	)[];
+	const where: Prisma.PeriodExceptionWhereInput = {
+		periodId,
+	};
 
 	if (search) {
-		const escapeLike = (s: string) =>
-			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
-		const pattern = `%${escapeLike(search)}%`;
-		filters.push(ilike(periodExceptions.name, pattern));
+		where.name = { contains: search, mode: "insensitive" };
 	}
 
-	const whereClause = and(...filters);
+	const [result, total] = await Promise.all([
+		prisma.periodException.findMany({
+			where,
+			orderBy: { start: "asc" },
+			skip: offset,
+			take: limit,
+		}),
+		prisma.periodException.count({ where }),
+	]);
 
-	const result = await db
-		.select()
-		.from(periodExceptions)
-		.where(whereClause)
-		.limit(limit)
-		.offset(offset)
-		.orderBy(periodExceptions.start);
-
-	const [total] = await db
-		.select({ count: count(periodExceptions.id) })
-		.from(periodExceptions)
-		.where(whereClause);
-
-	return { periodExceptions: result, total: total?.count ?? 0 };
+	return { periodExceptions: result, total };
 }

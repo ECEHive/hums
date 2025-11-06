@@ -1,5 +1,5 @@
-import { db, periods } from "@ecehive/drizzle";
 import { generatePeriodShiftOccurrences } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -85,20 +85,20 @@ export async function createHandler(options: TCreateOptions) {
 		scheduleModifyEnd,
 	} = options.input;
 
-	const values: typeof periods.$inferInsert = {
-		name,
-		start,
-		end,
-		visibleStart: visibleStart ?? null,
-		visibleEnd: visibleEnd ?? null,
-		scheduleSignupStart: scheduleSignupStart ?? null,
-		scheduleSignupEnd: scheduleSignupEnd ?? null,
-		scheduleModifyStart: scheduleModifyStart ?? null,
-		scheduleModifyEnd: scheduleModifyEnd ?? null,
-	};
-
-	return await db.transaction(async (tx) => {
-		const [inserted] = await tx.insert(periods).values(values).returning();
+	return await prisma.$transaction(async (tx) => {
+		const inserted = await tx.period.create({
+			data: {
+				name,
+				start,
+				end,
+				visibleStart: visibleStart ?? null,
+				visibleEnd: visibleEnd ?? null,
+				scheduleSignupStart: scheduleSignupStart ?? null,
+				scheduleSignupEnd: scheduleSignupEnd ?? null,
+				scheduleModifyStart: scheduleModifyStart ?? null,
+				scheduleModifyEnd: scheduleModifyEnd ?? null,
+			},
+		});
 
 		if (!inserted) {
 			return { period: undefined };

@@ -1,5 +1,4 @@
-import { db, roles } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,7 +13,14 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	const [role] = await db.select().from(roles).where(eq(roles.id, id));
+	const role = await prisma.role.findUnique({
+		where: { id },
+		include: {
+			permissions: {
+				orderBy: { name: "asc" },
+			},
+		},
+	});
 
 	return { role };
 }

@@ -1,9 +1,4 @@
-import {
-	db,
-	shiftOccurrenceAssignments,
-	shiftOccurrences,
-} from "@ecehive/drizzle";
-import { and, count, eq, gte, lte, type SQL, sql } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -31,47 +26,42 @@ export async function listHandler(options: TListOptions) {
 		endDate,
 	} = options.input;
 
-	const filters = [] as (SQL | undefined)[];
+	const where: Prisma.ShiftOccurrenceWhereInput = {};
 
 	if (shiftScheduleId) {
-		filters.push(eq(shiftOccurrences.shiftScheduleId, shiftScheduleId));
+		where.shiftScheduleId = shiftScheduleId;
 	}
 
-	if (startDate) {
-		filters.push(gte(shiftOccurrences.timestamp, startDate));
+	if (startDate || endDate) {
+		where.timestamp = {};
+		if (startDate) {
+			where.timestamp.gte = startDate;
+		}
+		if (endDate) {
+			where.timestamp.lte = endDate;
+		}
 	}
 
-	if (endDate) {
-		filters.push(lte(shiftOccurrences.timestamp, endDate));
-	}
+	const [result, total] = await Promise.all([
+		prisma.shiftOccurrence.findMany({
+			where,
+			include: {
+				_count: {
+					select: { users: true },
+				},
+			},
+			orderBy: { timestamp: "asc" },
+			skip: offset,
+			take: limit,
+		}),
+		prisma.shiftOccurrence.count({ where }),
+	]);
 
-	const whereClause = and(...filters);
-
-	const rows = await db
-		.select({
-			occurrence: shiftOccurrences,
-			assignedCount: sql<number>`cast(count(distinct ${shiftOccurrenceAssignments.id}) as int)`,
-		})
-		.from(shiftOccurrences)
-		.leftJoin(
-			shiftOccurrenceAssignments,
-			eq(shiftOccurrences.id, shiftOccurrenceAssignments.shiftOccurrenceId),
-		)
-		.where(whereClause)
-		.groupBy(shiftOccurrences.id)
-		.limit(limit)
-		.offset(offset)
-		.orderBy(shiftOccurrences.timestamp);
-
-	const occurrencesWithCounts = rows.map((row) => ({
-		...row.occurrence,
-		assignedUserCount: row.assignedCount,
+	const occurrencesWithCounts = result.map((occurrence) => ({
+		...occurrence,
+		assignedUserCount: occurrence._count.users,
+		_count: undefined,
 	}));
 
-	const [total] = await db
-		.select({ count: count(shiftOccurrences.id) })
-		.from(shiftOccurrences)
-		.where(whereClause);
-
-	return { shiftOccurrences: occurrencesWithCounts, total: total?.count ?? 0 };
+	return { shiftOccurrences: occurrencesWithCounts, total };
 }

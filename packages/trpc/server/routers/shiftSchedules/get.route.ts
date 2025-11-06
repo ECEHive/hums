@@ -1,11 +1,5 @@
-import {
-	db,
-	shiftOccurrences,
-	shiftScheduleAssignments,
-	shiftSchedules,
-	users,
-} from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -20,31 +14,29 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	const [shiftSchedule] = await db
-		.select()
-		.from(shiftSchedules)
-		.where(eq(shiftSchedules.id, id));
+	const shiftSchedule = await prisma.shiftSchedule.findUnique({
+		where: { id },
+		include: {
+			shiftOccurrences: {
+				orderBy: { timestamp: "asc" },
+			},
+			users: true,
+		},
+	});
 
 	if (!shiftSchedule) {
 		return { shiftSchedule: undefined, occurrences: [], assignedUsers: [] };
 	}
 
-	const occurrences = await db
-		.select()
-		.from(shiftOccurrences)
-		.where(eq(shiftOccurrences.shiftScheduleId, id))
-		.orderBy(shiftOccurrences.timestamp);
+	const {
+		shiftOccurrences: occurrences,
+		users: assignedUsers,
+		...schedule
+	} = shiftSchedule;
 
-	// Get assigned users
-	const assignments = await db
-		.select({
-			user: users,
-		})
-		.from(shiftScheduleAssignments)
-		.innerJoin(users, eq(shiftScheduleAssignments.userId, users.id))
-		.where(eq(shiftScheduleAssignments.shiftScheduleId, id));
-
-	const assignedUsers = assignments.map((a) => a.user);
-
-	return { shiftSchedule, occurrences, assignedUsers };
+	return {
+		shiftSchedule: schedule,
+		occurrences,
+		assignedUsers,
+	};
 }

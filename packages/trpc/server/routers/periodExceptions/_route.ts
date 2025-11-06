@@ -6,19 +6,19 @@ import { listHandler, ZListSchema } from "./list.route";
 import { updateHandler, ZUpdateSchema } from "./update.route";
 
 export const periodExceptionsRouter = router({
-	list: permissionProtectedProcedure("periodExceptions.list")
+	list: permissionProtectedProcedure("period_exceptions.list")
 		.input(ZListSchema)
 		.query(listHandler),
-	get: permissionProtectedProcedure("periodExceptions.get")
+	get: permissionProtectedProcedure("period_exceptions.get")
 		.input(ZGetSchema)
 		.query(getHandler),
-	create: permissionProtectedProcedure("periodExceptions.create")
+	create: permissionProtectedProcedure("period_exceptions.create")
 		.input(ZCreateSchema)
 		.mutation(createHandler),
-	update: permissionProtectedProcedure("periodExceptions.update")
+	update: permissionProtectedProcedure("period_exceptions.update")
 		.input(ZUpdateSchema)
 		.mutation(updateHandler),
-	delete: permissionProtectedProcedure("periodExceptions.delete")
+	delete: permissionProtectedProcedure("period_exceptions.delete")
 		.input(ZDeleteSchema)
 		.mutation(deleteHandler),
 });

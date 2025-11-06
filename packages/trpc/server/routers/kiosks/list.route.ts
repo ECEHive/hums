@@ -1,5 +1,4 @@
-import { db, kiosks } from "@ecehive/drizzle";
-import { countDistinct, ilike, or, type SQL } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -17,34 +16,29 @@ export type TListOptions = {
 };
 
 export async function listHandler(options: TListOptions) {
-	const { search, limit, offset = 0 } = options.input;
+	const { search, limit = 100, offset = 0 } = options.input;
 
-	const filters = [] as (SQL | undefined)[];
+	const where: Prisma.KioskWhereInput = search
+		? {
+				OR: [
+					{ name: { contains: search, mode: "insensitive" } },
+					{ ipAddress: { contains: search, mode: "insensitive" } },
+				],
+			}
+		: {};
 
-	if (search) {
-		const escapeLike = (s: string) =>
-			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
-		const pattern = `%${escapeLike(search)}%`;
-		filters.push(
-			or(ilike(kiosks.name, pattern), ilike(kiosks.ipAddress, pattern)),
-		);
-	}
-
-	const [{ count }] = await db
-		.select({ count: countDistinct(kiosks.id) })
-		.from(kiosks)
-		.where(filters.length > 0 ? or(...filters) : undefined);
-
-	const kiosksList = await db
-		.select()
-		.from(kiosks)
-		.where(filters.length > 0 ? or(...filters) : undefined)
-		.limit(limit ?? 100)
-		.offset(offset)
-		.orderBy(kiosks.createdAt);
+	const [kiosks, count] = await Promise.all([
+		prisma.kiosk.findMany({
+			where,
+			orderBy: { createdAt: "asc" },
+			skip: offset,
+			take: limit,
+		}),
+		prisma.kiosk.count({ where }),
+	]);
 
 	return {
-		kiosks: kiosksList,
+		kiosks,
 		count,
 	};
 }

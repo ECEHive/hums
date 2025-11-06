@@ -1,5 +1,4 @@
-import { db, permissions } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,10 +13,9 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	const [permission] = await db
-		.select()
-		.from(permissions)
-		.where(eq(permissions.id, id));
+	const permission = await prisma.permission.findUnique({
+		where: { id },
+	});
 
 	return { permission };
 }

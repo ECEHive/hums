@@ -1,6 +1,5 @@
-import { db, kiosks } from "@ecehive/drizzle";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -21,11 +20,10 @@ export type TUpdateOptions = {
 export async function updateHandler(options: TUpdateOptions) {
 	const { id, name, ipAddress, isActive } = options.input;
 
-	const [updated] = await db
-		.update(kiosks)
-		.set({ name, ipAddress, isActive, updatedAt: new Date() })
-		.where(eq(kiosks.id, id))
-		.returning();
+	const updated = await prisma.kiosk.update({
+		where: { id },
+		data: { name, ipAddress, isActive },
+	});
 
 	if (!updated) {
 		throw new TRPCError({

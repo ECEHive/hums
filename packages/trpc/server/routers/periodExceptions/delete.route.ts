@@ -1,6 +1,6 @@
-import { db, periodExceptions } from "@ecehive/drizzle";
 import { generatePeriodShiftOccurrences } from "@ecehive/features";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -18,13 +18,11 @@ export type TDeleteOptions = {
 export async function deleteHandler(options: TDeleteOptions) {
 	const { id } = options.input;
 
-	return await db.transaction(async (tx) => {
+	return await prisma.$transaction(async (tx) => {
 		// Get the exception to find its period
-		const [existing] = await tx
-			.select()
-			.from(periodExceptions)
-			.where(eq(periodExceptions.id, id))
-			.limit(1);
+		const existing = await tx.periodException.findUnique({
+			where: { id },
+		});
 
 		if (!existing) {
 			return { success: false };
@@ -32,7 +30,9 @@ export async function deleteHandler(options: TDeleteOptions) {
 
 		const periodId = existing.periodId;
 
-		await tx.delete(periodExceptions).where(eq(periodExceptions.id, id));
+		await tx.periodException.delete({
+			where: { id },
+		});
 
 		// Regenerate shift occurrences for the period since exception is removed
 		await generatePeriodShiftOccurrences(tx, periodId);
