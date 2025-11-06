@@ -18,10 +18,6 @@ export async function registerHandler(options: TRegisterOptions) {
 	const { shiftScheduleId } = options.input;
 	const userId = options.ctx.userId;
 
-	if (!userId) {
-		throw new Error("User not authenticated");
-	}
-
 	await prisma.$transaction(async (tx) => {
 		// Connect user to shift schedule
 		await tx.shiftSchedule.update({

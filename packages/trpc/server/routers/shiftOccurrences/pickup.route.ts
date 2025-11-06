@@ -18,10 +18,6 @@ export async function pickupHandler(options: TPickupOptions) {
 	const { shiftOccurrenceId } = options.input;
 	const userId = options.ctx.userId;
 
-	if (!userId) {
-		throw new Error("User not authenticated");
-	}
-
 	// Verify the shift occurrence exists
 	const occurrence = await prisma.shiftOccurrence.findUnique({
 		where: { id: shiftOccurrenceId },

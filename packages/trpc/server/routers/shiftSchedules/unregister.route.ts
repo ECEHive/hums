@@ -18,10 +18,6 @@ export async function unregisterHandler(options: TUnregisterOptions) {
 	const { shiftScheduleId } = options.input;
 	const userId = options.ctx.userId;
 
-	if (!userId) {
-		throw new Error("User not authenticated");
-	}
-
 	await prisma.$transaction(async (tx) => {
 		// Unassign user from all occurrences
 		await unassignUserFromScheduleOccurrences(tx, shiftScheduleId, userId);
