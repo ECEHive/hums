@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: hums-dev-node
     volumes:
       - ..:/home/node/workspace:cached
     depends_on:
@@ -13,14 +14,29 @@ services:
 
   postgres:
     image: postgres:16
+    container_name: hums-dev-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hive
     volumes:
-      - hive-scheduler-postgres-data:/var/lib/postgresql/data
+      - hums-dev-postgres-data:/var/lib/postgresql/data
+  
+  nginx:
+    image: nginx:stable-alpine
+    container_name: hums-dev-nginx
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx:/usr/share/nginx/html:ro
+      - ./nginx/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+    command: ["sh", "/usr/local/bin/entrypoint.sh"]
+    environment:
+      TZ: UTC
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
 
 volumes:
-  hive-scheduler-postgres-data:
-    name: hive-scheduler-postgres-data
+  hums-dev-postgres-data:
+    name: hums-dev-postgres-data

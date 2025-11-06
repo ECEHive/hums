@@ -64,8 +64,10 @@ To start server and client with hot-reload, run the following in the workspace r
 pnpm run -r dev
 ```
 
+You can then access the application at https://localhost:4483/.
+
 Notes:
-- The client may show an HTTPS warning in the browser when using the local dev server. You can accept the warning to continue.
+- You may get an HTTPS warning in the browser when using the local dev server. You can accept/bypass the warning to continue.
 
 ## Contributing
 

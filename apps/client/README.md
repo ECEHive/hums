@@ -16,9 +16,4 @@ pnpm dev
 | - | - | - |
 | `VITE_PUBLIC_SERVER_URL` | `""` | Public URL of the server. |
 | `VITE_CAS_PROXY_URL` | `""` | URL that the user will be redirected to for CAS authentication. | 
-
-### Development Variables
-
-| Variable | Default | Description |
-| - | - | - |
-| `PROXY_PRIVATE_SERVER_URL` | `"http://localhost:8080"` | Internal URL of the server for the proxy to serve. |
+| `VITE_PUBLIC_PATH` | `"/app/"` | Base path for the client application. |

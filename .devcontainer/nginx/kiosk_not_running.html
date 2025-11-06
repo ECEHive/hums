@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kiosk Not Running</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: oklch(44.4% 0.177 26.899);
+        color: #e5e7eb;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+      
+      .container {
+        background: rgb(50, 50, 50);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        padding: 3rem;
+        max-width: 600px;
+        width: 100%;
+      }
+      
+      .status-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1.5rem;
+        background: rgba(251, 191, 36, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+      }
+      
+      h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #f9fafb;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+      
+      .description {
+        font-size: 1.125rem;
+        color: #d1d5db;
+        text-align: center;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+      }
+      
+      .info-box {
+        background: rgba(255, 255, 255, 0.08);
+        border-left: 4px solid oklch(68% 0.19 26.899);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+      }
+      
+      .info-box strong {
+        color: #f9fafb;
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+      
+      .info-box p {
+        color: #d1d5db;
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+      
+      .command-box {
+        background: rgba(0, 0, 0, 0.4);
+        color: #f3f4f6;
+        padding: 1rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.875rem;
+        overflow-x: auto;
+        margin-bottom: 1.5rem;
+      }
+      
+      .command-box code {
+        color: oklch(80% 0.15 26.899);
+      }
+      
+      .steps {
+        margin-bottom: 1.5rem;
+      }
+      
+      .steps ol {
+        list-style: none;
+        counter-reset: step-counter;
+      }
+      
+      .steps li {
+        counter-increment: step-counter;
+        padding-left: 2.5rem;
+        position: relative;
+        margin-bottom: 1rem;
+        color: #d1d5db;
+      }
+      
+      .steps li::before {
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        background: oklch(68% 0.19 26.899);
+        color: white;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+      
+      .footer {
+        text-align: center;
+        color: #9ca3af;
+        font-size: 0.875rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      
+      a {
+        color: oklch(80% 0.15 26.899);
+        text-decoration: none;
+      }
+      
+      a:hover {
+        text-decoration: underline;
+        color: oklch(85% 0.15 26.899);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="status-icon">⚠️</div>
+      <h1>Kiosk Not Running</h1>
+      <p class="description">
+        The kiosk development server is not currently running or could not be reached.
+      </p>
+      
+      <div class="info-box">
+        <strong>Service Details</strong>
+        <p>Service: Kiosk (Vite Development Server)<br>
+        Expected Port: 44832<br>
+        Proxy Path: https://localhost:4483/kiosk/</p>
+      </div>
+      
+      <div class="steps">
+        <strong style="display: block; margin-bottom: 1rem; color: #f9fafb;">To start the kiosk:</strong>
+        <ol>
+          <li>Open a terminal in the workspace</li>
+          <li>Navigate to the kiosk directory</li>
+          <li>Run the development server</li>
+        </ol>
+      </div>
+      
+      <div class="command-box">
+        <code>$ cd apps/kiosk</code><br>
+        <code>$ pnpm dev</code>
+      </div>
+      
+      <div class="footer">
+        HUMS Development Environment<br>
+        <a href="/kiosk/">Refresh this page</a> after starting the server
+      </div>
+    </div>
+  </body>
+</html>
