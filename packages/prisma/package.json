@@ -5,7 +5,8 @@
 	"scripts": {
 		"generate": "prisma generate",
 		"migrate": "prisma migrate deploy",
-		"migrate:dev": "prisma migrate dev"
+		"migrate:dev": "prisma migrate dev",
+		"reset": "prisma migrate reset"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",

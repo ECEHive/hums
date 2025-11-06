@@ -7,7 +7,7 @@ Shift scheduling system for The Hive Makerspace at Georgia Tech.
 
 ## Structure
 
-This project has a monorepo structure. The `apps/` directory contains applications (e.g. client, server) while the `packages/` directory contains shared libraries and tools (e.g. drizzle, trpc)
+This project has a monorepo structure. The `apps/` directory contains applications (e.g. client, server) while the `packages/` directory contains shared libraries and tools (e.g. prisma, trpc)
 
 ## Prerequisites
 
@@ -39,10 +39,10 @@ pnpm -v
 	pnpm install
 	```
 
-4. Apply database migrations and seed permissions:
+4. Apply database migrations:
 
 	```sh
-	cd packages/drizzle
+	cd packages/prisma
 	pnpm migrate
 	```
 
