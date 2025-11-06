@@ -199,7 +199,7 @@ export function AppSidebar() {
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<a
-									href="https://github.com/ECEHive/scheduler/issues"
+									href="https://github.com/ECEHive/hums/issues"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
