@@ -1,5 +1,5 @@
 {
-	"name": "@ecehive/hive-scheduler",
+	"name": "@ecehive/hums",
 	"type": "module",
 	"scripts": {
 		"check": "biome check --write"

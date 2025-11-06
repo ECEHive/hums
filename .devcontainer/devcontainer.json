@@ -1,5 +1,5 @@
 {
-	"name": "hive-scheduler",
+	"name": "hums",
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "node",
 	"workspaceFolder": "/home/node/workspace",
