@@ -1,6 +1,5 @@
-import { db, users } from "@ecehive/drizzle";
 import { env } from "@ecehive/env";
-import { and, notInArray } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
 import { fetchUserInfo } from "./fetch-user-info";
 
 /**
@@ -19,23 +18,28 @@ export async function updateSystemUsers() {
 	// Add or update system users in the database
 	for (const username of systemUsers) {
 		const userInfo = await fetchUserInfo(username);
-		await db
-			.insert(users)
-			.values({
+		await prisma.user.upsert({
+			where: { email: userInfo.email },
+			update: { isSystemUser: true },
+			create: {
 				name: userInfo.name,
 				username: userInfo.username,
 				email: userInfo.email,
 				isSystemUser: true,
-			})
-			.onConflictDoUpdate({
-				target: users.email,
-				set: { isSystemUser: true },
-			});
+			},
+		});
 	}
 
 	// Remove system user flag from any users that are no longer system users
-	await db
-		.update(users)
-		.set({ isSystemUser: false })
-		.where(and(users.isSystemUser, notInArray(users.username, systemUsers)));
+	await prisma.user.updateMany({
+		where: {
+			isSystemUser: true,
+			username: {
+				notIn: systemUsers,
+			},
+		},
+		data: {
+			isSystemUser: false,
+		},
+	});
 }

@@ -1,5 +1,5 @@
-import { db, kiosks } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,7 +14,7 @@ export type TDeleteOptions = {
 export async function deleteHandler(options: TDeleteOptions) {
 	const { id } = options.input;
 
-	const deleted = await db.delete(kiosks).where(eq(kiosks.id, id)).returning();
+	const deleted = await prisma.kiosk.delete({ where: { id } });
 
-	return { kiosk: deleted[0] };
+	return { kiosk: deleted };
 }

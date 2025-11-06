@@ -1,18 +1,9 @@
-import {
-	db,
-	kiosks,
-	permissions,
-	rolePermissions,
-	roles,
-	userRoles,
-	users,
-} from "@ecehive/drizzle";
+import { prisma } from "@ecehive/prisma";
 import {
 	type inferProcedureBuilderResolverOptions,
 	initTRPC,
 	TRPCError,
 } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
 import superjson from "superjson";
 import type { Context } from "./context";
 
@@ -34,11 +25,9 @@ export const protectedProcedure = t.procedure.use(async (opts) => {
 		});
 	}
 
-	const findUserResult = await db
-		.select()
-		.from(users)
-		.where(eq(users.id, opts.ctx.userId));
-	const user = findUserResult[0];
+	const user = await prisma.user.findUnique({
+		where: { id: opts.ctx.userId },
+	});
 
 	if (!user) {
 		throw new TRPCError({
@@ -72,24 +61,24 @@ export const permissionProtectedProcedure = (permissionName: string) =>
 			return opts.next();
 		}
 
-		// Check if the user has the required permission
-		const userPermissions = await db
-			.select({
-				name: permissions.name,
-			})
-			.from(userRoles)
-			.innerJoin(roles, eq(userRoles.roleId, roles.id))
-			.innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
-			.innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-			.where(
-				and(
-					eq(userRoles.userId, opts.ctx.userId),
-					eq(permissions.name, permissionName),
-				),
-			);
+		// Check if the user has the required permission using Prisma's implicit many-to-many
+		const permission = await prisma.permission.findFirst({
+			where: {
+				name: permissionName,
+				roles: {
+					some: {
+						users: {
+							some: {
+								id: opts.ctx.userId,
+							},
+						},
+					},
+				},
+			},
+		});
 
-		// If no permissions found, throw an error
-		if (userPermissions.length === 0) {
+		// If no permission found, throw an error
+		if (!permission) {
 			throw new TRPCError({
 				code: "FORBIDDEN",
 				message: "You do not have permission to perform this action",
@@ -118,11 +107,12 @@ export const kioskProtectedProcedure = t.procedure.use(async (opts) => {
 	const ip = Array.isArray(clientIp) ? clientIp[0] : clientIp;
 
 	// Check if this IP is registered as an active kiosk
-	const [kiosk] = await db
-		.select()
-		.from(kiosks)
-		.where(and(eq(kiosks.ipAddress, ip), eq(kiosks.isActive, true)))
-		.limit(1);
+	const kiosk = await prisma.kiosk.findFirst({
+		where: {
+			ipAddress: ip,
+			isActive: true,
+		},
+	});
 
 	if (!kiosk) {
 		throw new TRPCError({

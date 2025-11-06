@@ -1,4 +1,4 @@
-import { db, kiosks } from "@ecehive/drizzle";
+import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -18,14 +18,13 @@ export type TCreateOptions = {
 export async function createHandler(options: TCreateOptions) {
 	const { name, ipAddress, isActive } = options.input;
 
-	const [newKiosk] = await db
-		.insert(kiosks)
-		.values({
+	const newKiosk = await prisma.kiosk.create({
+		data: {
 			name,
 			ipAddress,
 			isActive,
-		})
-		.returning();
+		},
+	});
 
 	return { kiosk: newKiosk };
 }

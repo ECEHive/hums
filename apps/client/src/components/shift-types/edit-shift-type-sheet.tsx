@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
 import { ColorPicker } from "@/components/color-picker";
@@ -76,6 +76,7 @@ interface ShiftType {
 	doRequireRoles: "disabled" | "all" | "any";
 	createdAt: Date;
 	updatedAt: Date;
+	roles?: { id: number; name: string }[];
 }
 
 interface EditShiftTypeSheetProps {
@@ -93,43 +94,17 @@ export function EditShiftTypeSheet({
 }: EditShiftTypeSheetProps) {
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
-	const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
+	const [selectedRoles, setSelectedRoles] = useState<Role[]>(
+		shiftType.roles || [],
+	);
 	const formId = useId();
 
-	// Fetch existing shift type roles
-	const { data: shiftTypeRolesData } = useQuery({
-		queryKey: ["shiftTypeRoles", { shiftTypeId: shiftType.id }],
-		queryFn: async () => {
-			const result = await trpc.shiftTypeRoles.list.query({
-				shiftTypeId: shiftType.id,
-				limit: 100,
-			});
-
-			// Fetch role details for each roleId
-			if (result.shiftTypeRoles.length > 0) {
-				const roleIds = result.shiftTypeRoles.map((str) => str.roleId);
-				const rolesResult = await trpc.roles.list.query({
-					limit: 100,
-				});
-				// Filter to only the roles we need
-				const roles = rolesResult.roles.filter((r) => roleIds.includes(r.id));
-				return {
-					...result,
-					roles: roles.map((r) => ({ id: r.id, name: r.name })),
-				};
-			}
-
-			return { ...result, roles: [] };
-		},
-		enabled: open,
-	});
-
-	// Initialize selected roles when data loads or when sheet opens
+	// Update selected roles when shiftType changes
 	useEffect(() => {
-		if (open && shiftTypeRolesData?.roles) {
-			setSelectedRoles(shiftTypeRolesData.roles);
+		if (open && shiftType.roles) {
+			setSelectedRoles(shiftType.roles);
 		}
-	}, [open, shiftTypeRolesData]);
+	}, [open, shiftType.roles]);
 
 	const updateShiftTypeMutation = useMutation({
 		mutationFn: async (input: {
@@ -143,6 +118,7 @@ export function EditShiftTypeSheet({
 			isBalancedAcrossPeriod: boolean;
 			canSelfAssign: boolean;
 			doRequireRoles: "disabled" | "all" | "any";
+			roleIds?: number[];
 		}) => {
 			return trpc.shiftTypes.update.mutate(input);
 		},
@@ -150,20 +126,6 @@ export function EditShiftTypeSheet({
 			queryClient.invalidateQueries({
 				queryKey: ["shiftTypes", { periodId: shiftType.periodId }],
 			});
-		},
-	});
-
-	const createShiftTypeRolesMutation = useMutation({
-		mutationFn: async (input: { shiftTypeId: number; roleIds: number[] }) => {
-			if (input.roleIds.length === 0) return null;
-			return trpc.shiftTypeRoles.bulkCreate.mutate(input);
-		},
-	});
-
-	const deleteShiftTypeRolesMutation = useMutation({
-		mutationFn: async (input: { shiftTypeId: number; roleIds: number[] }) => {
-			if (input.roleIds.length === 0) return null;
-			return trpc.shiftTypeRoles.bulkDelete.mutate(input);
 		},
 	});
 
@@ -184,7 +146,7 @@ export function EditShiftTypeSheet({
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				// Update the shift type
+				// Update the shift type with roleIds
 				await updateShiftTypeMutation.mutateAsync({
 					id: shiftType.id,
 					name: value.name,
@@ -196,35 +158,8 @@ export function EditShiftTypeSheet({
 					isBalancedAcrossPeriod: value.isBalancedAcrossPeriod,
 					canSelfAssign: value.canSelfAssign,
 					doRequireRoles: value.doRequireRoles,
+					roleIds: selectedRoles.map((r) => r.id),
 				});
-
-				// Sync shift type roles
-				const existingRoleIds =
-					shiftTypeRolesData?.roles.map((r) => r.id) ?? [];
-				const newRoleIds = selectedRoles.map((r) => r.id);
-
-				const rolesToAdd = newRoleIds.filter(
-					(id) => !existingRoleIds.includes(id),
-				);
-				const rolesToRemove = existingRoleIds.filter(
-					(id) => !newRoleIds.includes(id),
-				);
-
-				// Add new roles
-				if (rolesToAdd.length > 0) {
-					await createShiftTypeRolesMutation.mutateAsync({
-						shiftTypeId: shiftType.id,
-						roleIds: rolesToAdd,
-					});
-				}
-
-				// Remove roles
-				if (rolesToRemove.length > 0) {
-					await deleteShiftTypeRolesMutation.mutateAsync({
-						shiftTypeId: shiftType.id,
-						roleIds: rolesToRemove,
-					});
-				}
 
 				handleSheetChange(false);
 			} catch (err) {

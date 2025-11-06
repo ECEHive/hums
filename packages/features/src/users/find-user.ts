@@ -1,14 +1,12 @@
-import { db, users } from "@ecehive/drizzle";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 
 export async function findUser(uid: string) {
 	try {
-		const findUserResponse = await db
-			.select()
-			.from(users)
-			.where(eq(users.username, uid));
-		return findUserResponse[0] ?? null;
+		const user = await prisma.user.findUnique({
+			where: { username: uid },
+		});
+		return user ?? null;
 	} catch {
 		throw new TRPCError({
 			code: "INTERNAL_SERVER_ERROR",

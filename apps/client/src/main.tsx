@@ -52,3 +52,7 @@ if (!rootElement.innerHTML) {
 		</StrictMode>,
 	);
 }
+
+if (import.meta.hot) {
+	import.meta.hot.accept();
+}

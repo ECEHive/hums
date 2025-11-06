@@ -1,10 +1,9 @@
-import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
 import {
 	generateShiftScheduleShiftOccurrences,
 	parseTimeString,
 } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -46,11 +45,9 @@ export async function updateHandler(options: TUpdateOptions) {
 	const { id, shiftTypeId, slots, dayOfWeek, startTime, endTime } =
 		options.input;
 
-	const [existing] = await db
-		.select()
-		.from(shiftSchedules)
-		.where(eq(shiftSchedules.id, id))
-		.limit(1);
+	const existing = await prisma.shiftSchedule.findUnique({
+		where: { id },
+	});
 
 	if (!existing) {
 		return { shiftSchedule: undefined };
@@ -58,11 +55,9 @@ export async function updateHandler(options: TUpdateOptions) {
 
 	// If changing shift type, verify the new shift type exists
 	if (shiftTypeId !== undefined && shiftTypeId !== existing.shiftTypeId) {
-		const [shiftType] = await db
-			.select()
-			.from(shiftTypes)
-			.where(eq(shiftTypes.id, shiftTypeId))
-			.limit(1);
+		const shiftType = await prisma.shiftType.findUnique({
+			where: { id: shiftTypeId },
+		});
 
 		if (!shiftType) {
 			throw new TRPCError({
@@ -82,38 +77,16 @@ export async function updateHandler(options: TUpdateOptions) {
 		});
 	}
 
-	return await db.transaction(async (tx) => {
-		const updates: Partial<typeof shiftSchedules.$inferInsert> = {
-			updatedAt: new Date(),
-		};
-
-		if (shiftTypeId !== undefined) {
-			updates.shiftTypeId = shiftTypeId;
-		}
-
-		if (slots !== undefined) {
-			updates.slots = slots;
-		}
-
-		if (dayOfWeek !== undefined) {
-			updates.dayOfWeek = dayOfWeek;
-		}
-
-		if (startTime !== undefined) {
-			updates.startTime = startTime;
-		}
-
-		if (endTime !== undefined) {
-			updates.endTime = endTime;
-		}
-
-		await tx
-			.update(shiftSchedules)
-			.set(updates)
-			.where(eq(shiftSchedules.id, id));
-
-		const updated = await tx.query.shiftSchedules.findFirst({
-			where: eq(shiftSchedules.id, id),
+	return await prisma.$transaction(async (tx) => {
+		const updated = await tx.shiftSchedule.update({
+			where: { id },
+			data: {
+				...(shiftTypeId !== undefined && { shiftTypeId }),
+				...(slots !== undefined && { slots }),
+				...(dayOfWeek !== undefined && { dayOfWeek }),
+				...(startTime !== undefined && { startTime }),
+				...(endTime !== undefined && { endTime }),
+			},
 		});
 
 		if (!updated) {

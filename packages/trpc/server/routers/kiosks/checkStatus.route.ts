@@ -1,5 +1,4 @@
-import { db, kiosks } from "@ecehive/drizzle";
-import { and, eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { Context } from "../../context";
 
@@ -23,11 +22,12 @@ export async function checkStatusHandler(options: TCheckStatusOptions) {
 	const ip = Array.isArray(clientIp) ? clientIp[0] : clientIp;
 
 	// Check if this IP is registered as a kiosk
-	const [kiosk] = await db
-		.select()
-		.from(kiosks)
-		.where(and(eq(kiosks.ipAddress, ip), eq(kiosks.isActive, true)))
-		.limit(1);
+	const kiosk = await prisma.kiosk.findFirst({
+		where: {
+			ipAddress: ip,
+			isActive: true,
+		},
+	});
 
 	if (kiosk) {
 		return {

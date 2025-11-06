@@ -1,17 +1,14 @@
-import { db, users } from "@ecehive/drizzle";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 
 export async function findUserByCard(cardNumber: string) {
-	return await db.transaction(async (tx) => {
+	return await prisma.$transaction(async (tx) => {
 		// Find user by card id in the database
-		let user = await tx
-			.select()
-			.from(users)
-			.where(eq(users.cardNumber, cardNumber))
-			.limit(1);
+		let user = await tx.user.findUnique({
+			where: { cardNumber },
+		});
 
-		if (user.length === 0) {
+		if (!user) {
 			// Query SUMS for the username of the card owner
 			const response = await fetch(
 				`https://sums.gatech.edu/SUMSAPI/rest/API/GetUserNameAndEmailByBuzzCardNumber?BuzzCardNumber=${cardNumber}`,
@@ -49,12 +46,11 @@ export async function findUserByCard(cardNumber: string) {
 			}
 
 			// See if the user exists in our database
-			user = await tx
-				.select()
-				.from(users)
-				.where(eq(users.username, username))
-				.limit(1);
-			if (user.length === 0) {
+			user = await tx.user.findUnique({
+				where: { username },
+			});
+
+			if (!user) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: `No user exists for the provided card`,
@@ -62,12 +58,12 @@ export async function findUserByCard(cardNumber: string) {
 			}
 
 			// Update the user's card number in our database
-			await tx
-				.update(users)
-				.set({ cardNumber })
-				.where(eq(users.id, user[0].id));
+			await tx.user.update({
+				where: { id: user.id },
+				data: { cardNumber },
+			});
 		}
 
-		return user[0];
+		return user;
 	});
 }

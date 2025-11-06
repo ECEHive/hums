@@ -90,6 +90,7 @@ export function CreateShiftTypeSheet({
 			isBalancedAcrossPeriod: boolean;
 			canSelfAssign: boolean;
 			doRequireRoles: "disabled" | "all" | "any";
+			roleIds?: number[];
 		}) => {
 			return trpc.shiftTypes.create.mutate({
 				periodId,
@@ -100,13 +101,6 @@ export function CreateShiftTypeSheet({
 			queryClient.invalidateQueries({
 				queryKey: ["shiftTypes", { periodId }],
 			});
-		},
-	});
-
-	const createShiftTypeRolesMutation = useMutation({
-		mutationFn: async (input: { shiftTypeId: number; roleIds: number[] }) => {
-			if (input.roleIds.length === 0) return null;
-			return trpc.shiftTypeRoles.bulkCreate.mutate(input);
 		},
 	});
 
@@ -127,8 +121,8 @@ export function CreateShiftTypeSheet({
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				// First create the shift type
-				const shiftType = await createShiftTypeMutation.mutateAsync({
+				// Create the shift type with roleIds
+				await createShiftTypeMutation.mutateAsync({
 					name: value.name,
 					location: value.location,
 					description: value.description,
@@ -138,15 +132,11 @@ export function CreateShiftTypeSheet({
 					canSelfAssign: value.canSelfAssign,
 					doRequireRoles: value.doRequireRoles,
 					color: value.color ?? null,
+					roleIds:
+						selectedRoles.length > 0
+							? selectedRoles.map((r) => r.id)
+							: undefined,
 				});
-
-				// Then create the shift type roles if any are selected
-				if (selectedRoles.length > 0) {
-					await createShiftTypeRolesMutation.mutateAsync({
-						shiftTypeId: shiftType.shiftType.id,
-						roleIds: selectedRoles.map((r) => r.id),
-					});
-				}
 
 				handleSheetChange(false);
 			} catch (err) {

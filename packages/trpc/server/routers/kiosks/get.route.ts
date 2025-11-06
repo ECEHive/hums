@@ -1,5 +1,5 @@
-import { db, kiosks } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,7 +14,9 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	const [kiosk] = await db.select().from(kiosks).where(eq(kiosks.id, id));
+	const kiosk = await prisma.kiosk.findUnique({
+		where: { id },
+	});
 
 	return { kiosk };
 }

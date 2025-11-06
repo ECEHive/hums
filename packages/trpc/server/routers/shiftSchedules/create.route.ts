@@ -1,10 +1,9 @@
-import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
 import {
 	generateShiftScheduleShiftOccurrences,
 	parseTimeString,
 } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -41,13 +40,11 @@ export type TCreateOptions = {
 export async function createHandler(options: TCreateOptions) {
 	const { shiftTypeId, slots, dayOfWeek, startTime, endTime } = options.input;
 
-	return await db.transaction(async (tx) => {
+	return await prisma.$transaction(async (tx) => {
 		// Verify the shift type exists
-		const [shiftType] = await tx
-			.select()
-			.from(shiftTypes)
-			.where(eq(shiftTypes.id, shiftTypeId))
-			.limit(1);
+		const shiftType = await tx.shiftType.findUnique({
+			where: { id: shiftTypeId },
+		});
 
 		if (!shiftType) {
 			throw new TRPCError({
@@ -57,10 +54,9 @@ export async function createHandler(options: TCreateOptions) {
 		}
 
 		try {
-			const [schedule] = await tx
-				.insert(shiftSchedules)
-				.values({ shiftTypeId, slots, dayOfWeek, startTime, endTime })
-				.returning();
+			const schedule = await tx.shiftSchedule.create({
+				data: { shiftTypeId, slots, dayOfWeek, startTime, endTime },
+			});
 
 			if (!schedule) {
 				return { shiftSchedule: undefined };

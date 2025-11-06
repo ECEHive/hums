@@ -1,5 +1,5 @@
-import { db, shiftTypes } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,10 +14,9 @@ export type TDeleteOptions = {
 export async function deleteHandler(options: TDeleteOptions) {
 	const { id } = options.input;
 
-	const deleted = await db
-		.delete(shiftTypes)
-		.where(eq(shiftTypes.id, id))
-		.returning();
+	const deleted = await prisma.shiftType.delete({
+		where: { id },
+	});
 
-	return { shiftType: deleted[0] };
+	return { shiftType: deleted };
 }

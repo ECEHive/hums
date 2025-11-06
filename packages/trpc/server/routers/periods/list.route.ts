@@ -1,5 +1,4 @@
-import { db, periods } from "@ecehive/drizzle";
-import { and, count, gte, ilike, lte, type SQL } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -41,37 +40,29 @@ export async function listHandler(options: TListOptions) {
 		endsBefore,
 	} = options.input;
 
-	const filters = [] as (SQL | undefined)[];
+	const where: Prisma.PeriodWhereInput = {};
 
 	if (search) {
-		const escapeLike = (s: string) =>
-			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
-		const pattern = `%${escapeLike(search)}%`;
-		filters.push(ilike(periods.name, pattern));
+		where.name = { contains: search, mode: "insensitive" };
 	}
 
 	if (startsAfter) {
-		filters.push(gte(periods.end, startsAfter));
+		where.end = { gte: startsAfter };
 	}
 
 	if (endsBefore) {
-		filters.push(lte(periods.start, endsBefore));
+		where.start = { lte: endsBefore };
 	}
 
-	const whereClause = and(...filters);
+	const [result, total] = await Promise.all([
+		prisma.period.findMany({
+			where,
+			orderBy: { start: "asc" },
+			skip: offset,
+			take: limit,
+		}),
+		prisma.period.count({ where }),
+	]);
 
-	const result = await db
-		.select()
-		.from(periods)
-		.where(whereClause)
-		.limit(limit)
-		.offset(offset)
-		.orderBy(periods.start);
-
-	const [total] = await db
-		.select({ count: count(periods.id) })
-		.from(periods)
-		.where(whereClause);
-
-	return { periods: result, total: total?.count ?? 0 };
+	return { periods: result, total };
 }

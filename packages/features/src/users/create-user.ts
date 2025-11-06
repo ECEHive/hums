@@ -1,4 +1,4 @@
-import { db, users } from "@ecehive/drizzle";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { fetchUserInfo } from "./fetch-user-info";
 
@@ -18,16 +18,15 @@ export async function createUser(username: string) {
 			console.error("LDAP fetch failed:", error);
 		}
 
-		const createUserResponse = await db
-			.insert(users)
-			.values({
+		const newUser = await prisma.user.create({
+			data: {
 				name,
 				username,
 				email,
-			})
-			.returning();
+			},
+		});
 
-		if (!createUserResponse[0]) {
+		if (!newUser) {
 			console.error(
 				"Database insert did not return a user object for username:",
 				username,
@@ -37,7 +36,7 @@ export async function createUser(username: string) {
 				message: "Failed to create user",
 			});
 		}
-		return createUserResponse[0];
+		return newUser;
 	} catch {
 		console.error("User creation failed for username:", username);
 		throw new TRPCError({
