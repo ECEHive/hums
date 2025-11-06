@@ -1,9 +1,17 @@
-# Hive Scheduler
+<p align="center">
+  <h2 align="center">HUMS</h3>
+  <h3 align="center">Hive User Management System</h3>
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ECEHive/scheduler/code-quality.yaml?label=quality)
-![GitHub Repo stars](https://img.shields.io/github/stars/ECEHive/scheduler?style=flat)
+  <p align="center">
+    User management system for The Hive Makerspace at Georgia Tech.
+  </p>
+</p>
 
-Shift scheduling system for The Hive Makerspace at Georgia Tech.
+<p align="center">
+   <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/ECEHive/hums">
+   <img alt="GitHub License" src="https://img.shields.io/github/license/ECEHive/hums">
+	<img alt="GitHub top language" src="https://img.shields.io/github/languages/top/ECEHive/hums">
+</p>
 
 ## Structure
 
@@ -27,8 +35,8 @@ pnpm -v
 1. Clone the repository:
 
 	```sh
-	git clone https://github.com/ECEHive/hive-scheduler.git
-	cd hive-scheduler
+	git clone https://github.com/ECEHive/hums.git
+	cd hums
 	```
 
 2. If you are able to use development containers, setup and enter the development container as is appropriate for your IDE. If you are unable to use development containers, you will need to manually setup a Postgres instance.
