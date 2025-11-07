@@ -2,16 +2,14 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import React from "react";
-import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
+import { RequirePermissions } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { PeriodSelector } from "@/components/periods/period-selector";
 import { SchedulingTimeline } from "@/components/shift-schedules/scheduling-timeline";
 import { ShiftDetailSheet } from "@/components/shift-schedules/shift-detail-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
-import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/scheduling")({
 	component: () =>
@@ -30,7 +28,6 @@ interface SelectedBlock {
 }
 
 function Scheduling() {
-	const currentUser = useCurrentUser();
 	const queryClient = useQueryClient();
 	const [selectedPeriodId, setSelectedPeriodId] = React.useState<number | null>(
 		null,
@@ -78,13 +75,6 @@ function Scheduling() {
 		};
 	}, [selectedPeriodId, queryClient]);
 
-	// Check if user has register or unregister permissions
-	const canRegister =
-		currentUser && checkPermissions(currentUser, ["shift_schedules.register"]);
-	const canUnregister =
-		currentUser &&
-		checkPermissions(currentUser, ["shift_schedules.unregister"]);
-
 	// Fetch schedules for the selected period
 	const { data: schedulesData, isLoading: schedulesLoading } = useQuery({
 		queryKey: ["schedulesForRegistration", selectedPeriodId],
@@ -97,26 +87,39 @@ function Scheduling() {
 		enabled: !!selectedPeriodId,
 	});
 
-	// Check visibility window
-	const isWithinVisibilityWindow = React.useMemo(() => {
-		if (!schedulesData?.period) return true;
+	// Get time window status from server response
+	const isWithinSignupWindow = schedulesData?.isWithinSignupWindow ?? false;
+	const isWithinVisibilityWindow =
+		schedulesData?.isWithinVisibilityWindow ?? true;
 
-		const now = new Date();
-		const { visibleStart, visibleEnd } = schedulesData.period;
+	// Format window information for display
+	const getWindowMessage = () => {
+		if (!schedulesData?.period) return null;
 
-		// If no visibility window is defined, always allow access
-		if (!visibleStart && !visibleEnd) return true;
+		const { scheduleSignupStart, scheduleSignupEnd } = schedulesData.period;
 
-		// Check if current time is within the visibility window
-		if (visibleStart && new Date(visibleStart) > now) return false;
-		if (visibleEnd && new Date(visibleEnd) < now) return false;
+		if (!isWithinSignupWindow && (scheduleSignupStart || scheduleSignupEnd)) {
+			const now = new Date();
+			if (scheduleSignupStart && new Date(scheduleSignupStart) > now) {
+				return {
+					type: "primary",
+					title: "Registration Opens Soon",
+					message: `Shift registration will open on ${new Date(scheduleSignupStart).toLocaleString()}`,
+				};
+			}
+			if (scheduleSignupEnd && new Date(scheduleSignupEnd) < now) {
+				return {
+					type: "destructive",
+					title: "Registration Closed",
+					message: "The registration window for this period has ended",
+				};
+			}
+		}
 
-		return true;
-	}, [schedulesData]);
+		return null;
+	};
 
-	// Check if user can access the page
-	const canAccessPage =
-		(canRegister || canUnregister) && isWithinVisibilityWindow;
+	const windowMessage = getWindowMessage();
 
 	// Handle block click
 	const handleBlockClick = (dayOfWeek: number, timeBlock: string) => {
@@ -150,54 +153,86 @@ function Scheduling() {
 		});
 	}, [selectedBlock, schedulesData]);
 
-	if (!canAccessPage) {
-		return (
-			<div className="container mx-auto py-8 px-4">
-				<Card>
+	return (
+		<div className="container mx-auto p-4 space-y-4">
+			<h1 className="text-2xl font-bold">Shift Scheduling</h1>
+
+			<PeriodSelector
+				selectedPeriodId={selectedPeriodId}
+				onPeriodChange={setSelectedPeriodId}
+				visibleOnly={true}
+			/>
+
+			{selectedPeriodId ? (
+				isWithinVisibilityWindow ? (
+					<>
+						{windowMessage && (
+							<Alert
+								variant={
+									windowMessage.type === "destructive"
+										? "destructive"
+										: "default"
+								}
+							>
+								<AlertTitle>{windowMessage.title}</AlertTitle>
+								<AlertDescription>{windowMessage.message}</AlertDescription>
+							</Alert>
+						)}
+						<Card className="max-w-full">
+							<CardHeader>
+								<CardTitle>Available Shifts</CardTitle>
+								{schedulesData?.period && (
+									<div className="text-sm text-muted-foreground mt-2 space-y-1">
+										{isWithinSignupWindow && (
+											<p className="text-green-600 dark:text-green-400">
+												✓ Registration is currently open
+											</p>
+										)}
+									</div>
+								)}
+							</CardHeader>
+							<CardContent>
+								{schedulesLoading ? (
+									<div className="flex items-center justify-center py-12">
+										<Spinner className="w-8 h-8" />
+									</div>
+								) : (
+									<SchedulingTimeline
+										schedules={schedulesData?.schedules ?? []}
+										isLoading={schedulesLoading}
+										onBlockClick={handleBlockClick}
+									/>
+								)}
+							</CardContent>
+						</Card>
+					</>
+				) : (
+					<Card className="max-w-full">
+						<CardHeader>
+							<CardTitle>Period Not Visible</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Alert>
+								<AlertTitle>Outside Visibility Window</AlertTitle>
+								<AlertDescription>
+									The selected period is not currently visible. Please check
+									back during the visibility window.
+								</AlertDescription>
+							</Alert>
+						</CardContent>
+					</Card>
+				)
+			) : (
+				<Card className="max-w-full">
 					<CardHeader>
 						<CardTitle>Shift Scheduling</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<Alert variant="destructive">
-							<AlertTitle>Access Restricted</AlertTitle>
-							<AlertDescription>
-								{!isWithinVisibilityWindow
-									? "The selected period is not currently visible. Please check back during the visibility window."
-									: "You do not have permission to register or unregister for shifts."}
-							</AlertDescription>
-						</Alert>
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
-
-	return (
-		<div className="container mx-auto py-8 px-4 space-y-6">
-			<Field>
-				<PeriodSelector
-					selectedPeriodId={selectedPeriodId}
-					onPeriodChange={setSelectedPeriodId}
-				/>
-			</Field>
-
-			{selectedPeriodId && isWithinVisibilityWindow && (
-				<Card className="max-w-full">
-					<CardHeader>
-						<CardTitle>Available Shifts</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{schedulesLoading ? (
-							<div className="flex items-center justify-center py-12">
-								<Spinner className="w-8 h-8" />
-							</div>
-						) : (
-							<SchedulingTimeline
-								schedules={schedulesData?.schedules ?? []}
-								isLoading={schedulesLoading}
-								onBlockClick={handleBlockClick}
-							/>
-						)}
+						<div className="flex items-center justify-center py-12">
+							<p className="text-muted-foreground">
+								Select a period to view available shifts
+							</p>
+						</div>
 					</CardContent>
 				</Card>
 			)}
@@ -213,6 +248,7 @@ function Scheduling() {
 						: "00:00"
 				}
 				periodId={selectedPeriodId ?? 0}
+				isWithinSignupWindow={isWithinSignupWindow}
 			/>
 		</div>
 	);

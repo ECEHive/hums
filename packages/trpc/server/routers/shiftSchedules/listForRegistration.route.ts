@@ -47,6 +47,35 @@ export async function listForRegistrationHandler(
 		});
 	}
 
+	// Check if period is within visibility window
+	const now = new Date();
+	const isVisibleByStart =
+		!period.visibleStart || new Date(period.visibleStart) <= now;
+	const isVisibleByEnd =
+		!period.visibleEnd || new Date(period.visibleEnd) >= now;
+	const isWithinVisibilityWindow = isVisibleByStart && isVisibleByEnd;
+
+	if (!isWithinVisibilityWindow) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Period is not currently visible",
+		});
+	}
+
+	// Check if we're within the schedule signup window
+	const isSignupByStart =
+		!period.scheduleSignupStart || new Date(period.scheduleSignupStart) <= now;
+	const isSignupByEnd =
+		!period.scheduleSignupEnd || new Date(period.scheduleSignupEnd) >= now;
+	const isWithinSignupWindow = isSignupByStart && isSignupByEnd;
+
+	// Check if we're within the schedule modify window
+	const isModifyByStart =
+		!period.scheduleModifyStart || new Date(period.scheduleModifyStart) <= now;
+	const isModifyByEnd =
+		!period.scheduleModifyEnd || new Date(period.scheduleModifyEnd) >= now;
+	const isWithinModifyWindow = isModifyByStart && isModifyByEnd;
+
 	// Build where clause
 	const where: Prisma.ShiftScheduleWhereInput = {
 		shiftType: { periodId },
@@ -111,13 +140,21 @@ export async function listForRegistrationHandler(
 		// 4. Meets balancing requirements
 		// 5. There are available slots
 		// 6. Does not overlap with existing registrations
+		// 7. Within signup window (for new registrations)
 		const canRegister =
 			!isRegistered &&
 			canSelfAssign &&
 			meetsRole &&
 			meetsBalancing &&
 			availableSlots > 0 &&
-			!hasOverlap;
+			!hasOverlap &&
+			isWithinSignupWindow;
+
+		// User can unregister if:
+		// 1. Already registered
+		// 2. Shift type allows self-assignment
+		// 3. Within signup window (unregister uses same window as register)
+		const canUnregister = isRegistered && canSelfAssign && isWithinSignupWindow;
 
 		return {
 			id: schedule.id,
@@ -133,6 +170,7 @@ export async function listForRegistrationHandler(
 			availableSlots,
 			isRegistered,
 			canRegister,
+			canUnregister,
 			canSelfAssign,
 			meetsRoleRequirement: meetsRole,
 			meetsBalancingRequirement: meetsBalancing,
@@ -143,5 +181,8 @@ export async function listForRegistrationHandler(
 	return {
 		period,
 		schedules: schedulesWithAvailability,
+		isWithinSignupWindow,
+		isWithinModifyWindow,
+		isWithinVisibilityWindow,
 	};
 }

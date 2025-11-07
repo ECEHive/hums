@@ -43,6 +43,35 @@ export async function registerHandler(options: TRegisterOptions) {
 			});
 		}
 
+		// Get the period to check time windows
+		const period = await tx.period.findUnique({
+			where: { id: targetSchedule.shiftType.periodId },
+		});
+
+		if (!period) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Period not found",
+			});
+		}
+
+		// Check if we're within the schedule signup window
+		const now = new Date();
+		const isSignupByStart =
+			!period.scheduleSignupStart ||
+			new Date(period.scheduleSignupStart) <= now;
+		const isSignupByEnd =
+			!period.scheduleSignupEnd || new Date(period.scheduleSignupEnd) >= now;
+		const isWithinSignupWindow = isSignupByStart && isSignupByEnd;
+
+		if (!isWithinSignupWindow) {
+			throw new TRPCError({
+				code: "FORBIDDEN",
+				message:
+					"Shift registration is not currently allowed. Please check the signup window for this period.",
+			});
+		}
+
 		// Check if canSelfAssign is allowed
 		if (!targetSchedule.shiftType.canSelfAssign) {
 			throw new TRPCError({

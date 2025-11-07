@@ -27,6 +27,7 @@ interface ShiftSchedule {
 	availableSlots: number;
 	isRegistered: boolean;
 	canRegister: boolean;
+	canUnregister?: boolean;
 	canSelfAssign: boolean;
 	meetsRoleRequirement: boolean;
 	meetsBalancingRequirement: boolean;
@@ -41,6 +42,7 @@ interface ShiftDetailSheetProps {
 	dayOfWeek: number;
 	timeBlock: string;
 	periodId: number;
+	isWithinSignupWindow?: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -70,6 +72,7 @@ export function ShiftDetailSheet({
 	dayOfWeek,
 	timeBlock,
 	periodId,
+	isWithinSignupWindow = true,
 }: ShiftDetailSheetProps) {
 	const queryClient = useQueryClient();
 
@@ -160,7 +163,7 @@ export function ShiftDetailSheet({
 											variant="destructive"
 											onClick={() => unregisterMutation.mutate(schedule.id)}
 											disabled={
-												unregisterMutation.isPending || !schedule.canSelfAssign
+												unregisterMutation.isPending || !schedule.canUnregister
 											}
 										>
 											{unregisterMutation.isPending ? (
@@ -225,6 +228,9 @@ export function ShiftDetailSheet({
 										Why can't I register?
 									</div>
 									<ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+										{!isWithinSignupWindow && (
+											<li>Registration is outside the signup window</li>
+										)}
 										{!schedule.canSelfAssign && (
 											<li>
 												Self-assignment is not allowed for this shift type
@@ -256,9 +262,13 @@ export function ShiftDetailSheet({
 									<Badge variant="default" className="w-fit">
 										You are registered for this shift
 									</Badge>
-									{!schedule.canSelfAssign && (
+									{!schedule.canUnregister && (
 										<div className="text-sm text-muted-foreground">
-											Note: An administrator must unassign you from this shift.
+											{!schedule.canSelfAssign
+												? "Note: An administrator must unassign you from this shift."
+												: !isWithinSignupWindow
+													? "Note: Unregistration is outside the signup window."
+													: "Note: You cannot unregister from this shift at this time."}
 										</div>
 									)}
 								</>
