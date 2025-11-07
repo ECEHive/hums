@@ -186,7 +186,7 @@ export async function connectSerial(
 					try {
 						log.error("serial-read-error", { message: msg });
 					} catch {}
-					onError("Serial read error: " + msg);
+					onError(`Serial read error: ${msg}`);
 					break;
 				}
 			}
