@@ -1,4 +1,5 @@
 import {
+	getShiftScheduleForRegistration,
 	shiftScheduleEvents,
 	unassignUserFromScheduleOccurrences,
 } from "@ecehive/features";
@@ -26,13 +27,10 @@ export async function unregisterHandler(options: TUnregisterOptions) {
 
 	await prisma.$transaction(async (tx) => {
 		// Get the shift schedule to verify it exists and check canSelfAssign
-		const targetSchedule = await tx.shiftSchedule.findUnique({
-			where: { id: shiftScheduleId },
-			include: {
-				shiftType: true,
-				users: { select: { id: true } },
-			},
-		});
+		const targetSchedule = await getShiftScheduleForRegistration(
+			tx,
+			shiftScheduleId,
+		);
 
 		if (!targetSchedule) {
 			throw new TRPCError({
