@@ -192,7 +192,9 @@ function PeriodDetail() {
 	};
 
 	return (
-		<div className="container p-6">
+		<div className="container p-4 space-y-4">
+			<h1 className="text-2xl font-bold">Period Detail</h1>
+
 			<div className="flex items-center justify-between mb-6">
 				<PeriodsSelector
 					currentPeriodId={Number(periodId)}

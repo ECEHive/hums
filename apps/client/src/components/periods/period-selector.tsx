@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarIcon } from "lucide-react";
+import React from "react";
 import {
 	Select,
 	SelectContent,
@@ -17,14 +18,23 @@ interface PeriodSelectorProps {
 
 export function PeriodSelector({
 	selectedPeriodId,
-	onPeriodChange,
+	onPeriodChange
 }: PeriodSelectorProps) {
 	const { data: periodsData, isLoading } = useQuery({
-		queryKey: ["periods", "all"],
+		queryKey: ["periods", "listVisible"],
 		queryFn: async () => {
-			return trpc.periods.list.query({ limit: 100 });
-		},
+			return trpc.periods.listVisible.query({ limit: 100 });
+		}
 	});
+
+	const periods = periodsData?.periods ?? [];
+
+	// Automatically select the first available period when no period is selected
+	React.useEffect(() => {
+		if (!isLoading && periods.length > 0 && selectedPeriodId === null) {
+			onPeriodChange(periods[0].id);
+		}
+	}, [isLoading, periods, selectedPeriodId, onPeriodChange]);
 
 	if (isLoading) {
 		return (
@@ -37,11 +47,14 @@ export function PeriodSelector({
 		);
 	}
 
-	const periods = periodsData?.periods ?? [];
-
 	if (periods.length === 0) {
 		return (
-			<div className="text-sm text-muted-foreground">No periods available</div>
+			<div className="flex items-center gap-3">
+				<CalendarIcon className="w-5 h-5 text-muted-foreground" />
+				<div className="text-sm text-muted-foreground">
+					No periods available
+				</div>
+			</div>
 		);
 	}
 

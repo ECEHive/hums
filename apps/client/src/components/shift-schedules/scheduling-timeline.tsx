@@ -242,7 +242,7 @@ export function SchedulingTimeline({
 	}
 
 	return (
-		<div className="overflow-x-auto w-full">
+		<div className="overflow-x-auto w-full pb-4">
 			<div className="min-w-max">
 				{/* Header row with day names */}
 				<div className="grid grid-cols-8 gap-2 mb-2">

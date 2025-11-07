@@ -17,6 +17,7 @@ import { Route as AppUsersRouteImport } from './routes/app/users'
 import { Route as AppSchedulingRouteImport } from './routes/app/scheduling'
 import { Route as AppRolesRouteImport } from './routes/app/roles'
 import { Route as AppPeriodsRouteImport } from './routes/app/periods'
+import { Route as AppMyShiftsRouteImport } from './routes/app/my-shifts'
 import { Route as AppKiosksRouteImport } from './routes/app/kiosks'
 import { Route as AppPeriodsPeriodIdRouteImport } from './routes/app/periods_.$periodId'
 
@@ -60,6 +61,11 @@ const AppPeriodsRoute = AppPeriodsRouteImport.update({
   path: '/periods',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMyShiftsRoute = AppMyShiftsRouteImport.update({
+  id: '/my-shifts',
+  path: '/my-shifts',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppKiosksRoute = AppKiosksRouteImport.update({
   id: '/kiosks',
   path: '/kiosks',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/kiosks': typeof AppKiosksRoute
+  '/app/my-shifts': typeof AppMyShiftsRoute
   '/app/periods': typeof AppPeriodsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/kiosks': typeof AppKiosksRoute
+  '/app/my-shifts': typeof AppMyShiftsRoute
   '/app/periods': typeof AppPeriodsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/kiosks': typeof AppKiosksRoute
+  '/app/my-shifts': typeof AppMyShiftsRoute
   '/app/periods': typeof AppPeriodsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/scheduling': typeof AppSchedulingRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/kiosks'
+    | '/app/my-shifts'
     | '/app/periods'
     | '/app/roles'
     | '/app/scheduling'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/app/kiosks'
+    | '/app/my-shifts'
     | '/app/periods'
     | '/app/roles'
     | '/app/scheduling'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/kiosks'
+    | '/app/my-shifts'
     | '/app/periods'
     | '/app/roles'
     | '/app/scheduling'
@@ -209,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPeriodsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/my-shifts': {
+      id: '/app/my-shifts'
+      path: '/my-shifts'
+      fullPath: '/app/my-shifts'
+      preLoaderRoute: typeof AppMyShiftsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/kiosks': {
       id: '/app/kiosks'
       path: '/kiosks'
@@ -228,6 +247,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppKiosksRoute: typeof AppKiosksRoute
+  AppMyShiftsRoute: typeof AppMyShiftsRoute
   AppPeriodsRoute: typeof AppPeriodsRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSchedulingRoute: typeof AppSchedulingRoute
@@ -238,6 +258,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppKiosksRoute: AppKiosksRoute,
+  AppMyShiftsRoute: AppMyShiftsRoute,
   AppPeriodsRoute: AppPeriodsRoute,
   AppRolesRoute: AppRolesRoute,
   AppSchedulingRoute: AppSchedulingRoute,
