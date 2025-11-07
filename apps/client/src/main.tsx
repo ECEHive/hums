@@ -54,9 +54,3 @@ if (!rootElement.innerHTML) {
 		</StrictMode>,
 	);
 }
-
-if (import.meta.hot) {
-	import.meta.hot.on("vite:beforeFullReload", () => {
-		throw "(skipping full reload)";
-	});
-}
