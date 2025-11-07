@@ -28,6 +28,7 @@ export type TRegisterOptions = {
 export async function registerHandler(options: TRegisterOptions) {
 	const { shiftScheduleId } = options.input;
 	const userId = options.ctx.userId;
+	let emittedPeriodId: number = 0;
 
 	await prisma.$transaction(async (tx) => {
 		// Get the shift schedule the user wants to register for
@@ -54,6 +55,9 @@ export async function registerHandler(options: TRegisterOptions) {
 				message: "Period not found",
 			});
 		}
+
+		// save period id for use after the transaction (avoid redundant query)
+		emittedPeriodId = period.id;
 
 		// Check if we're within the schedule signup window
 		const now = new Date();
@@ -176,12 +180,7 @@ export async function registerHandler(options: TRegisterOptions) {
 		type: "register",
 		shiftScheduleId,
 		userId,
-		periodId: await prisma.shiftSchedule
-			.findUnique({
-				where: { id: shiftScheduleId },
-				select: { shiftType: { select: { periodId: true } } },
-			})
-			.then((s) => s?.shiftType.periodId ?? 0),
+		periodId: emittedPeriodId,
 		timestamp: new Date(),
 	});
 
