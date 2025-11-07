@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil } from "lucide-react";
+import { TagsIcon } from "lucide-react";
 import type { AuthUser } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { checkPermissions } from "@/lib/permissions";
@@ -59,9 +59,10 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 									variant="ghost"
 									size="icon"
 									aria-label={`Edit roles for ${user.username}`}
+									title={`Edit roles for ${user.username}`}
 									disabled={!canManageRoles}
 								>
-									<Pencil />
+									<TagsIcon />
 								</Button>
 							}
 						/>
@@ -90,8 +91,8 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 			},
 		},
 		{
-			accessorKey: "modify",
-			header: "Modify",
+			accessorKey: "actions",
+			header: "",
 			cell: ({ row }) => {
 				return (
 					<div className="flex gap-2 items-center">
