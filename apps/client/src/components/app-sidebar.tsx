@@ -136,7 +136,7 @@ export function AppSidebar() {
 	return (
 		<Sidebar>
 			<SidebarHeader>
-				<Logo className="h-8" />
+				<Logo className="h-8 p-1" />
 			</SidebarHeader>
 			<SidebarContent>
 				{items.map((group) => {

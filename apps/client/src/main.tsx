@@ -6,6 +6,7 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 // Import the generated route tree
@@ -39,6 +40,7 @@ if (!rootElement.innerHTML) {
 			<QueryClientProvider client={queryClient}>
 				<ThemeProvider defaultTheme="dark" storageKey="ui-theme">
 					<RouterProvider router={router} />
+					<Toaster />
 				</ThemeProvider>
 				<TanStackDevtools
 					plugins={[
@@ -54,5 +56,7 @@ if (!rootElement.innerHTML) {
 }
 
 if (import.meta.hot) {
-	import.meta.hot.accept();
+	import.meta.hot.on("vite:beforeFullReload", () => {
+		throw "(skipping full reload)";
+	});
 }
