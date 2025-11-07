@@ -3,6 +3,7 @@ import {
 	BugIcon,
 	CalendarIcon,
 	ChevronUpIcon,
+	ClipboardListIcon,
 	DoorOpenIcon,
 	HomeIcon,
 	LaptopMinimalCheckIcon,
@@ -40,6 +41,7 @@ import { checkPermissions } from "@/lib/permissions";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
 // import { permissions as reportsPagePermissions } from "@/routes/app/reports"; --- To be implemented
 import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
+import { permissions as myShiftsPagePermissions } from "@/routes/app/my-shifts";
 import { permissions as periodsPagePermissions } from "@/routes/app/periods";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
@@ -61,6 +63,12 @@ export const items = [
 				url: "/app/scheduling",
 				icon: CalendarIcon,
 				permissions: schedulingPagePermissions,
+			},
+			{
+				title: "My Shifts",
+				url: "/app/my-shifts",
+				icon: ClipboardListIcon,
+				permissions: myShiftsPagePermissions,
 			},
 		],
 	},
@@ -136,7 +144,7 @@ export function AppSidebar() {
 	return (
 		<Sidebar>
 			<SidebarHeader>
-				<Logo className="h-8" />
+				<Logo className="h-8 p-1" />
 			</SidebarHeader>
 			<SidebarContent>
 				{items.map((group) => {

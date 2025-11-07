@@ -18,11 +18,20 @@ export async function pickupHandler(options: TPickupOptions) {
 	const { shiftOccurrenceId } = options.input;
 	const userId = options.ctx.userId;
 
-	// Verify the shift occurrence exists
+	// Verify the shift occurrence exists and get related data
 	const occurrence = await prisma.shiftOccurrence.findUnique({
 		where: { id: shiftOccurrenceId },
 		include: {
 			users: true,
+			shiftSchedule: {
+				include: {
+					shiftType: {
+						include: {
+							period: true,
+						},
+					},
+				},
+			},
 		},
 	});
 
@@ -30,6 +39,23 @@ export async function pickupHandler(options: TPickupOptions) {
 		throw new TRPCError({
 			code: "NOT_FOUND",
 			message: "Shift occurrence not found",
+		});
+	}
+
+	// Check if we're within the schedule modify window
+	const period = occurrence.shiftSchedule.shiftType.period;
+	const now = new Date();
+	const isModifyByStart =
+		!period.scheduleModifyStart || new Date(period.scheduleModifyStart) <= now;
+	const isModifyByEnd =
+		!period.scheduleModifyEnd || new Date(period.scheduleModifyEnd) >= now;
+	const isWithinModifyWindow = isModifyByStart && isModifyByEnd;
+
+	if (!isWithinModifyWindow) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message:
+				"Shift occurrence pickup is not currently allowed. Please check the modification window for this period.",
 		});
 	}
 

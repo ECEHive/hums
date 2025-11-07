@@ -1,13 +1,13 @@
 import {
 	generateShiftScheduleShiftOccurrences,
-	parseTimeString,
+	TIME_REGEX,
+	timeToSeconds,
 } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-const TIME_REGEX = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
 const timeStringSchema = z.string().regex(TIME_REGEX, "Invalid time format");
 
 export const ZUpdateSchema = z
@@ -100,9 +100,4 @@ export async function updateHandler(options: TUpdateOptions) {
 
 		return { shiftSchedule: updated };
 	});
-}
-
-function timeToSeconds(time: string) {
-	const { hours, minutes, seconds } = parseTimeString(time);
-	return hours * 3600 + minutes * 60 + seconds;
 }

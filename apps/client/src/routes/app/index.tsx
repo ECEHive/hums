@@ -59,13 +59,22 @@ function AppIndexLayout() {
 
 					<Card className="md:col-span-1">
 						<CardContent>
-							<div className="space-y-3">
+							<div className="flex flex-col space-y-3">
 								<Link to="/app/scheduling">
 									<Button
 										variant="outline"
 										className="w-full flex items-center justify-between"
 									>
 										<span>Start Scheduling</span>
+										<ChevronsRightIcon />
+									</Button>
+								</Link>
+								<Link to="/app/my-shifts">
+									<Button
+										variant="outline"
+										className="w-full flex items-center justify-between"
+									>
+										<span>View My Shifts</span>
 										<ChevronsRightIcon />
 									</Button>
 								</Link>

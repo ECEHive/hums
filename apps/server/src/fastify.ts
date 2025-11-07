@@ -1,5 +1,4 @@
 import cors from "@fastify/cors";
-import fastifyWebsocket from "@fastify/websocket";
 import fastify from "fastify";
 import { apiRoute } from "./routes/api";
 
@@ -17,8 +16,6 @@ server.register(cors, {
 	origin: allowedOrigins,
 	credentials: true, // Allow cookies/auth headers
 });
-
-server.register(fastifyWebsocket);
 
 server.get("/", async () => {
 	// TODO: Add useful info here
