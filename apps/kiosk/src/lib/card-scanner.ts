@@ -1,3 +1,7 @@
+import { getLogger } from "./logging";
+
+const log = getLogger("card-scanner");
+
 export interface CardScan {
 	id: string;
 	data: string;
@@ -98,33 +102,99 @@ export async function connectSerial(
 			readableStreamClosed,
 			running: true,
 		};
+
+		// Buffer partial incoming chunks until a carriage return is received.
+		// Supports two formats:
+		// - Traditional: "732276\r"  => "732276"
+		// - Long-form: "...=...=...=6017700008173200\r" => take last '=' segment and
+		//   return characters 10..15 (1-based) which yields "817320" in the example.
+		const bufferParts: { buf: string } = { buf: "" };
+
+		const parseCardData = (raw: string): string | null => {
+			const s = raw.trim();
+			if (!s) return null;
+			// If contains '=', treat as long form
+			if (s.includes("=")) {
+				const parts = s.split("=");
+				const last = parts[parts.length - 1] ?? "";
+				// Extract characters 10..15 (1-based) => substring(9, 6)
+				if (last.length >= 15) {
+					const extracted = last.substring(9, 9 + 6);
+					const digits = extracted.replace(/\D/g, "");
+					return digits || null;
+				}
+				// Fallback: return continuous digits from last segment if it's shorter
+				const fallback = last.replace(/\D/g, "");
+				return fallback || null;
+			}
+
+			// Traditional: just return contiguous digits in the string
+			const digits = s.replace(/\D/g, "");
+			return digits || null;
+		};
+
 		(async () => {
 			while (session.running) {
 				try {
 					const { value, done } = await reader.read();
 					if (done) break;
-					if (value) {
-						value
-							.split(/\r?\n/)
-							.map((s: string) => s.trim())
-							.filter(Boolean)
-							.forEach((line: string) => {
-								onScan({
-									id: crypto.randomUUID(),
-									data: line,
-									timestamp: new Date(),
-								});
+					if (!value) continue;
+
+					// Log raw incoming chunk
+					try {
+						log.debug("raw-chunk-received", { chunk: value });
+					} catch {
+						/* no-op if logger serialization fails */
+					}
+
+					// Append incoming chunk to buffer
+					bufferParts.buf += value;
+
+					// Process all complete records in buffer (terminated by '\r' or '\n')
+					while (true) {
+						const idxR = bufferParts.buf.indexOf("\r");
+						const idxN = bufferParts.buf.indexOf("\n");
+						if (idxR === -1 && idxN === -1) break;
+						const idx =
+							idxR === -1 ? idxN : idxN === -1 ? idxR : Math.min(idxR, idxN);
+						const chunk = bufferParts.buf.slice(0, idx);
+						// Remove processed chunk and its terminator
+						bufferParts.buf = bufferParts.buf.slice(idx + 1);
+
+						const trimmed = chunk.trim();
+						if (!trimmed) continue;
+
+						const parsed = parseCardData(trimmed);
+						if (parsed) {
+							try {
+								log.info("card-parsed", { raw: trimmed, cardId: parsed });
+							} catch {}
+							onScan({
+								id: crypto.randomUUID(),
+								data: parsed,
+								timestamp: new Date(),
 							});
+						} else {
+							try {
+								log.warn("card-parse-failed", { raw: trimmed });
+							} catch {}
+							// If parsing failed, ignore the record
+						}
 					}
 				} catch (err) {
-					onError(
-						"Serial read error: " +
-							(err instanceof Error ? err.message : String(err)),
-					);
+					const msg = err instanceof Error ? err.message : String(err);
+					try {
+						log.error("serial-read-error", { message: msg });
+					} catch {}
+					onError("Serial read error: " + msg);
 					break;
 				}
 			}
-			reader.releaseLock();
+			try {
+				reader.releaseLock();
+			} catch {
+				/* ignore */
+			}
 		})();
 		return session;
 	} catch (e) {
