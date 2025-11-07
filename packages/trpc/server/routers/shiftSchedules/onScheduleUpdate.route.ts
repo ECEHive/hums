@@ -20,8 +20,6 @@ export async function* onScheduleUpdateHandler(opts: {
 }) {
 	const { periodId } = opts.input;
 
-	console.log("[Subscription] Client subscribed to period:", periodId);
-
 	// Create an async iterable from the event emitter
 	// This properly handles the EventEmitter and AbortSignal
 	const iterable = shiftScheduleEvents.toIterable("update", {
@@ -32,21 +30,11 @@ export async function* onScheduleUpdateHandler(opts: {
 	for await (const [data] of iterable) {
 		const event = data as ShiftScheduleUpdateEvent;
 
-		console.log(
-			"[Subscription] Received event for period:",
-			event.periodId,
-			"Subscribed to:",
-			periodId,
-		);
-
 		// Only send events for the requested period
 		if (event.periodId === periodId) {
 			// Use the timestamp as the event ID for tracking
 			const eventId = event.timestamp.getTime().toString();
-			console.log("[Subscription] Sending event to client:", eventId);
 			yield tracked(eventId, event);
 		}
 	}
-
-	console.log("[Subscription] Client unsubscribed from period:", periodId);
 }
