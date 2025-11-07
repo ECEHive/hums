@@ -38,7 +38,6 @@ export async function listHandler(options: TListOptions) {
 		search,
 		startsAfter,
 		endsBefore,
-		visibleOnly = false,
 	} = options.input;
 
 	const where: Prisma.PeriodWhereInput = {};
@@ -53,29 +52,6 @@ export async function listHandler(options: TListOptions) {
 
 	if (endsBefore) {
 		where.start = { lte: endsBefore };
-	}
-
-	// Filter by visibility window if requested
-	if (visibleOnly) {
-		const now = new Date();
-		where.OR = [
-			// No visibility window defined (always visible)
-			{
-				AND: [{ visibleStart: null }, { visibleEnd: null }],
-			},
-			// Only visibleStart defined and now is after it
-			{
-				AND: [{ visibleStart: { lte: now } }, { visibleEnd: null }],
-			},
-			// Only visibleEnd defined and now is before it
-			{
-				AND: [{ visibleStart: null }, { visibleEnd: { gte: now } }],
-			},
-			// Both defined and now is between them
-			{
-				AND: [{ visibleStart: { lte: now } }, { visibleEnd: { gte: now } }],
-			},
-		];
 	}
 
 	const [result, total] = await Promise.all([

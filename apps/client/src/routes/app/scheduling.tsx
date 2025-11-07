@@ -160,7 +160,6 @@ function Scheduling() {
 			<PeriodSelector
 				selectedPeriodId={selectedPeriodId}
 				onPeriodChange={setSelectedPeriodId}
-				visibleOnly={true}
 			/>
 
 			{selectedPeriodId ? (

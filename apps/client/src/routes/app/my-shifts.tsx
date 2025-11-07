@@ -72,7 +72,6 @@ function MyShifts() {
 						setSelectedPeriodId(id);
 						setPage(1);
 					}}
-					visibleOnly={false}
 				/>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
