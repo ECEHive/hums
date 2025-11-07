@@ -10,12 +10,7 @@ export interface ShiftScheduleUpdateEvent {
 
 class ShiftScheduleEventEmitter extends EventEmitter {
 	emitUpdate(event: ShiftScheduleUpdateEvent) {
-		console.log("[ShiftSchedule Event] Emitting update");
 		this.emit("update", event);
-		console.log(
-			"[ShiftSchedule Event] Listeners count:",
-			this.listenerCount("update"),
-		);
 	}
 
 	/**
