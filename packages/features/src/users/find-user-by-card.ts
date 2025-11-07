@@ -53,14 +53,7 @@ export async function findUserByCard(cardNumber: string) {
 
 			if (!user) {
 				// Create the user as if they had logged in on the client (fetch LDAP info)
-				const created = await createUser(username);
-				if (!created) {
-					throw new TRPCError({
-						code: "INTERNAL_SERVER_ERROR",
-						message: `Failed to create user for username ${username}`,
-					});
-				}
-				user = created;
+				user = await createUser(username);
 			}
 
 			// Update (or set) the user's card number in our database

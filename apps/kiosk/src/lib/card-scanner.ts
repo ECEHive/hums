@@ -105,9 +105,9 @@ export async function connectSerial(
 
 		// Buffer partial incoming chunks until a carriage return is received.
 		// Supports two formats:
-		// - Traditional: "732276\r"  => "732276"
-		// - Long-form: "...=...=...=6017700008173200\r" => take last '=' segment and
-		//   return characters 10..15 (1-based) which yields "817320" in the example.
+		// - Traditional: "123456\r"  => "123456"
+		// - Long-form: "...=...=...=6017700001234560\r" => take last '=' segment and
+		//   return characters 10..15 (1-based) which yields "123456" in the example.
 		const bufferParts: { buf: string } = { buf: "" };
 
 		const parseCardData = (raw: string): string | null => {
@@ -117,7 +117,7 @@ export async function connectSerial(
 			if (s.includes("=")) {
 				const parts = s.split("=");
 				const last = parts[parts.length - 1] ?? "";
-				// Extract characters 10..15 (1-based) => substring(9, 6)
+				// Extract characters 10..15 (1-based) => substring(9, 15)
 				if (last.length >= 15) {
 					const extracted = last.substring(9, 9 + 6);
 					const digits = extracted.replace(/\D/g, "");
