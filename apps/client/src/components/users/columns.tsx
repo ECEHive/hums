@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { checkPermissions } from "@/lib/permissions";
 import { Button } from "../ui/button";
 import { RolesDialog } from "./roles-dialog";
+import { SimulateUserButton } from "./simulate-button";
 import { UserUpdateDialog } from "./update-dialog";
 
 type User = {
@@ -25,6 +26,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 	if (user === null) return [];
 
 	const canManageRoles = checkPermissions(user, ["users.update"]);
+	const canSimulateUsers = checkPermissions(user, ["users.simulate"]);
 
 	return [
 		{
@@ -94,6 +96,12 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 				return (
 					<div className="flex gap-2 items-center">
 						<UserUpdateDialog user={row.original} />
+						{canSimulateUsers && (
+							<SimulateUserButton
+								userId={row.original.id}
+								userName={row.original.name || row.original.username}
+							/>
+						)}
 					</div>
 				);
 			},
