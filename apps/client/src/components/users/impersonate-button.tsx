@@ -1,33 +1,33 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { UserRoundCog } from "lucide-react";
+import { HatGlassesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 
-interface SimulateUserButtonProps {
+interface ImpersonateUserButtonProps {
 	userId: number;
 	userName: string;
 	disabled?: boolean;
 }
 
-export function SimulateUserButton({
+export function ImpersonateUserButton({
 	userId,
 	userName,
 	disabled = false,
-}: SimulateUserButtonProps) {
+}: ImpersonateUserButtonProps) {
 	const { setToken, token } = useAuth();
 	const queryClient = useQueryClient();
 
-	const simulateMutation = useMutation({
+	const impersonateMutation = useMutation({
 		mutationFn: async () => {
-			return await trpc.auth.simulate.mutate({ userId });
+			return await trpc.auth.impersonate.mutate({ userId });
 		},
 		onSuccess: (data) => {
 			// Store the original token before switching
 			if (typeof window !== "undefined" && token) {
 				localStorage.setItem("original_token", token);
-				localStorage.setItem("simulation_mode", "true");
+				localStorage.setItem("impersonation_mode", "true");
 			}
 
 			// Switch to the new token
@@ -36,10 +36,10 @@ export function SimulateUserButton({
 			// Invalidate queries to refresh with new user context
 			queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
 
-			toast.success(`You are now simulating ${userName}`);
+			toast.success(`You are now impersonating ${userName}`);
 		},
 		onError: (error: Error) => {
-			toast.error(error.message || "Failed to simulate user");
+			toast.error(error.message || "Failed to impersonate user");
 		},
 	});
 
@@ -47,12 +47,12 @@ export function SimulateUserButton({
 		<Button
 			variant="ghost"
 			size="icon"
-			onClick={() => simulateMutation.mutate()}
-			disabled={disabled || simulateMutation.isPending}
-			aria-label={`Simulate user ${userName}`}
-			title={`Simulate user ${userName}`}
+			onClick={() => impersonateMutation.mutate()}
+			disabled={disabled || impersonateMutation.isPending}
+			aria-label={`Impersonate user ${userName}`}
+			title={`Impersonate user ${userName}`}
 		>
-			<UserRoundCog className="h-4 w-4" />
+			<HatGlassesIcon className="h-4 w-4" />
 		</Button>
 	);
 }

@@ -16,6 +16,7 @@ import { checkPermissions } from "@/lib/permissions";
 export type AuthUser = {
 	id: number;
 	name: string | null;
+	username: string;
 	email: string | null;
 	permissions: string[];
 	isSystemUser: boolean;
