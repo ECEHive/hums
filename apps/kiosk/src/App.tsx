@@ -10,9 +10,11 @@ import {
 	disconnectSerial,
 	type SerialSession,
 } from "@/lib/card-scanner";
+import { getLogger } from "@/lib/logging";
 import type { ConnectionStatus, TapEvent } from "@/types";
 
 function App() {
+	const log = getLogger("app");
 	const [connectionStatus, setConnectionStatus] =
 		useState<ConnectionStatus>("disconnected");
 	const [errorMessage, setErrorMessage] = useState<string>("");
@@ -44,12 +46,28 @@ function App() {
 	// Handle new tap event - immediately show most recent
 	const handleTapInOut = async (cardNumber: string) => {
 		try {
+			try {
+				log.info("tap-request", { cardNumber });
+			} catch {}
 			const result = await trpc.sessions.tapInOut.mutate({ cardNumber });
 			const event: TapEvent = {
 				...result,
 				id: crypto.randomUUID(),
 				timestamp: new Date(),
 			};
+
+			try {
+				log.info("tap-result", {
+					cardNumber,
+					status: result.status,
+					user: {
+						id: result.user?.id,
+						username: result.user?.username,
+						name: result.user?.name,
+					},
+					sessionId: result.session?.id,
+				});
+			} catch {}
 
 			// Clear any existing timers
 			if (tapEventTimeoutRef.current) {
@@ -75,6 +93,9 @@ function App() {
 		} catch (error) {
 			const message =
 				error instanceof Error ? error.message : "Failed to process tap";
+			try {
+				log.error("tap-error", { cardNumber, message });
+			} catch {}
 			setErrorMessage(message);
 			setTimeout(() => setErrorMessage(""), 5000);
 		}
@@ -108,10 +129,16 @@ function App() {
 		setErrorMessage("");
 		const session = await connectSerial(
 			(scan) => {
+				try {
+					log.info("scan-received", { scanId: scan.id, data: scan.data });
+				} catch {}
 				// Call tap-in/tap-out endpoint
 				void handleTapInOut(scan.data);
 			},
 			(err) => {
+				try {
+					log.error("serial-error", { message: err });
+				} catch {}
 				setErrorMessage(err);
 				setConnectionStatus("error");
 				// Auto-disconnect on error

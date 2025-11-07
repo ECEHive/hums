@@ -1,5 +1,6 @@
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
+import { createUser } from "./create-user";
 
 export async function findUserByCard(cardNumber: string) {
 	return await prisma.$transaction(async (tx) => {
@@ -51,13 +52,11 @@ export async function findUserByCard(cardNumber: string) {
 			});
 
 			if (!user) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: `No user exists for the provided card`,
-				});
+				// Create the user as if they had logged in on the client (fetch LDAP info)
+				user = await createUser(username);
 			}
 
-			// Update the user's card number in our database
+			// Update (or set) the user's card number in our database
 			await tx.user.update({
 				where: { id: user.id },
 				data: { cardNumber },
