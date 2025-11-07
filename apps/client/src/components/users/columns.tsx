@@ -1,11 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil } from "lucide-react";
+import { TagsIcon } from "lucide-react";
 import type { AuthUser } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { checkPermissions } from "@/lib/permissions";
 import { Button } from "../ui/button";
+import { ImpersonateUserButton } from "./impersonate-button";
 import { RolesDialog } from "./roles-dialog";
-import { SimulateUserButton } from "./simulate-button";
 import { UserUpdateDialog } from "./update-dialog";
 
 type User = {
@@ -26,7 +26,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 	if (user === null) return [];
 
 	const canManageRoles = checkPermissions(user, ["users.update"]);
-	const canSimulateUsers = checkPermissions(user, ["users.simulate"]);
+	const canImpersonateUsers = checkPermissions(user, ["users.impersonate"]);
 
 	return [
 		{
@@ -59,9 +59,10 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 									variant="ghost"
 									size="icon"
 									aria-label={`Edit roles for ${user.username}`}
+									title={`Edit roles for ${user.username}`}
 									disabled={!canManageRoles}
 								>
-									<Pencil />
+									<TagsIcon />
 								</Button>
 							}
 						/>
@@ -90,14 +91,14 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 			},
 		},
 		{
-			accessorKey: "modify",
-			header: "Modify",
+			accessorKey: "actions",
+			header: "",
 			cell: ({ row }) => {
 				return (
 					<div className="flex gap-2 items-center">
 						<UserUpdateDialog user={row.original} />
-						{canSimulateUsers && (
-							<SimulateUserButton
+						{canImpersonateUsers && (
+							<ImpersonateUserButton
 								userId={row.original.id}
 								userName={row.original.name || row.original.username}
 							/>

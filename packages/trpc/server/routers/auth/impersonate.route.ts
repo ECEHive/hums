@@ -4,17 +4,17 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-export const ZSimulateSchema = z.object({
+export const ZImpersonateSchema = z.object({
 	userId: z.number(),
 });
 
-export type TSimulateInput = z.infer<typeof ZSimulateSchema>;
+export type TImpersonateInput = z.infer<typeof ZImpersonateSchema>;
 
-export async function simulateHandler({
+export async function impersonateHandler({
 	input,
 	ctx,
 }: {
-	input: TSimulateInput;
+	input: TImpersonateInput;
 	ctx?: TPermissionProtectedProcedureContext;
 }) {
 	if (!ctx) {
