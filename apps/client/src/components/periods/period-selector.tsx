@@ -18,13 +18,13 @@ interface PeriodSelectorProps {
 
 export function PeriodSelector({
 	selectedPeriodId,
-	onPeriodChange
+	onPeriodChange,
 }: PeriodSelectorProps) {
 	const { data: periodsData, isLoading } = useQuery({
 		queryKey: ["periods", "listVisible"],
 		queryFn: async () => {
 			return trpc.periods.listVisible.query({ limit: 100 });
-		}
+		},
 	});
 
 	const periods = periodsData?.periods ?? [];

@@ -1,5 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -104,6 +109,14 @@ function formatTimeFromMinutes(minutes: number): string {
 	const hours = Math.floor(minutes / 60);
 	const mins = minutes % 60;
 	return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Format day of week number to string
+ */
+function formatDayBlock(dayOfWeek: number): string {
+	const day = DAYS_OF_WEEK.find((d) => d.value === dayOfWeek);
+	return day ? day.label : "Day";
 }
 
 /**
@@ -284,52 +297,79 @@ export function SchedulingTimeline({
 									const hasAvailable = blockData.available > 0;
 
 									return (
-										<Button
-											key={day.value}
-											variant={
-												blockData.hasUserRegistered ? "default" : "outline"
-											}
-											className={cn(
-												"h-auto min-h-[60px] flex flex-col items-center justify-center gap-1 p-2",
-												!blockData.hasUserRegistered &&
-													hasAvailable &&
-													"border-green-500 hover:border-green-600",
-												!blockData.hasUserRegistered &&
-													!hasAvailable &&
-													"opacity-50",
-											)}
-											onClick={() =>
-												onBlockClick(
-													day.value,
-													formatTimeFromMinutes(blockStart),
-												)
-											}
-										>
-											<div
-												className={cn(
-													"text-lg font-bold",
-													blockData.hasUserRegistered
-														? "text-primary-foreground"
-														: hasAvailable
-															? "text-green-600 dark:text-green-400"
-															: "text-muted-foreground",
-												)}
-											>
-												{blockData.available}
-											</div>
-											<div
-												className={cn(
-													"text-xs",
-													blockData.hasUserRegistered &&
-														"text-primary-foreground/80",
-												)}
-											>
-												Available
-											</div>
-											{blockData.hasUserRegistered && (
-												<div className="text-xs font-medium">✓ Registered</div>
-											)}
-										</Button>
+										<HoverCard key={day.value}>
+											<HoverCardTrigger asChild>
+												<Button
+													variant={
+														blockData.hasUserRegistered ? "default" : "outline"
+													}
+													className={cn(
+														"h-auto min-h-[60px] flex flex-col items-center justify-center gap-1 p-2",
+														!blockData.hasUserRegistered &&
+															hasAvailable &&
+															"border-green-500 hover:border-green-600",
+														!blockData.hasUserRegistered &&
+															!hasAvailable &&
+															"opacity-50",
+													)}
+													onClick={() =>
+														onBlockClick(
+															day.value,
+															formatTimeFromMinutes(blockStart),
+														)
+													}
+												>
+													<div
+														className={cn(
+															"text-lg font-bold",
+															blockData.hasUserRegistered
+																? "text-primary-foreground"
+																: hasAvailable
+																	? "text-green-600 dark:text-green-400"
+																	: "text-muted-foreground",
+														)}
+													>
+														{blockData.available}
+													</div>
+													<div
+														className={cn(
+															"text-xs",
+															blockData.hasUserRegistered &&
+																"text-primary-foreground/80",
+														)}
+													>
+														Available
+													</div>
+													{blockData.hasUserRegistered && (
+														<div className="text-xs font-medium">
+															✓ Registered
+														</div>
+													)}
+												</Button>
+											</HoverCardTrigger>
+											<HoverCardContent>
+												<div className="space-y-2">
+													<div className="font-medium mb-1">
+														{/* Day and time block header */}
+														{formatDayBlock(day.value)}{" "}
+														{formatTimeBlock(blockStart, blockSize)}
+													</div>
+													{blockData.schedules.map((schedule) => (
+														<div
+															key={schedule.id}
+															className="flex flex-row justify-between items-center gap-4"
+														>
+															<div>
+																{schedule.availableSlots} / {schedule.slots}
+															</div>
+															<div className="grow">
+																{schedule.shiftTypeName}
+															</div>
+														</div>
+													))}
+												</div>
+											</HoverCardContent>
+										</HoverCard>
 									);
 								})}
 							</div>
