@@ -1,5 +1,5 @@
 <p align="center">
-  <h2 align="center">HUMS</h3>
+  <h1 align="center">HUMS</h1>
   <h3 align="center">Hive User Management System</h3>
 
   <p align="center">
@@ -66,16 +66,18 @@ Refer to each app's README for required variables.
 
 ## Development
 
-To start server and client with hot-reload, run the following in the workspace root,
+To start server, client, and kiosk with hot-reload, run the following in the workspace root,
 
 ```sh
 pnpm run -r dev
 ```
 
-You can then access the application at https://localhost:4483/.
+You can then access the client at https://localhost:44831/.
+
+The kiosk is accessible at https://localhost:44832/ and the server is accessible at http://localhost:44830/.
 
 Notes:
-- You may get an HTTPS warning in the browser when using the local dev server. You can accept/bypass the warning to continue.
+- You may get an HTTPS warning in the browser when using the local dev servers. You can accept/bypass the warning to continue.
 
 ## Contributing
 
