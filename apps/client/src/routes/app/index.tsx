@@ -83,7 +83,7 @@ function AppIndexLayout() {
 										"shift_schedules.unregister",
 									],
 								}) && (
-									<Link to="/shifts/scheduling">
+									<Link to="/shifts/my-shifts">
 										<Button
 											variant="outline"
 											className="w-full flex items-center justify-between"

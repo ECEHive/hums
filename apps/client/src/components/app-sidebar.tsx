@@ -41,7 +41,7 @@ import { permissions as appIndexPagePermissions } from "@/routes/app/index";
 import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as usersPagePermissions } from "@/routes/app/users";
-import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
+import { permissions as schedulingIndexPagePermissions } from "@/routes/shifts/scheduling";
 import { Logo } from "./logo";
 
 // Sidebar menu items, grouped by section
@@ -71,7 +71,7 @@ export const items: AppSidebarGroup[] = [
 				title: "Shifts",
 				url: "/shifts",
 				icon: CalendarIcon,
-				permissions: schedulingPagePermissions,
+				permissions: schedulingIndexPagePermissions,
 				hasChildren: true,
 			},
 		],

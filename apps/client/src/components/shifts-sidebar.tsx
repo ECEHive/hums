@@ -38,7 +38,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
-import { permissions as appIndexPagePermissions } from "@/routes/app/index";
+import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index";
 import { permissions as myShiftsPagePermissions } from "@/routes/shifts/my-shifts";
 import { permissions as periodDetailsPagePermissions } from "@/routes/shifts/period-details";
 import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
@@ -58,7 +58,7 @@ export const items = [
 				title: "Home",
 				url: "/shifts",
 				icon: HomeIcon,
-				permissions: appIndexPagePermissions,
+				permissions: shiftsIndexPagePermissions,
 			},
 			{
 				title: "Scheduling",
