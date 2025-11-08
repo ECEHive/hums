@@ -4,6 +4,7 @@ import { RequirePermissions, useCurrentUser } from "@/auth";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/")({
 	component: () =>
@@ -51,8 +52,8 @@ function AppIndexLayout() {
 
 						<CardContent>
 							<p className="text-muted-foreground">
-								Use the dashboard to sign up for shifts, view and manage
-								upcoming shifts, and keep track of your attendance.
+								Use this dashboard to navigate to different sections of the user
+								management system.
 							</p>
 						</CardContent>
 					</Card>
@@ -60,24 +61,38 @@ function AppIndexLayout() {
 					<Card className="md:col-span-1">
 						<CardContent>
 							<div className="flex flex-col space-y-3">
-								<Link to="/app/scheduling">
-									<Button
-										variant="outline"
-										className="w-full flex items-center justify-between"
-									>
-										<span>Start Scheduling</span>
-										<ChevronsRightIcon />
-									</Button>
-								</Link>
-								<Link to="/app/my-shifts">
-									<Button
-										variant="outline"
-										className="w-full flex items-center justify-between"
-									>
-										<span>View My Shifts</span>
-										<ChevronsRightIcon />
-									</Button>
-								</Link>
+								{checkPermissions(user, {
+									any: [
+										"shift_schedules.register",
+										"shift_schedules.unregister",
+									],
+								}) && (
+									<Link to="/shifts/scheduling">
+										<Button
+											variant="outline"
+											className="w-full flex items-center justify-between"
+										>
+											<span>Schedule Shifts</span>
+											<ChevronsRightIcon />
+										</Button>
+									</Link>
+								)}
+								{checkPermissions(user, {
+									any: [
+										"shift_schedules.register",
+										"shift_schedules.unregister",
+									],
+								}) && (
+									<Link to="/shifts/my-shifts">
+										<Button
+											variant="outline"
+											className="w-full flex items-center justify-between"
+										>
+											<span>View My Shifts</span>
+											<ChevronsRightIcon />
+										</Button>
+									</Link>
+								)}
 							</div>
 						</CardContent>
 					</Card>

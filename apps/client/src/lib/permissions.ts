@@ -2,21 +2,49 @@ import { trpc } from "@ecehive/trpc/client";
 import type { AuthUser } from "@/auth";
 
 /**
- * Ensure the provided user has all given permissions.
+ * Permissions descriptor accepted by helpers.
+ * - passing a plain string[] keeps the existing "all" behavior (every permission required)
+ * - passing { any: [...] } will return true if the user has any of the listed permissions
+ * - passing { all: [...] } will return true only if the user has all of the listed permissions
+ */
+export type RequiredPermissions = string[] | { any?: string[]; all?: string[] };
+
+/**
+ * Evaluate whether the provided user satisfies the required permissions.
  *
  * System users bypass permission checks.
- * Returns true if user has all required permissions, false otherwise.
  *
- * @param user The authenticated user or null.
- * @param requiredPermissions List of permissions to check.
- * @returns boolean indicating if user has all required permissions.
+ * Backwards compatible: passing a string[] behaves as "all" (every permission required).
  */
 export function checkPermissions(
 	user: AuthUser | null,
-	requiredPermissions: string[],
+	requiredPermissions: RequiredPermissions,
 ): boolean {
 	if (user?.isSystemUser) return true;
-	return requiredPermissions.every((perm) => user?.permissions.includes(perm));
+
+	// normalize to object form
+	let any: string[] | undefined;
+	let all: string[] | undefined;
+
+	if (Array.isArray(requiredPermissions)) {
+		all = requiredPermissions;
+	} else {
+		any = requiredPermissions.any;
+		all = requiredPermissions.all;
+	}
+
+	// If `any` provided, require at least one match
+	if (any && any.length > 0) {
+		return any.some((perm) => user?.permissions.includes(perm));
+	}
+
+	// Default to `all` behaviour (including when passed as plain array)
+	if (all && all.length > 0) {
+		return all.every((perm) => user?.permissions.includes(perm));
+	}
+
+	// No permissions required
+	return true;
 }
 
 export async function getAllPermissions(): Promise<

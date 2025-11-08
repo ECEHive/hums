@@ -6,6 +6,7 @@ import { useCallback, useId, useState } from "react";
 import { z } from "zod";
 // DateField removed in favor of DateRangeSelector
 import DateRangeSelector from "@/components/date-range-selector";
+import { usePeriod } from "@/components/period-provider";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,
@@ -56,6 +57,9 @@ export function CreatePeriodSheet({
 	const [serverError, setServerError] = useState<string | null>(null);
 	const formId = useId();
 
+	// access period context so we can set the newly created period
+	const { setPeriod } = usePeriod();
+
 	const createPeriodMutation = useMutation({
 		mutationFn: async (input: {
 			name: string;
@@ -72,10 +76,17 @@ export function CreatePeriodSheet({
 		},
 		onSuccess: (data) => {
 			if (data.period) {
+				// refresh the periods list
 				queryClient.invalidateQueries({ queryKey: ["periods"] });
+				// set the newly created period in context
+				try {
+					setPeriod(data.period.id);
+				} catch (_) {
+					// ignore if context not available
+				}
+				// navigate to the period details page
 				navigate({
-					to: "/app/periods/$periodId",
-					params: { periodId: String(data.period.id) },
+					to: "/shifts/period-details",
 				});
 			}
 		},

@@ -2,20 +2,21 @@ import { Link, useLocation } from "@tanstack/react-router";
 import {
 	BugIcon,
 	CalendarIcon,
-	ChevronRightIcon,
+	ChevronLeft,
 	ChevronUpIcon,
+	ClipboardListIcon,
+	ClockIcon,
 	DoorOpenIcon,
 	HomeIcon,
-	LaptopMinimalCheckIcon,
+	ListIcon,
 	MoonIcon,
-	ShieldIcon,
+	NotebookTextIcon,
 	SunIcon,
 	SunMoonIcon,
 	User2Icon,
-	UserIcon,
 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/theme-provider"; // Import useTheme from theme-provider
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -37,42 +38,39 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
-import { permissions as appIndexPagePermissions } from "@/routes/app/index";
-import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
-import { permissions as rolesPagePermissions } from "@/routes/app/roles";
-import { permissions as usersPagePermissions } from "@/routes/app/users";
-import { permissions as schedulingIndexPagePermissions } from "@/routes/shifts/scheduling";
+import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index";
+import { permissions as myShiftsPagePermissions } from "@/routes/shifts/my-shifts";
+import { permissions as periodDetailsPagePermissions } from "@/routes/shifts/period-details";
+import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
+import { permissions as shiftSchedulesPagePermissions } from "@/routes/shifts/shift-schedules";
+import { permissions as shiftTypesPagePermissions } from "@/routes/shifts/shift-types";
+// import { permissions as reportsPagePermissions } from "@/routes/shifts/reports"; // To be implemented
 import { Logo } from "./logo";
+import { usePeriod } from "./period-provider";
+import { PeriodSelector } from "./periods/period-selector";
 
 // Sidebar menu items, grouped by section
-type AppSidebarItem = {
-	title: string;
-	url: string;
-	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-	permissions: string[];
-	hasChildren?: boolean;
-};
-
-type AppSidebarGroup = {
-	name?: string;
-	items: AppSidebarItem[];
-};
-
-export const items: AppSidebarGroup[] = [
+export const items = [
 	{
+		name: "Shifts",
 		items: [
 			{
 				title: "Home",
-				url: "/app",
+				url: "/shifts",
 				icon: HomeIcon,
-				permissions: appIndexPagePermissions,
+				permissions: shiftsIndexPagePermissions,
 			},
 			{
-				title: "Shifts",
-				url: "/shifts",
+				title: "Scheduling",
+				url: "/shifts/scheduling",
 				icon: CalendarIcon,
-				permissions: schedulingIndexPagePermissions,
-				hasChildren: true,
+				permissions: schedulingPagePermissions,
+			},
+			{
+				title: "My Shifts",
+				url: "/shifts/my-shifts",
+				icon: ClipboardListIcon,
+				permissions: myShiftsPagePermissions,
 			},
 		],
 	},
@@ -80,28 +78,34 @@ export const items: AppSidebarGroup[] = [
 		name: "Admin",
 		items: [
 			{
-				title: "Roles",
-				url: "/app/roles",
-				icon: ShieldIcon,
-				permissions: rolesPagePermissions,
+				title: "Period Details",
+				url: "/shifts/period-details",
+				icon: CalendarIcon,
+				permissions: periodDetailsPagePermissions,
 			},
 			{
-				title: "Users",
-				url: "/app/users",
-				icon: UserIcon,
-				permissions: usersPagePermissions,
+				title: "Shift Types",
+				url: "/shifts/shift-types",
+				icon: ListIcon,
+				permissions: shiftTypesPagePermissions,
 			},
 			{
-				title: "Kiosks",
-				url: "/app/kiosks",
-				icon: LaptopMinimalCheckIcon,
-				permissions: kiosksPagePermissions,
+				title: "Shift Schedules",
+				url: "/shifts/shift-schedules",
+				icon: ClockIcon,
+				permissions: shiftSchedulesPagePermissions,
+			},
+			{
+				title: "Reports",
+				url: "/shifts/reports", // To be implemented
+				icon: NotebookTextIcon,
+				permissions: [], // reportsPagePermissions,
 			},
 		],
 	},
 ];
 
-export function AppSidebar() {
+export function ShiftsSidebar() {
 	const user = useCurrentUser();
 	const { logout } = useAuth();
 	const { setTheme } = useTheme();
@@ -133,12 +137,34 @@ export function AppSidebar() {
 		return nItem === longestMatch;
 	};
 
+	const { period, setPeriod } = usePeriod();
+
 	return (
 		<Sidebar>
 			<SidebarHeader>
 				<Logo className="h-8 p-1" />
 			</SidebarHeader>
 			<SidebarContent>
+				<SidebarGroup>
+					<SidebarGroupContent>
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild isActive={isPathActive("/app")}>
+									<Link to="/app">
+										<ChevronLeft />
+										<span>Dashboard</span>
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<PeriodSelector
+									selectedPeriodId={period}
+									onPeriodChange={(periodId) => setPeriod(periodId)}
+								/>
+							</SidebarMenuItem>
+						</SidebarMenu>
+					</SidebarGroupContent>
+				</SidebarGroup>
 				{items.map((group) => {
 					const visibleItems = group.items.filter((item) =>
 						checkPermissions(user, item.permissions),
@@ -157,15 +183,9 @@ export function AppSidebar() {
 												asChild
 												isActive={isPathActive(item.url)}
 											>
-												<Link
-													to={item.url}
-													className="flex w-full items-center gap-3"
-												>
-													<item.icon className="h-4 w-4" />
-													<span className="flex-1">{item.title}</span>
-													{item.hasChildren && (
-														<ChevronRightIcon className="ml-2 h-4 w-4 text-muted-foreground" />
-													)}
+												<Link to={item.url}>
+													<item.icon />
+													<span>{item.title}</span>
 												</Link>
 											</SidebarMenuButton>
 										</SidebarMenuItem>
