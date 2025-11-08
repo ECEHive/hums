@@ -4,14 +4,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import React from "react";
 import { RequirePermissions } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
-import { PeriodSelector } from "@/components/periods/period-selector";
+import { PeriodNotSelected } from "@/components/period-not-selected";
+import { usePeriod } from "@/components/period-provider";
 import { SchedulingTimeline } from "@/components/shift-schedules/scheduling-timeline";
 import { ShiftDetailSheet } from "@/components/shift-schedules/shift-detail-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import type { RequiredPermissions } from "@/lib/permissions";
 
-export const Route = createFileRoute("/app/scheduling")({
+export const Route = createFileRoute("/shifts/scheduling")({
 	component: () =>
 		RequirePermissions({
 			permissions,
@@ -20,7 +22,7 @@ export const Route = createFileRoute("/app/scheduling")({
 		}),
 });
 
-export const permissions = ["shift_schedules.register"];
+export const permissions = ["shift_schedules.register"] as RequiredPermissions;
 
 interface SelectedBlock {
 	dayOfWeek: number;
@@ -29,27 +31,10 @@ interface SelectedBlock {
 
 function Scheduling() {
 	const queryClient = useQueryClient();
-	const [selectedPeriodId, setSelectedPeriodId] = React.useState<number | null>(
-		null,
-	);
+	const { period: selectedPeriodId } = usePeriod();
 	const [selectedBlock, setSelectedBlock] =
 		React.useState<SelectedBlock | null>(null);
 	const [sheetOpen, setSheetOpen] = React.useState(false);
-
-	// Get current period
-	const { data: currentPeriodData } = useQuery({
-		queryKey: ["currentPeriod"],
-		queryFn: async () => {
-			return trpc.periods.getCurrent.query();
-		},
-	});
-
-	// Set selected period to current period on load
-	React.useEffect(() => {
-		if (currentPeriodData?.period && selectedPeriodId === null) {
-			setSelectedPeriodId(currentPeriodData.period.id);
-		}
-	}, [currentPeriodData, selectedPeriodId]);
 
 	// Subscribe to real-time shift schedule updates
 	React.useEffect(() => {
@@ -76,7 +61,12 @@ function Scheduling() {
 	}, [selectedPeriodId, queryClient]);
 
 	// Fetch schedules for the selected period
-	const { data: schedulesData, isLoading: schedulesLoading } = useQuery({
+	const {
+		data: schedulesData,
+		isLoading: schedulesLoading,
+		isError: schedulesError,
+		error: schedulesErrorObj,
+	} = useQuery({
 		queryKey: ["schedulesForRegistration", selectedPeriodId],
 		queryFn: async () => {
 			if (!selectedPeriodId) return null;
@@ -153,14 +143,13 @@ function Scheduling() {
 		});
 	}, [selectedBlock, schedulesData]);
 
+	if (selectedPeriodId === null) {
+		return <PeriodNotSelected />;
+	}
+
 	return (
 		<div className="container mx-auto p-4 space-y-4">
 			<h1 className="text-2xl font-bold">Shift Scheduling</h1>
-
-			<PeriodSelector
-				selectedPeriodId={selectedPeriodId}
-				onPeriodChange={setSelectedPeriodId}
-			/>
 
 			{selectedPeriodId ? (
 				isWithinVisibilityWindow ? (
@@ -195,6 +184,17 @@ function Scheduling() {
 									<div className="flex items-center justify-center py-12">
 										<Spinner className="w-8 h-8" />
 									</div>
+								) : schedulesError ? (
+									<Alert variant="destructive">
+										<AlertTitle>Failed to load shifts</AlertTitle>
+										<AlertDescription>
+											{String(
+												schedulesErrorObj?.message ??
+													schedulesErrorObj ??
+													"An unknown error occurred while loading shifts",
+											)}
+										</AlertDescription>
+									</Alert>
 								) : (
 									<SchedulingTimeline
 										schedules={schedulesData?.schedules ?? []}

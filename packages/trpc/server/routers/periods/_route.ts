@@ -6,7 +6,7 @@ import {
 import { createHandler, ZCreateSchema } from "./create.route";
 import { deleteHandler, ZDeleteSchema } from "./delete.route";
 import { getHandler, ZGetSchema } from "./get.route";
-import { getCurrentHandler } from "./getCurrent.route";
+import { getCurrentHandler, ZGetCurrentSchema } from "./getCurrent.route";
 import { listHandler, ZListSchema } from "./list.route";
 import { listVisibleHandler, ZListVisibleSchema } from "./listVisible.route";
 import { updateHandler, ZUpdateSchema } from "./update.route";
@@ -21,8 +21,9 @@ export const periodsRouter = router({
 	get: permissionProtectedProcedure("periods.get")
 		.input(ZGetSchema)
 		.query(getHandler),
-	getCurrent:
-		permissionProtectedProcedure("periods.list").query(getCurrentHandler),
+	getCurrent: permissionProtectedProcedure("periods.list")
+		.input(ZGetCurrentSchema)
+		.query(getCurrentHandler),
 	create: permissionProtectedProcedure("periods.create")
 		.input(ZCreateSchema)
 		.mutation(createHandler),
