@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-   <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/ECEHive/hums">
+   <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/ECEHive/hums?style=flat&color=yellow">
    <img alt="GitHub License" src="https://img.shields.io/github/license/ECEHive/hums">
 	<img alt="GitHub top language" src="https://img.shields.io/github/languages/top/ECEHive/hums">
 </p>
@@ -47,17 +47,18 @@ pnpm -v
 	pnpm install
 	```
 
-4. Apply database migrations:
+4. Generate database and apply migrations:
 
 	```sh
 	cd packages/prisma
-	pnpm migrate
+	pnpm generate && pnpm migrate
 	```
 
 5. Create environment files for each app that needs them (examples are provided):
 
 	```sh
 	cp apps/client/.env.sample apps/client/.env
+	cp apps/kiosk/.env.sample apps/kiosk/.env
 	cp apps/server/.env.sample apps/server/.env
 	# then edit the .env files to suit your local environment
 	```
@@ -79,14 +80,12 @@ The kiosk is accessible at https://localhost:44832/ and the server is accessible
 Notes:
 - You may get an HTTPS warning in the browser when using the local dev servers. You can accept/bypass the warning to continue.
 
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on contributing (branching, commits, pull requests, and reviews). Also read and follow our [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) to help keep the community respectful and collaborative.
-
 ## License
 
 See [LICENSE](./LICENSE) for license details.
 
----
+## Contributing
 
-![Alt](https://repobeats.axiom.co/api/embed/3834aafc611c93e7601ae61b25dfc6e8cde6b986.svg "Repobeats analytics image")
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on contributing (branching, commits, pull requests, and reviews). Also read and follow our [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) to help keep the community respectful and collaborative.
+
+![Alt](https://repobeats.axiom.co/api/embed/e340dcbcd1c8721fa10e52301b8825cd1e253ac2.svg "Repobeats analytics image (dev branch)")
