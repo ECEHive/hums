@@ -24,6 +24,7 @@ import { Route as ShiftsAttendanceRouteImport } from './routes/shifts/attendance
 import { Route as AppUsersRouteImport } from './routes/app/users'
 import { Route as AppSessionsRouteImport } from './routes/app/sessions'
 import { Route as AppRolesRouteImport } from './routes/app/roles'
+import { Route as AppReportsRouteImport } from './routes/app/reports'
 import { Route as AppMyAgreementsRouteImport } from './routes/app/my-agreements'
 import { Route as AppKiosksRouteImport } from './routes/app/kiosks'
 import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
@@ -103,6 +104,11 @@ const AppRolesRoute = AppRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMyAgreementsRoute = AppMyAgreementsRouteImport.update({
   id: '/my-agreements',
   path: '/my-agreements',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
+  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/kiosks'
     | '/app/my-agreements'
+    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/users'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/kiosks'
     | '/app/my-agreements'
+    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/users'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/kiosks'
     | '/app/my-agreements'
+    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/users'
@@ -353,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRolesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/my-agreements': {
       id: '/app/my-agreements'
       path: '/my-agreements'
@@ -381,6 +400,7 @@ interface AppRouteChildren {
   AppAgreementsRoute: typeof AppAgreementsRoute
   AppKiosksRoute: typeof AppKiosksRoute
   AppMyAgreementsRoute: typeof AppMyAgreementsRoute
+  AppReportsRoute: typeof AppReportsRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSessionsRoute: typeof AppSessionsRoute
   AppUsersRoute: typeof AppUsersRoute
@@ -391,6 +411,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgreementsRoute: AppAgreementsRoute,
   AppKiosksRoute: AppKiosksRoute,
   AppMyAgreementsRoute: AppMyAgreementsRoute,
+  AppReportsRoute: AppReportsRoute,
   AppRolesRoute: AppRolesRoute,
   AppSessionsRoute: AppSessionsRoute,
   AppUsersRoute: AppUsersRoute,
