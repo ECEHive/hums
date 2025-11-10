@@ -5,7 +5,7 @@ import {
 	CalendarCheckIcon,
 	CalendarClockIcon,
 	ChevronDownIcon,
-	TrendingUpIcon,
+	ClockIcon,
 } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
@@ -135,7 +135,7 @@ function AttendancePage() {
 			<h1 className="text-2xl font-bold">Shift Attendance</h1>
 
 			{/* Stats Cards */}
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 md:grid-cols-3">
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Total Shifts</CardTitle>
@@ -154,22 +154,23 @@ function AttendancePage() {
 						<CardTitle className="text-sm font-medium">
 							Attendance Rate
 						</CardTitle>
-						<TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
+						<ClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							{statsData?.attendanceRate ?? 0}%
+							{statsData?.timeOnShiftPercentage ?? 0}%
 						</div>
 						<p className="text-xs text-muted-foreground">
-							{statsData?.presentCount ?? 0} of {statsData?.totalShifts ?? 0}{" "}
-							present
+							of shift hours attended
 						</p>
 					</CardContent>
 				</Card>
 
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Hours Worked</CardTitle>
+						<CardTitle className="text-sm font-medium">
+							Hours on Shift
+						</CardTitle>
 						<CalendarClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
@@ -177,21 +178,6 @@ function AttendancePage() {
 							{statsData?.totalHoursWorked ?? 0}
 						</div>
 						<p className="text-xs text-muted-foreground">hours logged</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Upcoming Shifts
-						</CardTitle>
-						<CalendarCheckIcon className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">
-							{statsData?.upcomingShiftsCount ?? 0}
-						</div>
-						<p className="text-xs text-muted-foreground">not yet occurred</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -239,18 +225,19 @@ function AttendancePage() {
 								<TableHead>Time In</TableHead>
 								<TableHead>Time Out</TableHead>
 								<TableHead>Duration</TableHead>
+								<TableHead>% On Shift</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{attendanceLoading ? (
 								<TableRow>
-									<TableCell colSpan={6} className="text-center">
+									<TableCell colSpan={7} className="text-center">
 										Loading...
 									</TableCell>
 								</TableRow>
 							) : attendances.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={6} className="text-center">
+									<TableCell colSpan={7} className="text-center">
 										No attendance records found
 									</TableCell>
 								</TableRow>
@@ -298,6 +285,24 @@ function AttendancePage() {
 										</TableCell>
 										<TableCell>
 											{formatDuration(attendance.timeIn, attendance.timeOut)}
+										</TableCell>
+										<TableCell>
+											{attendance.timeOnShiftPercentage !== null &&
+											attendance.timeOnShiftPercentage !== undefined ? (
+												<span
+													className={
+														attendance.timeOnShiftPercentage >= 90
+															? "text-green-600 font-medium"
+															: attendance.timeOnShiftPercentage >= 70
+																? "text-yellow-600 font-medium"
+																: "text-orange-600 font-medium"
+													}
+												>
+													{attendance.timeOnShiftPercentage}%
+												</span>
+											) : (
+												<span className="text-muted-foreground">-</span>
+											)}
 										</TableCell>
 									</TableRow>
 								))

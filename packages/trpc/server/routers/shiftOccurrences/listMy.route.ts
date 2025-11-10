@@ -85,99 +85,101 @@ export async function listMyHandler(options: TListMyOptions) {
 
 	const hasActiveSession = !!activeSession;
 
-	// Get all shift occurrences for the user in this period
-	const [occurrences, total] = await Promise.all([
-		prisma.shiftOccurrence.findMany({
-			where: {
-				users: {
-					some: {
-						id: userId,
-					},
-				},
-				shiftSchedule: {
-					shiftType: {
-						periodId,
-					},
+	// Get all upcoming/active shift occurrences for the user in this period
+	// Filter to only show shifts that haven't ended yet
+	const occurrences = await prisma.shiftOccurrence.findMany({
+		where: {
+			users: {
+				some: {
+					id: userId,
 				},
 			},
-			include: {
-				shiftSchedule: {
-					include: {
-						shiftType: true,
-					},
-				},
-				users: {
-					select: {
-						id: true,
-						name: true,
-					},
-				},
-				attendances: {
-					where: {
-						userId,
-					},
-					select: {
-						id: true,
-						status: true,
-						timeIn: true,
-						timeOut: true,
-					},
+			shiftSchedule: {
+				shiftType: {
+					periodId,
 				},
 			},
-			orderBy: {
-				timestamp: "asc",
+			// Only include shifts where timestamp is today or in the future
+			// This is a rough filter; we'll do exact filtering after computing end times
+			timestamp: {
+				gte: new Date(now.getTime() - 24 * 60 * 60 * 1000), // Allow shifts from yesterday (in case they wrap to today)
 			},
-			skip: offset,
-			take: limit,
-		}),
-		prisma.shiftOccurrence.count({
-			where: {
-				users: {
-					some: {
-						id: userId,
-					},
-				},
-				shiftSchedule: {
-					shiftType: {
-						periodId,
-					},
+		},
+		include: {
+			shiftSchedule: {
+				include: {
+					shiftType: true,
 				},
 			},
-		}),
-	]);
-
-	// Map to a cleaner format
-	const mappedOccurrences = occurrences.map((occ) => {
-		const occStart = new Date(occ.timestamp);
-		const occEnd = computeOccurrenceEnd(
-			occStart,
-			occ.shiftSchedule.startTime,
-			occ.shiftSchedule.endTime,
-		);
-
-		const isActive = occStart <= now && occEnd > now;
-		const isTappedIn = isActive && hasActiveSession;
-
-		return {
-			id: occ.id,
-			timestamp: occ.timestamp,
-			slot: occ.slot,
-			shiftScheduleId: occ.shiftScheduleId,
-			shiftTypeName: occ.shiftSchedule.shiftType.name,
-			shiftTypeLocation: occ.shiftSchedule.shiftType.location,
-			shiftTypeColor: occ.shiftSchedule.shiftType.color,
-			startTime: occ.shiftSchedule.startTime,
-			endTime: occ.shiftSchedule.endTime,
-			dayOfWeek: occ.shiftSchedule.dayOfWeek,
-			users: occ.users,
-			attendance: occ.attendances[0] || null,
-			isActive,
-			isTappedIn,
-		};
+			users: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+			attendances: {
+				where: {
+					userId,
+				},
+				select: {
+					id: true,
+					status: true,
+					timeIn: true,
+					timeOut: true,
+				},
+			},
+		},
+		orderBy: {
+			timestamp: "asc",
+		},
+		skip: offset,
+		take: limit,
 	});
+
+	// Map to a cleaner format and filter out past shifts
+	const mappedOccurrences = occurrences
+		.map((occ) => {
+			const occStart = new Date(occ.timestamp);
+			const occEnd = computeOccurrenceEnd(
+				occStart,
+				occ.shiftSchedule.startTime,
+				occ.shiftSchedule.endTime,
+			);
+
+			const isActive = occStart <= now && occEnd > now;
+
+			// User is only tapped in if:
+			// 1. The shift is currently active
+			// 2. They have an active session
+			// 3. They haven't already tapped out (attendance.timeOut is null)
+			const attendance = occ.attendances[0];
+			const isTappedIn =
+				isActive &&
+				hasActiveSession &&
+				(!attendance || attendance.timeOut === null);
+
+			return {
+				id: occ.id,
+				timestamp: occ.timestamp,
+				slot: occ.slot,
+				shiftScheduleId: occ.shiftScheduleId,
+				shiftTypeName: occ.shiftSchedule.shiftType.name,
+				shiftTypeLocation: occ.shiftSchedule.shiftType.location,
+				shiftTypeColor: occ.shiftSchedule.shiftType.color,
+				startTime: occ.shiftSchedule.startTime,
+				endTime: occ.shiftSchedule.endTime,
+				dayOfWeek: occ.shiftSchedule.dayOfWeek,
+				users: occ.users,
+				attendance: attendance || null,
+				isActive,
+				isTappedIn,
+				occEnd,
+			};
+		})
+		.filter((occ) => occ.occEnd > now); // Only include shifts that haven't ended yet
 
 	return {
 		occurrences: mappedOccurrences,
-		total,
+		total: mappedOccurrences.length, // Use filtered count instead
 	};
 }

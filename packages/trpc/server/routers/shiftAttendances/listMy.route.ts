@@ -44,7 +44,11 @@ export async function listMyHandler(options: TListMyOptions) {
 	const [attendances, total] = await Promise.all([
 		prisma.shiftAttendance.findMany({
 			where,
-			orderBy: { createdAt: "desc" },
+			orderBy: {
+				shiftOccurrence: {
+					timestamp: "desc",
+				},
+			},
 			skip: offset,
 			take: limit,
 			select: {
@@ -87,8 +91,54 @@ export async function listMyHandler(options: TListMyOptions) {
 		prisma.shiftAttendance.count({ where }),
 	]);
 
+	// Calculate time on shift percentage for each attendance
+	const attendancesWithPercentage = attendances.map((attendance) => {
+		let timeOnShiftPercentage: number | null = null;
+		let scheduledHours: number | null = null;
+		let actualHours: number | null = null;
+
+		// Calculate scheduled shift duration
+		const [startHour, startMin] =
+			attendance.shiftOccurrence.shiftSchedule.startTime.split(":").map(Number);
+		const [endHour, endMin] = attendance.shiftOccurrence.shiftSchedule.endTime
+			.split(":")
+			.map(Number);
+		const shiftStart = new Date(attendance.shiftOccurrence.timestamp);
+		shiftStart.setHours(startHour, startMin, 0, 0);
+		const shiftEnd = new Date(attendance.shiftOccurrence.timestamp);
+		shiftEnd.setHours(endHour, endMin, 0, 0);
+
+		// Handle shifts that cross midnight
+		if (shiftEnd < shiftStart) {
+			shiftEnd.setDate(shiftEnd.getDate() + 1);
+		}
+
+		const scheduledDurationMs = shiftEnd.getTime() - shiftStart.getTime();
+		scheduledHours = scheduledDurationMs / (1000 * 60 * 60);
+
+		// Calculate actual hours worked
+		if (attendance.timeIn && attendance.timeOut) {
+			const actualDurationMs =
+				attendance.timeOut.getTime() - attendance.timeIn.getTime();
+			actualHours = actualDurationMs / (1000 * 60 * 60);
+
+			// Calculate percentage
+			if (scheduledHours > 0) {
+				timeOnShiftPercentage =
+					Math.round((actualHours / scheduledHours) * 100 * 100) / 100;
+			}
+		}
+
+		return {
+			...attendance,
+			scheduledHours: Math.round(scheduledHours * 100) / 100,
+			actualHours: actualHours ? Math.round(actualHours * 100) / 100 : null,
+			timeOnShiftPercentage,
+		};
+	});
+
 	return {
-		attendances,
+		attendances: attendancesWithPercentage,
 		total,
 	};
 }

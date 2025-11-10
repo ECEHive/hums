@@ -78,13 +78,41 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 
 	// Calculate total hours worked
 	let totalHoursWorked = 0;
+	let totalScheduledHours = 0;
+
 	for (const attendance of attendances) {
+		// Calculate actual hours worked
 		if (attendance.timeIn && attendance.timeOut) {
 			const durationMs =
 				attendance.timeOut.getTime() - attendance.timeIn.getTime();
 			totalHoursWorked += durationMs / (1000 * 60 * 60);
 		}
+
+		// Calculate scheduled shift duration
+		const [startHour, startMin] =
+			attendance.shiftOccurrence.shiftSchedule.startTime.split(":").map(Number);
+		const [endHour, endMin] = attendance.shiftOccurrence.shiftSchedule.endTime
+			.split(":")
+			.map(Number);
+		const shiftStart = new Date(attendance.shiftOccurrence.timestamp);
+		shiftStart.setHours(startHour, startMin, 0, 0);
+		const shiftEnd = new Date(attendance.shiftOccurrence.timestamp);
+		shiftEnd.setHours(endHour, endMin, 0, 0);
+
+		// Handle shifts that cross midnight
+		if (shiftEnd < shiftStart) {
+			shiftEnd.setDate(shiftEnd.getDate() + 1);
+		}
+
+		const scheduledDurationMs = shiftEnd.getTime() - shiftStart.getTime();
+		totalScheduledHours += scheduledDurationMs / (1000 * 60 * 60);
 	}
+
+	// Calculate time on shift percentage (actual time worked vs scheduled time)
+	const timeOnShiftPercentage =
+		totalScheduledHours > 0
+			? (totalHoursWorked / totalScheduledHours) * 100
+			: 0;
 
 	// Get upcoming shifts (occurrences assigned to user that haven't happened yet)
 	const now = new Date();
@@ -125,6 +153,8 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		leftEarlyCount,
 		attendanceRate: Math.round(attendanceRate * 100) / 100,
 		totalHoursWorked: Math.round(totalHoursWorked * 100) / 100,
+		totalScheduledHours: Math.round(totalScheduledHours * 100) / 100,
+		timeOnShiftPercentage: Math.round(timeOnShiftPercentage * 100) / 100,
 		upcomingShiftsCount,
 	};
 }

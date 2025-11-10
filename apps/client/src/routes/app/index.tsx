@@ -125,7 +125,9 @@ function AppIndexLayout() {
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{sessionStats?.activeSessionCount ?? 0} active session(s)
+								{sessionStats?.activeSessionCount > 0
+									? `in the space`
+									: `not in the space`}
 							</p>
 						</CardContent>
 					</Card>

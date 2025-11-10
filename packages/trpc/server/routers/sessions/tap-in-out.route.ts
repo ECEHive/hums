@@ -93,6 +93,7 @@ async function findActiveShiftOccurrences(
 				where: { userId },
 				select: {
 					id: true,
+					timeIn: true,
 					timeOut: true,
 				},
 			},
@@ -115,6 +116,7 @@ async function findActiveShiftOccurrences(
 
 /**
  * Create or update attendance records when user taps in
+ * Updates existing "absent" records (with no timeIn) to "present"
  */
 async function handleTapInAttendance(
 	tx: Prisma.TransactionClient,
@@ -131,12 +133,25 @@ async function handleTapInAttendance(
 		const existingAttendance = occurrence.attendances[0];
 
 		if (existingAttendance) {
-			// Attendance already exists - don't update timeIn
-			// This preserves the first tap-in time
+			// If attendance exists but doesn't have a timeIn yet (was created as "absent"),
+			// update it to "present" with timeIn
+			if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
+				const occStart = new Date(occurrence.timestamp);
+				const timeIn = tapInTime > occStart ? tapInTime : occStart;
+
+				await tx.shiftAttendance.update({
+					where: { id: existingAttendance.id },
+					data: {
+						status: "present",
+						timeIn,
+					},
+				});
+			}
+			// If timeIn or timeOut already exists, skip (preserve first tap-in)
 			continue;
 		}
 
-		// Create new attendance record
+		// Create new attendance record if none exists
 		const occStart = new Date(occurrence.timestamp);
 		const timeIn = tapInTime > occStart ? tapInTime : occStart;
 
@@ -153,6 +168,7 @@ async function handleTapInAttendance(
 
 /**
  * Update attendance records when user taps out
+ * Only updates attendances that don't already have a timeOut (first tap-out only)
  */
 async function handleTapOutAttendance(
 	tx: Prisma.TransactionClient,
@@ -160,6 +176,7 @@ async function handleTapOutAttendance(
 	tapOutTime: Date,
 ) {
 	// Find all attendances without timeOut for this user
+	// This ensures we only record the first tap-out
 	const openAttendances = await tx.shiftAttendance.findMany({
 		where: {
 			userId,
@@ -191,6 +208,7 @@ async function handleTapOutAttendance(
 		// Use the earlier of tapOutTime or occEnd
 		const timeOut = tapOutTime < occEnd ? tapOutTime : occEnd;
 
+		// Record the first tap-out time only
 		await tx.shiftAttendance.update({
 			where: { id: attendance.id },
 			data: { timeOut },

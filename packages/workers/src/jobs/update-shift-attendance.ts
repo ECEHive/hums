@@ -91,24 +91,25 @@ async function updateShiftAttendance(): Promise<void> {
 			select: { userId: true, startedAt: true },
 		});
 
-		// Early return if no active sessions
-		if (activeSessions.length === 0) {
-			return;
-		}
-
 		const userIds = Array.from(new Set(activeSessions.map((s) => s.userId)));
 
-		// Process in parallel for better performance
-		await Promise.all([
-			createAttendancesForRecentStarts(
-				activeSessions,
-				userIds,
-				startWindow,
-				now,
-			),
-			closeAttendancesForRecentEnds(activeSessions, userIds, endWindow, now),
-			ensureOngoingOccurrenceAttendances(activeSessions, userIds, now),
-		]);
+		// Create attendance records for all assigned users when shifts start
+		// This runs regardless of whether there are active sessions
+		await createAttendancesForOccurrenceStarts(now);
+
+		// Process user-specific attendance updates only if there are active sessions
+		if (activeSessions.length > 0) {
+			await Promise.all([
+				createAttendancesForRecentStarts(
+					activeSessions,
+					userIds,
+					startWindow,
+					now,
+				),
+				closeAttendancesForRecentEnds(activeSessions, userIds, endWindow, now),
+				ensureOngoingOccurrenceAttendances(activeSessions, userIds, now),
+			]);
+		}
 	} catch (err) {
 		console.error("updateShiftAttendance error:", err);
 		throw err; // Re-throw to allow monitoring/alerting
@@ -116,7 +117,80 @@ async function updateShiftAttendance(): Promise<void> {
 }
 
 /**
+ * Create attendance records for all assigned users when occurrences start
+ * Creates "absent" status by default for all assigned users
+ * This ensures every shift has attendance records, which can be updated to "present" when users tap in
+ * Also handles past occurrences that may have been missed (e.g., if the worker didn't run)
+ */
+async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
+	// Find all occurrences that started within the window OR are currently ongoing
+	// This ensures we catch any missed occurrences from previous runs
+	const LOOKBACK_DAYS = 1; // Look back 1 day to catch any missed occurrences
+	const lookbackTime = new Date(
+		now.getTime() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000,
+	);
+
+	const recentOccurrences = await prisma.shiftOccurrence.findMany({
+		where: {
+			timestamp: {
+				gte: lookbackTime, // Start from lookback time
+				lte: now, // Only process occurrences that have started
+			},
+		},
+		include: {
+			shiftSchedule: true,
+			users: { select: { id: true } },
+			attendances: { select: { id: true, userId: true } },
+		},
+	});
+
+	const attendancesToCreate: Prisma.ShiftAttendanceCreateManyInput[] = [];
+
+	for (const occurrence of recentOccurrences) {
+		const occStart = new Date(occurrence.timestamp);
+		const occEnd = computeOccurrenceEnd(
+			occStart,
+			occurrence.shiftSchedule.startTime,
+			occurrence.shiftSchedule.endTime,
+		);
+
+		// Only process occurrences that have started
+		// Skip occurrences that haven't started yet or ended more than a day ago
+		if (occStart > now || occEnd < lookbackTime) continue;
+
+		const existingAttendanceUserIds = new Set(
+			occurrence.attendances.map((a) => a.userId),
+		);
+
+		// Create attendance records for all assigned users who don't have one yet
+		for (const user of occurrence.users) {
+			// Skip if attendance already exists
+			if (existingAttendanceUserIds.has(user.id)) continue;
+
+			// Create attendance with "absent" status by default
+			// This will be updated to "present" if the user has an active session
+			attendancesToCreate.push({
+				shiftOccurrenceId: occurrence.id,
+				userId: user.id,
+				status: "absent",
+				timeIn: null,
+				timeOut: null,
+			});
+		}
+	}
+
+	// Batch create attendances
+	if (attendancesToCreate.length > 0) {
+		await prisma.shiftAttendance.createMany({
+			data: attendancesToCreate,
+			skipDuplicates: true,
+		});
+	}
+}
+
+/**
  * Create attendance records for shift occurrences that recently started
+ * Updates existing "absent" records to "present" when users have active sessions
  */
 async function createAttendancesForRecentStarts(
 	activeSessions: ActiveSession[],
@@ -135,27 +209,46 @@ async function createAttendancesForRecentStarts(
 		include: {
 			shiftSchedule: true,
 			users: { select: { id: true } },
-			attendances: { select: { id: true, userId: true, timeOut: true } },
+			attendances: {
+				select: { id: true, userId: true, timeIn: true, timeOut: true },
+			},
 		},
 	});
 
 	const attendancesToCreate: Prisma.ShiftAttendanceCreateManyInput[] = [];
+	const attendancesToUpdate: Array<{ id: number; timeIn: Date }> = [];
 
 	for (const occurrence of recentOccurrences) {
 		const occStart = new Date(occurrence.timestamp);
 		const assignedUserIds = new Set(occurrence.users.map((u) => u.id));
-		const existingAttendanceUserIds = new Set(
-			occurrence.attendances.map((a) => a.userId),
+
+		// Map existing attendances by userId
+		const existingAttendances = new Map(
+			occurrence.attendances.map((a) => [a.userId, a]),
 		);
 
 		for (const session of activeSessions) {
 			// Skip if user is not assigned to this occurrence
 			if (!assignedUserIds.has(session.userId)) continue;
 
-			// Skip if attendance already exists (preserve first tap-in)
-			if (existingAttendanceUserIds.has(session.userId)) continue;
+			const existingAttendance = existingAttendances.get(session.userId);
 
-			// Set timeIn based on when the user's session started
+			if (existingAttendance) {
+				// If attendance exists and doesn't have timeIn yet (was created as "absent"),
+				// update it to "present" with timeIn
+				if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
+					const timeIn =
+						session.startedAt > occStart ? session.startedAt : occStart;
+					attendancesToUpdate.push({
+						id: existingAttendance.id,
+						timeIn,
+					});
+				}
+				// If timeIn or timeOut exists, skip (preserve first tap-in)
+				continue;
+			}
+
+			// Create new attendance if none exists
 			const timeIn =
 				session.startedAt > occStart ? session.startedAt : occStart;
 
@@ -168,11 +261,22 @@ async function createAttendancesForRecentStarts(
 		}
 	}
 
-	// Batch create attendances
+	// Batch create new attendances
 	if (attendancesToCreate.length > 0) {
 		await prisma.shiftAttendance.createMany({
 			data: attendancesToCreate,
 			skipDuplicates: true,
+		});
+	}
+
+	// Update existing "absent" records to "present"
+	for (const update of attendancesToUpdate) {
+		await prisma.shiftAttendance.update({
+			where: { id: update.id },
+			data: {
+				status: "present",
+				timeIn: update.timeIn,
+			},
 		});
 	}
 }
@@ -253,7 +357,7 @@ async function closeAttendancesForRecentEnds(
 /**
  * Ensure attendance records exist for all ongoing shift occurrences
  * This catches cases where a user starts a session mid-shift
- * Preserves first tap-in time if attendance already exists
+ * Updates existing "absent" records to "present" when users have active sessions
  */
 async function ensureOngoingOccurrenceAttendances(
 	activeSessions: ActiveSession[],
@@ -268,11 +372,14 @@ async function ensureOngoingOccurrenceAttendances(
 		include: {
 			shiftSchedule: true,
 			users: { select: { id: true } },
-			attendances: { select: { id: true, userId: true, timeOut: true } },
+			attendances: {
+				select: { id: true, userId: true, timeIn: true, timeOut: true },
+			},
 		},
 	});
 
 	const attendancesToCreate: Prisma.ShiftAttendanceCreateManyInput[] = [];
+	const attendancesToUpdate: Array<{ id: number; timeIn: Date }> = [];
 
 	for (const occurrence of ongoingOccurrences) {
 		const occStart = new Date(occurrence.timestamp);
@@ -286,18 +393,34 @@ async function ensureOngoingOccurrenceAttendances(
 		if (!(occStart <= now && occEnd > now)) continue;
 
 		const assignedUserIds = new Set(occurrence.users.map((u) => u.id));
-		const existingAttendanceUserIds = new Set(
-			occurrence.attendances.map((a) => a.userId),
+
+		// Map existing attendances by userId
+		const existingAttendances = new Map(
+			occurrence.attendances.map((a) => [a.userId, a]),
 		);
 
 		for (const session of activeSessions) {
 			// Skip if user is not assigned to this occurrence
 			if (!assignedUserIds.has(session.userId)) continue;
 
-			// Skip if attendance already exists (preserve first tap-in)
-			if (existingAttendanceUserIds.has(session.userId)) continue;
+			const existingAttendance = existingAttendances.get(session.userId);
 
-			// Set timeIn based on when the user's session started
+			if (existingAttendance) {
+				// If attendance exists and doesn't have timeIn yet (was created as "absent"),
+				// update it to "present" with timeIn
+				if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
+					const timeIn =
+						session.startedAt > occStart ? session.startedAt : occStart;
+					attendancesToUpdate.push({
+						id: existingAttendance.id,
+						timeIn,
+					});
+				}
+				// If timeIn or timeOut exists, skip (preserve first tap-in)
+				continue;
+			}
+
+			// Create new attendance if none exists
 			const timeIn =
 				session.startedAt > occStart ? session.startedAt : occStart;
 
@@ -310,11 +433,22 @@ async function ensureOngoingOccurrenceAttendances(
 		}
 	}
 
-	// Batch create attendances
+	// Batch create new attendances
 	if (attendancesToCreate.length > 0) {
 		await prisma.shiftAttendance.createMany({
 			data: attendancesToCreate,
 			skipDuplicates: true,
+		});
+	}
+
+	// Update existing "absent" records to "present"
+	for (const update of attendancesToUpdate) {
+		await prisma.shiftAttendance.update({
+			where: { id: update.id },
+			data: {
+				status: "present",
+				timeIn: update.timeIn,
+			},
 		});
 	}
 }
