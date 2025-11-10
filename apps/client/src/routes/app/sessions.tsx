@@ -95,6 +95,7 @@ function SessionsPage() {
 						<div className="text-2xl font-bold">
 							{statsData?.totalSessions ?? 0}
 						</div>
+						<p className="text-xs text-muted-foreground">sessions</p>
 					</CardContent>
 				</Card>
 
@@ -140,7 +141,7 @@ function SessionsPage() {
 							)}
 						</div>
 						<p className="text-xs text-muted-foreground">
-							{statsData?.activeSessionCount ?? 0} active session(s)
+							{statsData?.currentlyActive ? "in a session" : "not in a session"}
 						</p>
 					</CardContent>
 				</Card>

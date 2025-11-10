@@ -125,9 +125,9 @@ function AppIndexLayout() {
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{sessionStats?.activeSessionCount > 0
-									? `in the space`
-									: `not in the space`}
+								{sessionStats?.currentlyActive
+									? "in the space"
+									: "not in the space"}
 							</p>
 						</CardContent>
 					</Card>
@@ -143,11 +143,7 @@ function AppIndexLayout() {
 							<div className="text-2xl font-bold">
 								{sessionStats?.totalSessions ?? 0}
 							</div>
-							<Link to="/app/sessions">
-								<p className="text-xs text-primary hover:underline">
-									View full history →
-								</p>
-							</Link>
+							<p className="text-xs text-muted-foreground">sessions</p>
 						</CardContent>
 					</Card>
 
