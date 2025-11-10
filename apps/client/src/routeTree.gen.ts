@@ -18,13 +18,13 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as ShiftsShiftTypesRouteImport } from './routes/shifts/shift-types'
 import { Route as ShiftsShiftSchedulesRouteImport } from './routes/shifts/shift-schedules'
 import { Route as ShiftsSchedulingRouteImport } from './routes/shifts/scheduling'
+import { Route as ShiftsReportsRouteImport } from './routes/shifts/reports'
 import { Route as ShiftsPeriodDetailsRouteImport } from './routes/shifts/period-details'
 import { Route as ShiftsMyShiftsRouteImport } from './routes/shifts/my-shifts'
 import { Route as ShiftsAttendanceRouteImport } from './routes/shifts/attendance'
 import { Route as AppUsersRouteImport } from './routes/app/users'
 import { Route as AppSessionsRouteImport } from './routes/app/sessions'
 import { Route as AppRolesRouteImport } from './routes/app/roles'
-import { Route as AppReportsRouteImport } from './routes/app/reports'
 import { Route as AppMyAgreementsRouteImport } from './routes/app/my-agreements'
 import { Route as AppKiosksRouteImport } from './routes/app/kiosks'
 import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
@@ -74,6 +74,11 @@ const ShiftsSchedulingRoute = ShiftsSchedulingRouteImport.update({
   path: '/scheduling',
   getParentRoute: () => ShiftsRoute,
 } as any)
+const ShiftsReportsRoute = ShiftsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => ShiftsRoute,
+} as any)
 const ShiftsPeriodDetailsRoute = ShiftsPeriodDetailsRouteImport.update({
   id: '/period-details',
   path: '/period-details',
@@ -104,11 +109,6 @@ const AppRolesRoute = AppRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReportsRoute = AppReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppMyAgreementsRoute = AppMyAgreementsRouteImport.update({
   id: '/my-agreements',
   path: '/my-agreements',
@@ -133,13 +133,13 @@ export interface FileRoutesByFullPath {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
-  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
   '/shifts/attendance': typeof ShiftsAttendanceRoute
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -152,13 +152,13 @@ export interface FileRoutesByTo {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
-  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
   '/shifts/attendance': typeof ShiftsAttendanceRoute
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -174,13 +174,13 @@ export interface FileRoutesById {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
-  '/app/reports': typeof AppReportsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
   '/shifts/attendance': typeof ShiftsAttendanceRoute
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -197,13 +197,13 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/kiosks'
     | '/app/my-agreements'
-    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/users'
     | '/shifts/attendance'
     | '/shifts/my-shifts'
     | '/shifts/period-details'
+    | '/shifts/reports'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -216,13 +216,13 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/kiosks'
     | '/app/my-agreements'
-    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/users'
     | '/shifts/attendance'
     | '/shifts/my-shifts'
     | '/shifts/period-details'
+    | '/shifts/reports'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -237,13 +237,13 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/kiosks'
     | '/app/my-agreements'
-    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/users'
     | '/shifts/attendance'
     | '/shifts/my-shifts'
     | '/shifts/period-details'
+    | '/shifts/reports'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -323,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShiftsSchedulingRouteImport
       parentRoute: typeof ShiftsRoute
     }
+    '/shifts/reports': {
+      id: '/shifts/reports'
+      path: '/reports'
+      fullPath: '/shifts/reports'
+      preLoaderRoute: typeof ShiftsReportsRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
     '/shifts/period-details': {
       id: '/shifts/period-details'
       path: '/period-details'
@@ -365,13 +372,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRolesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/reports': {
-      id: '/app/reports'
-      path: '/reports'
-      fullPath: '/app/reports'
-      preLoaderRoute: typeof AppReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/my-agreements': {
       id: '/app/my-agreements'
       path: '/my-agreements'
@@ -400,7 +400,6 @@ interface AppRouteChildren {
   AppAgreementsRoute: typeof AppAgreementsRoute
   AppKiosksRoute: typeof AppKiosksRoute
   AppMyAgreementsRoute: typeof AppMyAgreementsRoute
-  AppReportsRoute: typeof AppReportsRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSessionsRoute: typeof AppSessionsRoute
   AppUsersRoute: typeof AppUsersRoute
@@ -411,7 +410,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgreementsRoute: AppAgreementsRoute,
   AppKiosksRoute: AppKiosksRoute,
   AppMyAgreementsRoute: AppMyAgreementsRoute,
-  AppReportsRoute: AppReportsRoute,
   AppRolesRoute: AppRolesRoute,
   AppSessionsRoute: AppSessionsRoute,
   AppUsersRoute: AppUsersRoute,
@@ -424,6 +422,7 @@ interface ShiftsRouteChildren {
   ShiftsAttendanceRoute: typeof ShiftsAttendanceRoute
   ShiftsMyShiftsRoute: typeof ShiftsMyShiftsRoute
   ShiftsPeriodDetailsRoute: typeof ShiftsPeriodDetailsRoute
+  ShiftsReportsRoute: typeof ShiftsReportsRoute
   ShiftsSchedulingRoute: typeof ShiftsSchedulingRoute
   ShiftsShiftSchedulesRoute: typeof ShiftsShiftSchedulesRoute
   ShiftsShiftTypesRoute: typeof ShiftsShiftTypesRoute
@@ -434,6 +433,7 @@ const ShiftsRouteChildren: ShiftsRouteChildren = {
   ShiftsAttendanceRoute: ShiftsAttendanceRoute,
   ShiftsMyShiftsRoute: ShiftsMyShiftsRoute,
   ShiftsPeriodDetailsRoute: ShiftsPeriodDetailsRoute,
+  ShiftsReportsRoute: ShiftsReportsRoute,
   ShiftsSchedulingRoute: ShiftsSchedulingRoute,
   ShiftsShiftSchedulesRoute: ShiftsShiftSchedulesRoute,
   ShiftsShiftTypesRoute: ShiftsShiftTypesRoute,

@@ -17,7 +17,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-export const Route = createFileRoute("/app/reports")({
+export const Route = createFileRoute("/shifts/reports")({
 	component: () =>
 		RequirePermissions({
 			permissions,
@@ -34,7 +34,7 @@ function Reports() {
 	const [selectedRange, setSelectedRange] = React.useState<string>("");
 	const [selectedPeriodId, setSelectedPeriodId] = React.useState<number | null>(
 		null,
-	);
+	)
 
 	const { data: periodsData, isLoading } = useQuery({
 		queryKey: ["periods", { limit: 100, offset: 0 }],
@@ -42,9 +42,9 @@ function Reports() {
 			return trpc.periods.list.query({
 				limit: 100,
 				offset: 0,
-			});
+			})
 		},
-	});
+	})
 
 	return (
 		<div className="p-6 inline-block w-full space-y-6">
@@ -73,27 +73,27 @@ function Reports() {
 										value="last2weeks"
 										onClick={() => {
 											// Calculate last 2 full weeks
-											const now = new Date();
+											const now = new Date()
 											const dayOfWeek = now.getDay(); // 0 (Sun) to 6 (Sat)
 											const lastSunday = new Date(
 												now.getFullYear(),
 												now.getMonth(),
 												now.getDate() - dayOfWeek,
-											);
+											)
 											const startOfLast2Weeks = new Date(
 												lastSunday.getFullYear(),
 												lastSunday.getMonth(),
 												lastSunday.getDate() - 14,
-											);
-											setStart(startOfLast2Weeks);
+											)
+											setStart(startOfLast2Weeks)
 											setEnd(
 												new Date(
 													lastSunday.getFullYear(),
 													lastSunday.getMonth(),
 													lastSunday.getDate() - 1,
 												),
-											);
-											setSelectedRange("last2weeks");
+											)
+											setSelectedRange("last2weeks")
 										}}
 									>
 										Last 2 Full Weeks
@@ -101,20 +101,20 @@ function Reports() {
 									<ToggleGroupItem
 										value="lastmonth"
 										onClick={() => {
-											const now = new Date();
+											const now = new Date()
 											const lastDayOfLastMonth = new Date(
 												now.getFullYear(),
 												now.getMonth(),
 												0,
-											);
+											)
 											const firstDayOfLastMonth = new Date(
 												now.getFullYear(),
 												now.getMonth() - 1,
 												1,
-											);
-											setStart(firstDayOfLastMonth);
-											setEnd(lastDayOfLastMonth);
-											setSelectedRange("lastmonth");
+											)
+											setStart(firstDayOfLastMonth)
+											setEnd(lastDayOfLastMonth)
+											setSelectedRange("lastmonth")
 										}}
 									>
 										Last Full Month
@@ -122,7 +122,7 @@ function Reports() {
 									<ToggleGroupItem
 										value="fullperiod"
 										onClick={() => {
-											setSelectedRange("fullperiod");
+											setSelectedRange("fullperiod")
 										}}
 									>
 										{isLoading ? (
@@ -149,10 +149,10 @@ function Reports() {
 															<DropdownMenuItem
 																key={period.id}
 																onClick={() => {
-																	setSelectedPeriodId(period.id);
-																	setStart(new Date(period.start));
-																	setEnd(new Date(period.end));
-																	setSelectedRange("fullperiod");
+																	setSelectedPeriodId(period.id)
+																	setStart(new Date(period.start))
+																	setEnd(new Date(period.end))
+																	setSelectedRange("fullperiod")
 																}}
 																className={
 																	period.id === selectedPeriodId
@@ -179,9 +179,9 @@ function Reports() {
 							<DateRangeSelector
 								value={[start ?? undefined, end ?? undefined]}
 								onChange={([s, e]) => {
-									setStart(s ?? null);
-									setEnd(e ?? null);
-									setSelectedRange("custom");
+									setStart(s ?? null)
+									setEnd(e ?? null)
+									setSelectedRange("custom")
 								}}
 								withTime={false}
 								label={"Custom Date Range"}
@@ -192,5 +192,5 @@ function Reports() {
 			</Card>
 			<DataTable columns={[]} data={[]} isLoading={false} />
 		</div>
-	);
+	)
 }
