@@ -57,6 +57,9 @@ model User {
   // One-to-many
   sessions    Session[]
   attendances ShiftAttendance[]
+  
+  // Many-to-many (explicit)
+  userAgreements UserAgreement[]
 }
 
 model Role {
@@ -251,4 +254,41 @@ model Kiosk {
   // timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Agreement {
+  id Int @id @default(autoincrement())
+
+  // fields
+  title            String
+  content          String  @db.Text
+  confirmationText String
+  isEnabled        Boolean @default(true)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  userAgreements UserAgreement[]
+}
+
+model UserAgreement {
+  id Int @id @default(autoincrement())
+
+  // fields
+  userId      Int
+  agreementId Int
+
+  // timestamps
+  agreedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+
+  // constraints
+  @@unique([userId, agreementId])
 }

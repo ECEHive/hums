@@ -1,3 +1,4 @@
+import { agreementsRouter } from "./routers/agreements/_route";
 import { authRouter } from "./routers/auth/_route";
 import { kiosksRouter } from "./routers/kiosks/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
@@ -17,6 +18,7 @@ export const appRouter = router({
 	users: usersRouter,
 	roles: rolesRouter,
 	permissions: permissionsRouter,
+	agreements: agreementsRouter,
 	periods: periodsRouter,
 	periodExceptions: periodExceptionsRouter,
 	shiftTypes: shiftTypesRouter,
