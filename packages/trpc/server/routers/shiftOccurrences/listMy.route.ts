@@ -83,12 +83,10 @@ export async function listMyHandler(options: TListMyOptions) {
 		orderBy: {
 			timestamp: "asc",
 		},
-		skip: offset,
-		take: limit,
 	});
 
 	// Map to a cleaner format and filter out past shifts
-	const mappedOccurrences = occurrences
+	const mappedAndFiltered = occurrences
 		.map((occ) => {
 			const occStart = new Date(occ.timestamp);
 			const occEnd = computeOccurrenceEnd(
@@ -129,8 +127,14 @@ export async function listMyHandler(options: TListMyOptions) {
 		})
 		.filter((occ) => occ.occEnd > now); // Only include shifts that haven't ended yet
 
+	// Total upcoming occurrences across the entire result set
+	const total = mappedAndFiltered.length;
+
+	// Apply pagination in-memory after filtering so `total` is correct.
+	const paginated = mappedAndFiltered.slice(offset, offset + limit);
+
 	return {
-		occurrences: mappedOccurrences,
-		total: mappedOccurrences.length, // Use filtered count instead
+		occurrences: paginated,
+		total,
 	};
 }
