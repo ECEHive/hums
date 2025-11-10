@@ -406,15 +406,6 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  packages/ldap:
-    devDependencies:
-      '@ecehive/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: ^24.5.2
-        version: 24.5.2
-
   packages/trpc:
     dependencies:
       '@date-fns/tz':
