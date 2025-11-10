@@ -21,6 +21,7 @@ export const ZEnvSchema = z.object({
 		.describe("Comma-separated list of usernames"),
 	LDAP_HOST: z.string().default("whitepages.gatech.edu"),
 	LDAP_BASE_DN: z.string().default("dc=whitepages,dc=gatech,dc=edu"),
+	TZ: z.string().default("America/New_York"),
 });
 
 export type TEnvSchema = z.infer<typeof ZEnvSchema>;

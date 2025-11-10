@@ -5,4 +5,5 @@ export * from "./shift-schedules/generate";
 export * from "./shift-schedules/queries";
 export * from "./shift-schedules/utils";
 export * from "./shift-schedules/validation";
+export * from "./time-utils";
 export * from "./users";

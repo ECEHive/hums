@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronDownIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
@@ -63,7 +63,12 @@ function MyShifts() {
 
 	return (
 		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">My Shifts</h1>
+			<div className="flex justify-between items-center">
+				<h1 className="text-2xl font-bold">My Shifts</h1>
+				<Link to="/shifts/attendance">
+					<Button variant="outline">Shift History</Button>
+				</Link>
+			</div>
 
 			<div className="flex justify-between sm:items-center sm:flex-row flex-col gap-2">
 				<DropdownMenu>

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
 	BugIcon,
+	CalendarCheckIcon,
 	CalendarIcon,
 	ChevronLeft,
 	ChevronUpIcon,
@@ -38,6 +39,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
+import { permissions as attendancePagePermissions } from "@/routes/shifts/attendance";
 import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index";
 import { permissions as myShiftsPagePermissions } from "@/routes/shifts/my-shifts";
 import { permissions as periodDetailsPagePermissions } from "@/routes/shifts/period-details";
@@ -71,6 +73,12 @@ export const items = [
 				url: "/shifts/my-shifts",
 				icon: ClipboardListIcon,
 				permissions: myShiftsPagePermissions,
+			},
+			{
+				title: "Attendance",
+				url: "/shifts/attendance",
+				icon: CalendarCheckIcon,
+				permissions: attendancePagePermissions,
 			},
 		],
 	},

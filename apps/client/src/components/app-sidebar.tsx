@@ -4,6 +4,7 @@ import {
 	CalendarIcon,
 	ChevronRightIcon,
 	ChevronUpIcon,
+	ClockIcon,
 	DoorOpenIcon,
 	HomeIcon,
 	LaptopMinimalCheckIcon,
@@ -49,7 +50,7 @@ type AppSidebarItem = {
 	title: string;
 	url: string;
 	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-	permissions: string[];
+	permissions: string[] | Record<string, string[]>;
 	hasChildren?: boolean;
 };
 
@@ -66,6 +67,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app",
 				icon: HomeIcon,
 				permissions: appIndexPagePermissions,
+			},
+			{
+				title: "Sessions",
+				url: "/app/sessions",
+				icon: ClockIcon,
+				permissions: [], // Available to all authenticated users
 			},
 			{
 				title: "Shifts",

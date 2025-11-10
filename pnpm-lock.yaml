@@ -277,6 +277,9 @@ importers:
       '@ecehive/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
+      '@ecehive/workers':
+        specifier: workspace:*
+        version: link:../../packages/workers
       '@fastify/cors':
         specifier: ^11.1.0
         version: 11.1.0
@@ -405,9 +408,15 @@ importers:
 
   packages/trpc:
     dependencies:
+      '@date-fns/tz':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@ecehive/auth':
         specifier: workspace:*
         version: link:../auth
+      '@ecehive/env':
+        specifier: workspace:*
+        version: link:../env
       '@ecehive/features':
         specifier: workspace:*
         version: link:../features
@@ -439,6 +448,31 @@ importers:
       vite:
         specifier: ^7.1.7
         version: 7.2.1(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+
+  packages/workers:
+    dependencies:
+      '@date-fns/tz':
+        specifier: ^1.4.1
+        version: 1.4.1
+      '@ecehive/env':
+        specifier: workspace:*
+        version: link:../env
+      '@ecehive/features':
+        specifier: workspace:*
+        version: link:../features
+      '@ecehive/prisma':
+        specifier: workspace:*
+        version: link:../prisma
+      cron:
+        specifier: ^4.3.4
+        version: 4.3.4
+    devDependencies:
+      '@ecehive/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^24.10.0
+        version: 24.10.0
 
 packages:
 
@@ -1845,6 +1879,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/luxon@3.7.1':
+    resolution: {integrity: sha512-H3iskjFIAn5SlJU7OuxUmTEpebK6TKB8rxZShDslBMZJ5u9S//KM1sbdAisiSrqwLQncVjnpi2OK2J51h+4lsg==}
+
   '@types/node@24.10.0':
     resolution: {integrity: sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==}
 
@@ -2056,6 +2093,10 @@ packages:
 
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
+
+  cron@4.3.4:
+    resolution: {integrity: sha512-OiO0l73MGhQOZQCjYZ0v7r8yFWpBOWteemwR1RIxiHtfVsIOwiTJZDvg7GmKzggkwC0RO8tI3P1QYBUCIZNYRQ==}
+    engines: {node: '>=18.x'}
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
@@ -2492,6 +2533,10 @@ packages:
     resolution: {integrity: sha512-t5tS44bqd825zAW45UQxpG2CvcC4urOwn2TrwSH8u+MjeE+1NnWl6QqeQ/6NdjMqdOygyiT9p3Ev0p1NJykxjw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  luxon@3.7.2:
+    resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
+    engines: {node: '>=12'}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -4468,6 +4513,8 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/luxon@3.7.1': {}
+
   '@types/node@24.10.0':
     dependencies:
       undici-types: 7.16.0
@@ -4703,6 +4750,11 @@ snapshots:
       is-what: 5.5.0
 
   create-require@1.1.1: {}
+
+  cron@4.3.4:
+    dependencies:
+      '@types/luxon': 3.7.1
+      luxon: 3.7.2
 
   csstype@3.1.3: {}
 
@@ -5012,6 +5064,8 @@ snapshots:
   lucide-react@0.544.0(react@19.2.0):
     dependencies:
       react: 19.2.0
+
+  luxon@3.7.2: {}
 
   magic-string@0.30.21:
     dependencies:

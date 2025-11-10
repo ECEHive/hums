@@ -1,9 +1,11 @@
+import { trpc } from "@ecehive/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronsRightIcon } from "lucide-react";
+import { ChevronsRightIcon, ClockIcon } from "lucide-react";
 import { RequirePermissions, useCurrentUser } from "@/auth";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/")({
@@ -19,6 +21,13 @@ export const permissions = [];
 
 function AppIndexLayout() {
 	const user = useCurrentUser();
+
+	const { data: sessionStats } = useQuery({
+		queryKey: ["mySessionStats"],
+		queryFn: async () => {
+			return trpc.sessions.myStats.query({});
+		},
+	});
 
 	const initials = (user?.name || user?.email || "User")
 		.split(" ")
@@ -94,6 +103,75 @@ function AppIndexLayout() {
 									</Link>
 								)}
 							</div>
+						</CardContent>
+					</Card>
+				</div>
+
+				{/* Session Stats */}
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6">
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Current Status
+							</CardTitle>
+							<ClockIcon className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="text-2xl font-bold">
+								{sessionStats?.currentlyActive ? (
+									<span className="text-green-600">Active</span>
+								) : (
+									<span className="text-muted-foreground">Inactive</span>
+								)}
+							</div>
+							<p className="text-xs text-muted-foreground">
+								{sessionStats?.currentlyActive
+									? "in the space"
+									: "not in the space"}
+							</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Total Sessions
+							</CardTitle>
+							<ClockIcon className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="text-2xl font-bold">
+								{sessionStats?.totalSessions ?? 0}
+							</div>
+							<p className="text-xs text-muted-foreground">sessions</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+							<ClockIcon className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="text-2xl font-bold">
+								{sessionStats?.totalHours ?? 0}
+							</div>
+							<p className="text-xs text-muted-foreground">hours logged</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Average Session
+							</CardTitle>
+							<ClockIcon className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="text-2xl font-bold">
+								{sessionStats?.averageSessionHours ?? 0}
+							</div>
+							<p className="text-xs text-muted-foreground">hours per session</p>
 						</CardContent>
 					</Card>
 				</div>

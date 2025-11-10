@@ -1,3 +1,4 @@
+import { env } from "@ecehive/env";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -75,9 +76,9 @@ export function generateOccurrenceTimestamps(
 	// Parse the start time (format: "HH:MM:SS")
 	const { hours, minutes, seconds } = parseTimeString(startTime);
 
-	// Start from the beginning of the period
-	let current = dayjs(periodStart).startOf("day");
-	const end = dayjs(periodEnd).endOf("day");
+	// Start from the beginning of the period in the configured timezone
+	let current = dayjs(periodStart).tz(env.TZ).startOf("day");
+	const end = dayjs(periodEnd).tz(env.TZ).endOf("day");
 
 	// Find the first occurrence of the target day of week
 	while (current.day() !== dayOfWeek && current.isBefore(end)) {
@@ -86,7 +87,7 @@ export function generateOccurrenceTimestamps(
 
 	// Generate occurrences on the target day of week
 	while (current.isBefore(end)) {
-		// Set the time for this occurrence
+		// Set the time for this occurrence in the configured timezone
 		const occurrence = current
 			.hour(hours)
 			.minute(minutes)

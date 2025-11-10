@@ -27,3 +27,4 @@ pnpm start
 | `SYSTEM_USERS` | `gburdell3` | Comma-separated list of usernames for default users with admin access. |
 | `LDAP_HOST` | `whitepages.gatech.edu` | Host of the LDAP server to query user information from. |
 | `LDAP_BASE_DN` | `dc=whitepages,dc=gatech,dc=edu` | Base DN to use for LDAP queries. |
+| `TZ` | `America/New_York` | Timezone. |
