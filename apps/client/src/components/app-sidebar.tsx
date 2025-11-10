@@ -6,6 +6,7 @@ import {
 	ChevronUpIcon,
 	ClockIcon,
 	DoorOpenIcon,
+	FileTextIcon,
 	HomeIcon,
 	LaptopMinimalCheckIcon,
 	MoonIcon,
@@ -38,6 +39,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
+import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
 import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
@@ -97,6 +99,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app/users",
 				icon: UserIcon,
 				permissions: usersPagePermissions,
+			},
+			{
+				title: "Agreements",
+				url: "/app/agreements",
+				icon: FileTextIcon,
+				permissions: agreementsPagePermissions,
 			},
 			{
 				title: "Kiosks",

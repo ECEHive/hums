@@ -182,6 +182,45 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// If there is no session, or the most recent session has an endedAt, create a new session (tap in)
 		if (!mostRecentSession || mostRecentSession.endedAt) {
+			// Check if user has agreed to all enabled agreements
+			const enabledAgreements = await tx.agreement.findMany({
+				where: { isEnabled: true },
+				select: {
+					id: true,
+					title: true,
+					content: true,
+					confirmationText: true,
+				},
+			});
+
+			if (enabledAgreements.length > 0) {
+				const userAgreements = await tx.userAgreement.findMany({
+					where: {
+						userId: user.id,
+						agreementId: { in: enabledAgreements.map((a) => a.id) },
+					},
+					select: { agreementId: true },
+				});
+
+				const agreedIds = new Set(userAgreements.map((ua) => ua.agreementId));
+				const missingAgreements = enabledAgreements.filter(
+					(a) => !agreedIds.has(a.id),
+				);
+
+				if (missingAgreements.length > 0) {
+					return {
+						status: "agreements_required" as const,
+						user,
+						missingAgreements: missingAgreements.map((a) => ({
+							id: a.id,
+							title: a.title,
+							content: a.content,
+							confirmationText: a.confirmationText,
+						})),
+					};
+				}
+			}
+
 			const session = await tx.session.create({
 				data: {
 					userId: user.id,
