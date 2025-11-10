@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-   <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/ECEHive/hums">
+   <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/ECEHive/hums?style=flat&color=yellow">
    <img alt="GitHub License" src="https://img.shields.io/github/license/ECEHive/hums">
 	<img alt="GitHub top language" src="https://img.shields.io/github/languages/top/ECEHive/hums">
 </p>
@@ -47,17 +47,18 @@ pnpm -v
 	pnpm install
 	```
 
-4. Apply database migrations:
+4. Generate database and apply migrations:
 
 	```sh
 	cd packages/prisma
-	pnpm migrate
+	pnpm generate && pnpm migrate
 	```
 
 5. Create environment files for each app that needs them (examples are provided):
 
 	```sh
 	cp apps/client/.env.sample apps/client/.env
+	cp apps/kiosk/.env.sample apps/kiosk/.env
 	cp apps/server/.env.sample apps/server/.env
 	# then edit the .env files to suit your local environment
 	```
