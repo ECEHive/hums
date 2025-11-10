@@ -5,6 +5,7 @@ import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
 import { rolesRouter } from "./routers/roles/_route";
 import { sessionsRouter } from "./routers/sessions/_route";
+import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
 import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
 import { shiftTypesRouter } from "./routers/shiftTypes/_route";
@@ -21,6 +22,7 @@ export const appRouter = router({
 	shiftTypes: shiftTypesRouter,
 	shiftSchedules: shiftSchedulesRouter,
 	shiftOccurrences: shiftOccurrencesRouter,
+	shiftAttendances: shiftAttendancesRouter,
 	sessions: sessionsRouter,
 	kiosks: kiosksRouter,
 });

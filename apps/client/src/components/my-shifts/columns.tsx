@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Clock } from "lucide-react";
+import { CheckCircle2, Clock, RadioIcon, XCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 type ShiftOccurrence = {
 	id: number;
@@ -12,6 +13,14 @@ type ShiftOccurrence = {
 	shiftTypeName: string;
 	shiftTypeColor: string | null;
 	shiftTypeLocation: string;
+	isActive?: boolean;
+	isTappedIn?: boolean;
+	attendance?: {
+		id: number;
+		status: string;
+		timeIn: Date | null;
+		timeOut: Date | null;
+	} | null;
 };
 
 function formatTime(time: string): string {
@@ -68,6 +77,82 @@ export const columns: ColumnDef<ShiftOccurrence>[] = [
 					<span>{occurrence.shiftTypeName}</span>
 				</div>
 			);
+		},
+	},
+	{
+		accessorKey: "attendance",
+		header: "Status",
+		cell: ({ row }) => {
+			const occurrence = row.original;
+			const now = new Date();
+			const shiftTime = new Date(occurrence.timestamp);
+			const hasOccurred = shiftTime < now;
+
+			// Active shift indicators
+			if (occurrence.isActive) {
+				if (occurrence.isTappedIn) {
+					return (
+						<div className="flex items-center gap-1">
+							<Badge className="bg-green-600 animate-pulse">
+								<RadioIcon className="w-3 h-3 mr-1" />
+								Active & Present
+							</Badge>
+						</div>
+					);
+				}
+				return (
+					<div className="flex items-center gap-1">
+						<Badge className="bg-yellow-600 animate-pulse">
+							<RadioIcon className="w-3 h-3 mr-1" />
+							Active (Not Tapped In)
+						</Badge>
+					</div>
+				);
+			}
+
+			// Future shifts
+			if (!hasOccurred) {
+				return (
+					<Badge variant="outline" className="text-muted-foreground">
+						Upcoming
+					</Badge>
+				);
+			}
+
+			// Past shifts - check attendance
+			if (!occurrence.attendance) {
+				return (
+					<div className="flex items-center gap-1 text-muted-foreground">
+						<XCircle className="w-4 h-4" />
+						<span className="text-sm">No record</span>
+					</div>
+				);
+			}
+
+			const { status } = occurrence.attendance;
+
+			switch (status) {
+				case "present":
+					return (
+						<div className="flex items-center gap-1 text-green-600">
+							<CheckCircle2 className="w-4 h-4" />
+							<span className="text-sm font-medium">Present</span>
+						</div>
+					);
+				case "absent":
+					return (
+						<div className="flex items-center gap-1 text-red-600">
+							<XCircle className="w-4 h-4" />
+							<span className="text-sm font-medium">Absent</span>
+						</div>
+					);
+				case "arrived_late":
+					return <Badge className="bg-yellow-600">Late</Badge>;
+				case "left_early":
+					return <Badge className="bg-orange-600">Left Early</Badge>;
+				default:
+					return <Badge variant="outline">{status}</Badge>;
+			}
 		},
 	},
 ];
