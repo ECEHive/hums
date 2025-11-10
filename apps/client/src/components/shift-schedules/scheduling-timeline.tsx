@@ -331,19 +331,19 @@ export function SchedulingTimeline({
 													>
 														{blockData.available}
 													</div>
-													<div
-														className={cn(
-															"text-xs",
-															blockData.hasUserRegistered &&
-																"text-primary-foreground/80",
-														)}
-													>
-														Available
-													</div>
-													{blockData.hasUserRegistered && (
-														<div className="text-xs font-medium">
-															✓ Registered
+													{!blockData.hasUserRegistered && (
+														<div
+															className={cn(
+																"text-xs",
+																blockData.hasUserRegistered &&
+																	"text-primary-foreground/80",
+															)}
+														>
+															{blockData.available > 0 ? "Available" : "Full"}
 														</div>
+													)}
+													{blockData.hasUserRegistered && (
+														<div className="text-xs">✓ Registered</div>
 													)}
 												</Button>
 											</HoverCardTrigger>
