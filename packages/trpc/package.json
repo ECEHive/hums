@@ -10,7 +10,9 @@
 		"vite": "^7.1.7"
 	},
 	"dependencies": {
+		"@date-fns/tz": "^1.4.1",
 		"@ecehive/auth": "workspace:*",
+		"@ecehive/env": "workspace:*",
 		"@ecehive/features": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"@trpc/client": "11.5.1",
