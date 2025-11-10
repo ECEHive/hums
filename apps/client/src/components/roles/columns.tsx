@@ -18,9 +18,8 @@ export type Role = {
 export function generateColumns(user: AuthUser | null): ColumnDef<Role>[] {
 	if (user === null) return [];
 	const canEditPermissions = checkPermissions(user, [
-		"rolePermissions.list",
-		"rolePermissions.create",
-		"rolePermissions.delete",
+		"permissions.list",
+		"roles.update",
 	]);
 	const canRename = checkPermissions(user, ["roles.update"]);
 	const canDelete = checkPermissions(user, ["roles.delete"]);

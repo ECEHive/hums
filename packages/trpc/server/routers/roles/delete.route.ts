@@ -1,5 +1,4 @@
-import { db, roles } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,7 +13,7 @@ export type TDeleteOptions = {
 export async function deleteHandler(options: TDeleteOptions) {
 	const { id } = options.input;
 
-	await db.delete(roles).where(eq(roles.id, id));
+	await prisma.role.delete({ where: { id } });
 
 	return { success: true };
 }

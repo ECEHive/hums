@@ -1,7 +1,6 @@
-import { db, periods } from "@ecehive/drizzle";
 import { generatePeriodShiftOccurrences } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -89,7 +88,7 @@ export async function updateHandler(options: TUpdateOptions) {
 		scheduleModifyEnd,
 	} = options.input;
 
-	const [existing] = await db.select().from(periods).where(eq(periods.id, id));
+	const existing = await prisma.period.findUnique({ where: { id } });
 
 	if (!existing) {
 		return { period: undefined };
@@ -146,24 +145,21 @@ export async function updateHandler(options: TUpdateOptions) {
 		});
 	}
 
-	return await db.transaction(async (tx) => {
-		const updates: Partial<typeof periods.$inferInsert> = {
-			name,
-			start: nextStart,
-			end: nextEnd,
-			visibleStart: nextVisibleStart,
-			visibleEnd: nextVisibleEnd,
-			scheduleSignupStart: nextScheduleSignupStart,
-			scheduleSignupEnd: nextScheduleSignupEnd,
-			scheduleModifyStart: nextScheduleModifyStart,
-			scheduleModifyEnd: nextScheduleModifyEnd,
-		};
-
-		const [updated] = await tx
-			.update(periods)
-			.set(updates)
-			.where(eq(periods.id, id))
-			.returning();
+	return await prisma.$transaction(async (tx) => {
+		const updated = await tx.period.update({
+			where: { id },
+			data: {
+				...(name !== undefined && { name }),
+				start: nextStart,
+				end: nextEnd,
+				visibleStart: nextVisibleStart,
+				visibleEnd: nextVisibleEnd,
+				scheduleSignupStart: nextScheduleSignupStart,
+				scheduleSignupEnd: nextScheduleSignupEnd,
+				scheduleModifyStart: nextScheduleModifyStart,
+				scheduleModifyEnd: nextScheduleModifyEnd,
+			},
+		});
 
 		if (!updated) {
 			throw new TRPCError({

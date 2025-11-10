@@ -1,9 +1,10 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+// routing handled via window.location in this component to avoid router typing constraints
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { JSX } from "react/jsx-runtime";
+import { usePeriod } from "@/components/period-provider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -26,20 +27,46 @@ export function DeleteDialog({
 	periodName,
 }: DeleteDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
-	const router = useRouter();
 	const [serverError, setServerError] = useState<string | null>(null);
+
+	const { setPeriod } = usePeriod();
 
 	const mutation = useMutation({
 		mutationFn: async (id: number) => trpc.periods.delete.mutate({ id }),
-		onSuccess: () => {
+		onSuccess: async () => {
 			// Remove cached period list and the deleted period to avoid stale redirect
 			queryClient.removeQueries({ queryKey: ["periods"], exact: false });
 			queryClient.removeQueries({
 				queryKey: ["period", Number(periodId)],
 				exact: true,
 			});
-			// Navigate after cache is cleared so Periods won't redirect to the deleted id
-			void router.navigate({ to: "/app/periods" });
+
+			// Fetch the updated list of visible periods to pick the next one (if any)
+			try {
+				const data = await trpc.periods.listVisible.query({ limit: 100 });
+				const remaining = data?.periods ?? [];
+				if (remaining.length > 0) {
+					// pick the first remaining period as the next selection
+					const next = remaining[0];
+					try {
+						setPeriod(next.id);
+					} catch (_) {
+						// ignore if context not available
+					}
+					// Navigate to the details page for the next period
+					window.location.href = `/shifts/`;
+				} else {
+					// No periods remain: clear selection and go to list page
+					try {
+						setPeriod(null);
+					} catch (_) {}
+					window.location.href = "/shifts/";
+				}
+			} catch (err) {
+				// If fetching periods failed, fallback to navigating to the periods list
+				console.error("Failed to fetch periods after delete:", err);
+				window.location.href = "/shifts/";
+			}
 		},
 		onError: (err) => {
 			const message = err instanceof Error ? err.message : String(err);

@@ -1,5 +1,4 @@
-import { db, shiftTypes } from "@ecehive/drizzle";
-import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -20,39 +19,34 @@ export type TListOptions = {
 export async function listHandler(options: TListOptions) {
 	const { limit = 10, offset = 0, periodId, search } = options.input;
 
-	const filters = [] as (SQL | undefined)[];
+	const where: Prisma.ShiftTypeWhereInput = {};
 
 	if (periodId) {
-		filters.push(eq(shiftTypes.periodId, periodId));
+		where.periodId = periodId;
 	}
 
 	if (search) {
-		const escapeLike = (s: string) =>
-			s.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
-		const pattern = `%${escapeLike(search)}%`;
-		filters.push(
-			or(
-				ilike(shiftTypes.name, pattern),
-				ilike(shiftTypes.description, pattern),
-				ilike(shiftTypes.location, pattern),
-			),
-		);
+		where.OR = [
+			{ name: { contains: search, mode: "insensitive" } },
+			{ description: { contains: search, mode: "insensitive" } },
+			{ location: { contains: search, mode: "insensitive" } },
+		];
 	}
 
-	const whereClause = and(...filters);
+	const [result, total] = await Promise.all([
+		prisma.shiftType.findMany({
+			where,
+			include: {
+				roles: {
+					orderBy: { name: "asc" },
+				},
+			},
+			orderBy: { name: "asc" },
+			skip: offset,
+			take: limit,
+		}),
+		prisma.shiftType.count({ where }),
+	]);
 
-	const result = await db
-		.select()
-		.from(shiftTypes)
-		.where(whereClause)
-		.limit(limit)
-		.offset(offset)
-		.orderBy(shiftTypes.name);
-
-	const [total] = await db
-		.select({ count: count(shiftTypes.id) })
-		.from(shiftTypes)
-		.where(whereClause);
-
-	return { shiftTypes: result, total: total?.count ?? 0 };
+	return { shiftTypes: result, total };
 }

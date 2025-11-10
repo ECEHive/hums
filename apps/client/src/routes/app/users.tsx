@@ -71,7 +71,9 @@ function Users() {
 	const totalPages = Math.ceil(total / pageSize) || 1;
 
 	return (
-		<div className="container p-4 space-y-3">
+		<div className="container p-4 space-y-4">
+			<h1 className="text-2xl font-bold">Users</h1>
+
 			<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
 				<div className="flex items-center gap-2">
 					<FilterDialog

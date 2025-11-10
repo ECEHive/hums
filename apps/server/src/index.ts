@@ -1,5 +1,6 @@
 import { env } from "@ecehive/env";
 import { updateSystemUsers } from "@ecehive/features";
+import * as workers from "@ecehive/workers";
 import { server } from "./fastify";
 
 Promise.resolve()
@@ -9,6 +10,14 @@ Promise.resolve()
 	})
 	.catch((err) => {
 		console.error("Error updating system users:", err);
+		process.exit(1);
+	})
+	.then(() => workers.start())
+	.then(() => {
+		console.log("Workers started");
+	})
+	.catch((err) => {
+		console.error("Error starting workers:", err);
 		process.exit(1);
 	})
 	.then(() =>

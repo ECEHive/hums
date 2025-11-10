@@ -1,14 +1,13 @@
-import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
 import {
 	generateShiftScheduleShiftOccurrences,
-	parseTimeString,
+	TIME_REGEX,
+	timeToSeconds,
 } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-const TIME_REGEX = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
 const timeStringSchema = z.string().regex(TIME_REGEX, "Invalid time format");
 
 export const ZBulkCreateSchema = z.object({
@@ -47,13 +46,11 @@ export type TBulkCreateOptions = {
 export async function bulkCreateHandler(options: TBulkCreateOptions) {
 	const { shiftTypeId, schedules } = options.input;
 
-	return await db.transaction(async (tx) => {
+	return await prisma.$transaction(async (tx) => {
 		// Verify the shift type exists
-		const [shiftType] = await tx
-			.select()
-			.from(shiftTypes)
-			.where(eq(shiftTypes.id, shiftTypeId))
-			.limit(1);
+		const shiftType = await tx.shiftType.findUnique({
+			where: { id: shiftTypeId },
+		});
 
 		if (!shiftType) {
 			throw new TRPCError({
@@ -63,17 +60,18 @@ export async function bulkCreateHandler(options: TBulkCreateOptions) {
 		}
 
 		// Insert all schedules
-		const insertedSchedules = await tx
-			.insert(shiftSchedules)
-			.values(
-				schedules.map((schedule) => ({
+		const insertedSchedules = [];
+		for (const schedule of schedules) {
+			const inserted = await tx.shiftSchedule.create({
+				data: {
 					shiftTypeId,
 					dayOfWeek: schedule.dayOfWeek,
 					startTime: schedule.startTime,
 					endTime: schedule.endTime,
-				})),
-			)
-			.returning();
+				},
+			});
+			insertedSchedules.push(inserted);
+		}
 
 		// Generate shift occurrences for each schedule
 		for (const schedule of insertedSchedules) {
@@ -82,9 +80,4 @@ export async function bulkCreateHandler(options: TBulkCreateOptions) {
 
 		return { shiftSchedules: insertedSchedules };
 	});
-}
-
-function timeToSeconds(time: string) {
-	const { hours, minutes, seconds } = parseTimeString(time);
-	return hours * 3600 + minutes * 60 + seconds;
 }

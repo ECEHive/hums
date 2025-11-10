@@ -12,8 +12,9 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		publicDir: "public",
+		base: env.VITE_PUBLIC_PATH ?? "/",
 		server: {
-			port: 4483,
+			port: 44831,
 			host: "0.0.0.0",
 			https: {},
 			proxy: {
@@ -26,7 +27,11 @@ export default defineConfig(({ mode }) => {
 			},
 		},
 		plugins: [
-			devtools(),
+			devtools({
+				eventBusConfig: {
+					port: 42069,
+				},
+			}),
 			tsConfigPaths(),
 			router({
 				target: "react",

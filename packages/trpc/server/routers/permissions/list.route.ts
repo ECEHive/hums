@@ -1,11 +1,8 @@
-import { db, permissions } from "@ecehive/drizzle";
-import { and, count, ilike, type SQL } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 export const ZListSchema = z.object({
-	limit: z.number().min(1).max(100).optional(),
-	offset: z.number().min(0).optional(),
 	search: z.string().min(1).max(100).optional(),
 });
 export type TListSchema = z.infer<typeof ZListSchema>;
@@ -16,32 +13,19 @@ export type TListOptions = {
 };
 
 export async function listHandler(options: TListOptions) {
-	const { search, limit, offset = 0 } = options.input;
+	const { search } = options.input;
 
-	const filters = [] as (SQL | undefined)[];
+	const where: Prisma.PermissionWhereInput = search
+		? { name: { contains: search, mode: "insensitive" } }
+		: {};
 
-	if (search) {
-		const pattern = `%${search.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
-		filters.push(ilike(permissions.name, pattern));
-	}
+	const [permissions, total] = await Promise.all([
+		prisma.permission.findMany({
+			where,
+			orderBy: { name: "asc" },
+		}),
+		prisma.permission.count({ where }),
+	]);
 
-	const query = db
-		.select()
-		.from(permissions)
-		.where(and(...filters))
-		.offset(offset)
-		.orderBy(permissions.name);
-
-	if (limit) {
-		query.limit(limit);
-	}
-
-	const result = await query;
-
-	const [total] = await db
-		.select({ count: count(permissions.id) })
-		.from(permissions)
-		.where(and(...filters));
-
-	return { permissions: result, total: total?.count ?? 0 };
+	return { permissions, total };
 }

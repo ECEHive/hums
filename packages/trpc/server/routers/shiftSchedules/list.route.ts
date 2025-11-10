@@ -1,10 +1,4 @@
-import {
-	db,
-	shiftScheduleAssignments,
-	shiftSchedules,
-	shiftTypes,
-} from "@ecehive/drizzle";
-import { and, count, eq, type SQL, sql } from "drizzle-orm";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -32,49 +26,40 @@ export async function listHandler(options: TListOptions) {
 		dayOfWeek,
 	} = options.input;
 
-	const filters = [] as (SQL | undefined)[];
+	const where: Prisma.ShiftScheduleWhereInput = {};
 
 	if (shiftTypeId) {
-		filters.push(eq(shiftSchedules.shiftTypeId, shiftTypeId));
+		where.shiftTypeId = shiftTypeId;
 	}
 
 	if (periodId) {
-		filters.push(eq(shiftTypes.periodId, periodId));
+		where.shiftType = { periodId };
 	}
 
 	if (dayOfWeek !== undefined) {
-		filters.push(eq(shiftSchedules.dayOfWeek, dayOfWeek));
+		where.dayOfWeek = dayOfWeek;
 	}
 
-	const whereClause = and(...filters);
+	const [result, total] = await Promise.all([
+		prisma.shiftSchedule.findMany({
+			where,
+			include: {
+				_count: {
+					select: { users: true },
+				},
+			},
+			orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+			skip: offset,
+			take: limit,
+		}),
+		prisma.shiftSchedule.count({ where }),
+	]);
 
-	const rows = await db
-		.select({
-			schedule: shiftSchedules,
-			assignedCount: sql<number>`cast(count(distinct ${shiftScheduleAssignments.id}) as int)`,
-		})
-		.from(shiftSchedules)
-		.innerJoin(shiftTypes, eq(shiftSchedules.shiftTypeId, shiftTypes.id))
-		.leftJoin(
-			shiftScheduleAssignments,
-			eq(shiftSchedules.id, shiftScheduleAssignments.shiftScheduleId),
-		)
-		.where(whereClause)
-		.groupBy(shiftSchedules.id)
-		.limit(limit)
-		.offset(offset)
-		.orderBy(shiftSchedules.dayOfWeek, shiftSchedules.startTime);
-
-	const schedulesWithCounts = rows.map((row) => ({
-		...row.schedule,
-		assignedUserCount: row.assignedCount,
+	const schedulesWithCounts = result.map((schedule) => ({
+		...schedule,
+		assignedUserCount: schedule._count.users,
+		_count: undefined,
 	}));
 
-	const [total] = await db
-		.select({ count: count(shiftSchedules.id) })
-		.from(shiftSchedules)
-		.innerJoin(shiftTypes, eq(shiftSchedules.shiftTypeId, shiftTypes.id))
-		.where(whereClause);
-
-	return { shiftSchedules: schedulesWithCounts, total: total?.count ?? 0 };
+	return { shiftSchedules: schedulesWithCounts, total };
 }

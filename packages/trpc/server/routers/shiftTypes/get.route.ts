@@ -1,5 +1,5 @@
-import { db, shiftTypes } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,10 +14,14 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	const [shiftType] = await db
-		.select()
-		.from(shiftTypes)
-		.where(eq(shiftTypes.id, id));
+	const shiftType = await prisma.shiftType.findUnique({
+		where: { id },
+		include: {
+			roles: {
+				orderBy: { name: "asc" },
+			},
+		},
+	});
 
 	return { shiftType };
 }

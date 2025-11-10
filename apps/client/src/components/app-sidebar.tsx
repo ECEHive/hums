@@ -2,11 +2,14 @@ import { Link, useLocation } from "@tanstack/react-router";
 import {
 	BugIcon,
 	CalendarIcon,
+	ChevronRightIcon,
 	ChevronUpIcon,
+	ClockIcon,
 	DoorOpenIcon,
+	FileTextIcon,
 	HomeIcon,
+	LaptopMinimalCheckIcon,
 	MoonIcon,
-	NotebookTextIcon,
 	ShieldIcon,
 	SunIcon,
 	SunMoonIcon,
@@ -14,7 +17,7 @@ import {
 	UserIcon,
 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
-import { useTheme } from "@/components/theme-provider"; // Import useTheme from theme-provider
+import { useTheme } from "@/components/theme-provider";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -36,13 +39,29 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
+import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
+import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
-import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
+import { permissions as usersPagePermissions } from "@/routes/app/users";
+import { permissions as schedulingIndexPagePermissions } from "@/routes/shifts/scheduling";
 import { Logo } from "./logo";
 
 // Sidebar menu items, grouped by section
-export const items = [
+type AppSidebarItem = {
+	title: string;
+	url: string;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+	permissions: string[] | Record<string, string[]>;
+	hasChildren?: boolean;
+};
+
+type AppSidebarGroup = {
+	name?: string;
+	items: AppSidebarItem[];
+};
+
+export const items: AppSidebarGroup[] = [
 	{
 		items: [
 			{
@@ -52,10 +71,17 @@ export const items = [
 				permissions: appIndexPagePermissions,
 			},
 			{
-				title: "Scheduling",
-				url: "/app/scheduling",
+				title: "Sessions",
+				url: "/app/sessions",
+				icon: ClockIcon,
+				permissions: [], // Available to all authenticated users
+			},
+			{
+				title: "Shifts",
+				url: "/shifts",
 				icon: CalendarIcon,
-				permissions: schedulingPagePermissions,
+				permissions: schedulingIndexPagePermissions,
+				hasChildren: true,
 			},
 		],
 	},
@@ -66,25 +92,25 @@ export const items = [
 				title: "Roles",
 				url: "/app/roles",
 				icon: ShieldIcon,
-				permissions: rolesPagePermissions, // Example, will be changed based on real permissions
+				permissions: rolesPagePermissions,
 			},
 			{
 				title: "Users",
-				url: "/app/users", // To be implemented
+				url: "/app/users",
 				icon: UserIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				permissions: usersPagePermissions,
 			},
 			{
-				title: "Periods",
-				url: "/app/periods", // To be implemented
-				icon: CalendarIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				title: "Agreements",
+				url: "/app/agreements",
+				icon: FileTextIcon,
+				permissions: agreementsPagePermissions,
 			},
 			{
-				title: "Reports",
-				url: "/app/reports", // To be implemented
-				icon: NotebookTextIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				title: "Kiosks",
+				url: "/app/kiosks",
+				icon: LaptopMinimalCheckIcon,
+				permissions: kiosksPagePermissions,
 			},
 		],
 	},
@@ -125,7 +151,7 @@ export function AppSidebar() {
 	return (
 		<Sidebar>
 			<SidebarHeader>
-				<Logo className="h-8" />
+				<Logo className="h-8 p-1" />
 			</SidebarHeader>
 			<SidebarContent>
 				{items.map((group) => {
@@ -146,9 +172,15 @@ export function AppSidebar() {
 												asChild
 												isActive={isPathActive(item.url)}
 											>
-												<Link to={item.url}>
-													<item.icon />
-													<span>{item.title}</span>
+												<Link
+													to={item.url}
+													className="flex w-full items-center gap-3"
+												>
+													<item.icon className="h-4 w-4" />
+													<span className="flex-1">{item.title}</span>
+													{item.hasChildren && (
+														<ChevronRightIcon className="ml-2 h-4 w-4 text-muted-foreground" />
+													)}
 												</Link>
 											</SidebarMenuButton>
 										</SidebarMenuItem>
@@ -188,7 +220,7 @@ export function AppSidebar() {
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<a
-									href="https://github.com/ECEHive/scheduler/issues"
+									href="https://github.com/ECEHive/hums/issues"
 									target="_blank"
 									rel="noopener noreferrer"
 								>

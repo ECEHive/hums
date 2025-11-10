@@ -1,5 +1,5 @@
 {
-	"name": "hive-scheduler",
+	"name": "hums",
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "node",
 	"workspaceFolder": "/home/node/workspace",
@@ -9,7 +9,8 @@
 				"github.vscode-github-actions",
 				"github.vscode-pull-request-github",
 				"biomejs.biome",
-				"streetsidesoftware.code-spell-checker"
+				"streetsidesoftware.code-spell-checker",
+				"Prisma.prisma"
 			]
 		}
 	}

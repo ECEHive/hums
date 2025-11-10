@@ -1,7 +1,6 @@
-import { db, periodExceptions, periods } from "@ecehive/drizzle";
 import { generatePeriodShiftOccurrences } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -33,12 +32,10 @@ export type TUpdateOptions = {
 export async function updateHandler(options: TUpdateOptions) {
 	const { id, name, start, end } = options.input;
 
-	return await db.transaction(async (tx) => {
-		const [existing] = await tx
-			.select()
-			.from(periodExceptions)
-			.where(eq(periodExceptions.id, id))
-			.limit(1);
+	return await prisma.$transaction(async (tx) => {
+		const existing = await tx.periodException.findUnique({
+			where: { id },
+		});
 
 		if (!existing) {
 			return { periodException: undefined };
@@ -55,11 +52,9 @@ export async function updateHandler(options: TUpdateOptions) {
 		}
 
 		// Verify exception dates fall within period bounds
-		const [period] = await tx
-			.select()
-			.from(periods)
-			.where(eq(periods.id, existing.periodId))
-			.limit(1);
+		const period = await tx.period.findUnique({
+			where: { id: existing.periodId },
+		});
 
 		if (!period) {
 			throw new TRPCError({
@@ -75,27 +70,14 @@ export async function updateHandler(options: TUpdateOptions) {
 			});
 		}
 
-		const updates: Partial<typeof periodExceptions.$inferInsert> = {
-			updatedAt: new Date(),
-		};
-
-		if (name !== undefined) {
-			updates.name = name;
-		}
-
-		if (start !== undefined) {
-			updates.start = start;
-		}
-
-		if (end !== undefined) {
-			updates.end = end;
-		}
-
-		const [updated] = await tx
-			.update(periodExceptions)
-			.set(updates)
-			.where(eq(periodExceptions.id, id))
-			.returning();
+		const updated = await tx.periodException.update({
+			where: { id },
+			data: {
+				...(name !== undefined && { name }),
+				...(start !== undefined && { start }),
+				...(end !== undefined && { end }),
+			},
+		});
 
 		if (!updated) {
 			return { periodException: undefined };
