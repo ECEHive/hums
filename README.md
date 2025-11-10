@@ -79,14 +79,12 @@ The kiosk is accessible at https://localhost:44832/ and the server is accessible
 Notes:
 - You may get an HTTPS warning in the browser when using the local dev servers. You can accept/bypass the warning to continue.
 
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on contributing (branching, commits, pull requests, and reviews). Also read and follow our [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) to help keep the community respectful and collaborative.
-
 ## License
 
 See [LICENSE](./LICENSE) for license details.
 
----
+## Contributing
 
-![Alt](https://repobeats.axiom.co/api/embed/3834aafc611c93e7601ae61b25dfc6e8cde6b986.svg "Repobeats analytics image")
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on contributing (branching, commits, pull requests, and reviews). Also read and follow our [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) to help keep the community respectful and collaborative.
+
+![Alt](https://repobeats.axiom.co/api/embed/e340dcbcd1c8721fa10e52301b8825cd1e253ac2.svg "Repobeats analytics image (dev branch)")
