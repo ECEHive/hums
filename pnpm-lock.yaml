@@ -457,6 +457,9 @@ importers:
       '@ecehive/env':
         specifier: workspace:*
         version: link:../env
+      '@ecehive/features':
+        specifier: workspace:*
+        version: link:../features
       '@ecehive/prisma':
         specifier: workspace:*
         version: link:../prisma

@@ -1,5 +1,4 @@
-import { TZDate } from "@date-fns/tz";
-import { env } from "@ecehive/env";
+import { computeOccurrenceEnd } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
@@ -16,54 +15,6 @@ export type TListMyOptions = {
 	ctx: TPermissionProtectedProcedureContext;
 	input: TListMySchema;
 };
-
-/**
- * Parse time string in HH:MM:SS format to hours and minutes
- */
-function parseTime(time: string): { hours: number; minutes: number } {
-	const parts = time.split(":");
-	return {
-		hours: Number.parseInt(parts[0], 10),
-		minutes: Number.parseInt(parts[1], 10),
-	};
-}
-
-/**
- * Compute the end timestamp of a shift occurrence in the configured timezone
- */
-function computeOccurrenceEnd(
-	start: Date,
-	startTime: string,
-	endTime: string,
-): Date {
-	const startComponents = parseTime(startTime);
-	const endComponents = parseTime(endTime);
-
-	// Convert start date to TZ-aware date in the configured timezone
-	const tzStart = new TZDate(start, env.TZ);
-
-	// Create end date in the same timezone - use the date from tzStart and set the end time
-	const tzEnd = new TZDate(
-		tzStart.getFullYear(),
-		tzStart.getMonth(),
-		tzStart.getDate(),
-		endComponents.hours,
-		endComponents.minutes,
-		0,
-		env.TZ,
-	);
-
-	// If end time is earlier than start time, shift wraps to next day
-	if (
-		endComponents.hours < startComponents.hours ||
-		(endComponents.hours === startComponents.hours &&
-			endComponents.minutes <= startComponents.minutes)
-	) {
-		tzEnd.setDate(tzEnd.getDate() + 1);
-	}
-
-	return tzEnd;
-}
 
 /**
  * List shift occurrences for the current user in a specific period
