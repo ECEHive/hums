@@ -104,8 +104,6 @@ export function BulkDeleteShiftScheduleSheet({
 					offset: 0,
 				});
 
-				console.log("Fetched shift schedules for deletion check:", all);
-
 				const shiftTypeIds = new Set(selectedShiftTypes.map((s) => s.id));
 				const daysOfWeek = new Set(value.days);
 
@@ -118,8 +116,6 @@ export function BulkDeleteShiftScheduleSheet({
 					onOpenChange(false);
 					return;
 				}
-
-				console.log("Deleting shift schedules:", toDelete);
 
 				await deleteMutation.mutateAsync(toDelete.map((s) => s.id));
 
