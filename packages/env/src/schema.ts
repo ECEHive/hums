@@ -5,7 +5,7 @@ export const ZEnvSchema = z.object({
 	NODE_ENV: z
 		.enum(["development", "production", "test"])
 		.default("development"),
-	PORT: z.coerce.number().default(3000),
+	PORT: z.coerce.number().default(80),
 	DATABASE_URL: z.url(),
 	AUTH_SECRET: z
 		.string()
@@ -21,6 +21,7 @@ export const ZEnvSchema = z.object({
 		.describe("Comma-separated list of usernames"),
 	LDAP_HOST: z.string().default("whitepages.gatech.edu"),
 	LDAP_BASE_DN: z.string().default("dc=whitepages,dc=gatech,dc=edu"),
+	LDAP_FALLBACK_EMAIL_DOMAIN: z.string().default("gatech.edu"),
 	TZ: z.string().default("America/New_York"),
 });
 

@@ -1,4 +1,5 @@
 import cp from "node:child_process";
+import { env } from "@ecehive/env";
 
 /**
  * Searches an LDAP server and returns parsed results.
@@ -15,14 +16,41 @@ export async function searchLdap(
 	attributes: string[] = [],
 	timeoutMs: number = 5000,
 ): Promise<ParsedLdapResponse> {
-	const ldapResponse = await searchLdapRaw(
-		host,
-		baseDN,
-		filter,
-		attributes,
-		timeoutMs,
-	);
-	return parseLdapResponse(ldapResponse);
+	try {
+		const ldapResponse = await searchLdapRaw(
+			host,
+			baseDN,
+			filter,
+			attributes,
+			timeoutMs,
+		);
+		return parseLdapResponse(ldapResponse);
+	} catch (err) {
+		// Log the error but do not throw. Return a fallback response that uses the
+		// username parsed from the filter (if available) so callers can continue.
+		console.error("[ldap] search error:", err);
+
+		// Try to extract username from common filters like "(uid=username)" or "uid=username"
+		let username = "unknown";
+		try {
+			const m = /(?:uid|cn)=([^)\s]+)/i.exec(filter);
+			if (m?.[1]) {
+				username = m[1];
+			}
+		} catch {
+			// ignore parsing errors and keep username as 'unknown'
+		}
+
+		const fallbackEntry: LdapEntry = {
+			uid: username,
+			displayName: username,
+			givenName: username,
+			sn: null,
+			mail: `${username}@${env.LDAP_FALLBACK_EMAIL_DOMAIN}`,
+		};
+
+		return { entries: [fallbackEntry], metadata: {} };
+	}
 }
 
 /**

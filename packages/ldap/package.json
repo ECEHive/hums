@@ -5,5 +5,8 @@
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
 		"@types/node": "^24.5.2"
+	},
+	"dependencies": {
+		"@ecehive/env": "workspace:*"
 	}
 }
