@@ -1,0 +1,33 @@
+# Node modules (handled by parent)
+node_modules
+
+# Build artifacts
+dist
+build
+
+# Development files
+.env
+.env.*
+!.env.example
+
+# Testing
+*.test.ts
+*.spec.ts
+__tests__
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Misc
+.cache
+.tmp

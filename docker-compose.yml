@@ -25,8 +25,7 @@ services:
     build:
       context: .
       dockerfile: packages/prisma/Dockerfile
-      args:
-        DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+      target: prisma-migrate
     container_name: hums-prisma-migrate
     restart: "no"
     depends_on:
@@ -41,7 +40,7 @@ services:
   server:
     build:
       context: .
-      dockerfile: apps/server/Dockerfile
+      dockerfile: Dockerfile
       target: server
     container_name: hums-server
     restart: unless-stopped
@@ -53,24 +52,18 @@ services:
     environment:
       DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
       NODE_ENV: production
-      PORT: 3000
+      PORT: 80
       LDAP_HOST: ${LDAP_HOST}
       LDAP_BASE_DN: ${LDAP_BASE_DN}
       SYSTEM_USERS: ${SYSTEM_USERS}
     networks:
       - hums-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   # Client application
   client:
     build:
       context: .
-      dockerfile: apps/client/Dockerfile
+      dockerfile: Dockerfile
       target: client
       args:
         # Build-time environment variables for Vite
@@ -86,7 +79,7 @@ services:
   kiosk:
     build:
       context: .
-      dockerfile: apps/kiosk/Dockerfile
+      dockerfile: Dockerfile
       target: kiosk
       args:
         # Build-time environment variables for Vite
@@ -103,12 +96,8 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      # Uncomment for HTTPS
-      # - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      # Uncomment for SSL certificates
-      # - ./certs:/etc/nginx/certs:ro
     depends_on:
       - server
       - client
