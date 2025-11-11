@@ -136,81 +136,20 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
 CMD ["pnpm", "start"]
 
 # =============================================================================
-# Client Production Image
+# NGINX Proxy with Client and Kiosk
 # =============================================================================
-FROM caddy:2-alpine AS client
+FROM nginx:alpine AS nginx
 
-# Copy built static files
-COPY --from=build /app/apps/client/dist /srv
+# Copy built static files for both apps
+COPY --from=build /app/apps/client/dist /usr/share/nginx/html/client
+COPY --from=build /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
 
-# Create optimized Caddyfile
-RUN printf '{\n\
-    auto_https off\n\
-    admin off\n\
-}\n\
-\n\
-:80 {\n\
-    root * /srv\n\
-    encode gzip zstd\n\
-    file_server\n\
-    try_files {path} /index.html\n\
-    \n\
-    header {\n\
-        -Server\n\
-        X-Content-Type-Options "nosniff"\n\
-        X-Frame-Options "DENY"\n\
-        Referrer-Policy "no-referrer-when-downgrade"\n\
-    }\n\
-    \n\
-    @static {\n\
-        path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.woff *.woff2\n\
-    }\n\
-    header @static Cache-Control "public, max-age=31536000, immutable"\n\
-}' > /etc/caddy/Caddyfile
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
-
-# =============================================================================
-# Kiosk Production Image
-# =============================================================================
-FROM caddy:2-alpine AS kiosk
-
-# Copy built static files
-COPY --from=build /app/apps/kiosk/dist /srv
-
-# Create optimized Caddyfile
-RUN printf '{\n\
-    auto_https off\n\
-    admin off\n\
-}\n\
-\n\
-:80 {\n\
-    root * /srv\n\
-    encode gzip zstd\n\
-    file_server\n\
-    try_files {path} /index.html\n\
-    \n\
-    header {\n\
-        -Server\n\
-        X-Content-Type-Options "nosniff"\n\
-        X-Frame-Options "DENY"\n\
-        Referrer-Policy "no-referrer-when-downgrade"\n\
-    }\n\
-    \n\
-    @static {\n\
-        path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.woff *.woff2\n\
-    }\n\
-    header @static Cache-Control "public, max-age=31536000, immutable"\n\
-}' > /etc/caddy/Caddyfile
-
-EXPOSE 80
-
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
-
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
+CMD ["nginx", "-g", "daemon off;"]
