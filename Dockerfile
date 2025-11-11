@@ -140,6 +140,10 @@ CMD ["pnpm", "start"]
 # =============================================================================
 FROM nginx:alpine AS nginx
 
+# Declare ARG to receive build argument (even though we don't use it here,
+# it needs to be declared so docker-compose can pass it)
+ARG VITE_CAS_PROXY_URL
+
 # Copy built static files for both apps
 COPY --from=build /app/apps/client/dist /usr/share/nginx/html/client
 COPY --from=build /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
