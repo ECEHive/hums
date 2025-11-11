@@ -1,12 +1,21 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { CalendarDays, Clock, LayoutList, Plus } from "lucide-react";
+import {
+	CalendarDays,
+	Clock,
+	LayoutList,
+	ListPlus,
+	ListX,
+	Plus,
+} from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { PeriodNotSelected } from "@/components/period-not-selected";
 import { usePeriod } from "@/components/period-provider";
+import { BulkCreateShiftScheduleSheet } from "@/components/shift-schedules/bulk-create-shift-schedule-sheet";
+import { BulkDeleteShiftScheduleSheet } from "@/components/shift-schedules/bulk-delete-shift-schedule-sheet";
 import { generateColumns as generateShiftScheduleColumns } from "@/components/shift-schedules/columns";
 import { CreateShiftScheduleSheet } from "@/components/shift-schedules/create-shift-schedule-sheet";
 import { DataTable as ShiftScheduleDataTable } from "@/components/shift-schedules/data-table";
@@ -34,6 +43,8 @@ function ShiftSchedulesPage() {
 	const [view, setView] = React.useState<"timeline" | "table">("timeline");
 	const [page, setPage] = React.useState(1);
 	const [createOpen, setCreateOpen] = React.useState(false);
+	const [bulkCreateOpen, setBulkCreateOpen] = React.useState(false);
+	const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
 	const [editOpen, setEditOpen] = React.useState(false);
 	const [selectedId, setSelectedId] = React.useState<number | null>(null);
 	const limit = 10;
@@ -94,6 +105,8 @@ function ShiftSchedulesPage() {
 	const currentUser = useCurrentUser();
 	const canCreate =
 		currentUser && checkPermissions(currentUser, ["shiftSchedules.create"]);
+	const canDelete =
+		currentUser && checkPermissions(currentUser, ["shiftSchedules.delete"]);
 
 	if (periodId === null) {
 		return <PeriodNotSelected />;
@@ -147,6 +160,26 @@ function ShiftSchedulesPage() {
 									Add Shift Schedule
 								</Button>
 							)}
+							{canCreate && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setBulkCreateOpen(true)}
+								>
+									<ListPlus className="mr-2 h-4 w-4" />
+									Bulk Generate
+								</Button>
+							)}
+							{canDelete && (
+								<Button
+									variant="destructive"
+									size="sm"
+									onClick={() => setBulkDeleteOpen(true)}
+								>
+									<ListX className="mr-2 h-4 w-4" />
+									Bulk Delete
+								</Button>
+							)}
 						</div>
 					</div>
 				</CardHeader>
@@ -179,10 +212,22 @@ function ShiftSchedulesPage() {
 				</CardContent>
 			</Card>
 
+			<BulkCreateShiftScheduleSheet
+				periodId={Number(periodId)}
+				open={bulkCreateOpen}
+				onOpenChange={setBulkCreateOpen}
+			/>
+
 			<CreateShiftScheduleSheet
 				periodId={Number(periodId)}
 				open={createOpen}
 				onOpenChange={setCreateOpen}
+			/>
+
+			<BulkDeleteShiftScheduleSheet
+				periodId={Number(periodId)}
+				open={bulkDeleteOpen}
+				onOpenChange={setBulkDeleteOpen}
 			/>
 
 			{selectedData?.shiftSchedule && (
