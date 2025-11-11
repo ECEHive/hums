@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		publicDir: "public",
-		base: env.VITE_PUBLIC_PATH ?? "/kiosk/",
+		base: "/kiosk/",
 		server: {
 			port: 44832,
 			host: "0.0.0.0",
