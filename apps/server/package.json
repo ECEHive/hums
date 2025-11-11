@@ -3,6 +3,7 @@
 	"type": "module",
 	"scripts": {
 		"start": "tsx ./src/index.ts",
+		"migrate": "tsx ./prisma/migrate.ts",
 		"dev": "nodemon",
 		"check": "biome check --write"
 	},
@@ -13,11 +14,12 @@
 		"@ecehive/workers": "workspace:*",
 		"@fastify/cors": "^11.1.0",
 		"@trpc/server": "11.5.1",
-		"fastify": "^5.6.0"
+		"fastify": "^5.6.0",
+		"tsx": "^4.20.6"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
 		"nodemon": "^3.1.10",
-		"tsx": "^4.20.5"
+		"typescript": "^5.9.2"
 	}
 }
