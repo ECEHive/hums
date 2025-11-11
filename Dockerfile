@@ -43,10 +43,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # =============================================================================
 FROM deps AS build
 
-ARG VITE_PUBLIC_SERVER_URL
 ARG VITE_CAS_PROXY_URL
-
-ENV VITE_PUBLIC_SERVER_URL=$VITE_PUBLIC_SERVER_URL
 ENV VITE_CAS_PROXY_URL=$VITE_CAS_PROXY_URL
 
 # Copy source code
@@ -59,9 +56,7 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 RUN pnpm --filter @ecehive/prisma exec prisma generate
 
 # Build all apps in parallel
-ENV VITE_PUBLIC_PATH=/
 RUN pnpm --filter @ecehive/client build
-ENV VITE_PUBLIC_PATH=/kiosk/
 RUN pnpm --filter @ecehive/kiosk build
 
 # =============================================================================

@@ -16,7 +16,7 @@ const getHeaders = () => {
 };
 
 const getSubscriptionUrl = () => {
-	const baseUrl = `${import.meta.env.VITE_PUBLIC_SERVER_URL}/api/trpc`;
+	const baseUrl = `${import.meta.env.VITE_PUBLIC_SERVER_URL ?? ""}/api/trpc`;
 	const token = localStorage.getItem("auth_token");
 	if (token) {
 		return `${baseUrl}?token=${encodeURIComponent(token)}`;
