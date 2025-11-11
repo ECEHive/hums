@@ -24,7 +24,7 @@ services:
   prisma-migrate:
     build:
       context: .
-      dockerfile: packages/prisma/Dockerfile
+      dockerfile: Dockerfile
       target: prisma-migrate
     container_name: hums-prisma-migrate
     restart: "no"

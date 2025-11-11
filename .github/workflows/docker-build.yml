@@ -43,7 +43,7 @@ jobs:
             target: kiosk
           - name: prisma-migrate
             context: .
-            dockerfile: packages/prisma/Dockerfile
+            dockerfile: Dockerfile
             target: prisma-migrate
     
     steps:

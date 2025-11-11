@@ -11,9 +11,7 @@ RUN corepack enable
 # Install runtime dependencies once for reuse
 # Only server needs these, but we install them here to cache the layer
 RUN apk add --no-cache \
-    git \
-    openldap-clients \
-    postgresql-client
+    git
 
 WORKDIR /app
 
@@ -72,9 +70,42 @@ RUN mkdir -p /prod/server/prisma && \
     cp packages/prisma/schema.prisma /prod/server/prisma/schema.prisma 2>/dev/null || true
 
 # =============================================================================
+# Prisma Production Dependencies
+# =============================================================================
+FROM build AS prisma-prod-deps
+
+# Deploy prisma with production dependencies only
+RUN pnpm deploy --filter=@ecehive/prisma --prod --legacy /prod/prisma
+
+# =============================================================================
+# Prisma Migration Runner (one-shot)
+# =============================================================================
+FROM base AS prisma-migrate
+
+# Copy production prisma artifacts
+COPY --from=prisma-prod-deps /prod/prisma /prod/prisma
+
+WORKDIR /prod/prisma
+
+# Create non-root user and fix ownership
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /prod/prisma
+
+USER nodejs
+
+# Default command to run migrations (override at runtime as needed)
+CMD ["pnpm", "migrate"]
+
+# =============================================================================
 # Server Production Image
 # =============================================================================
+
 FROM base AS server
+
+# Install runtime-only packages needed by the server (kept out of the shared base
+# layer to reduce build-stage image sizes)
+RUN apk add --no-cache openldap-clients
 
 # Copy production dependencies and code
 COPY --from=server-prod-deps /prod/server /prod/server
