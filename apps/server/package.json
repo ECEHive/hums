@@ -3,7 +3,6 @@
 	"type": "module",
 	"scripts": {
 		"start": "tsx ./src/index.ts",
-		"migrate": "tsx ./prisma/migrate.ts",
 		"dev": "nodemon",
 		"check": "biome check --write"
 	},
