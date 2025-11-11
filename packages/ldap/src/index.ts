@@ -1,4 +1,5 @@
 import cp from "node:child_process";
+import { env } from "@ecehive/env";
 
 /**
  * Searches an LDAP server and returns parsed results.
@@ -45,7 +46,7 @@ export async function searchLdap(
 			displayName: username,
 			givenName: username,
 			sn: null,
-			mail: `${username}@gatech.edu`,
+			mail: `${username}@${env.LDAP_FALLBACK_EMAIL_DOMAIN}`,
 		};
 
 		return { entries: [fallbackEntry], metadata: {} };
