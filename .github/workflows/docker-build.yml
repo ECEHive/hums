@@ -2,11 +2,8 @@ name: Build and Push Docker Images
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - dev
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 env:
@@ -68,6 +65,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
+            type=ref,event=tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
