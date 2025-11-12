@@ -75,7 +75,7 @@ function SessionsPage() {
 	});
 
 	const { data: statsData, isLoading: isStatsLoading } = useQuery({
-		queryKey: ["sessionsStats", queryParams],
+		queryKey: ["sessionsStats"],
 		queryFn: async () => {
 			return trpc.sessions.stats.query({});
 		},
