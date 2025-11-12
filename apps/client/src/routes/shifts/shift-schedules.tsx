@@ -25,6 +25,11 @@ import { TablePagination } from "@/components/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/shifts/shift-schedules")({
@@ -151,34 +156,46 @@ function ShiftSchedulesPage() {
 								</Button>
 							</div>
 							{canCreate && (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => setCreateOpen(true)}
-								>
-									<Plus className="mr-2 h-4 w-4" />
-									Add Shift Schedule
-								</Button>
+								<Tooltip>
+									<TooltipTrigger>
+										<Button
+											variant="outline"
+											onClick={() => setCreateOpen(true)}
+										>
+											<Plus className="h-4 w-4" />
+											<span className="hidden lg:inline">Create</span>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Create a new shift schedule</TooltipContent>
+								</Tooltip>
 							)}
 							{canCreate && (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => setBulkCreateOpen(true)}
-								>
-									<ListPlus className="mr-2 h-4 w-4" />
-									Bulk Generate
-								</Button>
+								<Tooltip>
+									<TooltipTrigger>
+										<Button
+											variant="outline"
+											onClick={() => setBulkCreateOpen(true)}
+										>
+											<ListPlus className="h-4 w-4" />
+											<span className="hidden lg:inline">Bulk Create</span>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Bulk create shift schedules</TooltipContent>
+								</Tooltip>
 							)}
 							{canDelete && (
-								<Button
-									variant="destructive"
-									size="sm"
-									onClick={() => setBulkDeleteOpen(true)}
-								>
-									<ListX className="mr-2 h-4 w-4" />
-									Bulk Delete
-								</Button>
+								<Tooltip>
+									<TooltipTrigger>
+										<Button
+											variant="destructive"
+											onClick={() => setBulkDeleteOpen(true)}
+										>
+											<ListX className="h-4 w-4" />
+											<span className="hidden lg:inline">Bulk Delete</span>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Bulk delete shift schedules</TooltipContent>
+								</Tooltip>
 							)}
 						</div>
 					</div>
