@@ -8,18 +8,18 @@ import { defineConfig, loadEnv } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig(({ mode }) => {
-	const env = loadEnv(mode, process.cwd(), ["VITE_", "PROXY_"]);
+	const env = loadEnv(mode, process.cwd(), ["VITE_"]);
 
 	return {
 		publicDir: "public",
-		base: env.VITE_PUBLIC_PATH ?? "/",
+		base: "/",
 		server: {
-			port: 44831,
+			port: env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 44831,
 			host: "0.0.0.0",
 			https: {},
 			proxy: {
 				"/api": {
-					target: env.PROXY_PRIVATE_SERVER_URL,
+					target: env.VITE_DEV_SERVER_URL,
 					changeOrigin: true,
 				},
 				// If more server endpoints are added,

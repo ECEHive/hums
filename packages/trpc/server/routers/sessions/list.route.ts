@@ -6,6 +6,7 @@ export const ZListSchema = z.object({
 	limit: z.number().min(1).max(100).optional(),
 	offset: z.number().min(0).optional(),
 	filterUserId: z.number().min(1).optional(),
+	filterSessionType: z.enum(["regular", "staffing"]).optional(),
 });
 
 export type TListSchema = z.infer<typeof ZListSchema>;
@@ -16,11 +17,22 @@ export type TListOptions = {
 };
 
 export async function listHandler(options: TListOptions) {
-	const { filterUserId, limit = 50, offset = 0 } = options.input;
+	const {
+		filterUserId,
+		filterSessionType,
+		limit = 50,
+		offset = 0,
+	} = options.input;
 
-	const where: Prisma.SessionWhereInput = filterUserId
-		? { userId: filterUserId }
-		: {};
+	const where: Prisma.SessionWhereInput = {};
+
+	if (filterUserId) {
+		where.userId = filterUserId;
+	}
+
+	if (filterSessionType) {
+		where.sessionType = filterSessionType;
+	}
 
 	const [sessions, total] = await Promise.all([
 		prisma.session.findMany({
@@ -28,6 +40,16 @@ export async function listHandler(options: TListOptions) {
 			orderBy: { startedAt: "desc" },
 			skip: offset,
 			take: limit,
+			include: {
+				user: {
+					select: {
+						id: true,
+						name: true,
+						username: true,
+						email: true,
+					},
+				},
+			},
 		}),
 		prisma.session.count({ where }),
 	]);

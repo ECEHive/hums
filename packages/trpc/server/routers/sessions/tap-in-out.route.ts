@@ -6,6 +6,10 @@ import type { TKioskProtectedProcedureContext } from "../../trpc";
 
 export const ZTapInOutSchema = z.object({
 	cardNumber: z.string().regex(/^\d+$/),
+	sessionType: z.enum(["regular", "staffing"]).optional(),
+	tapAction: z
+		.enum(["end_session", "switch_to_staffing", "switch_to_regular"])
+		.optional(),
 });
 
 export type TTapInOutSchema = z.infer<typeof ZTapInOutSchema>;
@@ -167,12 +171,30 @@ async function handleTapOutAttendance(
 }
 
 export async function tapInOutHandler(options: TTapInOutOptions) {
-	const { cardNumber } = options.input;
+	const { cardNumber, sessionType, tapAction } = options.input;
 
 	const user = await findUserByCard(cardNumber);
 
 	return await prisma.$transaction(async (tx) => {
 		const now = new Date();
+
+		// Check if user has sessions.staffing permission
+		const hasStaffingPermission =
+			user.isSystemUser ||
+			(await tx.permission.findFirst({
+				where: {
+					name: "sessions.staffing",
+					roles: {
+						some: {
+							users: {
+								some: {
+									id: user.id,
+								},
+							},
+						},
+					},
+				},
+			})) !== null;
 
 		// Get the most recent session for the user
 		const mostRecentSession = await tx.session.findFirst({
@@ -182,7 +204,7 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// If there is no session, or the most recent session has an endedAt, create a new session (tap in)
 		if (!mostRecentSession || mostRecentSession.endedAt) {
-			// Check if user has agreed to all enabled agreements
+			// Check if user has agreed to all enabled agreements FIRST
 			const enabledAgreements = await tx.agreement.findMany({
 				where: { isEnabled: true },
 				select: {
@@ -221,31 +243,120 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				}
 			}
 
+			// User with staffing permission must specify session type
+			// This happens AFTER agreement check
+			if (hasStaffingPermission && !sessionType) {
+				return {
+					status: "choose_session_type" as const,
+					user,
+				};
+			}
+
+			// Determine the session type to create
+			const typeToCreate = sessionType || "regular";
+
 			const session = await tx.session.create({
 				data: {
 					userId: user.id,
+					sessionType: typeToCreate,
 					startedAt: now,
 				},
 			});
 
-			// Handle attendance for active shifts
-			await handleTapInAttendance(tx, user.id, now);
-
+			// Handle attendance for active shifts (only for staffing sessions)
+			if (typeToCreate === "staffing") {
+				await handleTapInAttendance(tx, user.id, now);
+			}
 			return {
 				status: "tapped_in",
 				user,
 				session,
 			};
+		} // Otherwise, handle tap-out or switch
+		// User with staffing permission must specify action
+		if (hasStaffingPermission && !tapAction) {
+			return {
+				status: "choose_tap_out_action" as const,
+				user,
+				currentSession: mostRecentSession,
+			};
 		}
 
-		// Otherwise, update the most recent session to set endedAt (tap out)
+		// Handle switch to staffing session
+		if (tapAction === "switch_to_staffing") {
+			// End current session
+			const endedSession = await tx.session.update({
+				where: { id: mostRecentSession.id },
+				data: { endedAt: now },
+			});
+
+			// Handle attendance for tap-out (only if ending a staffing session)
+			if (endedSession.sessionType === "staffing") {
+				await handleTapOutAttendance(tx, user.id, now);
+			}
+
+			// Start new staffing session
+			const newSession = await tx.session.create({
+				data: {
+					userId: user.id,
+					sessionType: "staffing",
+					startedAt: now,
+				},
+			});
+
+			// Handle attendance for new staffing session
+			await handleTapInAttendance(tx, user.id, now);
+
+			return {
+				status: "switched_to_staffing",
+				user,
+				endedSession,
+				newSession,
+			};
+		}
+
+		// Handle switch to regular session
+		if (tapAction === "switch_to_regular") {
+			// End current session
+			const endedSession = await tx.session.update({
+				where: { id: mostRecentSession.id },
+				data: { endedAt: now },
+			});
+
+			// Handle attendance for tap-out (only if ending a staffing session)
+			if (endedSession.sessionType === "staffing") {
+				await handleTapOutAttendance(tx, user.id, now);
+			}
+
+			// Start new regular session
+			const newSession = await tx.session.create({
+				data: {
+					userId: user.id,
+					sessionType: "regular",
+					startedAt: now,
+				},
+			});
+
+			// Don't handle attendance for regular sessions
+
+			return {
+				status: "switched_to_regular",
+				user,
+				endedSession,
+				newSession,
+			};
+		}
+
+		// Default: end session (tap out)
 		const session = await tx.session.update({
 			where: { id: mostRecentSession.id },
 			data: { endedAt: now },
 		});
 
-		// Handle attendance for active shifts
-		await handleTapOutAttendance(tx, user.id, now);
+		// Handle attendance for active shifts (only for staffing sessions)
+		if (session.sessionType === "staffing") {
+			await handleTapOutAttendance(tx, user.id, now);
+		}
 
 		return {
 			status: "tapped_out",

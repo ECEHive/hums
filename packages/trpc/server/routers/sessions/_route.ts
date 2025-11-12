@@ -10,7 +10,7 @@ import { myStatsHandler, ZMyStatsSchema } from "./myStats.route";
 import { tapInOutHandler, ZTapInOutSchema } from "./tap-in-out.route";
 
 export const sessionsRouter = router({
-	list: permissionProtectedProcedure("users.list")
+	list: permissionProtectedProcedure("sessions.list")
 		.input(ZListSchema)
 		.query(listHandler),
 	listMy: protectedProcedure.input(ZListMySchema).query(listMyHandler),

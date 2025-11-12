@@ -225,6 +225,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
+      tslog:
+        specifier: ^4.9.3
+        version: 4.10.2
       zod:
         specifier: ^4.1.9
         version: 4.1.12
@@ -289,6 +292,9 @@ importers:
       fastify:
         specifier: ^5.6.0
         version: 5.6.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.20.6
     devDependencies:
       '@ecehive/config':
         specifier: workspace:*
@@ -296,9 +302,9 @@ importers:
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
-      tsx:
-        specifier: ^4.20.5
-        version: 4.20.6
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   packages/auth:
     dependencies:
@@ -367,6 +373,10 @@ importers:
         version: 3.2.4(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
 
   packages/ldap:
+    dependencies:
+      '@ecehive/env':
+        specifier: workspace:*
+        version: link:../env
     devDependencies:
       '@ecehive/config':
         specifier: workspace:*
@@ -386,6 +396,9 @@ importers:
       dotenv:
         specifier: ^17.2.2
         version: 17.2.3
+      prisma:
+        specifier: ^6.19.0
+        version: 6.19.0(typescript@5.9.3)
     devDependencies:
       '@ecehive/config':
         specifier: workspace:*
@@ -393,9 +406,6 @@ importers:
       '@types/node':
         specifier: ^24.5.2
         version: 24.10.0
-      prisma:
-        specifier: ^6.19.0
-        version: 6.19.0(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@24.10.0)(typescript@5.9.3)
@@ -436,7 +446,7 @@ importers:
         specifier: ^5.6.0
         version: 5.6.1
       superjson:
-        specifier: ^2.2.2
+        specifier: ^2.2.5
         version: 2.2.5
       zod:
         specifier: ^4.1.9
@@ -2924,6 +2934,10 @@ packages:
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
+  tslog@4.10.2:
+    resolution: {integrity: sha512-XuELoRpMR+sq8fuWwX7P0bcj+PRNiicOKDEb3fGNURhxWVyykCi9BNq7c4uVz7h7P0sj8qgBsr5SWS6yBClq3g==}
+    engines: {node: '>=16'}
 
   tsx@4.20.6:
     resolution: {integrity: sha512-ytQKuwgmrrkDTFP4LjR0ToE2nqgy886GpvRSpU0JAnrdBYppuY5rLkRUYPU1yCryb24SsKBTL/hlDQAEFVwtZg==}
@@ -5417,6 +5431,8 @@ snapshots:
       typescript: 5.9.3
 
   tslib@2.8.1: {}
+
+  tslog@4.10.2: {}
 
   tsx@4.20.6:
     dependencies:

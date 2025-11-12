@@ -1,5 +1,6 @@
 import { permissionProtectedProcedure, router } from "../../trpc";
 import { bulkCreateHandler, ZBulkCreateSchema } from "./bulkCreate.route";
+import { bulkDeleteHandler, ZBulkDeleteSchema } from "./bulkDelete.route";
 import { createHandler, ZCreateSchema } from "./create.route";
 import { deleteHandler, ZDeleteSchema } from "./delete.route";
 import { getHandler, ZGetSchema } from "./get.route";
@@ -32,6 +33,9 @@ export const shiftSchedulesRouter = router({
 	bulkCreate: permissionProtectedProcedure("shift_schedules.create")
 		.input(ZBulkCreateSchema)
 		.mutation(bulkCreateHandler),
+	bulkDelete: permissionProtectedProcedure("shift_schedules.delete")
+		.input(ZBulkDeleteSchema)
+		.mutation(bulkDeleteHandler),
 	update: permissionProtectedProcedure("shift_schedules.update")
 		.input(ZUpdateSchema)
 		.mutation(updateHandler),

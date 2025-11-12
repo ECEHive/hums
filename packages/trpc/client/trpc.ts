@@ -16,7 +16,7 @@ const getHeaders = () => {
 };
 
 const getSubscriptionUrl = () => {
-	const baseUrl = `${import.meta.env.VITE_PUBLIC_SERVER_URL}/api/trpc`;
+	const baseUrl = `/api/trpc`;
 	const token = localStorage.getItem("auth_token");
 	if (token) {
 		return `${baseUrl}?token=${encodeURIComponent(token)}`;
@@ -35,7 +35,7 @@ export const trpc = createTRPCClient<AppRouter>({
 			}),
 			// Use batch HTTP link for queries and mutations
 			false: httpBatchLink({
-				url: `${import.meta.env.VITE_PUBLIC_SERVER_URL}/api/trpc`,
+				url: `/api/trpc`,
 				transformer: superjson,
 				headers: getHeaders,
 			}),

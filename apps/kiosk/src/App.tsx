@@ -5,8 +5,10 @@ import { AgreementFlow } from "@/components/agreement-flow";
 import { ErrorDialog } from "@/components/error-dialog";
 import { KioskHeader } from "@/components/kiosk-header";
 import { ReadyView } from "@/components/ready-view";
+import { SessionTypeSelector } from "@/components/session-type-selector";
 import { SetupView } from "@/components/setup-view";
 import { TapNotification } from "@/components/tap-notification";
+import { TapOutActionSelector } from "@/components/tap-out-action-selector";
 import {
 	connectSerial,
 	disconnectSerial,
@@ -28,6 +30,17 @@ type PendingAgreementState = {
 	agreements: AgreementData[];
 };
 
+type SessionTypeSelectionState = {
+	cardNumber: string;
+	userName: string;
+};
+
+type TapOutActionSelectionState = {
+	cardNumber: string;
+	userName: string;
+	currentSessionType: "regular" | "staffing";
+};
+
 function App() {
 	const log = getLogger("app");
 	const [connectionStatus, setConnectionStatus] =
@@ -39,6 +52,10 @@ function App() {
 	const [isErrorExiting, setIsErrorExiting] = useState<boolean>(false);
 	const [pendingAgreement, setPendingAgreement] =
 		useState<PendingAgreementState | null>(null);
+	const [sessionTypeSelection, setSessionTypeSelection] =
+		useState<SessionTypeSelectionState | null>(null);
+	const [tapOutActionSelection, setTapOutActionSelection] =
+		useState<TapOutActionSelectionState | null>(null);
 	const serialRef = useRef<SerialSession | null>(null);
 	const tapEventTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -64,12 +81,51 @@ function App() {
 	};
 
 	// Handle new tap event - immediately show most recent
-	const handleTapInOut = async (cardNumber: string) => {
+	const handleTapInOut = async (
+		cardNumber: string,
+		sessionType?: "regular" | "staffing",
+		tapAction?: "end_session" | "switch_to_staffing" | "switch_to_regular",
+	) => {
 		try {
 			try {
-				log.info("tap-request", { cardNumber });
+				log.info("tap-request", { cardNumber, sessionType, tapAction });
 			} catch {}
-			const result = await trpc.sessions.tapInOut.mutate({ cardNumber });
+			const result = await trpc.sessions.tapInOut.mutate({
+				cardNumber,
+				sessionType,
+				tapAction,
+			});
+
+			// Check if user needs to choose session type
+			if (result.status === "choose_session_type") {
+				try {
+					log.info("choose-session-type", {
+						cardNumber,
+					});
+				} catch {}
+
+				setSessionTypeSelection({
+					cardNumber,
+					userName: result.user.name,
+				});
+				return;
+			}
+
+			// Check if user needs to choose tap-out action
+			if (result.status === "choose_tap_out_action") {
+				try {
+					log.info("choose-tap-out-action", {
+						cardNumber,
+					});
+				} catch {}
+
+				setTapOutActionSelection({
+					cardNumber,
+					userName: result.user.name,
+					currentSessionType: result.currentSession?.sessionType || "regular",
+				});
+				return;
+			}
 
 			// Check if agreements are required
 			if (result.status === "agreements_required" && result.missingAgreements) {
@@ -89,14 +145,39 @@ function App() {
 			}
 
 			// Only create event for successful taps
-			if (result.status === "tapped_in" || result.status === "tapped_out") {
-				const event: TapEvent = {
-					status: result.status,
-					user: result.user,
-					session: result.session,
-					id: crypto.randomUUID(),
-					timestamp: new Date(),
-				};
+			if (
+				result.status === "tapped_in" ||
+				result.status === "tapped_out" ||
+				result.status === "switched_to_staffing" ||
+				result.status === "switched_to_regular"
+			) {
+				const event =
+					(result.status === "switched_to_staffing" ||
+						result.status === "switched_to_regular") &&
+					result.endedSession &&
+					result.newSession
+						? ({
+								status: result.status,
+								user: result.user,
+								endedSession: result.endedSession,
+								newSession: result.newSession,
+								id: crypto.randomUUID(),
+								timestamp: new Date(),
+							} as TapEvent)
+						: result.session
+							? ({
+									status: result.status as "tapped_in" | "tapped_out",
+									user: result.user,
+									session: result.session,
+									id: crypto.randomUUID(),
+									timestamp: new Date(),
+								} as TapEvent)
+							: null;
+				if (!event) {
+					// Should not happen, but handle gracefully
+					showError("Unexpected response from server");
+					return;
+				}
 
 				try {
 					log.info("tap-result", {
@@ -107,7 +188,8 @@ function App() {
 							username: result.user?.username,
 							name: result.user?.name,
 						},
-						sessionId: result.session?.id,
+						sessionId:
+							"session" in result ? result.session?.id : result.newSession?.id,
 					});
 				} catch {}
 
@@ -161,6 +243,36 @@ function App() {
 
 	const handleAgreementError = (message: string) => {
 		showError(message);
+	};
+
+	const handleSessionTypeSelect = async (type: "regular" | "staffing") => {
+		if (!sessionTypeSelection) return;
+
+		try {
+			await handleTapInOut(sessionTypeSelection.cardNumber, type);
+		} finally {
+			setSessionTypeSelection(null);
+		}
+	};
+
+	const handleSessionTypeCancel = () => {
+		setSessionTypeSelection(null);
+	};
+
+	const handleTapOutActionSelect = async (
+		action: "end_session" | "switch_to_staffing" | "switch_to_regular",
+	) => {
+		if (!tapOutActionSelection) return;
+
+		try {
+			await handleTapInOut(tapOutActionSelection.cardNumber, undefined, action);
+		} finally {
+			setTapOutActionSelection(null);
+		}
+	};
+
+	const handleTapOutActionCancel = () => {
+		setTapOutActionSelection(null);
 	};
 
 	// Schedule the event to hide after a delay
@@ -345,6 +457,25 @@ function App() {
 				{/* Error Dialog */}
 				{errorMessage && (
 					<ErrorDialog message={errorMessage} isExiting={isErrorExiting} />
+				)}
+
+				{/* Session Type Selection */}
+				{sessionTypeSelection && (
+					<SessionTypeSelector
+						userName={sessionTypeSelection.userName}
+						onSelectType={handleSessionTypeSelect}
+						onCancel={handleSessionTypeCancel}
+					/>
+				)}
+
+				{/* Tap-Out Action Selection */}
+				{tapOutActionSelection && (
+					<TapOutActionSelector
+						userName={tapOutActionSelection.userName}
+						currentSessionType={tapOutActionSelection.currentSessionType}
+						onSelectAction={handleTapOutActionSelect}
+						onCancel={handleTapOutActionCancel}
+					/>
 				)}
 
 				{/* Agreement Flow */}
