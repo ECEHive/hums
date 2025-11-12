@@ -30,9 +30,12 @@ async function updateShiftAttendance(): Promise<void> {
 			end: new Date(now.getTime() + LOOKAHEAD_MS),
 		};
 
-		// Get all active sessions
+		// Get all active staffing sessions (only staffing sessions track attendance)
 		const activeSessions = await prisma.session.findMany({
-			where: { endedAt: null },
+			where: {
+				endedAt: null,
+				sessionType: "staffing",
+			},
 			select: { userId: true, startedAt: true },
 		});
 

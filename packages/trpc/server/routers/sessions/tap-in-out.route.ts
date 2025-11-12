@@ -263,9 +263,10 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				},
 			});
 
-			// Handle attendance for active shifts
-			await handleTapInAttendance(tx, user.id, now);
-
+			// Handle attendance for active shifts (only for staffing sessions)
+			if (typeToCreate === "staffing") {
+				await handleTapInAttendance(tx, user.id, now);
+			}
 			return {
 				status: "tapped_in",
 				user,
@@ -289,8 +290,10 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				data: { endedAt: now },
 			});
 
-			// Handle attendance for tap-out
-			await handleTapOutAttendance(tx, user.id, now);
+			// Handle attendance for tap-out (only if ending a staffing session)
+			if (endedSession.sessionType === "staffing") {
+				await handleTapOutAttendance(tx, user.id, now);
+			}
 
 			// Start new staffing session
 			const newSession = await tx.session.create({
@@ -301,7 +304,7 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				},
 			});
 
-			// Handle attendance for new session
+			// Handle attendance for new staffing session
 			await handleTapInAttendance(tx, user.id, now);
 
 			return {
@@ -320,8 +323,10 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				data: { endedAt: now },
 			});
 
-			// Handle attendance for tap-out
-			await handleTapOutAttendance(tx, user.id, now);
+			// Handle attendance for tap-out (only if ending a staffing session)
+			if (endedSession.sessionType === "staffing") {
+				await handleTapOutAttendance(tx, user.id, now);
+			}
 
 			// Start new regular session
 			const newSession = await tx.session.create({
@@ -332,8 +337,7 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				},
 			});
 
-			// Handle attendance for new session
-			await handleTapInAttendance(tx, user.id, now);
+			// Don't handle attendance for regular sessions
 
 			return {
 				status: "switched_to_regular",
@@ -349,8 +353,10 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			data: { endedAt: now },
 		});
 
-		// Handle attendance for active shifts
-		await handleTapOutAttendance(tx, user.id, now);
+		// Handle attendance for active shifts (only for staffing sessions)
+		if (session.sessionType === "staffing") {
+			await handleTapOutAttendance(tx, user.id, now);
+		}
 
 		return {
 			status: "tapped_out",
