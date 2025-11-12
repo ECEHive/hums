@@ -139,6 +139,7 @@ CMD ["pnpm", "start"]
 FROM nginx:alpine AS nginx
 
 # Declare ARG to receive build argument
+# This is not used directly in this stage, but allows passing to the build stage
 ARG VITE_CAS_PROXY_URL
 
 # Copy built static files for both apps

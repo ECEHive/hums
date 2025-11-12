@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
 		publicDir: "public",
 		base: "/",
 		server: {
-			port: env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 44841,
+			port: env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 44831,
 			host: "0.0.0.0",
 			https: {},
 			proxy: {

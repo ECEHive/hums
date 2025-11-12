@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
 		publicDir: "public",
 		base: "/kiosk/",
 		server: {
-			port: env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 44842,
+			port: env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 44832,
 			host: "0.0.0.0",
 			https: {},
 			proxy: {
