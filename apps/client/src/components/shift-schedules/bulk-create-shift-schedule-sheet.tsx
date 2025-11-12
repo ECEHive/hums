@@ -126,30 +126,40 @@ export function BulkCreateShiftScheduleSheet({
 			endTime: string;
 			duration: number;
 		}) => {
-			for (const shiftTypeId of input.shiftTypeIds) {
-				for (const dayOfWeek of input.daysOfWeek) {
-					for (let time = input.startTime; time < input.endTime; ) {
-						// Calculate next end time based on duration
-						const [hours, minutes] = time.split(":").map(Number);
-						const totalMinutes = hours * 60 + minutes + input.duration;
-						const nextHours = Math.floor(totalMinutes / 60);
-						const nextMinutes = totalMinutes % 60;
-						const nextTime = `${String(nextHours).padStart(2, "0")}:${String(
-							nextMinutes,
-						).padStart(2, "0")}`;
+			// Build schedules array by splitting time window into duration chunks
+			const schedules: Array<{
+				dayOfWeek: number;
+				startTime: string;
+				endTime: string;
+			}> = [];
 
-						await trpc.shiftSchedules.create.mutate({
-							shiftTypeId,
-							slots: input.slots,
-							dayOfWeek,
-							startTime: time,
-							endTime: nextTime,
-						});
+			for (const dayOfWeek of input.daysOfWeek) {
+				for (let time = input.startTime; time < input.endTime; ) {
+					// Calculate next end time based on duration
+					const [hours, minutes] = time.split(":").map(Number);
+					const totalMinutes = hours * 60 + minutes + input.duration;
+					const nextHours = Math.floor(totalMinutes / 60);
+					const nextMinutes = totalMinutes % 60;
+					const nextTime = `${String(nextHours).padStart(2, "0")}:${String(
+						nextMinutes,
+					).padStart(2, "0")}`;
 
-						time = nextTime;
-					}
+					schedules.push({
+						dayOfWeek,
+						startTime: time,
+						endTime: nextTime,
+					});
+
+					time = nextTime;
 				}
 			}
+
+			// Call the bulk create endpoint
+			return trpc.shiftSchedules.bulkCreate.mutate({
+				shiftTypeIds: input.shiftTypeIds,
+				slots: input.slots,
+				schedules,
+			});
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -179,25 +189,15 @@ export function BulkCreateShiftScheduleSheet({
 					return;
 				}
 
-				// Create a schedule for each selected shift type and each selected day
-				const promises: Promise<unknown>[] = [];
-				promises.push(
-					createBulkShiftScheduleMutation.mutateAsync({
-						shiftTypeIds: selectedShiftTypes.map((st) => st.id),
-						slots: value.slots,
-						daysOfWeek: value.days,
-						startTime: value.startTime,
-						endTime: value.endTime,
-						duration: value.duration,
-					}),
-				);
-
-				const results = await Promise.allSettled(promises);
-				const rejected = results.find((r) => r.status === "rejected");
-				if (rejected) {
-					const reason = (rejected as PromiseRejectedResult).reason;
-					throw reason instanceof Error ? reason : new Error(String(reason));
-				}
+				// Call the bulk create mutation
+				await createBulkShiftScheduleMutation.mutateAsync({
+					shiftTypeIds: selectedShiftTypes.map((st) => st.id),
+					slots: value.slots,
+					daysOfWeek: value.days,
+					startTime: value.startTime,
+					endTime: value.endTime,
+					duration: value.duration,
+				});
 
 				onOpenChange(false);
 			} catch (error) {

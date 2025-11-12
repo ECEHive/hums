@@ -68,10 +68,11 @@ export function BulkDeleteShiftScheduleSheet({
 	const formId = useId();
 
 	const deleteMutation = useMutation({
-		mutationFn: async (ids: number[]) => {
-			for (const id of ids) {
-				await trpc.shiftSchedules.delete.mutate({ id });
-			}
+		mutationFn: async (input: {
+			shiftTypeIds: number[];
+			daysOfWeek: number[];
+		}) => {
+			return trpc.shiftSchedules.bulkDelete.mutate(input);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -97,27 +98,11 @@ export function BulkDeleteShiftScheduleSheet({
 					return;
 				}
 
-				// Fetch all schedules for the period (large limit) and filter client-side
-				const all = await trpc.shiftSchedules.list.query({
-					periodId,
-					limit: 10000,
-					offset: 0,
+				// Call the bulk delete endpoint
+				await deleteMutation.mutateAsync({
+					shiftTypeIds: selectedShiftTypes.map((s) => s.id),
+					daysOfWeek: value.days,
 				});
-
-				const shiftTypeIds = new Set(selectedShiftTypes.map((s) => s.id));
-				const daysOfWeek = new Set(value.days);
-
-				const toDelete = (all.shiftSchedules || []).filter(
-					(s) => shiftTypeIds.has(s.shiftTypeId) && daysOfWeek.has(s.dayOfWeek),
-				);
-
-				if (toDelete.length === 0) {
-					// nothing to do
-					onOpenChange(false);
-					return;
-				}
-
-				await deleteMutation.mutateAsync(toDelete.map((s) => s.id));
 
 				onOpenChange(false);
 			} catch (error) {

@@ -3,7 +3,7 @@ import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 export const ZListSchema = z.object({
-	limit: z.number().min(1).max(10000).optional(),
+	limit: z.number().min(1).max(100).optional(),
 	offset: z.number().min(0).optional(),
 	shiftTypeId: z.number().min(1).optional(),
 	periodId: z.number().min(1).optional(),
