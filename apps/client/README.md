@@ -14,12 +14,11 @@ pnpm dev
 
 | Variable | Default | Description |
 | - | - | - |
-| `VITE_PUBLIC_SERVER_URL` | `""` | Public URL of the server. |
 | `VITE_CAS_PROXY_URL` | `""` | URL that the user will be redirected to for CAS authentication. | 
-| `VITE_PUBLIC_PATH` | `"/app/"` | Base path for the client application. |
 
 ### Development Variables
 
 | Variable | Default | Description |
 | - | - | - |
-| `PROXY_PRIVATE_SERVER_URL` | `"http://localhost:44830"` | Internal URL of the server for the proxy to serve. |
+| `VITE_DEV_PORT` | `44831` | Port to host the development kiosk on. |
+| `VITE_DEV_SERVER_URL` | `"http://localhost:44830"` | URL of the development server to be proxied. |
