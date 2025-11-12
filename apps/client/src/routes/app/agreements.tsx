@@ -102,11 +102,16 @@ function Agreements() {
 				data={data.agreements}
 				isLoading={isLoading}
 			/>
-			<TablePagination
-				page={page}
-				totalPages={totalPages}
-				onPageChange={setPage}
-			/>
+			<div className="flex flex-col justify-between items-center gap-2">
+				<TablePagination
+					page={page}
+					totalPages={totalPages}
+					onPageChange={setPage}
+				/>
+				<p className="text-sm text-muted-foreground">
+					Showing {offset + 1} - {offset + data.agreements.length} of {total}
+				</p>
+			</div>
 		</div>
 	);
 }
