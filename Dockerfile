@@ -8,8 +8,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Install runtime dependencies once for reuse
-# Only server needs these, but we install them here to cache the layer
+# Install reusable packages
 RUN apk add --no-cache \
     git
 
@@ -34,7 +33,7 @@ COPY packages/prisma/package.json ./packages/prisma/
 COPY packages/trpc/package.json ./packages/trpc/
 COPY packages/workers/package.json ./packages/workers/
 
-# Install dependencies with cache mount
+# Install PNPM dependencies with cache mount
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
@@ -55,7 +54,7 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 # Generate Prisma client
 RUN pnpm --filter @ecehive/prisma exec prisma generate
 
-# Build all apps in parallel
+# Build all client apps
 RUN pnpm --filter @ecehive/client build
 RUN pnpm --filter @ecehive/kiosk build
 
@@ -106,8 +105,7 @@ CMD ["pnpm", "migrate"]
 
 FROM base AS server
 
-# Install runtime-only packages needed by the server (kept out of the shared base
-# layer to reduce build-stage image sizes)
+# Install runtime-only packages needed by the server
 RUN apk add --no-cache openldap-clients
 
 # Copy production dependencies and code
@@ -140,8 +138,7 @@ CMD ["pnpm", "start"]
 # =============================================================================
 FROM nginx:alpine AS nginx
 
-# Declare ARG to receive build argument (even though we don't use it here,
-# it needs to be declared so docker-compose can pass it)
+# Declare ARG to receive build argument
 ARG VITE_CAS_PROXY_URL
 
 # Copy built static files for both apps

@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
 			https: {},
 			proxy: {
 				"/api": {
-					target: env.VITE_DEV_PRIVATE_SERVER_URL,
+					target: env.VITE_DEV_SERVER_URL,
 					changeOrigin: true,
 				},
 				// If more server endpoints are added,
