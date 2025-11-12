@@ -55,6 +55,7 @@ function SessionsPage() {
 			limit: number;
 			offset: number;
 			filterSessionType?: "regular" | "staffing";
+			filterUser?: string;
 		} = {
 			limit,
 			offset,
@@ -64,8 +65,17 @@ function SessionsPage() {
 			params.filterSessionType = filterSessionType;
 		}
 
+		if (debouncedSearch.trim()) {
+			params.filterUser = debouncedSearch.trim();
+		}
+
 		return params;
-	}, [limit, offset, filterSessionType]);
+	}, [limit, offset, filterSessionType, debouncedSearch]);
+
+	// Reset to first page when the debounced search or filters change
+	React.useEffect(() => {
+		setPage(1);
+	}, [debouncedSearch, filterSessionType, pageSize]);
 
 	const { data: sessionsData, isLoading } = useQuery({
 		queryKey: ["sessions", queryParams],
@@ -84,19 +94,6 @@ function SessionsPage() {
 	const sessions = sessionsData?.sessions ?? [];
 	const total = sessionsData?.total ?? 0;
 	const totalPages = Math.ceil(total / pageSize) || 1;
-
-	// Filter sessions client-side by user search
-	const filteredSessions = React.useMemo(() => {
-		if (!debouncedSearch.trim()) return sessions;
-
-		const searchLower = debouncedSearch.toLowerCase();
-		return sessions.filter(
-			(session) =>
-				session.user.name.toLowerCase().includes(searchLower) ||
-				session.user.username.toLowerCase().includes(searchLower) ||
-				session.user.email.toLowerCase().includes(searchLower),
-		);
-	}, [sessions, debouncedSearch]);
 
 	return (
 		<div className="container p-4 space-y-4">
@@ -268,11 +265,7 @@ function SessionsPage() {
 					</div>
 				</CardHeader>
 				<CardContent>
-					<DataTable
-						columns={columns}
-						data={filteredSessions}
-						isLoading={isLoading}
-					/>
+					<DataTable columns={columns} data={sessions} isLoading={isLoading} />
 					{total > 0 && (
 						<div className="flex flex-col justify-between items-center gap-2 mt-4">
 							<TablePagination
@@ -282,9 +275,7 @@ function SessionsPage() {
 							/>
 							<p className="text-sm text-muted-foreground">
 								Showing {offset + 1} -{" "}
-								{Math.min(offset + filteredSessions.length, total)} of {total}
-								{debouncedSearch &&
-									` (${filteredSessions.length} matching search)`}
+								{Math.min(offset + sessions.length, total)} of {total}
 							</p>
 						</div>
 					)}
