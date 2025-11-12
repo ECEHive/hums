@@ -118,10 +118,12 @@ function AppIndexLayout() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{sessionStats?.currentlyActive ? (
-									<span className="text-green-600">Active</span>
-								) : (
+								{!sessionStats?.currentlyActive ? (
 									<span className="text-muted-foreground">Inactive</span>
+								) : sessionStats.activeSessionType === "staffing" ? (
+									<span className="text-green-600">Staffing</span>
+								) : (
+									<span className="text-green-600">Active</span>
 								)}
 							</div>
 							<p className="text-xs text-muted-foreground">

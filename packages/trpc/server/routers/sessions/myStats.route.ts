@@ -37,6 +37,7 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 			where,
 			select: {
 				id: true,
+				sessionType: true,
 				startedAt: true,
 				endedAt: true,
 			},
@@ -48,6 +49,7 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 			},
 			select: {
 				id: true,
+				sessionType: true,
 				startedAt: true,
 			},
 		}),
@@ -94,8 +96,11 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		averageSessionHours: Math.round(averageSessionHours * 100) / 100,
 		currentlyActive,
 		activeSessionCount: activeSessions.length,
+		activeSessionType:
+			activeSessions.length > 0 ? activeSessions[0].sessionType : null,
 		mostRecentSession: recentSession
 			? {
+					sessionType: recentSession.sessionType,
 					startedAt: recentSession.startedAt,
 					endedAt: recentSession.endedAt,
 				}

@@ -26,6 +26,7 @@ export async function listMyHandler(options: TListMyOptions) {
 			take: limit,
 			select: {
 				id: true,
+				sessionType: true,
 				startedAt: true,
 				endedAt: true,
 			},

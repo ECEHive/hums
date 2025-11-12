@@ -25,11 +25,12 @@ export async function listMyHandler(options: TListMyOptions) {
 
 	const now = new Date();
 
-	// Check if user has an active session
+	// Check if user has an active staffing session (only staffing sessions track attendance)
 	const activeSession = await prisma.session.findFirst({
 		where: {
 			userId,
 			endedAt: null,
+			sessionType: "staffing",
 		},
 		select: { id: true },
 	});
