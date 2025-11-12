@@ -5,6 +5,7 @@ import { ChevronDownIcon, ClockIcon } from "lucide-react";
 import React from "react";
 import { RequireAuth } from "@/auth";
 import { TablePagination } from "@/components/table-pagination";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -143,6 +144,21 @@ function SessionsPage() {
 						<p className="text-xs text-muted-foreground">
 							{statsData?.currentlyActive ? "in a session" : "not in a session"}
 						</p>
+						{statsData?.currentlyActive && statsData.activeSessionType && (
+							<div className="mt-2">
+								<Badge
+									variant={
+										statsData.activeSessionType === "staffing"
+											? "default"
+											: "secondary"
+									}
+								>
+									{statsData.activeSessionType === "staffing"
+										? "Staffing Session"
+										: "Regular Session"}
+								</Badge>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 			</div>
@@ -184,6 +200,7 @@ function SessionsPage() {
 					<Table>
 						<TableHeader>
 							<TableRow>
+								<TableHead>Type</TableHead>
 								<TableHead>Started</TableHead>
 								<TableHead>Ended</TableHead>
 								<TableHead>Duration</TableHead>
@@ -193,19 +210,32 @@ function SessionsPage() {
 						<TableBody>
 							{sessionsLoading ? (
 								<TableRow>
-									<TableCell colSpan={4} className="text-center">
+									<TableCell colSpan={5} className="text-center">
 										Loading...
 									</TableCell>
 								</TableRow>
 							) : sessions.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={4} className="text-center">
+									<TableCell colSpan={5} className="text-center">
 										No sessions found
 									</TableCell>
 								</TableRow>
 							) : (
 								sessions.map((session) => (
 									<TableRow key={session.id}>
+										<TableCell>
+											<Badge
+												variant={
+													session.sessionType === "staffing"
+														? "default"
+														: "secondary"
+												}
+											>
+												{session.sessionType === "staffing"
+													? "Staffing"
+													: "Regular"}
+											</Badge>
+										</TableCell>
 										<TableCell>{formatDate(session.startedAt)}</TableCell>
 										<TableCell>
 											{session.endedAt ? formatDate(session.endedAt) : "-"}

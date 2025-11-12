@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronsRightIcon, ClockIcon } from "lucide-react";
 import { RequirePermissions, useCurrentUser } from "@/auth";
 import { MissingPermissions } from "@/components/missing-permissions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { checkPermissions } from "@/lib/permissions";
@@ -129,6 +130,22 @@ function AppIndexLayout() {
 									? "in the space"
 									: "not in the space"}
 							</p>
+							{sessionStats?.currentlyActive &&
+								sessionStats.activeSessionType && (
+									<div className="mt-2">
+										<Badge
+											variant={
+												sessionStats.activeSessionType === "staffing"
+													? "default"
+													: "secondary"
+											}
+										>
+											{sessionStats.activeSessionType === "staffing"
+												? "Staffing"
+												: "Regular"}
+										</Badge>
+									</div>
+								)}
 						</CardContent>
 					</Card>
 

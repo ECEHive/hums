@@ -16,6 +16,55 @@ export type TapResponse =
 			session: {
 				id: number;
 				userId: number;
+				sessionType: "regular" | "staffing";
+				startedAt: Date;
+				endedAt: Date | null;
+			};
+	  }
+	| {
+			status: "switched_to_staffing" | "switched_to_regular";
+			user: {
+				id: number;
+				name: string;
+				email: string;
+				username: string;
+			};
+			endedSession: {
+				id: number;
+				userId: number;
+				sessionType: "regular" | "staffing";
+				startedAt: Date;
+				endedAt: Date | null;
+			};
+			newSession: {
+				id: number;
+				userId: number;
+				sessionType: "regular" | "staffing";
+				startedAt: Date;
+				endedAt: Date | null;
+			};
+	  }
+	| {
+			status: "choose_session_type";
+			user: {
+				id: number;
+				name: string;
+				email: string;
+				username: string;
+			};
+	  }
+	| {
+			status: "choose_tap_out_action";
+			user: {
+				id: number;
+				name: string;
+				email: string;
+				username: string;
+			};
+			currentSession: {
+				id: number;
+				userId: number;
+				sessionType: "regular" | "staffing";
 				startedAt: Date;
 				endedAt: Date | null;
 			};
@@ -38,7 +87,13 @@ export type TapResponse =
 
 export type TapEvent = Extract<
 	TapResponse,
-	{ status: "tapped_in" | "tapped_out" }
+	{
+		status:
+			| "tapped_in"
+			| "tapped_out"
+			| "switched_to_staffing"
+			| "switched_to_regular";
+	}
 > & {
 	id: string;
 	timestamp: Date;
