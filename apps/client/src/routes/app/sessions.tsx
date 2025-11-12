@@ -1,9 +1,12 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDownIcon, ClockIcon } from "lucide-react";
+import { ChevronDownIcon, ClockIcon, Filter, X } from "lucide-react";
 import React from "react";
-import { RequireAuth } from "@/auth";
+import { RequirePermissions } from "@/auth";
+import { MissingPermissions } from "@/components/missing-permissions";
+import { columns } from "@/components/sessions/columns";
+import { DataTable } from "@/components/sessions/data-table";
 import { TablePagination } from "@/components/table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,39 +23,53 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/lib/debounce";
 
 export const Route = createFileRoute("/app/sessions")({
-	component: () => RequireAuth({ children: <SessionsPage /> }),
+	component: () =>
+		RequirePermissions({
+			permissions,
+			children: <SessionsPage />,
+			forbiddenFallback: <MissingPermissions />,
+		}),
 });
+
+export const permissions = ["sessions.list"];
 
 function SessionsPage() {
 	const [page, setPage] = React.useState(1);
 	const [pageSize, setPageSize] = React.useState(20);
+	const [search, setSearch] = React.useState("");
+	const [filterSessionType, setFilterSessionType] = React.useState<
+		"regular" | "staffing" | null
+	>(null);
+	const debouncedSearch = useDebounce(search, 300);
+
 	const limit = pageSize;
 	const offset = (page - 1) * limit;
 
-	const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
-		queryKey: ["mySessions", page, limit],
-		queryFn: async () => {
-			return trpc.sessions.listMy.query({
-				limit,
-				offset,
-			});
-		},
-	});
+	const queryParams = React.useMemo(() => {
+		const params: {
+			limit: number;
+			offset: number;
+			filterSessionType?: "regular" | "staffing";
+		} = {
+			limit,
+			offset,
+		};
 
-	const { data: statsData } = useQuery({
-		queryKey: ["mySessionStats"],
+		if (filterSessionType) {
+			params.filterSessionType = filterSessionType;
+		}
+
+		return params;
+	}, [limit, offset, filterSessionType]);
+
+	const { data: sessionsData, isLoading } = useQuery({
+		queryKey: ["sessions", queryParams],
 		queryFn: async () => {
-			return trpc.sessions.myStats.query({});
+			return trpc.sessions.list.query(queryParams);
 		},
 	});
 
@@ -60,92 +77,78 @@ function SessionsPage() {
 	const total = sessionsData?.total ?? 0;
 	const totalPages = Math.ceil(total / pageSize) || 1;
 
-	const formatDate = (date: Date) => {
-		return new Date(date).toLocaleString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "numeric",
-			minute: "2-digit",
-		});
-	};
+	// Filter sessions client-side by user search
+	const filteredSessions = React.useMemo(() => {
+		if (!debouncedSearch.trim()) return sessions;
 
-	const formatDuration = (start: Date, end: Date | null) => {
-		const startTime = new Date(start).getTime();
-		const endTime = end ? new Date(end).getTime() : Date.now();
-		const durationMs = endTime - startTime;
-		const hours = Math.floor(durationMs / (1000 * 60 * 60));
-		const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-		return `${hours}h ${minutes}m`;
-	};
+		const searchLower = debouncedSearch.toLowerCase();
+		return sessions.filter(
+			(session) =>
+				session.user.name.toLowerCase().includes(searchLower) ||
+				session.user.username.toLowerCase().includes(searchLower) ||
+				session.user.email.toLowerCase().includes(searchLower),
+		);
+	}, [sessions, debouncedSearch]);
+
+	// Calculate statistics
+	const stats = React.useMemo(() => {
+		const activeSessions = sessions.filter((s) => !s.endedAt);
+		const activeRegular = activeSessions.filter(
+			(s) => s.sessionType === "regular",
+		).length;
+		const activeStaffing = activeSessions.filter(
+			(s) => s.sessionType === "staffing",
+		).length;
+
+		return {
+			totalActive: activeSessions.length,
+			activeRegular,
+			activeStaffing,
+		};
+	}, [sessions]);
 
 	return (
 		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">My Sessions</h1>
+			<h1 className="text-2xl font-bold">Sessions</h1>
 
 			{/* Stats Cards */}
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 md:grid-cols-3">
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
-							Total Sessions
+							Total Active Sessions
 						</CardTitle>
 						<ClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
-							{statsData?.totalSessions ?? 0}
-						</div>
-						<p className="text-xs text-muted-foreground">sessions</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-						<ClockIcon className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">
-							{statsData?.totalHours ?? 0}
-						</div>
-						<p className="text-xs text-muted-foreground">hours logged</p>
+						<div className="text-2xl font-bold">{stats.totalActive}</div>
+						<p className="text-xs text-muted-foreground">currently active</p>
 					</CardContent>
 				</Card>
 
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
-							Average Session
+							Active Regular Sessions
 						</CardTitle>
 						<ClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
-							{statsData?.averageSessionHours ?? 0}
-						</div>
-						<p className="text-xs text-muted-foreground">hours per session</p>
+						<div className="text-2xl font-bold">{stats.activeRegular}</div>
+						<p className="text-xs text-muted-foreground">regular sessions</p>
 					</CardContent>
 				</Card>
 
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Status</CardTitle>
+						<CardTitle className="text-sm font-medium">
+							Active Staffing Sessions
+						</CardTitle>
 						<ClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
-							{!statsData?.currentlyActive ? (
-								<span className="text-muted-foreground">Inactive</span>
-							) : statsData.activeSessionType === "staffing" ? (
-								<span className="text-green-600">Staffing</span>
-							) : (
-								<span className="text-green-600">Active</span>
-							)}
-						</div>
-						<p className="text-xs text-muted-foreground">
-							{statsData?.currentlyActive ? "in a session" : "not in a session"}
-						</p>
+						<div className="text-2xl font-bold">{stats.activeStaffing}</div>
+						<p className="text-xs text-muted-foreground">staffing sessions</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -153,98 +156,114 @@ function SessionsPage() {
 			{/* Sessions Table */}
 			<Card>
 				<CardHeader>
-					<div className="flex justify-between items-center">
-						<div>
-							<CardTitle>Session History</CardTitle>
-							<CardDescription>
-								View all your session check-ins and check-outs
-							</CardDescription>
+					<div className="flex flex-col gap-4">
+						<div className="flex justify-between items-center">
+							<div>
+								<CardTitle>All Sessions</CardTitle>
+								<CardDescription>
+									View and filter all user sessions
+								</CardDescription>
+							</div>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="outline">
+										{pageSize} per page{" "}
+										<ChevronDownIcon className="ml-2 size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									{[10, 20, 50, 100].map((size) => (
+										<DropdownMenuItem
+											key={size}
+											onClick={() => {
+												setPageSize(size);
+												setPage(1);
+											}}
+										>
+											{size} per page
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</div>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline">
-									{pageSize} per page{" "}
-									<ChevronDownIcon className="ml-2 size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								{[10, 20, 50, 100].map((size) => (
-									<DropdownMenuItem
-										key={size}
+
+						{/* Filters */}
+						<div className="flex flex-col sm:flex-row gap-2">
+							<Input
+								placeholder="Search by user name, username, or email..."
+								value={search}
+								onChange={(e) => {
+									setSearch(e.target.value);
+								}}
+								className="max-w-md"
+							/>
+							<div className="flex gap-2 flex-wrap">
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="outline" className="gap-2">
+											<Filter className="size-4" />
+											Session Type
+											{filterSessionType && (
+												<Badge variant="secondary" className="ml-1">
+													{filterSessionType === "staffing"
+														? "Staffing"
+														: "Regular"}
+												</Badge>
+											)}
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="start">
+										<DropdownMenuItem
+											onClick={() => {
+												setFilterSessionType(null);
+												setPage(1);
+											}}
+										>
+											All Types
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												setFilterSessionType("regular");
+												setPage(1);
+											}}
+										>
+											Regular
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												setFilterSessionType("staffing");
+												setPage(1);
+											}}
+										>
+											Staffing
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+
+								{(search || filterSessionType) && (
+									<Button
+										variant="ghost"
 										onClick={() => {
-											setPageSize(size);
+											setSearch("");
+											setFilterSessionType(null);
 											setPage(1);
 										}}
+										className="gap-2"
 									>
-										{size} per page
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuContent>
-						</DropdownMenu>
+										<X className="size-4" />
+										Clear Filters
+									</Button>
+								)}
+							</div>
+						</div>
 					</div>
 				</CardHeader>
 				<CardContent>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Type</TableHead>
-								<TableHead>Started</TableHead>
-								<TableHead>Ended</TableHead>
-								<TableHead>Duration</TableHead>
-								<TableHead>Status</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{sessionsLoading ? (
-								<TableRow>
-									<TableCell colSpan={5} className="text-center">
-										Loading...
-									</TableCell>
-								</TableRow>
-							) : sessions.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={5} className="text-center">
-										No sessions found
-									</TableCell>
-								</TableRow>
-							) : (
-								sessions.map((session) => (
-									<TableRow key={session.id}>
-										<TableCell>
-											<Badge
-												variant={
-													session.sessionType === "staffing"
-														? "default"
-														: "outline"
-												}
-											>
-												{session.sessionType === "staffing"
-													? "Staffing"
-													: "Regular"}
-											</Badge>
-										</TableCell>
-										<TableCell>{formatDate(session.startedAt)}</TableCell>
-										<TableCell>
-											{session.endedAt ? formatDate(session.endedAt) : "-"}
-										</TableCell>
-										<TableCell>
-											{formatDuration(session.startedAt, session.endedAt)}
-										</TableCell>
-										<TableCell>
-											{session.endedAt ? (
-												<span className="text-muted-foreground">Ended</span>
-											) : (
-												<span className="text-green-600 font-medium">
-													Active
-												</span>
-											)}
-										</TableCell>
-									</TableRow>
-								))
-							)}
-						</TableBody>
-					</Table>
-
+					<DataTable
+						columns={columns}
+						data={filteredSessions}
+						isLoading={isLoading}
+					/>
 					{total > 0 && (
 						<div className="flex flex-col justify-between items-center gap-2 mt-4">
 							<TablePagination
@@ -253,7 +272,10 @@ function SessionsPage() {
 								onPageChange={setPage}
 							/>
 							<p className="text-sm text-muted-foreground">
-								Showing {offset + 1} - {offset + sessions.length} of {total}
+								Showing {offset + 1} -{" "}
+								{Math.min(offset + filteredSessions.length, total)} of {total}
+								{debouncedSearch &&
+									` (${filteredSessions.length} matching search)`}
 							</p>
 						</div>
 					)}

@@ -6,5 +6,6 @@ ALTER TABLE "Session" ADD COLUMN     "sessionType" "SessionType" NOT NULL DEFAUL
 
 -- Add permissions
 INSERT INTO "Permission" (name) VALUES
+    ('sessions.list'),
     ('sessions.staffing')
 ON CONFLICT (name) DO NOTHING;

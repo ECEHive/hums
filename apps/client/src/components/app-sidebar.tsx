@@ -6,6 +6,7 @@ import {
 	ChevronUpIcon,
 	ClockIcon,
 	DoorOpenIcon,
+	FileClockIcon,
 	FileTextIcon,
 	HomeIcon,
 	LaptopMinimalCheckIcon,
@@ -43,6 +44,7 @@ import { permissions as agreementsPagePermissions } from "@/routes/app/agreement
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
 import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
+import { permissions as sessionsPagePermissions } from "@/routes/app/sessions";
 import { permissions as usersPagePermissions } from "@/routes/app/users";
 import { permissions as schedulingIndexPagePermissions } from "@/routes/shifts/scheduling";
 import { Logo } from "./logo";
@@ -71,8 +73,8 @@ export const items: AppSidebarGroup[] = [
 				permissions: appIndexPagePermissions,
 			},
 			{
-				title: "Sessions",
-				url: "/app/sessions",
+				title: "My Sessions",
+				url: "/app/my-sessions",
 				icon: ClockIcon,
 				permissions: [], // Available to all authenticated users
 			},
@@ -111,6 +113,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app/kiosks",
 				icon: LaptopMinimalCheckIcon,
 				permissions: kiosksPagePermissions,
+			},
+			{
+				title: "Sessions",
+				url: "/app/sessions",
+				icon: FileClockIcon,
+				permissions: sessionsPagePermissions,
 			},
 		],
 	},
