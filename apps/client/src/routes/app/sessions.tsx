@@ -24,6 +24,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/lib/debounce";
 
 export const Route = createFileRoute("/app/sessions")({
@@ -73,6 +74,13 @@ function SessionsPage() {
 		},
 	});
 
+	const { data: statsData, isLoading: isStatsLoading } = useQuery({
+		queryKey: ["sessionsStats", queryParams],
+		queryFn: async () => {
+			return trpc.sessions.stats.query({});
+		},
+	});
+
 	const sessions = sessionsData?.sessions ?? [];
 	const total = sessionsData?.total ?? 0;
 	const totalPages = Math.ceil(total / pageSize) || 1;
@@ -90,23 +98,6 @@ function SessionsPage() {
 		);
 	}, [sessions, debouncedSearch]);
 
-	// Calculate statistics
-	const stats = React.useMemo(() => {
-		const activeSessions = sessions.filter((s) => !s.endedAt);
-		const activeRegular = activeSessions.filter(
-			(s) => s.sessionType === "regular",
-		).length;
-		const activeStaffing = activeSessions.filter(
-			(s) => s.sessionType === "staffing",
-		).length;
-
-		return {
-			totalActive: activeSessions.length,
-			activeRegular,
-			activeStaffing,
-		};
-	}, [sessions]);
-
 	return (
 		<div className="container p-4 space-y-4">
 			<h1 className="text-2xl font-bold">Sessions</h1>
@@ -121,7 +112,13 @@ function SessionsPage() {
 						<ClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{stats.totalActive}</div>
+						{isStatsLoading ? (
+							<Spinner />
+						) : (
+							<div className="text-2xl font-bold">
+								{statsData?.totalActive ?? 0}
+							</div>
+						)}
 						<p className="text-xs text-muted-foreground">currently active</p>
 					</CardContent>
 				</Card>
@@ -134,7 +131,13 @@ function SessionsPage() {
 						<ClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{stats.activeRegular}</div>
+						{isStatsLoading ? (
+							<Spinner />
+						) : (
+							<div className="text-2xl font-bold">
+								{statsData?.activeRegular ?? 0}
+							</div>
+						)}
 						<p className="text-xs text-muted-foreground">regular sessions</p>
 					</CardContent>
 				</Card>
@@ -147,7 +150,13 @@ function SessionsPage() {
 						<ClockIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{stats.activeStaffing}</div>
+						{isStatsLoading ? (
+							<Spinner />
+						) : (
+							<div className="text-2xl font-bold">
+								{statsData?.activeStaffing ?? 0}
+							</div>
+						)}
 						<p className="text-xs text-muted-foreground">staffing sessions</p>
 					</CardContent>
 				</Card>
