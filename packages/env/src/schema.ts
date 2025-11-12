@@ -5,7 +5,7 @@ export const ZEnvSchema = z.object({
 	NODE_ENV: z
 		.enum(["development", "production", "test"])
 		.default("development"),
-	PORT: z.coerce.number().default(80),
+	PORT: z.coerce.number().default(44830),
 	DATABASE_URL: z.url(),
 	AUTH_SECRET: z
 		.string()
