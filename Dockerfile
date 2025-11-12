@@ -8,8 +8,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# Install runtime dependencies once for reuse
-# Only server needs these, but we install them here to cache the layer
+# Install reusable packages
 RUN apk add --no-cache \
     git
 
@@ -34,7 +33,7 @@ COPY packages/prisma/package.json ./packages/prisma/
 COPY packages/trpc/package.json ./packages/trpc/
 COPY packages/workers/package.json ./packages/workers/
 
-# Install dependencies with cache mount
+# Install PNPM dependencies with cache mount
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
@@ -42,6 +41,9 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # Build Stage - Build all applications
 # =============================================================================
 FROM deps AS build
+
+ARG VITE_CAS_PROXY_URL
+ENV VITE_CAS_PROXY_URL=$VITE_CAS_PROXY_URL
 
 # Copy source code
 COPY . .
@@ -52,9 +54,9 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 # Generate Prisma client
 RUN pnpm --filter @ecehive/prisma exec prisma generate
 
-# Build all apps in parallel
-RUN pnpm --filter @ecehive/client build && \
-    pnpm --filter @ecehive/kiosk build
+# Build all client apps
+RUN pnpm --filter @ecehive/client build
+RUN pnpm --filter @ecehive/kiosk build
 
 # =============================================================================
 # Server Production Dependencies
@@ -103,8 +105,7 @@ CMD ["pnpm", "migrate"]
 
 FROM base AS server
 
-# Install runtime-only packages needed by the server (kept out of the shared base
-# layer to reduce build-stage image sizes)
+# Install runtime-only packages needed by the server
 RUN apk add --no-cache openldap-clients
 
 # Copy production dependencies and code
@@ -133,81 +134,24 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
 CMD ["pnpm", "start"]
 
 # =============================================================================
-# Client Production Image
+# NGINX Proxy with Client and Kiosk
 # =============================================================================
-FROM caddy:2-alpine AS client
+FROM nginx:alpine AS nginx
 
-# Copy built static files
-COPY --from=build /app/apps/client/dist /srv
+# Declare ARG to receive build argument
+# This is not used directly in this stage, but allows passing to the build stage
+ARG VITE_CAS_PROXY_URL
 
-# Create optimized Caddyfile
-RUN printf '{\n\
-    auto_https off\n\
-    admin off\n\
-}\n\
-\n\
-:80 {\n\
-    root * /srv\n\
-    encode gzip zstd\n\
-    file_server\n\
-    try_files {path} /index.html\n\
-    \n\
-    header {\n\
-        -Server\n\
-        X-Content-Type-Options "nosniff"\n\
-        X-Frame-Options "DENY"\n\
-        Referrer-Policy "no-referrer-when-downgrade"\n\
-    }\n\
-    \n\
-    @static {\n\
-        path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.woff *.woff2\n\
-    }\n\
-    header @static Cache-Control "public, max-age=31536000, immutable"\n\
-}' > /etc/caddy/Caddyfile
+# Copy built static files for both apps
+COPY --from=build /app/apps/client/dist /usr/share/nginx/html/client
+COPY --from=build /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
-
-# =============================================================================
-# Kiosk Production Image
-# =============================================================================
-FROM caddy:2-alpine AS kiosk
-
-# Copy built static files
-COPY --from=build /app/apps/kiosk/dist /srv
-
-# Create optimized Caddyfile
-RUN printf '{\n\
-    auto_https off\n\
-    admin off\n\
-}\n\
-\n\
-:80 {\n\
-    root * /srv\n\
-    encode gzip zstd\n\
-    file_server\n\
-    try_files {path} /index.html\n\
-    \n\
-    header {\n\
-        -Server\n\
-        X-Content-Type-Options "nosniff"\n\
-        X-Frame-Options "DENY"\n\
-        Referrer-Policy "no-referrer-when-downgrade"\n\
-    }\n\
-    \n\
-    @static {\n\
-        path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.woff *.woff2\n\
-    }\n\
-    header @static Cache-Control "public, max-age=31536000, immutable"\n\
-}' > /etc/caddy/Caddyfile
-
-EXPOSE 80
-
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
-
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
+CMD ["nginx", "-g", "daemon off;"]

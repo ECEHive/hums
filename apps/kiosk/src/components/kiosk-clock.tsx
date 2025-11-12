@@ -8,8 +8,26 @@ export function KioskClock({ className = "" }: KioskClockProps) {
 	const [now, setNow] = useState<Date>(() => new Date());
 
 	useEffect(() => {
-		const t = setInterval(() => setNow(new Date()), 1000);
-		return () => clearInterval(t);
+		// Update the time immediately
+		const updateTime = () => setNow(new Date());
+		updateTime();
+
+		// Calculate milliseconds until the next minute boundary
+		const msUntilNextMinute = 60000 - (Date.now() % 60000);
+
+		let interval: NodeJS.Timeout;
+
+		// Set a timeout to sync to the next minute boundary
+		const syncTimeout = setTimeout(() => {
+			updateTime();
+			// Then set an interval to update every minute, on the minute
+			interval = setInterval(updateTime, 60000);
+		}, msUntilNextMinute);
+
+		return () => {
+			clearTimeout(syncTimeout);
+			if (interval) clearInterval(interval);
+		};
 	}, []);
 
 	const formatTime = (d: Date) =>
@@ -17,7 +35,6 @@ export function KioskClock({ className = "" }: KioskClockProps) {
 			hour12: false,
 			hour: "2-digit",
 			minute: "2-digit",
-			second: "2-digit",
 		});
 
 	return (

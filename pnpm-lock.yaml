@@ -446,7 +446,7 @@ importers:
         specifier: ^5.6.0
         version: 5.6.1
       superjson:
-        specifier: ^2.2.2
+        specifier: ^2.2.5
         version: 2.2.5
       zod:
         specifier: ^4.1.9
