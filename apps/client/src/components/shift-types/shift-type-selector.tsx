@@ -113,7 +113,8 @@ export function ShiftTypeSelector({
 									return (
 										<CommandItem
 											key={shiftType.id}
-											value={String(shiftType.id)}
+											value={`${shiftType.id}-${shiftType.name}-${shiftType.location}`}
+											keywords={[shiftType.name, shiftType.location]}
 											onSelect={() => {
 												selectShiftType(shiftType);
 											}}

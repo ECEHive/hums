@@ -9,9 +9,9 @@ export const ZEnvSchema = z.object({
 	DATABASE_URL: z.url(),
 	AUTH_SECRET: z
 		.string()
-		.default(crypto.randomBytes(64).toString("hex"))
+		.default(crypto.randomBytes(64).toString("utf8"))
 		.transform((val) => {
-			const buffer = Buffer.from(val, "hex");
+			const buffer = Buffer.from(val);
 			return new Uint8Array(buffer);
 		}),
 	AUTH_CAS_SERVER: z.url(),
