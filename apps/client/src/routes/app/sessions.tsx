@@ -135,30 +135,17 @@ function SessionsPage() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							{statsData?.currentlyActive ? (
-								<span className="text-green-600">Active</span>
-							) : (
+							{!statsData?.currentlyActive ? (
 								<span className="text-muted-foreground">Inactive</span>
+							) : statsData.activeSessionType === "staffing" ? (
+								<span className="text-green-600">Staffing</span>
+							) : (
+								<span className="text-green-600">Active</span>
 							)}
 						</div>
 						<p className="text-xs text-muted-foreground">
 							{statsData?.currentlyActive ? "in a session" : "not in a session"}
 						</p>
-						{statsData?.currentlyActive && statsData.activeSessionType && (
-							<div className="mt-2">
-								<Badge
-									variant={
-										statsData.activeSessionType === "staffing"
-											? "default"
-											: "secondary"
-									}
-								>
-									{statsData.activeSessionType === "staffing"
-										? "Staffing Session"
-										: "Regular Session"}
-								</Badge>
-							</div>
-						)}
 					</CardContent>
 				</Card>
 			</div>
@@ -228,7 +215,7 @@ function SessionsPage() {
 												variant={
 													session.sessionType === "staffing"
 														? "default"
-														: "secondary"
+														: "outline"
 												}
 											>
 												{session.sessionType === "staffing"
