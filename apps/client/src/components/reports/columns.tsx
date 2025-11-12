@@ -24,18 +24,74 @@ export function generateColumns(): ColumnDef<UserReport>[] {
 	return [
 		{
 			accessorKey: "name",
-			header: "Role",
+			header: "Full Name",
 		},
 		{
-			accessorKey: "userCount",
-			header: "User Count",
+			accessorKey: "username",
+			header: "Username",
 		},
 		{
-			accessorKey: "permissions",
-			header: "Permissions",
+			accessorKey: "shiftOccurrences",
+			header: "Shift Occurrences",
 			cell: ({ row }) => {
 				return <></>;
 			},
 		},
+		{
+			accessorKey: "shiftAttendances",
+			header: "Shift Attendances",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		},
+		{
+			accessorKey: "totalScheduledTime",
+			header: "Total Scheduled Time",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		},
+		{
+			accessorKey: "totalAttendedTime",
+			header: "Total Attended Time",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		},
+		{
+			accessorKey: "totalMissedTime",
+			header: "Total Missed Time",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		},
+		{
+			accessorKey: "attendancePercentage",
+			header: "Attendance Percentage",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		},
+		{
+			accessorKey: "shiftAnomalies",
+			header: "No Shows",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		},
+		{
+			accessorKey: "droppedShifts",
+			header: "Dropped Shifts",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		},
+		{
+			accessorKey: "scheduledMakeupShifts",
+			header: "Makeup Shifts",
+			cell: ({ row }) => {
+				return <></>;
+			},
+		}
 	];
 }
