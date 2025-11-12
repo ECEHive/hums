@@ -85,7 +85,7 @@ function SessionsPage() {
 	});
 
 	const { data: statsData, isLoading: isStatsLoading } = useQuery({
-		queryKey: ["sessionsStats"],
+		queryKey: ["sessionsStats", queryParams],
 		queryFn: async () => {
 			return trpc.sessions.stats.query({});
 		},
@@ -94,6 +94,19 @@ function SessionsPage() {
 	const sessions = sessionsData?.sessions ?? [];
 	const total = sessionsData?.total ?? 0;
 	const totalPages = Math.ceil(total / pageSize) || 1;
+
+	// Filter sessions client-side by user search
+	const filteredSessions = React.useMemo(() => {
+		if (!debouncedSearch.trim()) return sessions;
+
+		const searchLower = debouncedSearch.toLowerCase();
+		return sessions.filter(
+			(session) =>
+				session.user.name.toLowerCase().includes(searchLower) ||
+				session.user.username.toLowerCase().includes(searchLower) ||
+				session.user.email.toLowerCase().includes(searchLower),
+		);
+	}, [sessions, debouncedSearch]);
 
 	return (
 		<div className="container p-4 space-y-4">
