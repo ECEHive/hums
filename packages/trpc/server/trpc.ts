@@ -98,13 +98,25 @@ export type TPermissionProtectedProcedureContext =
  */
 export const kioskProtectedProcedure = t.procedure.use(async (opts) => {
 	// Get the client IP address from the request
+	// Highest priority first
 	const clientIp =
 		opts.ctx.req.headers["x-forwarded-for"] ||
 		opts.ctx.req.headers["x-real-ip"] ||
 		opts.ctx.req.socket.remoteAddress ||
 		"unknown";
 
-	const ip = Array.isArray(clientIp) ? clientIp[0] : clientIp;
+	// Handle cases where the IP is an array
+	const rawIp = Array.isArray(clientIp)
+		? clientIp[0]
+		: typeof clientIp === "string"
+			? clientIp
+			: (clientIp ?? "unknown");
+
+	// Handle cases where there is a comma-separated list of IPs
+	const ip =
+		typeof rawIp === "string"
+			? rawIp.split(",")[0].trim() || "unknown"
+			: String(rawIp);
 
 	// Check if this IP is registered as an active kiosk
 	const kiosk = await prisma.kiosk.findFirst({
