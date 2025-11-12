@@ -1,6 +1,7 @@
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { Context } from "../../context";
+import { getClientIp } from "../../utils/getClientIp";
 
 export const ZCheckStatusSchema = z.object({});
 
@@ -13,13 +14,7 @@ export type TCheckStatusOptions = {
 
 export async function checkStatusHandler(options: TCheckStatusOptions) {
 	// Get the client IP address from the request
-	const clientIp =
-		options.ctx.req.headers["x-forwarded-for"] ||
-		options.ctx.req.headers["x-real-ip"] ||
-		options.ctx.req.socket.remoteAddress ||
-		"unknown";
-
-	const ip = Array.isArray(clientIp) ? clientIp[0] : clientIp;
+	const ip = getClientIp(options.ctx.req);
 
 	// Check if this IP is registered as a kiosk
 	const kiosk = await prisma.kiosk.findFirst({
