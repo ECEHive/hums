@@ -8,6 +8,12 @@ Run the client using the `dev` script. This will hot-reload on changes.
 pnpm dev
 ```
 
+## Environment Variables
+
+| Variable | Default | Description |
+| - | - | - |
+| `VITE_KIOSK_SENTRY_DSN` | `""` | Optional DSN if you wish to include Sentry. |
+
 ### Development Variables
 
 | Variable | Default | Description |
