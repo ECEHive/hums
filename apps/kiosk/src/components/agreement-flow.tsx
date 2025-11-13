@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -31,9 +31,28 @@ export function AgreementFlow({
 }: AgreementFlowProps) {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isProcessing, setIsProcessing] = useState(false);
+	const [countdown, setCountdown] = useState(3);
+	const [isCountdownComplete, setIsCountdownComplete] = useState(false);
 
 	const currentAgreement = agreements[currentIndex];
 	const isLastAgreement = currentIndex === agreements.length - 1;
+
+	// Countdown timer effect
+	useEffect(() => {
+		if (countdown > 0) {
+			const timer = setTimeout(() => {
+				setCountdown(countdown - 1);
+			}, 1000);
+			return () => clearTimeout(timer);
+		}
+		setIsCountdownComplete(true);
+	}, [countdown]);
+
+	// Reset countdown when changing agreements
+	useEffect(() => {
+		setCountdown(3);
+		setIsCountdownComplete(false);
+	}, [currentIndex]);
 
 	const agreeMutation = useMutation({
 		mutationFn: (agreementId: number) => {
@@ -109,11 +128,13 @@ export function AgreementFlow({
 							<Button
 								size="lg"
 								onClick={handleAgree}
-								disabled={isProcessing}
+								disabled={isProcessing || !isCountdownComplete}
 								className="text-base px-6 py-5"
 							>
 								<Check className="mr-2 h-5 w-5" />
-								{currentAgreement.confirmationText}
+								{isCountdownComplete
+									? currentAgreement.confirmationText
+									: `${currentAgreement.confirmationText} (${countdown})`}
 							</Button>
 						</div>
 						{agreements.length > 1 && (
