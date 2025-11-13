@@ -1,16 +1,19 @@
 import { Maximize } from "lucide-react";
 import { KioskClock } from "@/components/kiosk-clock";
+import { LoadingIndicator } from "@/components/loading-indicator";
 import { Button } from "@/components/ui/button";
 
 interface ReadyViewProps {
 	logoUrl: string;
 	isFullscreen: boolean;
+	isProcessing?: boolean;
 	onToggleFullscreen: () => void;
 }
 
 export function ReadyView({
 	logoUrl,
 	isFullscreen,
+	isProcessing = false,
 	onToggleFullscreen,
 }: ReadyViewProps) {
 	return (
@@ -37,14 +40,18 @@ export function ReadyView({
 
 				<KioskClock className="text-[clamp(1rem,9vw,10rem)] leading-tight max-w-full" />
 
-				<div className="space-y-2">
-					<h1 className="text-[clamp(1.25rem,3.2vw,2.25rem)] font-bold leading-tight">
-						Ready to Scan
-					</h1>
-					<p className="text-[clamp(0.95rem,1.8vw,1.1rem)] text-muted-foreground max-w-[80vw] sm:max-w-[60vw] mx-auto">
-						Please scan your card to tap in or out
-					</p>
-				</div>
+				{isProcessing ? (
+					<LoadingIndicator message="Processing..." />
+				) : (
+					<div className="space-y-2">
+						<h1 className="text-[clamp(1.25rem,3.2vw,2.25rem)] font-bold leading-tight">
+							Ready to Scan
+						</h1>
+						<p className="text-[clamp(0.95rem,1.8vw,1.1rem)] text-muted-foreground max-w-[80vw] sm:max-w-[60vw] mx-auto">
+							Please scan your card to tap in or out
+						</p>
+					</div>
+				)}
 			</div>
 		</div>
 	);

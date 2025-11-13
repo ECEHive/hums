@@ -50,6 +50,7 @@ function App() {
 	const [currentTapEvent, setCurrentTapEvent] = useState<TapEvent | null>(null);
 	const [isExiting, setIsExiting] = useState<boolean>(false);
 	const [isErrorExiting, setIsErrorExiting] = useState<boolean>(false);
+	const [isProcessing, setIsProcessing] = useState<boolean>(false);
 	const [pendingAgreement, setPendingAgreement] =
 		useState<PendingAgreementState | null>(null);
 	const [sessionTypeSelection, setSessionTypeSelection] =
@@ -61,6 +62,9 @@ function App() {
 	const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const errorExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const sessionTypeSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const tapOutActionSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const agreementFlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	// Check kiosk status using TanStack Query
 	const { data: kioskStatusData, isLoading: kioskStatusLoading } = useQuery({
@@ -86,6 +90,26 @@ function App() {
 		sessionType?: "regular" | "staffing",
 		tapAction?: "end_session" | "switch_to_staffing" | "switch_to_regular",
 	) => {
+		// Clear all dialogs and their timers when a new card is scanned
+		if (sessionTypeSelectorTimeoutRef.current) {
+			clearTimeout(sessionTypeSelectorTimeoutRef.current);
+			sessionTypeSelectorTimeoutRef.current = null;
+		}
+		if (tapOutActionSelectorTimeoutRef.current) {
+			clearTimeout(tapOutActionSelectorTimeoutRef.current);
+			tapOutActionSelectorTimeoutRef.current = null;
+		}
+		if (agreementFlowTimeoutRef.current) {
+			clearTimeout(agreementFlowTimeoutRef.current);
+			agreementFlowTimeoutRef.current = null;
+		}
+		setSessionTypeSelection(null);
+		setTapOutActionSelection(null);
+		setPendingAgreement(null);
+		
+		// Show processing state
+		setIsProcessing(true);
+		
 		try {
 			try {
 				log.info("tap-request", { cardNumber, sessionType, tapAction });
@@ -104,10 +128,15 @@ function App() {
 					});
 				} catch {}
 
+				setIsProcessing(false);
 				setSessionTypeSelection({
 					cardNumber,
 					userName: result.user.name,
 				});
+				// Auto-hide after 15 seconds
+				sessionTypeSelectorTimeoutRef.current = setTimeout(() => {
+					setSessionTypeSelection(null);
+				}, 15000);
 				return;
 			}
 
@@ -119,11 +148,16 @@ function App() {
 					});
 				} catch {}
 
+				setIsProcessing(false);
 				setTapOutActionSelection({
 					cardNumber,
 					userName: result.user.name,
 					currentSessionType: result.currentSession?.sessionType || "regular",
 				});
+				// Auto-hide after 15 seconds
+				tapOutActionSelectorTimeoutRef.current = setTimeout(() => {
+					setTapOutActionSelection(null);
+				}, 15000);
 				return;
 			}
 
@@ -136,11 +170,17 @@ function App() {
 					});
 				} catch {}
 
+				setIsProcessing(false);
 				setPendingAgreement({
 					cardNumber,
 					userName: result.user.name,
 					agreements: result.missingAgreements,
 				});
+				// Auto-hide after 15 seconds
+				agreementFlowTimeoutRef.current = setTimeout(() => {
+					setPendingAgreement(null);
+					showError("Entry denied. Complete all agreements to tap in.");
+				}, 15000);
 				return;
 			}
 
@@ -151,6 +191,7 @@ function App() {
 				result.status === "switched_to_staffing" ||
 				result.status === "switched_to_regular"
 			) {
+				setIsProcessing(false);
 				const event =
 					(result.status === "switched_to_staffing" ||
 						result.status === "switched_to_regular") &&
@@ -216,6 +257,7 @@ function App() {
 				}
 			}
 		} catch (error: unknown) {
+			setIsProcessing(false);
 			const message =
 				error instanceof Error ? error.message : "Failed to process tap";
 			try {
@@ -228,6 +270,12 @@ function App() {
 	const handleAgreementComplete = async () => {
 		if (!pendingAgreement) return;
 
+		// Clear auto-hide timeout
+		if (agreementFlowTimeoutRef.current) {
+			clearTimeout(agreementFlowTimeoutRef.current);
+			agreementFlowTimeoutRef.current = null;
+		}
+
 		try {
 			// All agreements accepted, now tap in
 			await handleTapInOut(pendingAgreement.cardNumber);
@@ -237,6 +285,11 @@ function App() {
 	};
 
 	const handleAgreementCancel = () => {
+		// Clear auto-hide timeout
+		if (agreementFlowTimeoutRef.current) {
+			clearTimeout(agreementFlowTimeoutRef.current);
+			agreementFlowTimeoutRef.current = null;
+		}
 		setPendingAgreement(null);
 		showError("Entry denied. Complete all agreements to tap in.");
 	};
@@ -248,6 +301,12 @@ function App() {
 	const handleSessionTypeSelect = async (type: "regular" | "staffing") => {
 		if (!sessionTypeSelection) return;
 
+		// Clear auto-hide timeout
+		if (sessionTypeSelectorTimeoutRef.current) {
+			clearTimeout(sessionTypeSelectorTimeoutRef.current);
+			sessionTypeSelectorTimeoutRef.current = null;
+		}
+
 		try {
 			await handleTapInOut(sessionTypeSelection.cardNumber, type);
 		} finally {
@@ -256,6 +315,11 @@ function App() {
 	};
 
 	const handleSessionTypeCancel = () => {
+		// Clear auto-hide timeout
+		if (sessionTypeSelectorTimeoutRef.current) {
+			clearTimeout(sessionTypeSelectorTimeoutRef.current);
+			sessionTypeSelectorTimeoutRef.current = null;
+		}
 		setSessionTypeSelection(null);
 	};
 
@@ -263,6 +327,12 @@ function App() {
 		action: "end_session" | "switch_to_staffing" | "switch_to_regular",
 	) => {
 		if (!tapOutActionSelection) return;
+
+		// Clear auto-hide timeout
+		if (tapOutActionSelectorTimeoutRef.current) {
+			clearTimeout(tapOutActionSelectorTimeoutRef.current);
+			tapOutActionSelectorTimeoutRef.current = null;
+		}
 
 		try {
 			await handleTapInOut(tapOutActionSelection.cardNumber, undefined, action);
@@ -272,6 +342,11 @@ function App() {
 	};
 
 	const handleTapOutActionCancel = () => {
+		// Clear auto-hide timeout
+		if (tapOutActionSelectorTimeoutRef.current) {
+			clearTimeout(tapOutActionSelectorTimeoutRef.current);
+			tapOutActionSelectorTimeoutRef.current = null;
+		}
 		setTapOutActionSelection(null);
 	};
 
@@ -294,7 +369,7 @@ function App() {
 				setErrorMessage("");
 				setIsErrorExiting(false);
 			}, 300); // Fade-out duration
-		}, 5000); // Display duration (longer for errors so users can read)
+		}, 3000); // Display duration (3 seconds)
 	};
 
 	// Show error with animation
@@ -336,6 +411,15 @@ function App() {
 			}
 			if (errorExitTimeoutRef.current) {
 				clearTimeout(errorExitTimeoutRef.current);
+			}
+			if (sessionTypeSelectorTimeoutRef.current) {
+				clearTimeout(sessionTypeSelectorTimeoutRef.current);
+			}
+			if (tapOutActionSelectorTimeoutRef.current) {
+				clearTimeout(tapOutActionSelectorTimeoutRef.current);
+			}
+			if (agreementFlowTimeoutRef.current) {
+				clearTimeout(agreementFlowTimeoutRef.current);
 			}
 		};
 	}, []);
@@ -507,6 +591,7 @@ function App() {
 						<ReadyView
 							logoUrl={logoUrl}
 							isFullscreen={isFullscreen}
+							isProcessing={isProcessing}
 							onToggleFullscreen={toggleFullscreen}
 						/>
 					)}
