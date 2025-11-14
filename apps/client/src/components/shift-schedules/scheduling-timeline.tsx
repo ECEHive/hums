@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -39,6 +40,30 @@ const DAYS_OF_WEEK = [
 	{ value: 5, label: "Friday", short: "Fri" },
 	{ value: 6, label: "Saturday", short: "Sat" },
 ];
+
+const TIME_COLUMN_WIDTH = "clamp(68px, 18vw, 120px)";
+const DAY_COLUMN_WIDTH = "clamp(120px, 15vw, 170px)";
+
+function renderEmptyState(
+	message = "No shift schedules available for this period",
+) {
+	return (
+		<Card>
+			<CardContent className="py-12 text-center text-muted-foreground">
+				{message}
+			</CardContent>
+		</Card>
+	);
+}
+
+function formatCompactTime(minutes: number): string {
+	const hours24 = Math.floor(minutes / 60) % 24;
+	const mins = minutes % 60;
+	const period = hours24 >= 12 ? "p" : "a";
+	const hours12 = hours24 % 12 || 12;
+	const minutePart = mins === 0 ? "" : `:${mins.toString().padStart(2, "0")}`;
+	return `${hours12}${minutePart}${period}`;
+}
 
 /**
  * Parse time string (HH:MM) to minutes since midnight
@@ -221,13 +246,7 @@ export function SchedulingTimeline({
 	}
 
 	if (schedules.length === 0) {
-		return (
-			<Card>
-				<CardContent className="py-12 text-center text-muted-foreground">
-					No shift schedules available for this period
-				</CardContent>
-			</Card>
-		);
+		return renderEmptyState();
 	}
 
 	// Calculate optimal block size
@@ -235,6 +254,18 @@ export function SchedulingTimeline({
 
 	// Group schedules by day and time block
 	const blocks = groupSchedulesByDayAndTimeBlock(schedules, blockSize);
+
+	// Determine which days actually have shift schedules
+	const daysWithSchedules = new Set(
+		schedules.map((schedule) => schedule.dayOfWeek),
+	);
+	const visibleDays = DAYS_OF_WEEK.filter((day) =>
+		daysWithSchedules.has(day.value),
+	);
+
+	if (visibleDays.length === 0) {
+		return renderEmptyState();
+	}
 
 	// Get all unique time blocks across all days
 	const allTimeBlocks = new Set<number>();
@@ -245,50 +276,58 @@ export function SchedulingTimeline({
 	const timeBlockStarts = Array.from(allTimeBlocks).sort((a, b) => a - b);
 
 	if (timeBlockStarts.length === 0) {
-		return (
-			<Card>
-				<CardContent className="py-12 text-center text-muted-foreground">
-					No shift schedules available
-				</CardContent>
-			</Card>
-		);
+		return renderEmptyState("No shift schedules available");
 	}
+
+	const gridTemplateColumns = `${TIME_COLUMN_WIDTH} repeat(${visibleDays.length}, ${DAY_COLUMN_WIDTH})`;
 
 	return (
 		<div className="overflow-x-auto w-full pb-4">
 			<div className="min-w-max">
-				{/* Header row with day names */}
-				<div className="grid grid-cols-8 gap-2 mb-2">
-					<div className="text-sm font-medium text-muted-foreground">Time</div>
-					{DAYS_OF_WEEK.map((day) => (
-						<div key={day.value} className="text-sm font-medium text-center">
+				<div
+					className="inline-grid auto-rows-min gap-2"
+					style={{ gridTemplateColumns }}
+				>
+					<div className="sticky left-0 z-30 text-xs sm:text-sm font-medium text-muted-foreground py-2 pr-4 bg-card/50 backdrop-blur-md">
+						Time
+					</div>
+					{visibleDays.map((day) => (
+						<div
+							key={`header-${day.value}`}
+							className="text-center text-sm font-medium py-2"
+						>
 							<div className="hidden sm:block">{day.label}</div>
 							<div className="sm:hidden">{day.short}</div>
 						</div>
 					))}
-				</div>
 
-				{/* Timeline grid */}
-				<div className="space-y-2">
 					{timeBlockStarts.map((blockStart) => {
 						const timeLabel = formatTimeBlock(blockStart, blockSize);
+						const compactStart = formatCompactTime(blockStart);
+						const compactEnd = formatCompactTime(blockStart + blockSize);
 
 						return (
-							<div key={blockStart} className="grid grid-cols-8 gap-2">
-								{/* Time label */}
-								<div className="flex items-center text-sm text-muted-foreground font-medium py-2">
-									{timeLabel}
+							<React.Fragment key={blockStart}>
+								<div className="flex items-center sm:items-stretch text-muted-foreground font-medium py-2 pr-4 min-h-[60px] sticky left-0 z-20 bg-card/50 backdrop-blur-md">
+									<span className="hidden sm:inline">{timeLabel}</span>
+									<span className="flex flex-col sm:hidden leading-tight">
+										<span className="text-sm font-semibold">
+											{compactStart}
+										</span>
+										<span className="text-[10px] text-muted-foreground/80">
+											{compactEnd}
+										</span>
+									</span>
 								</div>
 
-								{/* Day cells */}
-								{DAYS_OF_WEEK.map((day) => {
+								{visibleDays.map((day) => {
 									const key = `${day.value}-${blockStart}`;
 									const blockData = blocks.get(key);
 
 									if (!blockData) {
 										return (
 											<div
-												key={day.value}
+												key={key}
 												className="border border-dashed border-muted rounded-md p-2 min-h-[60px]"
 											/>
 										);
@@ -297,14 +336,14 @@ export function SchedulingTimeline({
 									const hasAvailable = blockData.available > 0;
 
 									return (
-										<HoverCard key={day.value}>
+										<HoverCard key={key}>
 											<HoverCardTrigger asChild>
 												<Button
 													variant={
 														blockData.hasUserRegistered ? "default" : "outline"
 													}
 													className={cn(
-														"h-auto min-h-[60px] flex flex-col items-center justify-center gap-1 p-2",
+														"w-full h-auto min-h-[60px] flex flex-col items-center justify-center gap-1 p-2",
 														!blockData.hasUserRegistered &&
 															hasAvailable &&
 															"border-green-500 hover:border-green-600",
@@ -350,7 +389,6 @@ export function SchedulingTimeline({
 											<HoverCardContent>
 												<div className="space-y-2">
 													<div className="font-medium mb-1">
-														{/* Day and time block header */}
 														{formatDayBlock(day.value)}{" "}
 														{formatTimeBlock(blockStart, blockSize)}
 													</div>
@@ -372,7 +410,7 @@ export function SchedulingTimeline({
 										</HoverCard>
 									);
 								})}
-							</div>
+							</React.Fragment>
 						);
 					})}
 				</div>

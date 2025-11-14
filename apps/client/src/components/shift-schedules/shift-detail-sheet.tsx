@@ -114,7 +114,7 @@ export function ShiftDetailSheet({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="overflow-y-auto">
+			<SheetContent className="overflow-y-auto w-full">
 				<SheetHeader>
 					<SheetTitle>
 						{DAYS_OF_WEEK[dayOfWeek]} - {timeBlock}
