@@ -18,6 +18,15 @@ import {
 import { formatLog, getLogger } from "@/lib/logging";
 import type { ConnectionStatus, TapEvent } from "@/types";
 
+// Timeout constants (in milliseconds)
+const SESSION_TYPE_TIMEOUT_MS = 15000;
+const TAP_OUT_ACTION_TIMEOUT_MS = 15000;
+const AGREEMENT_FLOW_TIMEOUT_MS = 30000;
+const NOTIFICATION_DISPLAY_DURATION_MS = 3000;
+const FADE_OUT_DURATION_MS = 300;
+const FADE_OUT_TRIGGER_DELAY_MS = 200;
+const SERIAL_CONNECTION_CHECK_INTERVAL_MS = 2000;
+
 type AgreementData = {
 	id: number;
 	title: string;
@@ -141,7 +150,7 @@ function App() {
 				// Auto-hide after 15 seconds
 				sessionTypeSelectorTimeoutRef.current = setTimeout(() => {
 					setSessionTypeSelection(null);
-				}, 15000);
+				}, SESSION_TYPE_TIMEOUT_MS);
 				return;
 			}
 
@@ -163,7 +172,7 @@ function App() {
 				// Auto-hide after 15 seconds
 				tapOutActionSelectorTimeoutRef.current = setTimeout(() => {
 					setTapOutActionSelection(null);
-				}, 15000);
+				}, TAP_OUT_ACTION_TIMEOUT_MS);
 				return;
 			}
 
@@ -186,7 +195,7 @@ function App() {
 				agreementFlowTimeoutRef.current = setTimeout(() => {
 					setPendingAgreement(null);
 					showError("Entry denied. Complete all agreements to tap in.");
-				}, 30000);
+				}, AGREEMENT_FLOW_TIMEOUT_MS);
 				return;
 			}
 
@@ -251,7 +260,7 @@ function App() {
 						setIsExiting(false);
 						setCurrentTapEvent(event);
 						scheduleEventHide();
-					}, 200); // Brief fade-out duration
+					}, FADE_OUT_TRIGGER_DELAY_MS); // Brief fade-out duration
 				} else {
 					// No current event, show immediately
 					setCurrentTapEvent(event);
@@ -277,7 +286,7 @@ function App() {
 		agreementFlowTimeoutRef.current = setTimeout(() => {
 			setPendingAgreement(null);
 			showError("Entry denied. Complete all agreements to tap in.");
-		}, 30000);
+		}, AGREEMENT_FLOW_TIMEOUT_MS);
 	};
 
 	const handleAgreementComplete = async () => {
@@ -370,8 +379,8 @@ function App() {
 			exitTimeoutRef.current = setTimeout(() => {
 				setCurrentTapEvent(null);
 				setIsExiting(false);
-			}, 300); // Fade-out duration
-		}, 3000); // Display duration
+			}, FADE_OUT_DURATION_MS); // Fade-out duration
+		}, NOTIFICATION_DISPLAY_DURATION_MS); // Display duration
 	};
 
 	// Schedule error to hide after a delay
@@ -381,8 +390,8 @@ function App() {
 			errorExitTimeoutRef.current = setTimeout(() => {
 				setErrorMessage("");
 				setIsErrorExiting(false);
-			}, 300); // Fade-out duration
-		}, 3000); // Display duration (3 seconds)
+			}, FADE_OUT_DURATION_MS); // Fade-out duration
+		}, NOTIFICATION_DISPLAY_DURATION_MS); // Display duration (3 seconds)
 	};
 
 	// Show error with animation
@@ -402,7 +411,7 @@ function App() {
 				setIsErrorExiting(false);
 				setErrorMessage(message);
 				scheduleErrorHide();
-			}, 200); // Brief fade-out duration
+			}, FADE_OUT_TRIGGER_DELAY_MS); // Brief fade-out duration
 		} else {
 			// No current error, show immediately
 			setErrorMessage(message);
@@ -490,7 +499,7 @@ function App() {
 					showError("Kiosk disconnected - card reader was unplugged");
 					void disconnectSerialHandler();
 				}
-			}, 2000);
+			}, SERIAL_CONNECTION_CHECK_INTERVAL_MS);
 
 			return () => clearInterval(checkConnection);
 		}
