@@ -8,6 +8,9 @@ export const ZCreateSchema = z
 		name: z.string().min(1).max(100),
 		start: z.date(),
 		end: z.date(),
+		min: z.number().int().min(0).optional().nullable(),
+		max: z.number().int().min(0).optional().nullable(),
+		minMaxUnit: z.enum(["count", "minutes", "hours"]).optional().nullable(),
 		visibleStart: z.date().optional().nullable(),
 		visibleEnd: z.date().optional().nullable(),
 		scheduleSignupStart: z.date().optional().nullable(),
@@ -63,6 +66,32 @@ export const ZCreateSchema = z
 				path: ["scheduleModifyStart"],
 			});
 		}
+
+		const hasMin = data.min !== null && data.min !== undefined;
+		const hasMax = data.max !== null && data.max !== undefined;
+
+		if ((hasMin || hasMax) && !data.minMaxUnit) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Select a unit when specifying min or max",
+				path: ["minMaxUnit"],
+			});
+		}
+
+		if (
+			hasMin &&
+			hasMax &&
+			typeof data.min === "number" &&
+			typeof data.max === "number"
+		) {
+			if (data.min > data.max) {
+				ctx.addIssue({
+					code: "custom",
+					message: "Minimum requirement cannot exceed maximum",
+					path: ["min"],
+				});
+			}
+		}
 	});
 
 export type TCreateSchema = z.infer<typeof ZCreateSchema>;
@@ -77,6 +106,9 @@ export async function createHandler(options: TCreateOptions) {
 		name,
 		start,
 		end,
+		min,
+		max,
+		minMaxUnit,
 		visibleStart,
 		visibleEnd,
 		scheduleSignupStart,
@@ -91,6 +123,9 @@ export async function createHandler(options: TCreateOptions) {
 				name,
 				start,
 				end,
+				min: min ?? null,
+				max: max ?? null,
+				minMaxUnit: minMaxUnit ?? null,
 				visibleStart: visibleStart ?? null,
 				visibleEnd: visibleEnd ?? null,
 				scheduleSignupStart: scheduleSignupStart ?? null,

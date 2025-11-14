@@ -1,6 +1,9 @@
 import {
 	assignUserToScheduleOccurrences,
+	calculateRequirementComparableValue,
+	convertRequirementThresholdToComparable,
 	getAllSchedulesForBalancing,
+	getShiftDurationMinutes,
 	getShiftScheduleForRegistration,
 	getUserRegisteredSchedules,
 	getUserWithRoles,
@@ -149,16 +152,50 @@ export async function registerHandler(options: TRegisterOptions) {
 
 		// Get all shift schedules the user is already registered for
 		const userSchedules = await getUserRegisteredSchedules(tx, userId);
+		const schedulesForOverlap = userSchedules.map(
+			({ shiftType, ...rest }) => rest,
+		);
 
 		// Validate no time overlap (throws if overlap exists)
 		try {
-			validateNoTimeOverlap(targetSchedule, userSchedules);
+			validateNoTimeOverlap(targetSchedule, schedulesForOverlap);
 		} catch (error) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message:
 					error instanceof Error ? error.message : "Time overlap detected",
 			});
+		}
+
+		// Enforce period maximum requirement if configured
+		if (period.max !== null && period.max !== undefined && period.minMaxUnit) {
+			const unit = period.minMaxUnit;
+			const userPeriodSchedules = userSchedules.filter(
+				(schedule) => schedule.shiftType?.periodId === period.id,
+			);
+			const currentComparable = calculateRequirementComparableValue(
+				userPeriodSchedules,
+				unit,
+			);
+			const addedComparable =
+				unit === "count"
+					? 1
+					: getShiftDurationMinutes(
+							targetSchedule.startTime,
+							targetSchedule.endTime,
+						);
+			const maxComparable = convertRequirementThresholdToComparable(
+				period.max,
+				unit,
+			);
+
+			if (currentComparable + addedComparable > maxComparable) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"You have reached the maximum allowed shift registrations for this period.",
+				});
+			}
 		}
 
 		// Connect user to shift schedule

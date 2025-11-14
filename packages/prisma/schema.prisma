@@ -32,6 +32,12 @@ enum SessionType {
   staffing
 }
 
+enum MinMaxUnit {
+  count
+  minutes
+  hours
+}
+
 //
 // Models
 //
@@ -102,6 +108,10 @@ model Period {
   name  String
   start DateTime
   end   DateTime
+
+  min       Int?
+  max       Int?
+  minMaxUnit MinMaxUnit?
 
   visibleStart DateTime?
   visibleEnd   DateTime?
