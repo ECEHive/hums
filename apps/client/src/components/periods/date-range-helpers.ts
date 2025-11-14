@@ -11,7 +11,7 @@ function setBoundary(date: Date, boundary: "start" | "end") {
 	if (boundary === "start") {
 		date.setHours(0, 0, 0, 0);
 	} else {
-		date.setHours(23, 59, 0, 0);
+		date.setHours(23, 59, 59, 999);
 	}
 	return date;
 }
