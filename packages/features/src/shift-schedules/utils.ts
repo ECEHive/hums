@@ -10,6 +10,9 @@ dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
+const MINUTES_PER_DAY = 24 * 60;
+const MINUTES_PER_HOUR = 60;
+
 /**
  * Parse a time string in HH:MM:SS format.
  *
@@ -180,4 +183,82 @@ export function filterExceptionPeriods(
 
 		return true;
 	});
+}
+
+export type RequirementUnit = "count" | "minutes" | "hours";
+
+export interface RequirementScheduleLite {
+	startTime: string;
+	endTime: string;
+}
+
+/**
+ * Calculate the duration of a shift schedule in minutes, handling overnight shifts.
+ */
+export function getShiftDurationMinutes(
+	startTime: string,
+	endTime: string,
+): number {
+	const start = parseTimeString(startTime);
+	const end = parseTimeString(endTime);
+
+	const startMinutes =
+		start.hours * MINUTES_PER_HOUR +
+		start.minutes +
+		(start.seconds ?? 0) / MINUTES_PER_HOUR;
+	let endMinutes =
+		end.hours * MINUTES_PER_HOUR +
+		end.minutes +
+		(end.seconds ?? 0) / MINUTES_PER_HOUR;
+
+	if (endMinutes <= startMinutes) {
+		endMinutes += MINUTES_PER_DAY;
+	}
+
+	return endMinutes - startMinutes;
+}
+
+export function calculateRequirementComparableValue(
+	schedules: RequirementScheduleLite[],
+	unit: RequirementUnit,
+): number {
+	if (unit === "count") {
+		return schedules.length;
+	}
+
+	return schedules.reduce(
+		(total, schedule) =>
+			total + getShiftDurationMinutes(schedule.startTime, schedule.endTime),
+		0,
+	);
+}
+
+export function convertRequirementThresholdToComparable(
+	value: number,
+	unit: RequirementUnit,
+): number {
+	if (unit === "count") {
+		return value;
+	}
+
+	if (unit === "minutes") {
+		return value;
+	}
+
+	return value * MINUTES_PER_HOUR;
+}
+
+export function convertComparableValueToUnit(
+	value: number,
+	unit: RequirementUnit,
+): number {
+	if (unit === "count") {
+		return value;
+	}
+
+	if (unit === "minutes") {
+		return value;
+	}
+
+	return value / MINUTES_PER_HOUR;
 }

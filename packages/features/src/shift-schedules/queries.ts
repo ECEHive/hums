@@ -41,6 +41,9 @@ export async function getUserRegisteredSchedules(
 			dayOfWeek: true,
 			startTime: true,
 			endTime: true,
+			shiftType: {
+				select: { periodId: true },
+			},
 		},
 	});
 }
