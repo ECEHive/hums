@@ -1,11 +1,12 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, NotebookTextIcon } from "lucide-react";
+import { NotebookTextIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
 import DateRangeSelector from "@/components/date-range-selector";
 import { MissingPermissions } from "@/components/missing-permissions";
+import { usePeriod } from "@/components/period-provider";
 import { DataTable } from "@/components/reports/data-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -32,19 +33,14 @@ function Reports() {
 	const [start, setStart] = React.useState<Date | null>(null);
 	const [end, setEnd] = React.useState<Date | null>(null);
 	const [selectedRange, setSelectedRange] = React.useState<string>("");
-	const [selectedPeriodId, setSelectedPeriodId] = React.useState<number | null>(
-		null,
-	)
+	const { period: periodId } = usePeriod();
 
-	const { data: periodsData, isLoading } = useQuery({
-		queryKey: ["periods", { limit: 100, offset: 0 }],
+	const { data: periodData, isLoading } = useQuery({
+		queryKey: ["period", Number(periodId)],
 		queryFn: async () => {
-			return trpc.periods.list.query({
-				limit: 100,
-				offset: 0,
-			})
+			return trpc.periods.get.query({ id: Number(periodId) });
 		},
-	})
+	});
 
 	return (
 		<div className="p-6 inline-block w-full space-y-6">
@@ -73,27 +69,27 @@ function Reports() {
 										value="last2weeks"
 										onClick={() => {
 											// Calculate last 2 full weeks
-											const now = new Date()
+											const now = new Date();
 											const dayOfWeek = now.getDay(); // 0 (Sun) to 6 (Sat)
 											const lastSunday = new Date(
 												now.getFullYear(),
 												now.getMonth(),
 												now.getDate() - dayOfWeek,
-											)
+											);
 											const startOfLast2Weeks = new Date(
 												lastSunday.getFullYear(),
 												lastSunday.getMonth(),
 												lastSunday.getDate() - 14,
-											)
-											setStart(startOfLast2Weeks)
+											);
+											setStart(startOfLast2Weeks);
 											setEnd(
 												new Date(
 													lastSunday.getFullYear(),
 													lastSunday.getMonth(),
 													lastSunday.getDate() - 1,
 												),
-											)
-											setSelectedRange("last2weeks")
+											);
+											setSelectedRange("last2weeks");
 										}}
 									>
 										Last 2 Full Weeks
@@ -101,20 +97,20 @@ function Reports() {
 									<ToggleGroupItem
 										value="lastmonth"
 										onClick={() => {
-											const now = new Date()
+											const now = new Date();
 											const lastDayOfLastMonth = new Date(
 												now.getFullYear(),
 												now.getMonth(),
 												0,
-											)
+											);
 											const firstDayOfLastMonth = new Date(
 												now.getFullYear(),
 												now.getMonth() - 1,
 												1,
-											)
-											setStart(firstDayOfLastMonth)
-											setEnd(lastDayOfLastMonth)
-											setSelectedRange("lastmonth")
+											);
+											setStart(firstDayOfLastMonth);
+											setEnd(lastDayOfLastMonth);
+											setSelectedRange("lastmonth");
 										}}
 									>
 										Last Full Month
@@ -122,55 +118,14 @@ function Reports() {
 									<ToggleGroupItem
 										value="fullperiod"
 										onClick={() => {
-											setSelectedRange("fullperiod")
+											setSelectedRange("fullperiod");
+											if (periodData?.period) {
+												setStart(periodData.period.start);
+												setEnd(periodData.period.end);
+											}
 										}}
 									>
-										{isLoading ? (
-											<Spinner className="mr-2 h-4 w-4" />
-										) : (
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<div className="flex items-center">
-														<span className="px-3 py-1 inline-block">
-															{selectedPeriodId &&
-															selectedRange === "fullperiod"
-																? periodsData?.periods.find(
-																		(p) => p.id === selectedPeriodId,
-																	)?.name
-																: "Full Period"}
-														</span>
-														<ChevronDown className="ml-2 h-4 w-4 shrink-0" />
-													</div>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="start">
-													{periodsData?.periods &&
-													periodsData.periods.length > 0 ? (
-														periodsData.periods.map((period) => (
-															<DropdownMenuItem
-																key={period.id}
-																onClick={() => {
-																	setSelectedPeriodId(period.id)
-																	setStart(new Date(period.start))
-																	setEnd(new Date(period.end))
-																	setSelectedRange("fullperiod")
-																}}
-																className={
-																	period.id === selectedPeriodId
-																		? "bg-accent"
-																		: undefined
-																}
-															>
-																{period.name}
-															</DropdownMenuItem>
-														))
-													) : (
-														<DropdownMenuItem disabled>
-															No periods available
-														</DropdownMenuItem>
-													)}
-												</DropdownMenuContent>
-											</DropdownMenu>
-										)}
+										{(isLoading || !periodData?.period) ? <Spinner /> : periodData.period.name}
 									</ToggleGroupItem>
 								</ToggleGroup>
 							</div>
@@ -179,12 +134,12 @@ function Reports() {
 							<DateRangeSelector
 								value={[start ?? undefined, end ?? undefined]}
 								onChange={([s, e]) => {
-									setStart(s ?? null)
-									setEnd(e ?? null)
-									setSelectedRange("custom")
+									setStart(s ?? null);
+									setEnd(e ?? null);
+									setSelectedRange("custom");
 								}}
 								withTime={false}
-								label={"Custom Date Range"}
+								label={"Date Range"}
 							/>
 						</div>
 					</div>
@@ -192,5 +147,5 @@ function Reports() {
 			</Card>
 			<DataTable columns={[]} data={[]} isLoading={false} />
 		</div>
-	)
+	);
 }

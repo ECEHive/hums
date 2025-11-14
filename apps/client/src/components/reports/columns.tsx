@@ -7,13 +7,33 @@ import { RenameDialog } from "./rename-dialog";
 
 export type UserReport = {
 	id: number;
-    name: string;
-    username: string;
-    shiftSchedule: {
-        id: number;
-        start: Date;
-        end: Date;
-    }[];
+	name: string;
+	username: string;
+	shiftOccurrences: {
+		id: number;
+		shiftScheduleId: number;
+	}[];
+	shiftAttendances: {
+		id: number;
+		shiftOccurrenceId: number;
+	}[];
+	totalScheduledTime: number;
+	totalAttendedTime: number;
+	totalMissedTime: number;
+	attendancePercentage: number;
+	shiftAnomalies: {
+		id: number;
+		shiftOccurrenceId: number;
+		reason: string;
+	}[];
+	droppedShifts: {
+		id: number;
+		shiftOccurrenceId: number;
+	}[];
+	scheduledMakeupShifts: {
+		id: number;
+		shiftOccurrenceId: number;
+	}[];
 	permissions: {
 		id: number;
 		name: string;
@@ -48,33 +68,33 @@ export function generateColumns(): ColumnDef<UserReport>[] {
 			accessorKey: "totalScheduledTime",
 			header: "Total Scheduled Time",
 			cell: ({ row }) => {
-				return <></>;
+				return <span>{row.original.totalScheduledTime} hrs</span>;
 			},
 		},
 		{
 			accessorKey: "totalAttendedTime",
 			header: "Total Attended Time",
 			cell: ({ row }) => {
-				return <></>;
+				return <span>{row.original.totalAttendedTime}%</span>;
 			},
 		},
 		{
 			accessorKey: "totalMissedTime",
 			header: "Total Missed Time",
 			cell: ({ row }) => {
-				return <></>;
+				return <span>{row.original.totalMissedTime}%</span>;
 			},
 		},
 		{
 			accessorKey: "attendancePercentage",
 			header: "Attendance Percentage",
 			cell: ({ row }) => {
-				return <></>;
+				return <span>{row.original.attendancePercentage}%</span>;
 			},
 		},
 		{
 			accessorKey: "shiftAnomalies",
-			header: "No Shows",
+			header: "Shift Anomalies",
 			cell: ({ row }) => {
 				return <></>;
 			},
@@ -92,6 +112,6 @@ export function generateColumns(): ColumnDef<UserReport>[] {
 			cell: ({ row }) => {
 				return <></>;
 			},
-		}
+		},
 	];
 }
