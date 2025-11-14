@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Sample database URL to satisfy Prisma
+  DATABASE_URL: postgresql://user:password@localhost:5432/dbname
+
 jobs:
   quality:
     name: Quality Checks
@@ -26,9 +30,6 @@ jobs:
   typecheck:
     name: Type Checks
     runs-on: ubuntu-latest
-    env:
-      # Sample DATABASE_URL to satisfy Prisma during type checking
-      DATABASE_URL: postgresql://user:password@localhost:5432/dbname
     steps:
       - name: Checkout
         uses: actions/checkout@v4
