@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	CalendarCheckIcon,
 	CalendarClockIcon,
+	CalendarXIcon,
 	ChevronDownIcon,
 	ClockIcon,
 } from "lucide-react";
@@ -120,6 +121,10 @@ function AttendancePage() {
 				return <Badge className="bg-yellow-600">Late</Badge>;
 			case "left_early":
 				return <Badge className="bg-orange-600">Left Early</Badge>;
+			case "dropped":
+				return <Badge variant="outline">Dropped</Badge>;
+			case "dropped_makeup":
+				return <Badge variant="outline">Dropped w/ Makeup</Badge>;
 			default:
 				return <Badge variant="outline">{status}</Badge>;
 		}
@@ -135,7 +140,7 @@ function AttendancePage() {
 			<h1 className="text-2xl font-bold">Shift Attendance</h1>
 
 			{/* Stats Cards */}
-			<div className="grid gap-4 md:grid-cols-3">
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Total Shifts</CardTitle>
@@ -145,7 +150,9 @@ function AttendancePage() {
 						<div className="text-2xl font-bold">
 							{statsData?.totalShifts ?? 0}
 						</div>
-						<p className="text-xs text-muted-foreground">shifts this period</p>
+						<p className="text-xs text-muted-foreground">
+							{statsData?.upcomingShiftsCount ?? 0} upcoming
+						</p>
 					</CardContent>
 				</Card>
 
@@ -158,10 +165,25 @@ function AttendancePage() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
+							{statsData?.attendanceRate ?? 0}%
+						</div>
+						<p className="text-xs text-muted-foreground">
+							of eligible shifts attended
+						</p>
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Time on Shift</CardTitle>
+						<CalendarClockIcon className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">
 							{statsData?.timeOnShiftPercentage ?? 0}%
 						</div>
 						<p className="text-xs text-muted-foreground">
-							of shift hours attended
+							{statsData?.totalHoursWorked ?? 0}h logged
 						</p>
 					</CardContent>
 				</Card>
@@ -169,15 +191,25 @@ function AttendancePage() {
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
-							Hours on Shift
+							Dropped Shifts
 						</CardTitle>
-						<CalendarClockIcon className="h-4 w-4 text-muted-foreground" />
+						<CalendarXIcon className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
-							{statsData?.totalHoursWorked ?? 0}
+						<div className="flex items-baseline justify-between gap-4">
+							<div>
+								<div className="text-2xl font-bold">
+									{statsData?.droppedCount ?? 0}
+								</div>
+								<p className="text-xs text-muted-foreground">without makeup</p>
+							</div>
+							<div>
+								<div className="text-2xl font-bold">
+									{statsData?.droppedMakeupCount ?? 0}
+								</div>
+								<p className="text-xs text-muted-foreground">with makeup</p>
+							</div>
 						</div>
-						<p className="text-xs text-muted-foreground">hours logged</p>
 					</CardContent>
 				</Card>
 			</div>
