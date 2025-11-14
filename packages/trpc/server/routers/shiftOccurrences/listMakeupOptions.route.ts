@@ -20,6 +20,7 @@ export type TListMakeupOptions = {
 
 export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 	const { periodId, shiftTypeId, limit = 10, offset = 0 } = options.input;
+	const userId = options.ctx.userId;
 
 	const period = await prisma.period.findUnique({
 		where: { id: periodId },
@@ -39,6 +40,23 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 
 	const now = new Date();
 
+	const conflictingTimestamps = await prisma.shiftOccurrence.findMany({
+		where: {
+			timestamp: {
+				gt: now,
+			},
+			users: {
+				some: { id: userId },
+			},
+		},
+		select: { timestamp: true },
+		distinct: ["timestamp"],
+	});
+
+	const blockedTimestamps = conflictingTimestamps.map(
+		(occurrence) => occurrence.timestamp,
+	);
+
 	const where: Prisma.ShiftOccurrenceWhereInput = {
 		timestamp: {
 			gt: now,
@@ -54,6 +72,14 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 			},
 		},
 	};
+
+	if (blockedTimestamps.length > 0) {
+		where.NOT = {
+			timestamp: {
+				in: blockedTimestamps,
+			},
+		};
+	}
 
 	const [occurrences, total] = await Promise.all([
 		prisma.shiftOccurrence.findMany({

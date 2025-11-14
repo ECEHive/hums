@@ -166,6 +166,27 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 			});
 		}
 
+		const conflictingOccurrence = await tx.shiftOccurrence.findFirst({
+			where: {
+				timestamp: makeupOccurrence.timestamp,
+				users: {
+					some: { id: userId },
+				},
+				NOT: {
+					id: shiftOccurrenceId,
+				},
+			},
+			select: { id: true },
+		});
+
+		if (conflictingOccurrence) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message:
+					"You already have a shift scheduled at this time. Please choose a different makeup shift.",
+			});
+		}
+
 		await tx.shiftOccurrence.update({
 			where: { id: shiftOccurrenceId },
 			data: {
