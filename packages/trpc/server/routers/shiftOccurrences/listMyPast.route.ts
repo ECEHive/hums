@@ -1,5 +1,5 @@
 import { computeOccurrenceEnd } from "@ecehive/features";
-import { prisma } from "@ecehive/prisma";
+import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -107,13 +107,23 @@ export async function listMyPastHandler(options: TListMyPastOptions) {
 		})
 		.filter((item) => item.isPast);
 
-	// Calculate statistics
+	const droppedStatus = "dropped" as ShiftAttendanceStatus;
+	const droppedMakeupStatus = "dropped_makeup" as ShiftAttendanceStatus;
+
 	const totalShifts = pastOccurrencesWithData.length;
-	const totalShiftHours = pastOccurrencesWithData.reduce(
+	const attendanceEligibleOccurrences = pastOccurrencesWithData.filter(
+		(item) => {
+			const status = item.occurrence.attendances[0]?.status as
+				| ShiftAttendanceStatus
+				| undefined;
+			return status !== droppedStatus && status !== droppedMakeupStatus;
+		},
+	);
+	const totalShiftHours = attendanceEligibleOccurrences.reduce(
 		(sum, item) => sum + item.shiftDurationHours,
 		0,
 	);
-	const totalAttendanceHours = pastOccurrencesWithData.reduce(
+	const totalAttendanceHours = attendanceEligibleOccurrences.reduce(
 		(sum, item) => sum + item.attendanceDurationHours,
 		0,
 	);

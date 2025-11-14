@@ -18,17 +18,13 @@ enum ShiftTypeRoleRequirement {
   any
 }
 
-enum ShiftOccurrenceAssignmentStatus {
-  assigned
-  dropped
-  picked_up
-}
-
 enum ShiftAttendanceStatus {
   present
   absent
   arrived_late
   left_early
+  dropped
+  dropped_makeup
 }
 
 enum SessionType {

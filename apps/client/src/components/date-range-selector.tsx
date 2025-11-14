@@ -93,6 +93,13 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 		}
 	};
 
+	const handleClear = () => {
+		setRange([undefined, undefined]);
+		setStartTime("00:00");
+		setEndTime("23:59");
+		onChange?.([undefined, undefined]);
+	};
+
 	return (
 		<div>
 			{label && <span className="text-sm font-medium block mb-1">{label}</span>}
@@ -110,6 +117,17 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start">
 					<div className="p-4">
+						<div className="flex items-center justify-between mb-2">
+							<span className="text-sm font-medium">Select range</span>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleClear}
+								disabled={!range[0] && !range[1]}
+							>
+								Clear
+							</Button>
+						</div>
 						<Calendar
 							mode="range"
 							selected={range ? { from: range[0], to: range[1] } : undefined}
