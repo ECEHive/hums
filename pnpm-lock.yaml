@@ -327,6 +327,9 @@ importers:
       '@ecehive/config':
         specifier: workspace:*
         version: link:../config
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   packages/config:
     devDependencies:
@@ -352,6 +355,9 @@ importers:
       '@ecehive/config':
         specifier: workspace:*
         version: link:../config
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   packages/features:
     dependencies:
@@ -374,6 +380,9 @@ importers:
       '@ecehive/config':
         specifier: workspace:*
         version: link:../config
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
@@ -390,6 +399,9 @@ importers:
       '@types/node':
         specifier: ^24.5.2
         version: 24.10.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   packages/prisma:
     dependencies:
@@ -461,6 +473,9 @@ importers:
       '@ecehive/config':
         specifier: workspace:*
         version: link:../config
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
       vite:
         specifier: ^7.1.7
         version: 7.2.1(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
@@ -489,6 +504,9 @@ importers:
       '@types/node':
         specifier: ^24.10.0
         version: 24.10.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
 packages:
 

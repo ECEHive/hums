@@ -7,7 +7,8 @@
 		"generate": "prisma generate",
 		"migrate": "prisma migrate deploy",
 		"migrate:dev": "prisma migrate dev",
-		"reset": "prisma migrate reset"
+		"reset": "prisma migrate reset",
+		"tsc": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
