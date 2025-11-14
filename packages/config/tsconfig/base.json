@@ -8,7 +8,7 @@
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"inlineSources": false,
-		"isolatedModules": true,
+		"isolatedModules": false,
 		"module": "esnext",
 		"moduleResolution": "bundler",
 		"noImplicitAny": true,

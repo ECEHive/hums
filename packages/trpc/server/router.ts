@@ -13,7 +13,7 @@ import { shiftTypesRouter } from "./routers/shiftTypes/_route";
 import { usersRouter } from "./routers/users/_route";
 import { router } from "./trpc";
 
-export const appRouter: ReturnType<typeof router> = router({
+export const appRouter = router({
 	auth: authRouter,
 	users: usersRouter,
 	roles: rolesRouter,
