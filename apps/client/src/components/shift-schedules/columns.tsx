@@ -35,8 +35,8 @@ export function generateColumns(
 ): ColumnDef<ShiftSchedule>[] {
 	if (user === null) return [];
 
-	const canEdit = checkPermissions(user, ["shiftSchedules.update"]);
-	const canDelete = checkPermissions(user, ["shiftSchedules.delete"]);
+	const canEdit = checkPermissions(user, ["shift_schedules.update"]);
+	const canDelete = checkPermissions(user, ["shift_schedules.delete"]);
 
 	const columns: ColumnDef<ShiftSchedule>[] = [
 		{
