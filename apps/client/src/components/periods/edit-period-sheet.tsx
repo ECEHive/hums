@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
 // DateField removed in favor of DateRangeSelector
 import DateRangeSelector from "@/components/date-range-selector";
+import { normalizeRangeToDayBounds } from "@/components/periods/date-range-helpers";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,
@@ -225,10 +226,11 @@ export function EditPeriodSheet({
 												<DateRangeSelector
 													value={[start ?? undefined, end ?? undefined]}
 													onChange={([s, e]) => {
-														startField.handleChange(s ?? null);
-														endField.handleChange(e ?? null);
+														const [normalizedStart, normalizedEnd] =
+															normalizeRangeToDayBounds(s, e);
+														startField.handleChange(normalizedStart);
+														endField.handleChange(normalizedEnd);
 													}}
-													withTime
 												/>
 											)}
 										/>
@@ -297,10 +299,11 @@ export function EditPeriodSheet({
 												<DateRangeSelector
 													value={[start ?? undefined, end ?? undefined]}
 													onChange={([s, e]) => {
-														startField.handleChange(s ?? null);
-														endField.handleChange(e ?? null);
+														const [normalizedStart, normalizedEnd] =
+															normalizeRangeToDayBounds(s, e);
+														startField.handleChange(normalizedStart);
+														endField.handleChange(normalizedEnd);
 													}}
-													withTime
 												/>
 											)}
 										/>
@@ -333,10 +336,11 @@ export function EditPeriodSheet({
 												<DateRangeSelector
 													value={[start ?? undefined, end ?? undefined]}
 													onChange={([s, e]) => {
-														startField.handleChange(s ?? null);
-														endField.handleChange(e ?? null);
+														const [normalizedStart, normalizedEnd] =
+															normalizeRangeToDayBounds(s, e);
+														startField.handleChange(normalizedStart);
+														endField.handleChange(normalizedEnd);
 													}}
-													withTime
 												/>
 											)}
 										/>
@@ -369,10 +373,11 @@ export function EditPeriodSheet({
 												<DateRangeSelector
 													value={[start ?? undefined, end ?? undefined]}
 													onChange={([s, e]) => {
-														startField.handleChange(s ?? null);
-														endField.handleChange(e ?? null);
+														const [normalizedStart, normalizedEnd] =
+															normalizeRangeToDayBounds(s, e);
+														startField.handleChange(normalizedStart);
+														endField.handleChange(normalizedEnd);
 													}}
-													withTime
 												/>
 											)}
 										/>
