@@ -1,0 +1,320 @@
+/**
+ * Kiosk-specific CSS utilities for consistent scaling
+ *
+ * This file provides utility classes and CSS custom properties
+ * for building a consistent kiosk UI that scales properly
+ * across different screen sizes while maintaining a 4:3 aspect ratio.
+ */
+
+/* CSS Custom Properties for Kiosk Scaling */
+:root {
+	/* Base resolution: 1024x768 (4:3) */
+	--kiosk-base-width: 1024px;
+	--kiosk-base-height: 768px;
+	--kiosk-scale: 1;
+
+	/* Actual container dimensions (set by KioskContainer) */
+	--kiosk-width: 100vw;
+	--kiosk-height: 100vh;
+}
+
+/* Kiosk viewport container styles */
+.kiosk-viewport {
+	/* Enable relative positioning for absolute children */
+	position: relative;
+
+	/* Prevent overflow */
+	overflow: hidden;
+
+	/* Force hardware acceleration */
+	transform: translateZ(0);
+	will-change: width, height;
+}
+
+/* Kiosk scaling utilities - use these for font sizes, spacing, etc. */
+
+/* Font size utilities based on kiosk scale */
+.kiosk-text-xs {
+	font-size: calc(0.75rem * var(--kiosk-scale));
+}
+
+.kiosk-text-sm {
+	font-size: calc(0.875rem * var(--kiosk-scale));
+}
+
+.kiosk-text-base {
+	font-size: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-text-lg {
+	font-size: calc(1.125rem * var(--kiosk-scale));
+}
+
+.kiosk-text-xl {
+	font-size: calc(1.25rem * var(--kiosk-scale));
+}
+
+.kiosk-text-2xl {
+	font-size: calc(1.5rem * var(--kiosk-scale));
+}
+
+.kiosk-text-3xl {
+	font-size: calc(1.875rem * var(--kiosk-scale));
+}
+
+.kiosk-text-4xl {
+	font-size: calc(2.25rem * var(--kiosk-scale));
+}
+
+.kiosk-text-5xl {
+	font-size: calc(3rem * var(--kiosk-scale));
+}
+
+.kiosk-text-6xl {
+	font-size: calc(3.75rem * var(--kiosk-scale));
+}
+
+.kiosk-text-7xl {
+	font-size: calc(4.5rem * var(--kiosk-scale));
+}
+
+.kiosk-text-8xl {
+	font-size: calc(6rem * var(--kiosk-scale));
+}
+
+.kiosk-text-9xl {
+	font-size: calc(8rem * var(--kiosk-scale));
+}
+
+/* Spacing utilities based on kiosk scale */
+.kiosk-spacing-1 {
+	--spacing: calc(0.25rem * var(--kiosk-scale));
+}
+
+.kiosk-spacing-2 {
+	--spacing: calc(0.5rem * var(--kiosk-scale));
+}
+
+.kiosk-spacing-3 {
+	--spacing: calc(0.75rem * var(--kiosk-scale));
+}
+
+.kiosk-spacing-4 {
+	--spacing: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-spacing-6 {
+	--spacing: calc(1.5rem * var(--kiosk-scale));
+}
+
+.kiosk-spacing-8 {
+	--spacing: calc(2rem * var(--kiosk-scale));
+}
+
+.kiosk-spacing-12 {
+	--spacing: calc(3rem * var(--kiosk-scale));
+}
+
+.kiosk-spacing-16 {
+	--spacing: calc(4rem * var(--kiosk-scale));
+}
+
+/* Icon size utilities */
+.kiosk-icon-sm {
+	width: calc(1.5rem * var(--kiosk-scale));
+	height: calc(1.5rem * var(--kiosk-scale));
+}
+
+.kiosk-icon-md {
+	width: calc(2rem * var(--kiosk-scale));
+	height: calc(2rem * var(--kiosk-scale));
+}
+
+.kiosk-icon-lg {
+	width: calc(3rem * var(--kiosk-scale));
+	height: calc(3rem * var(--kiosk-scale));
+}
+
+.kiosk-icon-xl {
+	width: calc(4rem * var(--kiosk-scale));
+	height: calc(4rem * var(--kiosk-scale));
+}
+
+.kiosk-icon-2xl {
+	width: calc(6rem * var(--kiosk-scale));
+	height: calc(6rem * var(--kiosk-scale));
+}
+
+.kiosk-icon-3xl {
+	width: calc(8rem * var(--kiosk-scale));
+	height: calc(8rem * var(--kiosk-scale));
+}
+
+/* Border width utilities */
+.kiosk-border-2 {
+	border-width: calc(2px * var(--kiosk-scale));
+}
+
+.kiosk-border-4 {
+	border-width: calc(4px * var(--kiosk-scale));
+}
+
+.kiosk-border-8 {
+	border-width: calc(8px * var(--kiosk-scale));
+}
+
+/* Padding utilities */
+.kiosk-p-4 {
+	padding: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-p-6 {
+	padding: calc(1.5rem * var(--kiosk-scale));
+}
+
+.kiosk-p-8 {
+	padding: calc(2rem * var(--kiosk-scale));
+}
+
+.kiosk-p-12 {
+	padding: calc(3rem * var(--kiosk-scale));
+}
+
+.kiosk-p-16 {
+	padding: calc(4rem * var(--kiosk-scale));
+}
+
+/* Gap utilities */
+.kiosk-gap-2 {
+	gap: calc(0.5rem * var(--kiosk-scale));
+}
+
+.kiosk-gap-3 {
+	gap: calc(0.75rem * var(--kiosk-scale));
+}
+
+.kiosk-gap-4 {
+	gap: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-gap-6 {
+	gap: calc(1.5rem * var(--kiosk-scale));
+}
+
+.kiosk-gap-8 {
+	gap: calc(2rem * var(--kiosk-scale));
+}
+
+/* Rounded corners */
+.kiosk-rounded {
+	border-radius: calc(0.375rem * var(--kiosk-scale));
+}
+
+.kiosk-rounded-md {
+	border-radius: calc(0.5rem * var(--kiosk-scale));
+}
+
+.kiosk-rounded-lg {
+	border-radius: calc(0.75rem * var(--kiosk-scale));
+}
+
+.kiosk-rounded-xl {
+	border-radius: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-rounded-2xl {
+	border-radius: calc(1.5rem * var(--kiosk-scale));
+}
+
+.kiosk-rounded-full {
+	border-radius: 9999px;
+}
+
+/* Margin utilities */
+.kiosk-m-1 {
+	margin: calc(0.25rem * var(--kiosk-scale));
+}
+
+.kiosk-m-2 {
+	margin: calc(0.5rem * var(--kiosk-scale));
+}
+
+.kiosk-m-3 {
+	margin: calc(0.75rem * var(--kiosk-scale));
+}
+
+.kiosk-m-4 {
+	margin: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-m-6 {
+	margin: calc(1.5rem * var(--kiosk-scale));
+}
+
+.kiosk-m-8 {
+	margin: calc(2rem * var(--kiosk-scale));
+}
+
+.kiosk-mx-auto {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.kiosk-my-2 {
+	margin-top: calc(0.5rem * var(--kiosk-scale));
+	margin-bottom: calc(0.5rem * var(--kiosk-scale));
+}
+
+.kiosk-my-4 {
+	margin-top: calc(1rem * var(--kiosk-scale));
+	margin-bottom: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-mt-2 {
+	margin-top: calc(0.5rem * var(--kiosk-scale));
+}
+
+.kiosk-mt-4 {
+	margin-top: calc(1rem * var(--kiosk-scale));
+}
+
+.kiosk-mb-2 {
+	margin-bottom: calc(0.5rem * var(--kiosk-scale));
+}
+
+.kiosk-mb-4 {
+	margin-bottom: calc(1rem * var(--kiosk-scale));
+}
+
+/* Max width utilities (as percentage of kiosk container) */
+.kiosk-max-w-xs {
+	max-width: calc(var(--kiosk-width) * 0.25);
+}
+
+.kiosk-max-w-sm {
+	max-width: calc(var(--kiosk-width) * 0.35);
+}
+
+.kiosk-max-w-md {
+	max-width: calc(var(--kiosk-width) * 0.5);
+}
+
+.kiosk-max-w-lg {
+	max-width: calc(var(--kiosk-width) * 0.6);
+}
+
+.kiosk-max-w-xl {
+	max-width: calc(var(--kiosk-width) * 0.7);
+}
+
+.kiosk-max-w-2xl {
+	max-width: calc(var(--kiosk-width) * 0.8);
+}
+
+.kiosk-max-w-3xl {
+	max-width: calc(var(--kiosk-width) * 0.85);
+}
+
+.kiosk-max-w-4xl {
+	max-width: calc(var(--kiosk-width) * 0.9);
+}

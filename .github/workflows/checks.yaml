@@ -1,0 +1,48 @@
+name: Checks
+
+on:
+  push:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+env:
+  # Sample database URL to satisfy Prisma
+  DATABASE_URL: postgresql://user:password@localhost:5432/dbname
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run checks
+        run: pnpm exec biome ci
+
+  typecheck:
+    name: Type Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run type checks
+        run: pnpm run tsc
+

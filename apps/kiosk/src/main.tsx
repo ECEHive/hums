@@ -4,6 +4,7 @@ import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import "./globals.css";
+import "./kiosk.css";
 import * as Sentry from "@sentry/react";
 import App from "./App";
 
