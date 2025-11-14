@@ -109,9 +109,9 @@ function ShiftSchedulesPage() {
 
 	const currentUser = useCurrentUser();
 	const canCreate =
-		currentUser && checkPermissions(currentUser, ["shiftSchedules.create"]);
+		currentUser && checkPermissions(currentUser, ["shift_schedules.create"]);
 	const canDelete =
-		currentUser && checkPermissions(currentUser, ["shiftSchedules.delete"]);
+		currentUser && checkPermissions(currentUser, ["shift_schedules.delete"]);
 
 	if (periodId === null) {
 		return <PeriodNotSelected />;
