@@ -27,7 +27,7 @@ export const Route = createFileRoute("/shifts/reports")({
 		}),
 });
 
-export const permissions = ["users.list"];
+export const permissions = ["reports.generate"];
 
 function Reports() {
 	const [start, setStart] = React.useState<Date | null>(null);
@@ -125,7 +125,11 @@ function Reports() {
 											}
 										}}
 									>
-										{(isLoading || !periodData?.period) ? <Spinner /> : periodData.period.name}
+										{isLoading || !periodData?.period ? (
+											<Spinner />
+										) : (
+											periodData.period.name
+										)}
 									</ToggleGroupItem>
 								</ToggleGroup>
 							</div>
