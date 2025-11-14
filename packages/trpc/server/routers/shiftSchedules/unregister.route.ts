@@ -1,5 +1,6 @@
 import {
 	getShiftScheduleForRegistration,
+	lockShiftSchedule,
 	shiftScheduleEvents,
 	unassignUserFromScheduleOccurrences,
 } from "@ecehive/features";
@@ -26,6 +27,15 @@ export async function unregisterHandler(options: TUnregisterOptions) {
 	let periodId = 0;
 
 	await prisma.$transaction(async (tx) => {
+		const isLocked = await lockShiftSchedule(tx, shiftScheduleId);
+
+		if (!isLocked) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Shift schedule not found",
+			});
+		}
+
 		// Get the shift schedule to verify it exists and check canSelfAssign
 		const targetSchedule = await getShiftScheduleForRegistration(
 			tx,
