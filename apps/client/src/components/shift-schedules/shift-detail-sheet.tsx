@@ -32,6 +32,7 @@ interface ShiftSchedule {
 	meetsRoleRequirement: boolean;
 	meetsBalancingRequirement: boolean;
 	hasTimeOverlap: boolean;
+	blockedByMaxRequirement?: boolean;
 	users: { id: number; name: string }[];
 }
 
@@ -251,6 +252,11 @@ export function ShiftDetailSheet({
 											<li>
 												This shift overlaps with another shift you are already
 												registered for
+											</li>
+										)}
+										{schedule.blockedByMaxRequirement && (
+											<li>
+												You have reached the maximum allowed for this period
 											</li>
 										)}
 									</ul>

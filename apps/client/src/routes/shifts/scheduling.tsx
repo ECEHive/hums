@@ -10,6 +10,7 @@ import { SchedulingTimeline } from "@/components/shift-schedules/scheduling-time
 import { ShiftDetailSheet } from "@/components/shift-schedules/shift-detail-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import type { RequiredPermissions } from "@/lib/permissions";
 
@@ -28,6 +29,12 @@ interface SelectedBlock {
 	dayOfWeek: number;
 	timeBlock: string;
 }
+
+const requirementUnitLabels = {
+	count: "shifts",
+	hours: "hours",
+	minutes: "minutes",
+} as const;
 
 function Scheduling() {
 	const queryClient = useQueryClient();
@@ -111,6 +118,42 @@ function Scheduling() {
 
 	const windowMessage = getWindowMessage();
 
+	const requirementProgress = schedulesData?.requirementProgress;
+	const requirementUnit = requirementProgress?.unit ?? null;
+	const requirementUnitLabel = requirementUnit
+		? requirementUnitLabels[requirementUnit]
+		: null;
+	const requirementFormatter =
+		requirementUnit === null
+			? null
+			: new Intl.NumberFormat(undefined, {
+					maximumFractionDigits: requirementUnit === "hours" ? 1 : 0,
+					minimumFractionDigits: 0,
+				});
+
+	const formatRequirementValue = (value: number | null | undefined) => {
+		if (value === null || value === undefined || !requirementFormatter) {
+			return null;
+		}
+		return requirementFormatter.format(value);
+	};
+
+	const currentDisplay = formatRequirementValue(requirementProgress?.current);
+	const hasMinRequirement =
+		requirementProgress?.min !== null && requirementProgress?.min !== undefined;
+	const hasMaxRequirement =
+		requirementProgress?.max !== null && requirementProgress?.max !== undefined;
+	const minDisplay = formatRequirementValue(
+		requirementProgress && hasMinRequirement ? requirementProgress.min : null,
+	);
+	const maxDisplay = formatRequirementValue(
+		requirementProgress && hasMaxRequirement ? requirementProgress.max : null,
+	);
+	const progressPercentRaw = requirementProgress
+		? (requirementProgress.minPercent ?? requirementProgress.maxPercent ?? 0)
+		: 0;
+	const progressPercent = Math.min(100, Math.max(0, progressPercentRaw ?? 0));
+
 	// Handle block click
 	const handleBlockClick = (dayOfWeek: number, timeBlock: string) => {
 		setSelectedBlock({ dayOfWeek, timeBlock });
@@ -154,6 +197,58 @@ function Scheduling() {
 			{selectedPeriodId ? (
 				isWithinVisibilityWindow ? (
 					<>
+						{requirementProgress && requirementUnitLabel && (
+							<div className="rounded-md border border-border/70 bg-muted/20 p-3 text-xs sm:text-sm space-y-2">
+								<div className="flex items-center justify-between text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+									<span>Requirement progress</span>
+									<span>{requirementUnitLabel}</span>
+								</div>
+								<div className="space-y-1">
+									<div className="flex items-center justify-between font-medium">
+										<span>Current</span>
+										<span>
+											{currentDisplay ?? "0"}
+											{hasMinRequirement && minDisplay
+												? ` / ${minDisplay}`
+												: hasMaxRequirement && maxDisplay
+													? ` / ${maxDisplay}`
+													: ""}{" "}
+											{requirementUnitLabel}
+										</span>
+									</div>
+									<Progress className="h-1.5" value={progressPercent} />
+								</div>
+								<div className="grid gap-2 sm:grid-cols-2 justify-between">
+									<div className="flex items-center gap-2 text-muted-foreground">
+										{hasMinRequirement && (
+											<>
+												<span>Min</span>
+												<span className="font-medium text-foreground">
+													{minDisplay
+														? `${minDisplay} ${requirementUnitLabel}`
+														: "–"}
+												</span>
+											</>
+										)}
+									</div>
+									<div className="flex items-center justify-end gap-2 text-muted-foreground">
+										{hasMaxRequirement && (
+											<>
+												<span>Max</span>
+												<span className="font-medium text-foreground">
+													{maxDisplay
+														? `${maxDisplay} ${requirementUnitLabel}`
+														: "–"}
+													{requirementProgress.hasReachedMax
+														? " (reached)"
+														: ""}
+												</span>
+											</>
+										)}
+									</div>
+								</div>
+							</div>
+						)}
 						{windowMessage && (
 							<Alert
 								variant={
