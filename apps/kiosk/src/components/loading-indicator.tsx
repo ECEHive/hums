@@ -10,9 +10,9 @@ export function LoadingIndicator({
 	className = "",
 }: LoadingIndicatorProps) {
 	return (
-		<div className={`flex flex-col items-center gap-4 ${className}`}>
-			<Loader2 className="h-16 w-16 animate-spin text-primary" />
-			<p className="text-[clamp(1rem,2vw,1.25rem)] font-semibold text-muted-foreground">
+		<div className={`flex flex-col items-center kiosk-gap-2 ${className}`}>
+			<Loader2 className="kiosk-icon-lg animate-spin text-primary" />
+			<p className="kiosk-text-xl font-semibold text-muted-foreground">
 				{message}
 			</p>
 		</div>

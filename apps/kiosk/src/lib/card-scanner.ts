@@ -1,4 +1,4 @@
-import { getLogger } from "./logging";
+import { formatLog, getLogger } from "./logging";
 
 const log = getLogger("card-scanner");
 
@@ -140,13 +140,6 @@ export async function connectSerial(
 					if (done) break;
 					if (!value) continue;
 
-					// Log raw incoming chunk
-					try {
-						log.debug("raw-chunk-received", { chunk: value });
-					} catch {
-						/* no-op if logger serialization fails */
-					}
-
 					// Append incoming chunk to buffer
 					bufferParts.buf += value;
 
@@ -166,26 +159,20 @@ export async function connectSerial(
 
 						const parsed = parseCardData(trimmed);
 						if (parsed) {
-							try {
-								log.info("card-parsed", { raw: trimmed, cardId: parsed });
-							} catch {}
+							log.info(formatLog("Card scanned", { cardId: parsed }));
 							onScan({
 								id: crypto.randomUUID(),
 								data: parsed,
 								timestamp: new Date(),
 							});
 						} else {
-							try {
-								log.warn("card-parse-failed", { raw: trimmed });
-							} catch {}
+							log.warn(formatLog("Card parse failed", { raw: trimmed }));
 							// If parsing failed, ignore the record
 						}
 					}
 				} catch (err) {
 					const msg = err instanceof Error ? err.message : String(err);
-					try {
-						log.error("serial-read-error", { message: msg });
-					} catch {}
+					log.error(formatLog("Serial read error", { error: msg }));
 					onError(`Serial read error: ${msg}`);
 					break;
 				}

@@ -1,7 +1,7 @@
 import { Maximize } from "lucide-react";
 import { KioskClock } from "@/components/kiosk-clock";
+import { KioskButton } from "@/components/kiosk-ui";
 import { LoadingIndicator } from "@/components/loading-indicator";
-import { Button } from "@/components/ui/button";
 
 interface ReadyViewProps {
 	logoUrl: string;
@@ -19,39 +19,60 @@ export function ReadyView({
 	return (
 		<div className="w-full h-full flex items-center justify-center overflow-hidden relative">
 			{!isFullscreen && (
-				<div className="absolute top-4 right-4 z-40">
-					<Button
+				<div
+					className="absolute z-40"
+					style={{
+						top: "calc(1rem * var(--kiosk-scale))",
+						right: "calc(1rem * var(--kiosk-scale))",
+					}}
+				>
+					<KioskButton
 						variant="ghost"
-						size="icon"
 						onClick={onToggleFullscreen}
 						title="Enter Fullscreen"
+						style={{
+							width: "calc(2.5rem * var(--kiosk-scale))",
+							height: "calc(2.5rem * var(--kiosk-scale))",
+							padding: 0,
+						}}
 					>
-						<Maximize className="h-5 w-5" />
-					</Button>
+						<Maximize className="kiosk-icon-md" />
+					</KioskButton>
 				</div>
 			)}
 
-			<div className="text-center px-4 py-6 max-h-[85vh] flex flex-col items-center justify-center gap-6 sm:gap-8">
+			<div className="text-center kiosk-gap-6 flex flex-col items-center justify-center">
 				<img
 					src={logoUrl}
 					alt="HUMS"
-					className="h-[clamp(40px,6vw,96px)] w-auto mx-auto flex-shrink-0"
+					className="flex-shrink-0"
+					style={{
+						height: "calc(6rem * var(--kiosk-scale))",
+						width: "auto",
+					}}
 				/>
 
-				<KioskClock className="text-[clamp(1rem,9vw,10rem)] leading-tight max-w-full" />
+				<KioskClock className="kiosk-text-9xl leading-tight max-w-full" />
 
-				{isProcessing ? (
-					<LoadingIndicator message="Processing..." />
-				) : (
-					<div className="space-y-2">
-						<h1 className="text-[clamp(1.25rem,3.2vw,2.25rem)] font-bold leading-tight">
-							Ready to Scan
-						</h1>
-						<p className="text-[clamp(0.95rem,1.8vw,1.1rem)] text-muted-foreground max-w-[80vw] sm:max-w-[60vw] mx-auto">
-							Please scan your card to tap in or out
-						</p>
-					</div>
-				)}
+				<div
+					className="flex items-center justify-center"
+					style={{
+						minHeight: "calc(5rem * var(--kiosk-scale))",
+					}}
+				>
+					{isProcessing ? (
+						<LoadingIndicator message="Processing..." />
+					) : (
+						<div className="kiosk-gap-2 flex flex-col">
+							<h1 className="kiosk-text-4xl font-bold leading-tight">
+								Ready to Scan
+							</h1>
+							<p className="kiosk-text-xl text-muted-foreground kiosk-max-w-lg mx-auto">
+								Please scan your card to tap in or out
+							</p>
+						</div>
+					)}
+				</div>
 			</div>
 		</div>
 	);

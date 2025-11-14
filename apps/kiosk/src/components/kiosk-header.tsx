@@ -5,8 +5,7 @@ import {
 	Minimize2,
 	XCircle,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { KioskBadge, KioskButton } from "@/components/kiosk-ui";
 import type { ConnectionStatus, KioskStatus } from "@/types";
 
 interface KioskHeaderProps {
@@ -61,49 +60,75 @@ export function KioskHeader({
 	const StatusIcon = statusConfig.icon;
 
 	return (
-		<div className="flex-none px-4 py-3 sm:px-6 sm:py-4">
-			<div className="flex items-center justify-between">
-				<img src={logoUrl} alt="HUMS" className="h-8 sm:h-10 w-auto" />
-				<div className="flex items-center gap-3">
-					<Button
+		<div
+			className="flex-none"
+			style={{
+				padding: `calc(0.75rem * var(--kiosk-scale)) calc(1.5rem * var(--kiosk-scale))`,
+			}}
+		>
+			<div className="flex items-center justify-between kiosk-gap-4">
+				<img
+					src={logoUrl}
+					alt="HUMS"
+					style={{
+						height: "calc(2.5rem * var(--kiosk-scale))",
+						width: "auto",
+					}}
+				/>
+				<div className="flex items-center kiosk-gap-3">
+					<KioskButton
 						variant="ghost"
-						size="icon"
 						onClick={onToggleFullscreen}
 						title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+						style={{
+							width: "calc(2.5rem * var(--kiosk-scale))",
+							height: "calc(2.5rem * var(--kiosk-scale))",
+							padding: 0,
+						}}
 					>
 						{isFullscreen ? (
-							<Minimize2 className="h-5 w-5" />
+							<Minimize2 className="kiosk-icon-md" />
 						) : (
-							<Maximize className="h-5 w-5" />
+							<Maximize className="kiosk-icon-md" />
 						)}
-					</Button>
+					</KioskButton>
 					{!kioskStatus.checking && (
-						<Badge
+						<KioskBadge
 							variant={kioskStatus.isKiosk ? "default" : "destructive"}
-							className={`flex items-center gap-2 ${kioskStatus.isKiosk ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+							className={`flex items-center kiosk-gap-2 ${kioskStatus.isKiosk ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+							style={{
+								fontSize: "calc(0.875rem * var(--kiosk-scale))",
+								padding:
+									"calc(0.25rem * var(--kiosk-scale)) calc(0.75rem * var(--kiosk-scale))",
+							}}
 						>
 							{kioskStatus.isKiosk ? (
 								<>
-									<CheckCircle2 className="h-4 w-4" />
-									<span className="text-sm">Kiosk Registered</span>
+									<CheckCircle2 className="kiosk-icon-sm" />
+									<span>Kiosk Registered</span>
 								</>
 							) : (
 								<>
-									<XCircle className="h-4 w-4" />
-									<span className="text-sm">Not Registered</span>
+									<XCircle className="kiosk-icon-sm" />
+									<span>Not Registered</span>
 								</>
 							)}
-						</Badge>
+						</KioskBadge>
 					)}
-					<Badge
+					<KioskBadge
 						variant={statusConfig.variant}
-						className={`flex items-center gap-2 ${statusConfig.className}`}
+						className={`flex items-center kiosk-gap-2 ${statusConfig.className}`}
+						style={{
+							fontSize: "calc(0.875rem * var(--kiosk-scale))",
+							padding:
+								"calc(0.25rem * var(--kiosk-scale)) calc(0.75rem * var(--kiosk-scale))",
+						}}
 					>
 						<StatusIcon
-							className={`h-4 w-4 ${connectionStatus === "connecting" ? "animate-spin" : ""}`}
+							className={`kiosk-icon-sm ${connectionStatus === "connecting" ? "animate-spin" : ""}`}
 						/>
-						<span className="text-sm">{statusConfig.text}</span>
-					</Badge>
+						<span>{statusConfig.text}</span>
+					</KioskBadge>
 				</div>
 			</div>
 		</div>
