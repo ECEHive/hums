@@ -66,6 +66,8 @@ services:
       target: nginx
       args:
         VITE_CAS_PROXY_URL: ${VITE_CAS_PROXY_URL}
+        VITE_CLIENT_SENTRY_DSN: ${VITE_CLIENT_SENTRY_DSN}
+        VITE_KIOSK_SENTRY_DSN: ${VITE_KIOSK_SENTRY_DSN}
     container_name: hums-nginx
     restart: unless-stopped
     ports:

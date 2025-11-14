@@ -5,7 +5,17 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import "./globals.css";
 import "./kiosk.css";
+import * as Sentry from "@sentry/react";
 import App from "./App";
+
+if ((import.meta.env.VITE_KIOSK_SENTRY_DSN ?? "").trim().length > 0) {
+	Sentry.init({
+		dsn: import.meta.env.VITE_KIOSK_SENTRY_DSN,
+		sendDefaultPii: true,
+		enableLogs: true,
+		release: `${__APP_VERSION__}+${__COMMIT_HASH__}`,
+	});
+}
 
 const queryClient = new QueryClient();
 

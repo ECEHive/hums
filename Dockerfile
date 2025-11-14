@@ -43,7 +43,11 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 FROM deps AS build
 
 ARG VITE_CAS_PROXY_URL
+ARG VITE_CLIENT_SENTRY_DSN
+ARG VITE_KIOSK_SENTRY_DSN
 ENV VITE_CAS_PROXY_URL=$VITE_CAS_PROXY_URL
+ENV VITE_CLIENT_SENTRY_DSN=$VITE_CLIENT_SENTRY_DSN
+ENV VITE_KIOSK_SENTRY_DSN=$VITE_KIOSK_SENTRY_DSN
 
 # Copy source code
 COPY . .
@@ -141,6 +145,8 @@ FROM nginx:alpine AS nginx
 # Declare ARG to receive build argument
 # This is not used directly in this stage, but allows passing to the build stage
 ARG VITE_CAS_PROXY_URL
+ARG VITE_CLIENT_SENTRY_DSN
+ARG VITE_KIOSK_SENTRY_DSN
 
 # Copy built static files for both apps
 COPY --from=build /app/apps/client/dist /usr/share/nginx/html/client
