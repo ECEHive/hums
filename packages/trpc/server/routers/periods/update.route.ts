@@ -10,6 +10,9 @@ export const ZUpdateSchema = z
 		name: z.string().min(1).max(100).optional(),
 		start: z.date().optional(),
 		end: z.date().optional(),
+		min: z.number().int().min(0).optional().nullable(),
+		max: z.number().int().min(0).optional().nullable(),
+		minMaxUnit: z.enum(["count", "minutes", "hours"]).optional().nullable(),
 		visibleStart: z.date().optional().nullable(),
 		visibleEnd: z.date().optional().nullable(),
 		scheduleSignupStart: z.date().optional().nullable(),
@@ -80,6 +83,9 @@ export async function updateHandler(options: TUpdateOptions) {
 		name,
 		start,
 		end,
+		min,
+		max,
+		minMaxUnit,
 		visibleStart,
 		visibleEnd,
 		scheduleSignupStart,
@@ -116,6 +122,37 @@ export async function updateHandler(options: TUpdateOptions) {
 		scheduleModifyEnd === undefined
 			? existing.scheduleModifyEnd
 			: scheduleModifyEnd;
+	const nextMin = min === undefined ? existing.min : min;
+	const nextMax = max === undefined ? existing.max : max;
+	let nextMinMaxUnit =
+		minMaxUnit === undefined ? existing.minMaxUnit : minMaxUnit;
+	const minProvided = min !== undefined;
+	const maxProvided = max !== undefined;
+
+	const hasNextMin = nextMin !== null && nextMin !== undefined;
+	const hasNextMax = nextMax !== null && nextMax !== undefined;
+
+	if ((hasNextMin || hasNextMax) && !nextMinMaxUnit) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Select a unit when specifying min or max",
+		});
+	}
+
+	if (
+		typeof nextMin === "number" &&
+		typeof nextMax === "number" &&
+		nextMin > nextMax
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Minimum requirement cannot exceed maximum",
+		});
+	}
+
+	if (!hasNextMin && !hasNextMax && (minProvided || maxProvided)) {
+		nextMinMaxUnit = null;
+	}
 
 	if (nextStart >= nextEnd) {
 		throw new TRPCError({
@@ -164,6 +201,9 @@ export async function updateHandler(options: TUpdateOptions) {
 				...(name !== undefined && { name }),
 				start: nextStart,
 				end: nextEnd,
+				min: nextMin ?? null,
+				max: nextMax ?? null,
+				minMaxUnit: nextMinMaxUnit ?? null,
 				visibleStart: nextVisibleStart,
 				visibleEnd: nextVisibleEnd,
 				scheduleSignupStart: nextScheduleSignupStart,

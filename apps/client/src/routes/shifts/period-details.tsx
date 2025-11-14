@@ -84,7 +84,21 @@ function PeriodDetail() {
 		scheduleSignupEnd: period.scheduleSignupEnd?.toISOString() ?? null,
 		scheduleModifyStart: period.scheduleModifyStart?.toISOString() ?? null,
 		scheduleModifyEnd: period.scheduleModifyEnd?.toISOString() ?? null,
+		min: period.min,
+		max: period.max,
+		minMaxUnit: period.minMaxUnit,
 	};
+
+	const unitLabels = {
+		count: "shifts",
+		hours: "hours",
+		minutes: "minutes",
+	} as const;
+
+	const hasRequirements = period.min !== null || period.max !== null;
+	const unitLabel = period.minMaxUnit
+		? unitLabels[period.minMaxUnit as keyof typeof unitLabels]
+		: null;
 
 	return (
 		<div className="container p-4 space-y-4">
@@ -236,6 +250,38 @@ function PeriodDetail() {
 						) : (
 							<div className="text-sm text-muted-foreground">
 								No modification window configured
+							</div>
+						)}
+					</div>
+
+					<div>
+						<div className="text-sm font-semibold mb-3">Shift Requirements</div>
+						{hasRequirements && unitLabel ? (
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div>
+									<div className="text-sm font-medium text-muted-foreground">
+										Minimum
+									</div>
+									<div>
+										{period.min !== null
+											? `${period.min} ${unitLabel}`
+											: "Not set"}
+									</div>
+								</div>
+								<div>
+									<div className="text-sm font-medium text-muted-foreground">
+										Maximum
+									</div>
+									<div>
+										{period.max !== null
+											? `${period.max} ${unitLabel}`
+											: "Not set"}
+									</div>
+								</div>
+							</div>
+						) : (
+							<div className="text-sm text-muted-foreground">
+								No shift requirements configured
 							</div>
 						)}
 					</div>

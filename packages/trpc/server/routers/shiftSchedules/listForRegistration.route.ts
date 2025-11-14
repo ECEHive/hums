@@ -1,4 +1,7 @@
 import {
+	calculateRequirementComparableValue,
+	convertComparableValueToUnit,
+	convertRequirementThresholdToComparable,
 	getAllSchedulesForBalancing,
 	getPeriodById,
 	getShiftSchedulesForListing,
@@ -105,11 +108,64 @@ export async function listForRegistrationHandler(
 		prisma,
 		userId,
 	);
+	const userSchedulesInPeriod = userRegisteredSchedules.filter(
+		(schedule) => schedule.shiftType?.periodId === period.id,
+	);
+	const schedulesForOverlap = userRegisteredSchedules.map(
+		({ shiftType, ...rest }) => rest,
+	);
 
 	// Get all schedules for balancing checks (cached for performance)
 	const allSchedulesForBalancing = await getAllSchedulesForBalancing(prisma);
 
 	// For each schedule, calculate availability and registration eligibility
+	const requirementUnit =
+		period.minMaxUnit && (period.min !== null || period.max !== null)
+			? period.minMaxUnit
+			: null;
+
+	let requirementProgress: {
+		unit: typeof period.minMaxUnit;
+		min: number | null;
+		max: number | null;
+		current: number;
+		minPercent: number | null;
+		maxPercent: number | null;
+		hasReachedMax: boolean;
+	} | null = null;
+
+	if (requirementUnit) {
+		const currentComparable = calculateRequirementComparableValue(
+			userSchedulesInPeriod,
+			requirementUnit,
+		);
+		const minComparable =
+			period.min !== null && period.min !== undefined
+				? convertRequirementThresholdToComparable(period.min, requirementUnit)
+				: undefined;
+		const maxComparable =
+			period.max !== null && period.max !== undefined
+				? convertRequirementThresholdToComparable(period.max, requirementUnit)
+				: undefined;
+		const hasReachedMax =
+			maxComparable !== undefined && currentComparable >= maxComparable;
+		requirementProgress = {
+			unit: requirementUnit,
+			min: period.min ?? null,
+			max: period.max ?? null,
+			current: convertComparableValueToUnit(currentComparable, requirementUnit),
+			minPercent:
+				minComparable && minComparable > 0
+					? Math.min(100, (currentComparable / minComparable) * 100)
+					: null,
+			maxPercent:
+				maxComparable && maxComparable > 0
+					? Math.min(100, (currentComparable / maxComparable) * 100)
+					: null,
+			hasReachedMax,
+		};
+	}
+
 	const schedulesWithAvailability = schedules.map((schedule) => {
 		const isRegistered = schedule.users.some((u) => u.id === userId);
 
@@ -121,7 +177,7 @@ export async function listForRegistrationHandler(
 
 		// Check for time overlap with existing registrations
 		const hasOverlap = !isRegistered
-			? hasTimeOverlap(schedule, userRegisteredSchedules)
+			? hasTimeOverlap(schedule, schedulesForOverlap)
 			: false;
 
 		// Check balancing restrictions
@@ -141,6 +197,9 @@ export async function listForRegistrationHandler(
 		// 5. There are available slots
 		// 6. Does not overlap with existing registrations
 		// 7. Within signup window (for new registrations)
+		const blockedByMaxRequirement =
+			!isRegistered && (requirementProgress?.hasReachedMax ?? false);
+
 		const canRegister =
 			!isRegistered &&
 			canSelfAssign &&
@@ -148,7 +207,8 @@ export async function listForRegistrationHandler(
 			meetsBalancing &&
 			availableSlots > 0 &&
 			!hasOverlap &&
-			isWithinSignupWindow;
+			isWithinSignupWindow &&
+			!blockedByMaxRequirement;
 
 		// User can unregister if:
 		// 1. Already registered
@@ -175,6 +235,7 @@ export async function listForRegistrationHandler(
 			meetsRoleRequirement: meetsRole,
 			meetsBalancingRequirement: meetsBalancing,
 			hasTimeOverlap: hasOverlap,
+			blockedByMaxRequirement,
 		};
 	});
 
@@ -184,5 +245,6 @@ export async function listForRegistrationHandler(
 		isWithinSignupWindow,
 		isWithinModifyWindow,
 		isWithinVisibilityWindow,
+		requirementProgress,
 	};
 }

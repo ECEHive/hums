@@ -17,7 +17,7 @@ if ((import.meta.env.VITE_CLIENT_SENTRY_DSN ?? "").trim().length > 0) {
 		dsn: import.meta.env.VITE_CLIENT_SENTRY_DSN,
 		sendDefaultPii: true,
 		enableLogs: true,
-		release: `${__APP_VERSION__}+${__COMMIT_HASH__}`,
+		release: __APP_VERSION__,
 	});
 }
 
