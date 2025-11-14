@@ -43,6 +43,8 @@ jobs:
           version: 10
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Build Prisma
+        run: pnpm run --filter=@ecehive/prisma generate
       - name: Run type checks
         run: pnpm run tsc
 
