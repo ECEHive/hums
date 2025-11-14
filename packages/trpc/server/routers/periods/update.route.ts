@@ -96,14 +96,26 @@ export async function updateHandler(options: TUpdateOptions) {
 
 	const nextStart = start ?? existing.start;
 	const nextEnd = end ?? existing.end;
-	const nextVisibleStart = visibleStart ?? existing.visibleStart;
-	const nextVisibleEnd = visibleEnd ?? existing.visibleEnd;
+	const nextVisibleStart =
+		visibleStart === undefined ? existing.visibleStart : visibleStart;
+	const nextVisibleEnd =
+		visibleEnd === undefined ? existing.visibleEnd : visibleEnd;
 	const nextScheduleSignupStart =
-		scheduleSignupStart ?? existing.scheduleSignupStart;
-	const nextScheduleSignupEnd = scheduleSignupEnd ?? existing.scheduleSignupEnd;
+		scheduleSignupStart === undefined
+			? existing.scheduleSignupStart
+			: scheduleSignupStart;
+	const nextScheduleSignupEnd =
+		scheduleSignupEnd === undefined
+			? existing.scheduleSignupEnd
+			: scheduleSignupEnd;
 	const nextScheduleModifyStart =
-		scheduleModifyStart ?? existing.scheduleModifyStart;
-	const nextScheduleModifyEnd = scheduleModifyEnd ?? existing.scheduleModifyEnd;
+		scheduleModifyStart === undefined
+			? existing.scheduleModifyStart
+			: scheduleModifyStart;
+	const nextScheduleModifyEnd =
+		scheduleModifyEnd === undefined
+			? existing.scheduleModifyEnd
+			: scheduleModifyEnd;
 
 	if (nextStart >= nextEnd) {
 		throw new TRPCError({
