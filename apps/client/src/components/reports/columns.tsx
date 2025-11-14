@@ -11,11 +11,11 @@ export type UserReport = {
 	username: string;
 	shiftOccurrences: {
 		id: number;
-		shiftScheduleId: number;
+		shiftOccurrenceId: number;
 	}[];
 	shiftAttendances: {
 		id: number;
-		shiftOccurrenceId: number;
+		shiftAttendanceId: number;
 	}[];
 	totalScheduledTime: number;
 	totalAttendedTime: number;
@@ -23,16 +23,16 @@ export type UserReport = {
 	attendancePercentage: number;
 	shiftAnomalies: {
 		id: number;
-		shiftOccurrenceId: number;
+		shiftAttendanceId: number;
 		reason: string;
 	}[];
 	droppedShifts: {
 		id: number;
-		shiftOccurrenceId: number;
+		shiftAttendanceId: number;
 	}[];
 	scheduledMakeupShifts: {
 		id: number;
-		shiftOccurrenceId: number;
+		shiftAttendanceId: number;
 	}[];
 	permissions: {
 		id: number;
