@@ -1,4 +1,4 @@
-import { prisma } from "@ecehive/prisma";
+import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import z from "zod";
 import type { TProtectedProcedureContext } from "../../trpc";
 
@@ -92,10 +92,27 @@ export async function listMyHandler(options: TListMyOptions) {
 	]);
 
 	// Calculate time on shift percentage for each attendance
+	const droppedStatuses = new Set<ShiftAttendanceStatus>([
+		"dropped" as ShiftAttendanceStatus,
+		"dropped_makeup" as ShiftAttendanceStatus,
+	]);
+
 	const attendancesWithPercentage = attendances.map((attendance) => {
 		let timeOnShiftPercentage: number | null = null;
 		let scheduledHours: number | null = null;
 		let actualHours: number | null = null;
+		const isDroppedStatus = droppedStatuses.has(
+			attendance.status as ShiftAttendanceStatus,
+		);
+
+		if (isDroppedStatus) {
+			return {
+				...attendance,
+				scheduledHours,
+				actualHours,
+				timeOnShiftPercentage,
+			};
+		}
 
 		// Calculate scheduled shift duration
 		const [startHour, startMin] =

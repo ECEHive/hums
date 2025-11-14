@@ -4,8 +4,13 @@ import {
 	router,
 } from "../../trpc";
 import { dropHandler, ZDropSchema } from "./drop.route";
+import { dropMakeupHandler, ZDropMakeupSchema } from "./dropMakeup.route";
 import { getHandler, ZGetSchema } from "./get.route";
 import { listHandler, ZListSchema } from "./list.route";
+import {
+	listMakeupOptionsHandler,
+	ZListMakeupOptionsSchema,
+} from "./listMakeupOptions.route";
 import { listMyHandler, ZListMySchema } from "./listMy.route";
 import { listMyPastHandler, ZListMyPastSchema } from "./listMyPast.route";
 import { pickupHandler, ZPickupSchema } from "./pickup.route";
@@ -27,4 +32,10 @@ export const shiftOccurrencesRouter = router({
 	drop: permissionProtectedProcedure("shift_occurrences.drop")
 		.input(ZDropSchema)
 		.mutation(dropHandler),
+	dropMakeup: permissionProtectedProcedure("shift_occurrences.drop")
+		.input(ZDropMakeupSchema)
+		.mutation(dropMakeupHandler),
+	listMakeupOptions: permissionProtectedProcedure("shift_occurrences.drop")
+		.input(ZListMakeupOptionsSchema)
+		.query(listMakeupOptionsHandler),
 });
