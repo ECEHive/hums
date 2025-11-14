@@ -1,4 +1,4 @@
-import { prisma } from "@ecehive/prisma";
+import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import z from "zod";
 import type { TProtectedProcedureContext } from "../../trpc";
 
@@ -61,34 +61,55 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		},
 	});
 
-	// Calculate statistics
-	const totalShifts = attendances.length;
-	const presentCount = attendances.filter((a) => a.status === "present").length;
-	const absentCount = attendances.filter((a) => a.status === "absent").length;
-	const lateCount = attendances.filter(
-		(a) => a.status === "arrived_late",
-	).length;
-	const leftEarlyCount = attendances.filter(
-		(a) => a.status === "left_early",
-	).length;
+	const droppedStatus = "dropped" as ShiftAttendanceStatus;
+	const droppedMakeupStatus = "dropped_makeup" as ShiftAttendanceStatus;
 
-	// Calculate attendance rate
-	const attendanceRate =
-		totalShifts > 0 ? (presentCount / totalShifts) * 100 : 0;
-
-	// Calculate total hours worked
+	let presentCount = 0;
+	let absentCount = 0;
+	let lateCount = 0;
+	let leftEarlyCount = 0;
 	let totalHoursWorked = 0;
 	let totalScheduledHours = 0;
+	let droppedCount = 0;
+	let droppedMakeupCount = 0;
+	let attendanceEligibleShiftCount = 0;
 
 	for (const attendance of attendances) {
-		// Calculate actual hours worked
+		if (attendance.status === droppedStatus) {
+			droppedCount++;
+			continue;
+		}
+
+		if (attendance.status === droppedMakeupStatus) {
+			droppedMakeupCount++;
+			continue;
+		}
+
+		attendanceEligibleShiftCount++;
+
+		switch (attendance.status) {
+			case "present":
+				presentCount++;
+				break;
+			case "absent":
+				absentCount++;
+				break;
+			case "arrived_late":
+				lateCount++;
+				break;
+			case "left_early":
+				leftEarlyCount++;
+				break;
+			default:
+				break;
+		}
+
 		if (attendance.timeIn && attendance.timeOut) {
 			const durationMs =
 				attendance.timeOut.getTime() - attendance.timeIn.getTime();
 			totalHoursWorked += durationMs / (1000 * 60 * 60);
 		}
 
-		// Calculate scheduled shift duration
 		const [startHour, startMin] =
 			attendance.shiftOccurrence.shiftSchedule.startTime.split(":").map(Number);
 		const [endHour, endMin] = attendance.shiftOccurrence.shiftSchedule.endTime
@@ -99,7 +120,6 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		const shiftEnd = new Date(attendance.shiftOccurrence.timestamp);
 		shiftEnd.setHours(endHour, endMin, 0, 0);
 
-		// Handle shifts that cross midnight
 		if (shiftEnd < shiftStart) {
 			shiftEnd.setDate(shiftEnd.getDate() + 1);
 		}
@@ -108,7 +128,11 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		totalScheduledHours += scheduledDurationMs / (1000 * 60 * 60);
 	}
 
-	// Calculate time on shift percentage (actual time worked vs scheduled time)
+	const totalShifts = attendances.length;
+	const attendanceRate =
+		attendanceEligibleShiftCount > 0
+			? (presentCount / attendanceEligibleShiftCount) * 100
+			: 0;
 	const timeOnShiftPercentage =
 		totalScheduledHours > 0
 			? (totalHoursWorked / totalScheduledHours) * 100
@@ -118,6 +142,7 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 	const now = new Date();
 	const upcomingShiftsWhere: {
 		userId: number;
+		status: { notIn: ShiftAttendanceStatus[] };
 		shiftOccurrence: {
 			timestamp: { gt: Date };
 			shiftSchedule?: {
@@ -128,6 +153,7 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		};
 	} = {
 		userId,
+		status: { notIn: [droppedStatus, droppedMakeupStatus] },
 		shiftOccurrence: {
 			timestamp: { gt: now },
 		},
@@ -151,6 +177,8 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		absentCount,
 		lateCount,
 		leftEarlyCount,
+		droppedCount,
+		droppedMakeupCount,
 		attendanceRate: Math.round(attendanceRate * 100) / 100,
 		totalHoursWorked: Math.round(totalHoursWorked * 100) / 100,
 		totalScheduledHours: Math.round(totalScheduledHours * 100) / 100,

@@ -67,6 +67,13 @@ export async function pickupHandler(options: TPickupOptions) {
 		});
 	}
 
+	if (occurrence.users.length > 0) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "This shift occurrence already has someone assigned",
+		});
+	}
+
 	// Assign user to the occurrence
 	await prisma.shiftOccurrence.update({
 		where: { id: shiftOccurrenceId },

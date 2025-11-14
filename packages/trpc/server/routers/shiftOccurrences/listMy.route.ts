@@ -2,6 +2,7 @@ import { computeOccurrenceEnd } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import { isWithinModifyWindow } from "./utils";
 
 export const ZListMySchema = z.object({
 	periodId: z.number().min(1),
@@ -60,7 +61,11 @@ export async function listMyHandler(options: TListMyOptions) {
 		include: {
 			shiftSchedule: {
 				include: {
-					shiftType: true,
+					shiftType: {
+						include: {
+							period: true,
+						},
+					},
 				},
 			},
 			users: {
@@ -97,6 +102,10 @@ export async function listMyHandler(options: TListMyOptions) {
 			);
 
 			const isActive = occStart <= now && occEnd > now;
+			const period = occ.shiftSchedule.shiftType.period;
+			const windowIsOpen = isWithinModifyWindow(period, now);
+			const isBeforeStart = occStart > now;
+			const canModify = windowIsOpen && isBeforeStart;
 
 			// User is only tapped in if:
 			// 1. The shift is currently active
@@ -113,6 +122,7 @@ export async function listMyHandler(options: TListMyOptions) {
 				timestamp: occ.timestamp,
 				slot: occ.slot,
 				shiftScheduleId: occ.shiftScheduleId,
+				shiftTypeId: occ.shiftSchedule.shiftType.id,
 				shiftTypeName: occ.shiftSchedule.shiftType.name,
 				shiftTypeLocation: occ.shiftSchedule.shiftType.location,
 				shiftTypeColor: occ.shiftSchedule.shiftType.color,
@@ -124,6 +134,13 @@ export async function listMyHandler(options: TListMyOptions) {
 				isActive,
 				isTappedIn,
 				occEnd,
+				canDrop: canModify,
+				canMakeup: canModify,
+				modificationWindow: {
+					start: period.scheduleModifyStart,
+					end: period.scheduleModifyEnd,
+					isOpen: windowIsOpen,
+				},
 			};
 		})
 		.filter((occ) => occ.occEnd > now); // Only include shifts that haven't ended yet
