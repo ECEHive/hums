@@ -1,3 +1,4 @@
+import { lockShiftOccurrence } from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -20,6 +21,15 @@ export async function dropHandler(options: TDropOptions) {
 	const userId = options.ctx.userId;
 
 	await prisma.$transaction(async (tx) => {
+		const hasLock = await lockShiftOccurrence(tx, shiftOccurrenceId);
+
+		if (hasLock === 0) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Shift occurrence not found",
+			});
+		}
+
 		// Verify the shift occurrence exists and get related data
 		const occurrence = await tx.shiftOccurrence.findUnique({
 			where: { id: shiftOccurrenceId },

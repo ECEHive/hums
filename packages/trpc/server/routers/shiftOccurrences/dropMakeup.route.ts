@@ -1,3 +1,4 @@
+import { lockShiftOccurrences } from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -46,6 +47,11 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 	]);
 
 	await prisma.$transaction(async (tx) => {
+		await lockShiftOccurrences(tx, [
+			shiftOccurrenceId,
+			makeupShiftOccurrenceId,
+		]);
+
 		const dropOccurrence = await tx.shiftOccurrence.findUnique({
 			where: { id: shiftOccurrenceId },
 			include: {
