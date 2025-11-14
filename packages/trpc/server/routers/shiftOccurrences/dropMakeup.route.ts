@@ -81,7 +81,7 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message:
-					"You can only makeup shifts that have not started yet. This shift is already in progress or finished.",
+					"You can only drop shifts that have not started yet. This shift is already in progress or finished.",
 			});
 		}
 
