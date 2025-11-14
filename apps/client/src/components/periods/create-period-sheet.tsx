@@ -16,6 +16,13 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
@@ -26,21 +33,53 @@ import {
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
 
-const formSchema = z.object({
-	name: z
-		.string()
-		.min(1, "Name is required")
-		.min(2, "Name must be at least 2 characters")
-		.max(100, "Name must be at most 100 characters"),
-	start: z.date(),
-	end: z.date(),
-	visibleStart: z.date().nullable(),
-	visibleEnd: z.date().nullable(),
-	scheduleSignupStart: z.date().nullable(),
-	scheduleSignupEnd: z.date().nullable(),
-	scheduleModifyStart: z.date().nullable(),
-	scheduleModifyEnd: z.date().nullable(),
-});
+const unitSchema = z.enum(["count", "minutes", "hours"]);
+
+const formSchema = z
+	.object({
+		name: z
+			.string()
+			.min(1, "Name is required")
+			.min(2, "Name must be at least 2 characters")
+			.max(100, "Name must be at most 100 characters"),
+		start: z.date(),
+		end: z.date(),
+		min: z.number().int().min(0).nullable(),
+		max: z.number().int().min(0).nullable(),
+		minMaxUnit: unitSchema.nullable(),
+		visibleStart: z.date().nullable(),
+		visibleEnd: z.date().nullable(),
+		scheduleSignupStart: z.date().nullable(),
+		scheduleSignupEnd: z.date().nullable(),
+		scheduleModifyStart: z.date().nullable(),
+		scheduleModifyEnd: z.date().nullable(),
+	})
+	.superRefine((data, ctx) => {
+		const hasMin = data.min !== null && data.min !== undefined;
+		const hasMax = data.max !== null && data.max !== undefined;
+
+		if ((hasMin || hasMax) && !data.minMaxUnit) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Select a unit when specifying min or max",
+				path: ["minMaxUnit"],
+			});
+		}
+
+		if (
+			hasMin &&
+			hasMax &&
+			typeof data.min === "number" &&
+			typeof data.max === "number" &&
+			data.min > data.max
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Minimum requirement cannot exceed maximum",
+				path: ["min"],
+			});
+		}
+	});
 
 interface CreatePeriodSheetProps {
 	open: boolean;
@@ -66,6 +105,9 @@ export function CreatePeriodSheet({
 			name: string;
 			start: Date;
 			end: Date;
+			min: number | null;
+			max: number | null;
+			minMaxUnit: z.infer<typeof unitSchema> | null;
 			visibleStart: Date | null;
 			visibleEnd: Date | null;
 			scheduleSignupStart: Date | null;
@@ -98,6 +140,9 @@ export function CreatePeriodSheet({
 			name: "",
 			start: null as Date | null,
 			end: null as Date | null,
+			min: null as number | null,
+			max: null as number | null,
+			minMaxUnit: null as z.infer<typeof unitSchema> | null,
 			visibleStart: null as Date | null,
 			visibleEnd: null as Date | null,
 			scheduleSignupStart: null as Date | null,
@@ -116,6 +161,9 @@ export function CreatePeriodSheet({
 					name: value.name,
 					start: value.start,
 					end: value.end,
+					min: value.min,
+					max: value.max,
+					minMaxUnit: value.minMaxUnit,
 					visibleStart: value.visibleStart,
 					visibleEnd: value.visibleEnd,
 					scheduleSignupStart: value.scheduleSignupStart,
@@ -256,6 +304,117 @@ export function CreatePeriodSheet({
 									);
 								}}
 							/>
+						</div>
+
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<h3 className="text-sm font-medium">
+									Shift Requirements
+									<span className="text-muted-foreground text-xs font-normal ml-1">
+										(optional)
+									</span>
+								</h3>
+								<FieldDescription>
+									Specify a recommended minimum or enforced maximum number of
+									shifts for this period.
+								</FieldDescription>
+							</div>
+							<div className="grid gap-4 sm:grid-cols-3">
+								<form.Field
+									name="min"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return (
+											<div className="space-y-1">
+												<FieldLabel htmlFor={field.name}>Minimum</FieldLabel>
+												<Input
+													id={field.name}
+													type="number"
+													min={0}
+													step={1}
+													value={field.state.value ?? ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => {
+														const numericValue =
+															e.target.value === ""
+																? null
+																: Number(e.target.value);
+														field.handleChange(numericValue);
+													}}
+													placeholder="e.g. 4"
+												/>
+												{isInvalid && (
+													<FieldError errors={field.state.meta.errors} />
+												)}
+											</div>
+										);
+									}}
+								/>
+								<form.Field
+									name="max"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return (
+											<div className="space-y-1">
+												<FieldLabel htmlFor={field.name}>Maximum</FieldLabel>
+												<Input
+													id={field.name}
+													type="number"
+													min={0}
+													step={1}
+													value={field.state.value ?? ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => {
+														const numericValue =
+															e.target.value === ""
+																? null
+																: Number(e.target.value);
+														field.handleChange(numericValue);
+													}}
+													placeholder="e.g. 10"
+												/>
+												{isInvalid && (
+													<FieldError errors={field.state.meta.errors} />
+												)}
+											</div>
+										);
+									}}
+								/>
+								<form.Field
+									name="minMaxUnit"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return (
+											<div className="space-y-1">
+												<FieldLabel>Unit</FieldLabel>
+												<Select
+													value={field.state.value ?? ""}
+													onValueChange={(value) =>
+														field.handleChange(
+															value as z.infer<typeof unitSchema>,
+														)
+													}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Unit" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="count">Shift count</SelectItem>
+														<SelectItem value="hours">Hours</SelectItem>
+														<SelectItem value="minutes">Minutes</SelectItem>
+													</SelectContent>
+												</Select>
+												{isInvalid && (
+													<FieldError errors={field.state.meta.errors} />
+												)}
+											</div>
+										);
+									}}
+								/>
+							</div>
 						</div>
 
 						<div className="space-y-2">
