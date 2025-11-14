@@ -4,6 +4,7 @@ import {
 	getShiftScheduleForRegistration,
 	getUserRegisteredSchedules,
 	getUserWithRoles,
+	lockShiftSchedule,
 	shiftScheduleEvents,
 	validateBalancingRequirement,
 	validateNoTimeOverlap,
@@ -31,6 +32,15 @@ export async function registerHandler(options: TRegisterOptions) {
 	let emittedPeriodId: number = 0;
 
 	await prisma.$transaction(async (tx) => {
+		const isLocked = await lockShiftSchedule(tx, shiftScheduleId);
+
+		if (!isLocked) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Shift schedule not found",
+			});
+		}
+
 		// Get the shift schedule the user wants to register for
 		const targetSchedule = await getShiftScheduleForRegistration(
 			tx,

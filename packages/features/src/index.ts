@@ -1,4 +1,5 @@
 export * from "./assignments/generators";
+export * from "./db/locking";
 export * from "./periods/generate";
 export * from "./shift-schedules/events";
 export * from "./shift-schedules/generate";
