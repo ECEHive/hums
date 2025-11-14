@@ -17,7 +17,7 @@ import { registerHandler, ZRegisterSchema } from "./register.route";
 import { unregisterHandler, ZUnregisterSchema } from "./unregister.route";
 import { updateHandler, ZUpdateSchema } from "./update.route";
 
-export const shiftSchedulesRouter: ReturnType<typeof router> = router({
+export const shiftSchedulesRouter = router({
 	list: permissionProtectedProcedure("shift_schedules.list")
 		.input(ZListSchema)
 		.query(listHandler),
