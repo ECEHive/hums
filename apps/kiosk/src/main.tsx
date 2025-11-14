@@ -4,6 +4,7 @@ import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import "./globals.css";
+import "./kiosk.css";
 import App from "./App";
 
 const queryClient = new QueryClient();
