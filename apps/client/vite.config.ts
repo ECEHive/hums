@@ -1,4 +1,3 @@
-import * as child from "node:child_process";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
@@ -12,14 +11,11 @@ import packageConfig from "./package.json";
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), ["VITE_"]);
 
-	const commitHash = child.execSync("git rev-parse --short HEAD").toString();
-
 	return {
 		publicDir: "public",
 		base: "/",
 		define: {
-			__APP_VERSION__: JSON.stringify(packageConfig.version) ?? "dev",
-			__COMMIT_HASH__: JSON.stringify(commitHash) ?? "unknown",
+			__APP_VERSION__: JSON.stringify(packageConfig.version ?? "dev"),
 		},
 		server: {
 			port: env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 44831,
