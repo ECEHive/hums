@@ -3,12 +3,16 @@
 	"version": "0.0.0",
 	"type": "module",
 	"main": "./src/index.ts",
+	"scripts": {
+		"tsc": "tsc --noEmit"
+	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
 		"fast-xml-parser": "^5.2.5",
 		"jose": "^6.1.0"
 	},
 	"devDependencies": {
-		"@ecehive/config": "workspace:*"
+		"@ecehive/config": "workspace:*",
+		"typescript": "^5.9.2"
 	}
 }
