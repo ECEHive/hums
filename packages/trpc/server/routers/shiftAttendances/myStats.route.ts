@@ -1,3 +1,7 @@
+import {
+	computeOccurrenceEnd,
+	computeOccurrenceStart,
+} from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import z from "zod";
 import type { TProtectedProcedureContext } from "../../trpc";
@@ -47,6 +51,9 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 			status: true,
 			timeIn: true,
 			timeOut: true,
+			didArriveLate: true,
+			didLeaveEarly: true,
+			isMakeup: true,
 			shiftOccurrence: {
 				select: {
 					timestamp: true,
@@ -63,6 +70,7 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 
 	const droppedStatus = "dropped" as ShiftAttendanceStatus;
 	const droppedMakeupStatus = "dropped_makeup" as ShiftAttendanceStatus;
+	const upcomingStatus = "upcoming" as ShiftAttendanceStatus;
 
 	let presentCount = 0;
 	let absentCount = 0;
@@ -73,6 +81,8 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 	let droppedCount = 0;
 	let droppedMakeupCount = 0;
 	let attendanceEligibleShiftCount = 0;
+	let upcomingShiftsCount = 0;
+	const now = new Date();
 
 	for (const attendance of attendances) {
 		if (attendance.status === droppedStatus) {
@@ -85,23 +95,41 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 			continue;
 		}
 
+		// Handle upcoming status explicitly
+		if (attendance.status === upcomingStatus) {
+			upcomingShiftsCount++;
+			continue;
+		}
+
+		const scheduledStart = computeOccurrenceStart(
+			new Date(attendance.shiftOccurrence.timestamp),
+			attendance.shiftOccurrence.shiftSchedule.startTime,
+		);
+		const scheduledEnd = computeOccurrenceEnd(
+			scheduledStart,
+			attendance.shiftOccurrence.shiftSchedule.startTime,
+			attendance.shiftOccurrence.shiftSchedule.endTime,
+		);
+
+		// Also check by date in case status hasn't been updated yet
+		if (scheduledStart > now) {
+			upcomingShiftsCount++;
+			continue;
+		}
+
 		attendanceEligibleShiftCount++;
 
-		switch (attendance.status) {
-			case "present":
-				presentCount++;
-				break;
-			case "absent":
-				absentCount++;
-				break;
-			case "arrived_late":
-				lateCount++;
-				break;
-			case "left_early":
-				leftEarlyCount++;
-				break;
-			default:
-				break;
+		if (attendance.status === "present") {
+			presentCount++;
+		} else if (attendance.status === "absent") {
+			absentCount++;
+		}
+
+		if (attendance.didArriveLate) {
+			lateCount++;
+		}
+		if (attendance.didLeaveEarly) {
+			leftEarlyCount++;
 		}
 
 		if (attendance.timeIn && attendance.timeOut) {
@@ -110,21 +138,8 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 			totalHoursWorked += durationMs / (1000 * 60 * 60);
 		}
 
-		const [startHour, startMin] =
-			attendance.shiftOccurrence.shiftSchedule.startTime.split(":").map(Number);
-		const [endHour, endMin] = attendance.shiftOccurrence.shiftSchedule.endTime
-			.split(":")
-			.map(Number);
-		const shiftStart = new Date(attendance.shiftOccurrence.timestamp);
-		shiftStart.setHours(startHour, startMin, 0, 0);
-		const shiftEnd = new Date(attendance.shiftOccurrence.timestamp);
-		shiftEnd.setHours(endHour, endMin, 0, 0);
-
-		if (shiftEnd < shiftStart) {
-			shiftEnd.setDate(shiftEnd.getDate() + 1);
-		}
-
-		const scheduledDurationMs = shiftEnd.getTime() - shiftStart.getTime();
+		const scheduledDurationMs =
+			scheduledEnd.getTime() - scheduledStart.getTime();
 		totalScheduledHours += scheduledDurationMs / (1000 * 60 * 60);
 	}
 
@@ -137,39 +152,6 @@ export async function myStatsHandler(options: TMyStatsOptions) {
 		totalScheduledHours > 0
 			? (totalHoursWorked / totalScheduledHours) * 100
 			: 0;
-
-	// Get upcoming shifts (occurrences assigned to user that haven't happened yet)
-	const now = new Date();
-	const upcomingShiftsWhere: {
-		userId: number;
-		status: { notIn: ShiftAttendanceStatus[] };
-		shiftOccurrence: {
-			timestamp: { gt: Date };
-			shiftSchedule?: {
-				shiftType?: {
-					periodId?: number;
-				};
-			};
-		};
-	} = {
-		userId,
-		status: { notIn: [droppedStatus, droppedMakeupStatus] },
-		shiftOccurrence: {
-			timestamp: { gt: now },
-		},
-	};
-
-	if (periodId) {
-		upcomingShiftsWhere.shiftOccurrence.shiftSchedule = {
-			shiftType: {
-				periodId,
-			},
-		};
-	}
-
-	const upcomingShiftsCount = await prisma.shiftAttendance.count({
-		where: upcomingShiftsWhere,
-	});
 
 	return {
 		totalShifts,

@@ -111,23 +111,66 @@ function AttendancePage() {
 		return `${hours}h ${minutes}m`;
 	};
 
-	const getStatusBadge = (status: string) => {
-		switch (status) {
+	const getStatusBadge = (record: {
+		status: string;
+		droppedNotes?: string | null;
+	}) => {
+		switch (record.status) {
+			case "upcoming":
+				return (
+					<Badge variant="outline" className="text-muted-foreground">
+						Upcoming
+					</Badge>
+				);
 			case "present":
 				return <Badge className="bg-green-600">Present</Badge>;
 			case "absent":
 				return <Badge variant="destructive">Absent</Badge>;
-			case "arrived_late":
-				return <Badge className="bg-yellow-600">Late</Badge>;
-			case "left_early":
-				return <Badge className="bg-orange-600">Left Early</Badge>;
 			case "dropped":
-				return <Badge variant="outline">Dropped</Badge>;
 			case "dropped_makeup":
-				return <Badge variant="outline">Dropped w/ Makeup</Badge>;
+				return (
+					<div className="flex flex-col gap-1">
+						<Badge variant="outline">
+							{record.status === "dropped" ? "Dropped" : "Dropped w/ Makeup"}
+						</Badge>
+					</div>
+				);
 			default:
-				return <Badge variant="outline">{status}</Badge>;
+				return <Badge variant="outline">{record.status}</Badge>;
 		}
+	};
+
+	const renderStatusFlags = (record?: {
+		didArriveLate?: boolean | null;
+		didLeaveEarly?: boolean | null;
+		isMakeup?: boolean | null;
+	}) => {
+		if (!record) return null;
+		const badges: React.ReactNode[] = [];
+		if (record.isMakeup) {
+			badges.push(
+				<Badge key="makeup" variant="outline">
+					Makeup
+				</Badge>,
+			);
+		}
+		if (record.didArriveLate) {
+			badges.push(
+				<Badge key="late" className="bg-yellow-600">
+					Arrived Late
+				</Badge>,
+			);
+		}
+		if (record.didLeaveEarly) {
+			badges.push(
+				<Badge key="left-early" className="bg-orange-600">
+					Left Early
+				</Badge>,
+			);
+		}
+		return badges.length > 0 ? (
+			<div className="flex flex-wrap gap-1">{badges}</div>
+		) : null;
 	};
 
 	const getDayOfWeek = (dayNum: number) => {
@@ -219,7 +262,7 @@ function AttendancePage() {
 				<CardHeader>
 					<div className="flex justify-between items-center">
 						<div>
-							<CardTitle>Attendance History</CardTitle>
+							<CardTitle>Attendance Records</CardTitle>
 							<CardDescription>
 								View your shift attendance records for this period
 							</CardDescription>
@@ -306,7 +349,12 @@ function AttendancePage() {
 												</span>
 											</div>
 										</TableCell>
-										<TableCell>{getStatusBadge(attendance.status)}</TableCell>
+										<TableCell>
+											<div className="flex flex-col gap-1">
+												{getStatusBadge(attendance)}
+												{renderStatusFlags(attendance)}
+											</div>
+										</TableCell>
 										<TableCell>
 											{attendance.timeIn ? formatDate(attendance.timeIn) : "-"}
 										</TableCell>
