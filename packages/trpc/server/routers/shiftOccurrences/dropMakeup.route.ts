@@ -1,4 +1,8 @@
-import { lockShiftOccurrences } from "@ecehive/features";
+import {
+	computeOccurrenceEnd,
+	computeOccurrenceStart,
+	lockShiftOccurrences,
+} from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -10,6 +14,7 @@ export const ZDropMakeupSchema = z
 	.object({
 		shiftOccurrenceId: z.number().min(1),
 		makeupShiftOccurrenceId: z.number().min(1),
+		notes: z.string().max(500).optional(),
 	})
 	.superRefine((value, ctx) => {
 		if (value.shiftOccurrenceId === value.makeupShiftOccurrenceId) {
@@ -29,9 +34,10 @@ export type TDropMakeupOptions = {
 };
 
 export async function dropMakeupHandler(options: TDropMakeupOptions) {
-	const { shiftOccurrenceId, makeupShiftOccurrenceId } = options.input;
+	const { shiftOccurrenceId, makeupShiftOccurrenceId, notes } = options.input;
 	const userId = options.ctx.userId;
 	const skipPermissionCheck = options.ctx.user.isSystemUser;
+	const sanitizedNotes = notes?.trim() ? notes.trim() : undefined;
 
 	await Promise.all([
 		ensureUserHasPermission({
@@ -83,7 +89,12 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 		}
 
 		const now = new Date();
-		if (dropOccurrence.timestamp <= now) {
+		const dropOccurrenceStart = computeOccurrenceStart(
+			new Date(dropOccurrence.timestamp),
+			dropOccurrence.shiftSchedule.startTime,
+		);
+
+		if (dropOccurrenceStart <= now) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message:
@@ -151,7 +162,12 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 			});
 		}
 
-		if (makeupOccurrence.timestamp <= now) {
+		const makeupOccurrenceStart = computeOccurrenceStart(
+			new Date(makeupOccurrence.timestamp),
+			makeupOccurrence.shiftSchedule.startTime,
+		);
+
+		if (makeupOccurrenceStart <= now) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message: "You can only makeup into future shifts",
@@ -166,9 +182,17 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 			});
 		}
 
-		const conflictingOccurrence = await tx.shiftOccurrence.findFirst({
+		// Check for time conflicts with other assigned shifts
+		// Get the makeup shift's time range
+		const makeupEnd = computeOccurrenceEnd(
+			makeupOccurrenceStart,
+			makeupOccurrence.shiftSchedule.startTime,
+			makeupOccurrence.shiftSchedule.endTime,
+		);
+
+		// Find all other shifts assigned to this user (excluding the one being dropped)
+		const userOccurrences = await tx.shiftOccurrence.findMany({
 			where: {
-				timestamp: makeupOccurrence.timestamp,
 				users: {
 					some: { id: userId },
 				},
@@ -176,15 +200,37 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 					id: shiftOccurrenceId,
 				},
 			},
-			select: { id: true },
+			include: {
+				shiftSchedule: {
+					select: {
+						startTime: true,
+						endTime: true,
+					},
+				},
+			},
 		});
 
-		if (conflictingOccurrence) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message:
-					"You already have a shift scheduled at this time. Please choose a different makeup shift.",
-			});
+		// Check for time overlaps
+		for (const occurrence of userOccurrences) {
+			const occStart = computeOccurrenceStart(
+				new Date(occurrence.timestamp),
+				occurrence.shiftSchedule.startTime,
+			);
+			const occEnd = computeOccurrenceEnd(
+				occStart,
+				occurrence.shiftSchedule.startTime,
+				occurrence.shiftSchedule.endTime,
+			);
+
+			// Check if time ranges overlap
+			// Two ranges overlap if: start1 < end2 AND start2 < end1
+			if (makeupOccurrenceStart < occEnd && occStart < makeupEnd) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"You already have a shift scheduled that overlaps with this time. Please choose a different makeup shift.",
+				});
+			}
 		}
 
 		await tx.shiftOccurrence.update({
@@ -205,11 +251,24 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 			},
 		});
 
+		// Create attendance for makeup shift with "upcoming" status since it's in the future
+		await upsertAttendanceStatus(
+			tx,
+			makeupShiftOccurrenceId,
+			userId,
+			"upcoming" as ShiftAttendanceStatus,
+			{ isMakeup: true },
+		);
+
+		// Mark the dropped shift with "dropped_makeup" status
 		await upsertAttendanceStatus(
 			tx,
 			shiftOccurrenceId,
 			userId,
 			"dropped_makeup" as ShiftAttendanceStatus,
+			sanitizedNotes !== undefined
+				? { droppedNotes: sanitizedNotes }
+				: undefined,
 		);
 	});
 

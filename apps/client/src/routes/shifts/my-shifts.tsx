@@ -50,6 +50,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
@@ -99,6 +100,8 @@ function MyShifts() {
 	const [page, setPage] = React.useState(1);
 	const [pageSize, setPageSize] = React.useState(20);
 	const restrictCheckboxId = React.useId();
+	const dropNotesId = React.useId();
+	const dropMakeupNotesId = React.useId();
 	const [dropTarget, setDropTarget] = React.useState<ShiftOccurrenceRow | null>(
 		null,
 	);
@@ -108,6 +111,8 @@ function MyShifts() {
 	const [isSubmittingMakeup, setIsSubmittingMakeup] = React.useState(false);
 	const [selectedMakeupOccurrenceId, setSelectedMakeupOccurrenceId] =
 		React.useState<number | null>(null);
+	const [dropNotes, setDropNotes] = React.useState("");
+	const [dropMakeupNotes, setDropMakeupNotes] = React.useState("");
 	const [restrictToSameType, setRestrictToSameType] = React.useState(true);
 	const [makeupPage, setMakeupPage] = React.useState(1);
 
@@ -131,6 +136,7 @@ function MyShifts() {
 
 	const handleDropClick = React.useCallback(
 		(occurrence: ShiftOccurrenceRow) => {
+			setDropNotes("");
 			setDropTarget(occurrence);
 		},
 		[],
@@ -142,6 +148,7 @@ function MyShifts() {
 				toast.error("You do not have permission to makeup shifts.");
 				return;
 			}
+			setDropMakeupNotes("");
 			setMakeupTarget(occurrence);
 			setRestrictToSameType(true);
 			setSelectedMakeupOccurrenceId(null);
@@ -230,12 +237,14 @@ function MyShifts() {
 
 	const closeDropDialog = React.useCallback(() => {
 		setDropTarget(null);
+		setDropNotes("");
 	}, []);
 
 	const closeMakeupSheet = React.useCallback(() => {
 		setMakeupTarget(null);
 		setSelectedMakeupOccurrenceId(null);
 		setMakeupPage(1);
+		setDropMakeupNotes("");
 	}, []);
 
 	const handleDropDialogOpenChange = React.useCallback(
@@ -259,9 +268,11 @@ function MyShifts() {
 	const handleConfirmDrop = React.useCallback(async () => {
 		if (!dropTarget) return;
 		setIsDropping(true);
+		const trimmedNotes = dropNotes.trim();
 		try {
 			await trpc.shiftOccurrences.drop.mutate({
 				shiftOccurrenceId: dropTarget.id,
+				...(trimmedNotes ? { notes: trimmedNotes } : {}),
 			});
 			toast.success("Shift dropped");
 			await refetchOccurrences();
@@ -271,15 +282,17 @@ function MyShifts() {
 		} finally {
 			setIsDropping(false);
 		}
-	}, [dropTarget, refetchOccurrences, closeDropDialog]);
+	}, [dropTarget, dropNotes, refetchOccurrences, closeDropDialog]);
 
 	const handleDropMakeupConfirm = React.useCallback(async () => {
 		if (!makeupTarget || !selectedMakeupOccurrenceId) return;
 		setIsSubmittingMakeup(true);
+		const trimmedNotes = dropMakeupNotes.trim();
 		try {
 			await trpc.shiftOccurrences.dropMakeup.mutate({
 				shiftOccurrenceId: makeupTarget.id,
 				makeupShiftOccurrenceId: selectedMakeupOccurrenceId,
+				...(trimmedNotes ? { notes: trimmedNotes } : {}),
 			});
 			toast.success("Shift dropped and makeup scheduled");
 			await refetchOccurrences();
@@ -292,6 +305,7 @@ function MyShifts() {
 	}, [
 		makeupTarget,
 		selectedMakeupOccurrenceId,
+		dropMakeupNotes,
 		refetchOccurrences,
 		closeMakeupSheet,
 	]);
@@ -390,6 +404,19 @@ function MyShifts() {
 									<p>{dropSummary}</p>
 								</AlertDescription>
 							</Alert>
+							<div className="space-y-2">
+								<Label htmlFor={dropNotesId}>Reason (optional)</Label>
+								<Textarea
+									id={dropNotesId}
+									value={dropNotes}
+									onChange={(event) => setDropNotes(event.target.value)}
+									placeholder="Let the coordinators know why you're dropping this shift."
+									maxLength={500}
+								/>
+								<p className="text-xs text-muted-foreground text-right">
+									{dropNotes.length}/500 characters
+								</p>
+							</div>
 							<p>This action cannot be undone.</p>
 						</div>
 					) : null}
@@ -416,7 +443,7 @@ function MyShifts() {
 				open={isMakeupSheetOpen}
 				onOpenChange={handleMakeupSheetOpenChange}
 			>
-				<SheetContent className="w-full sm:max-w-lg md:max-w-lg lg:max-w-xl">
+				<SheetContent className="w-full overflow-y-auto sm:max-w-lg md:max-w-lg lg:max-w-xl">
 					<SheetHeader>
 						<SheetTitle>Find a makeup shift</SheetTitle>
 						<SheetDescription>
@@ -516,6 +543,20 @@ function MyShifts() {
 								/>
 							</div>
 						)}
+
+						<div className="space-y-2">
+							<Label htmlFor={dropMakeupNotesId}>Reason (optional)</Label>
+							<Textarea
+								id={dropMakeupNotesId}
+								value={dropMakeupNotes}
+								onChange={(event) => setDropMakeupNotes(event.target.value)}
+								placeholder="Let the coordinators know why you're dropping and selecting this makeup shift."
+								maxLength={500}
+							/>
+							<p className="text-xs text-muted-foreground text-right">
+								{dropMakeupNotes.length}/500 characters
+							</p>
+						</div>
 					</div>
 
 					<SheetFooter className="gap-2 sm:flex-row">

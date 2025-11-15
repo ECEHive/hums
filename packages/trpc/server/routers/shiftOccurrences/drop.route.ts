@@ -1,4 +1,4 @@
-import { lockShiftOccurrence } from "@ecehive/features";
+import { computeOccurrenceStart, lockShiftOccurrence } from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -7,6 +7,7 @@ import { isWithinModifyWindow, upsertAttendanceStatus } from "./utils";
 
 export const ZDropSchema = z.object({
 	shiftOccurrenceId: z.number().min(1),
+	notes: z.string().max(500).optional(),
 });
 
 export type TDropSchema = z.infer<typeof ZDropSchema>;
@@ -17,8 +18,9 @@ export type TDropOptions = {
 };
 
 export async function dropHandler(options: TDropOptions) {
-	const { shiftOccurrenceId } = options.input;
+	const { shiftOccurrenceId, notes } = options.input;
 	const userId = options.ctx.userId;
+	const sanitizedNotes = notes?.trim() ? notes.trim() : undefined;
 
 	await prisma.$transaction(async (tx) => {
 		const hasLock = await lockShiftOccurrence(tx, shiftOccurrenceId);
@@ -63,7 +65,12 @@ export async function dropHandler(options: TDropOptions) {
 		}
 
 		const now = new Date();
-		if (occurrence.timestamp <= now) {
+		const occurrenceStart = computeOccurrenceStart(
+			new Date(occurrence.timestamp),
+			occurrence.shiftSchedule.startTime,
+		);
+
+		if (occurrenceStart <= now) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message: "You cannot drop a shift that has already started or passed",
@@ -94,6 +101,9 @@ export async function dropHandler(options: TDropOptions) {
 			shiftOccurrenceId,
 			userId,
 			"dropped" as ShiftAttendanceStatus,
+			sanitizedNotes !== undefined
+				? { droppedNotes: sanitizedNotes }
+				: undefined,
 		);
 	});
 

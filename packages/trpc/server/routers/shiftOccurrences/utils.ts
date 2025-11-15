@@ -11,11 +11,17 @@ export function isWithinModifyWindow(
 	return afterWindowStart && beforeWindowEnd;
 }
 
+type UpsertAttendanceStatusOptions = {
+	isMakeup?: boolean;
+	droppedNotes?: string | null;
+};
+
 export async function upsertAttendanceStatus(
 	tx: Prisma.TransactionClient,
 	shiftOccurrenceId: number,
 	userId: number,
 	status: ShiftAttendanceStatus,
+	options: UpsertAttendanceStatusOptions = {},
 ) {
 	const existingAttendance = await tx.shiftAttendance.findFirst({
 		where: {
@@ -24,14 +30,26 @@ export async function upsertAttendanceStatus(
 		},
 	});
 
+	const updateData: Prisma.ShiftAttendanceUpdateInput = {
+		status,
+		timeIn: null,
+		timeOut: null,
+		didArriveLate: false,
+		didLeaveEarly: false,
+	};
+
+	if (options.isMakeup !== undefined) {
+		updateData.isMakeup = options.isMakeup;
+	}
+
+	if (options.droppedNotes !== undefined) {
+		updateData.droppedNotes = options.droppedNotes;
+	}
+
 	if (existingAttendance) {
 		return tx.shiftAttendance.update({
 			where: { id: existingAttendance.id },
-			data: {
-				status,
-				timeIn: null,
-				timeOut: null,
-			},
+			data: updateData,
 		});
 	}
 
@@ -40,6 +58,10 @@ export async function upsertAttendanceStatus(
 			shiftOccurrenceId,
 			userId,
 			status,
+			isMakeup: options.isMakeup ?? false,
+			didArriveLate: false,
+			didLeaveEarly: false,
+			droppedNotes: options.droppedNotes ?? null,
 		},
 	});
 }

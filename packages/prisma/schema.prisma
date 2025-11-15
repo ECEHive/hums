@@ -19,10 +19,9 @@ enum ShiftTypeRoleRequirement {
 }
 
 enum ShiftAttendanceStatus {
+  upcoming
   present
   absent
-  arrived_late
-  left_early
   dropped
   dropped_makeup
 }
@@ -227,6 +226,10 @@ model ShiftAttendance {
   shiftOccurrenceId Int
   userId            Int
   status            ShiftAttendanceStatus @default(absent)
+  isMakeup          Boolean             @default(false)
+  didArriveLate     Boolean             @default(false)
+  didLeaveEarly     Boolean             @default(false)
+  droppedNotes      String?
   timeIn            DateTime?
   timeOut           DateTime?
 
@@ -237,6 +240,9 @@ model ShiftAttendance {
   // relations
   shiftOccurrence ShiftOccurrence @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // constraints
+  @@unique([shiftOccurrenceId, userId])
 }
 
 model Session {

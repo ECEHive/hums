@@ -1,7 +1,12 @@
+import {
+	computeOccurrenceEnd,
+	computeOccurrenceStart,
+} from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import { isWithinModifyWindow, upsertAttendanceStatus } from "./utils";
 
 export const ZPickupSchema = z.object({
 	shiftOccurrenceId: z.number().min(1),
@@ -42,20 +47,37 @@ export async function pickupHandler(options: TPickupOptions) {
 		});
 	}
 
-	// Check if we're within the schedule modify window
-	const period = occurrence.shiftSchedule.shiftType.period;
+	const shiftType = occurrence.shiftSchedule.shiftType;
+	const period = shiftType.period;
 	const now = new Date();
-	const isModifyByStart =
-		!period.scheduleModifyStart || new Date(period.scheduleModifyStart) <= now;
-	const isModifyByEnd =
-		!period.scheduleModifyEnd || new Date(period.scheduleModifyEnd) >= now;
-	const isWithinModifyWindow = isModifyByStart && isModifyByEnd;
 
-	if (!isWithinModifyWindow) {
+	// Check if shift type allows self-assignment
+	if (!shiftType.canSelfAssign) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "This shift does not allow self-assignment",
+		});
+	}
+
+	// Check if we're within the schedule modify window
+	if (!isWithinModifyWindow(period, now)) {
 		throw new TRPCError({
 			code: "FORBIDDEN",
 			message:
 				"Shift occurrence pickup is not currently allowed. Please check the modification window for this period.",
+		});
+	}
+
+	// Check if shift is in the future
+	const occurrenceStart = computeOccurrenceStart(
+		new Date(occurrence.timestamp),
+		occurrence.shiftSchedule.startTime,
+	);
+
+	if (occurrenceStart <= now) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "You can only pick up future shifts",
 		});
 	}
 
@@ -74,14 +96,65 @@ export async function pickupHandler(options: TPickupOptions) {
 		});
 	}
 
-	// Assign user to the occurrence
-	await prisma.shiftOccurrence.update({
-		where: { id: shiftOccurrenceId },
-		data: {
+	// Check for time conflicts with other assigned shifts
+	const occurrenceEnd = computeOccurrenceEnd(
+		occurrenceStart,
+		occurrence.shiftSchedule.startTime,
+		occurrence.shiftSchedule.endTime,
+	);
+
+	const conflictingOccurrences = await prisma.shiftOccurrence.findMany({
+		where: {
 			users: {
-				connect: { id: userId },
+				some: { id: userId },
 			},
 		},
+		include: {
+			shiftSchedule: {
+				select: {
+					startTime: true,
+					endTime: true,
+				},
+			},
+		},
+	});
+
+	// Check for time overlaps
+	for (const conflictOccurrence of conflictingOccurrences) {
+		const conflictStart = computeOccurrenceStart(
+			new Date(conflictOccurrence.timestamp),
+			conflictOccurrence.shiftSchedule.startTime,
+		);
+		const conflictEnd = computeOccurrenceEnd(
+			conflictStart,
+			conflictOccurrence.shiftSchedule.startTime,
+			conflictOccurrence.shiftSchedule.endTime,
+		);
+
+		// Check if time ranges overlap
+		if (occurrenceStart < conflictEnd && conflictStart < occurrenceEnd) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message:
+					"You already have a shift scheduled that overlaps with this time.",
+			});
+		}
+	}
+
+	await prisma.$transaction(async (tx) => {
+		// Assign user to the occurrence
+		await tx.shiftOccurrence.update({
+			where: { id: shiftOccurrenceId },
+			data: {
+				users: {
+					connect: { id: userId },
+				},
+			},
+		});
+
+		// Create attendance record with appropriate status
+		// Since we verified the shift is in the future, use "upcoming"
+		await upsertAttendanceStatus(tx, shiftOccurrenceId, userId, "upcoming");
 	});
 
 	return { success: true };
