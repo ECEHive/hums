@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { ListIcon, Plus } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
@@ -66,7 +66,10 @@ function ShiftTypesPage() {
 			<Card>
 				<CardHeader>
 					<div className="flex items-center justify-between">
-						<CardTitle>Shift Types</CardTitle>
+						<CardTitle className="flex items-center gap-2">
+							<ListIcon className="h-5 w-5" />
+							Shift Types
+						</CardTitle>
 						<div>
 							{canCreate && (
 								<Button

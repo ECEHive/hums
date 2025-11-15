@@ -1,20 +1,26 @@
 import { trpc } from "@ecehive/trpc/client";
+import { PopoverTrigger } from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { NotebookTextIcon } from "lucide-react";
+import { NotebookTextIcon, ScrollTextIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
 import DateRangeSelector from "@/components/date-range-selector";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { usePeriod } from "@/components/period-provider";
 import { DataTable } from "@/components/reports/data-table";
+import { RoleMultiSelect } from "@/components/roles/role-multiselect";
+import { RoleSelect } from "@/components/roles/role-select";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -32,13 +38,44 @@ export const permissions = ["reports.generate"];
 function Reports() {
 	const [start, setStart] = React.useState<Date | null>(null);
 	const [end, setEnd] = React.useState<Date | null>(null);
-	const [selectedRange, setSelectedRange] = React.useState<string>("");
+	const [selectedRange, setSelectedRange] =
+		React.useState<string>("fullperiod");
+	const [openRoleSelector, setOpenRoleSelector] = React.useState(false);
+	const [roleQuery, setRoleQuery] = React.useState("");
+	const [selectedRole, setSelectedRole] = React.useState<number | null>(null);
 	const { period: periodId } = usePeriod();
 
 	const { data: periodData, isLoading } = useQuery({
 		queryKey: ["period", Number(periodId)],
 		queryFn: async () => {
-			return trpc.periods.get.query({ id: Number(periodId) });
+			const res = await trpc.periods.get.query({ id: Number(periodId) });
+			setStart(res?.period?.start ?? null);
+			setEnd(res?.period?.end ?? null);
+			return res;
+		},
+	});
+
+	const { data: rolesData } = useQuery({
+		queryKey: ["roles.list"],
+		queryFn: async () => {
+			return await trpc.roles.list.query({});
+		},
+	});
+
+	const { data: reportData } = useQuery({
+		queryKey: [
+			"reports.generate",
+			{
+				startDate: start?.toDateString() ?? undefined,
+				endDate: end?.toDateString() ?? undefined,
+			},
+		],
+		queryFn: async () => {
+			return trpc.reports.generate.query({
+				staffingRoleId: 1,
+				startDate: start?.toDateString() ?? undefined,
+				endDate: end?.toDateString() ?? undefined,
+			});
 		},
 	});
 
@@ -145,6 +182,29 @@ function Reports() {
 								withTime={false}
 								label={"Date Range"}
 							/>
+						</div>
+						<div>
+							<div className="text-sm font-medium mb-1">Staffing Role</div>
+							<RoleSelect
+								value={
+									selectedRole
+										? (rolesData?.roles.find((r) => r.id === selectedRole) ??
+											null)
+										: null
+								}
+								onChange={(role) => setSelectedRole(role?.id ?? null)}
+								placeholder="Select staffing role..."
+							/>
+						</div>
+						<div className="pt-2">
+							<Button
+								variant="default"
+								onClick={() => {
+									// Trigger report generation
+								}}
+							>
+								Generate Report
+							</Button>
 						</div>
 					</div>
 				</CardContent>

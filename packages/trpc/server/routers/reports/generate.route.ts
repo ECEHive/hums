@@ -1,26 +1,32 @@
 import { type Prisma, prisma } from "@ecehive/prisma";
-import { DateTimeFieldRefInput } from "@ecehive/prisma/generated/prisma/internal/prismaNamespace";
 import z from "zod";
-import { id } from "zod/v4/locales";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-export const ZListSchema = z.object({
+export const ZGenerateSchema = z.object({
 	limit: z.number().min(1).max(100).optional(),
 	offset: z.number().min(0).optional(),
+	startDate: z.string().optional(),
+	endDate: z.string().optional(),
 	staffingRoleId: z.number(),
 });
 
-export type TListSchema = z.infer<typeof ZListSchema>;
+export type TGenerateSchema = z.infer<typeof ZGenerateSchema>;
 
-export type TListOptions = {
+export type TGenerateOptions = {
 	ctx?: TPermissionProtectedProcedureContext;
-	input: TListSchema;
+	input: TGenerateSchema;
 };
 
-export async function generateHandler(options: TListOptions) {
-	const { staffingRoleId, limit = 20, offset = 0 } = options.input;
+export async function generateHandler(options: TGenerateOptions) {
+	const {
+		staffingRoleId,
+		startDate,
+		endDate,
+		limit = 20,
+		offset = 0,
+	} = options.input;
 
-	const whereStaffing: Prisma.ShiftAttendanceWhereInput = {
+	const where: Prisma.ShiftAttendanceWhereInput = {
 		user: {
 			roles: {
 				some: {
@@ -28,20 +34,31 @@ export async function generateHandler(options: TListOptions) {
 				},
 			},
 		},
+		...(startDate && endDate
+			? {
+					shift: {
+						start: {
+							gte: new Date(startDate),
+						},
+						end: {
+							lte: new Date(endDate),
+						},
+					},
+				}
+			: {}),
 	};
 
-	const [shiftAttendances, total] = await Promise.all([
-		prisma.shiftAttendance.findMany({
-			where: whereStaffing,
-			include: {
-				user: true,
-			},
-			orderBy: { userId: "asc" },
-			skip: offset,
-			take: limit,
-		}),
-		prisma.shiftAttendance.count({ where: whereStaffing }),
-	]);
+	const shiftAttendances = await prisma.shiftAttendance.findMany({
+		where: where,
+		include: {
+			user: true,
+		},
+		orderBy: {
+			user: { username: "asc" },
+		},
+		skip: offset,
+		take: limit,
+	});
 
 	// Aggregate shiftAttendences by username
 	const userMap = new Map<
