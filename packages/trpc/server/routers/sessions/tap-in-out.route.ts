@@ -1,4 +1,10 @@
-import { computeOccurrenceEnd, findUserByCard } from "@ecehive/features";
+import {
+	computeOccurrenceEnd,
+	computeOccurrenceStart,
+	findUserByCard,
+	isArrivalLate,
+	isDepartureEarly,
+} from "@ecehive/features";
 import type { Prisma } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
@@ -85,19 +91,24 @@ async function handleTapInAttendance(
 
 	for (const occurrence of activeOccurrences) {
 		const existingAttendance = occurrence.attendances[0];
+		const scheduledStart = computeOccurrenceStart(
+			new Date(occurrence.timestamp),
+			occurrence.shiftSchedule.startTime,
+		);
 
 		if (existingAttendance) {
 			// If attendance exists but doesn't have a timeIn yet (was created as "absent"),
 			// update it to "present" with timeIn
 			if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
-				const occStart = new Date(occurrence.timestamp);
-				const timeIn = tapInTime > occStart ? tapInTime : occStart;
+				const timeIn = tapInTime > scheduledStart ? tapInTime : scheduledStart;
+				const didArriveLate = isArrivalLate(scheduledStart, timeIn);
 
 				await tx.shiftAttendance.update({
 					where: { id: existingAttendance.id },
 					data: {
 						status: "present",
 						timeIn,
+						didArriveLate,
 					},
 				});
 			}
@@ -106,8 +117,8 @@ async function handleTapInAttendance(
 		}
 
 		// Create new attendance record if none exists
-		const occStart = new Date(occurrence.timestamp);
-		const timeIn = tapInTime > occStart ? tapInTime : occStart;
+		const timeIn = tapInTime > scheduledStart ? tapInTime : scheduledStart;
+		const didArriveLate = isArrivalLate(scheduledStart, timeIn);
 
 		await tx.shiftAttendance.create({
 			data: {
@@ -115,6 +126,8 @@ async function handleTapInAttendance(
 				userId,
 				status: "present",
 				timeIn,
+				didArriveLate,
+				didLeaveEarly: false,
 			},
 		});
 	}
@@ -135,6 +148,9 @@ async function handleTapOutAttendance(
 		where: {
 			userId,
 			timeOut: null,
+			shiftOccurrence: {
+				timestamp: { lte: tapOutTime },
+			},
 		},
 		include: {
 			shiftOccurrence: {
@@ -151,9 +167,15 @@ async function handleTapOutAttendance(
 	});
 
 	for (const attendance of openAttendances) {
-		const occStart = new Date(attendance.shiftOccurrence.timestamp);
+		const scheduledStart = computeOccurrenceStart(
+			new Date(attendance.shiftOccurrence.timestamp),
+			attendance.shiftOccurrence.shiftSchedule.startTime,
+		);
+
+		// Skip occurrences that haven't started yet
+		if (scheduledStart > tapOutTime) continue;
 		const occEnd = computeOccurrenceEnd(
-			occStart,
+			scheduledStart,
 			attendance.shiftOccurrence.shiftSchedule.startTime,
 			attendance.shiftOccurrence.shiftSchedule.endTime,
 		);
@@ -161,11 +183,12 @@ async function handleTapOutAttendance(
 		// Only close attendance if the shift is still active or just ended
 		// Use the earlier of tapOutTime or occEnd
 		const timeOut = tapOutTime < occEnd ? tapOutTime : occEnd;
+		const didLeaveEarly = isDepartureEarly(occEnd, timeOut);
 
 		// Record the first tap-out time only
 		await tx.shiftAttendance.update({
 			where: { id: attendance.id },
-			data: { timeOut },
+			data: { timeOut, didLeaveEarly },
 		});
 	}
 }

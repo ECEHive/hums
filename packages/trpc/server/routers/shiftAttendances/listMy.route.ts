@@ -54,8 +54,12 @@ export async function listMyHandler(options: TListMyOptions) {
 			select: {
 				id: true,
 				status: true,
+				droppedNotes: true,
 				timeIn: true,
 				timeOut: true,
+				didArriveLate: true,
+				didLeaveEarly: true,
+				isMakeup: true,
 				createdAt: true,
 				shiftOccurrence: {
 					select: {
@@ -104,8 +108,10 @@ export async function listMyHandler(options: TListMyOptions) {
 		const isDroppedStatus = droppedStatuses.has(
 			attendance.status as ShiftAttendanceStatus,
 		);
+		const isUpcomingStatus = attendance.status === "upcoming";
 
-		if (isDroppedStatus) {
+		// Don't calculate percentages for dropped or upcoming shifts
+		if (isDroppedStatus || isUpcomingStatus) {
 			return {
 				...attendance,
 				scheduledHours,

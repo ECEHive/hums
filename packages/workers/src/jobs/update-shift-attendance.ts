@@ -1,4 +1,8 @@
-import { computeOccurrenceEnd } from "@ecehive/features";
+import {
+	computeOccurrenceEnd,
+	computeOccurrenceStart,
+	isArrivalLate,
+} from "@ecehive/features";
 import type { Prisma } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
@@ -95,7 +99,10 @@ async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
 	const attendancesToCreate: Prisma.ShiftAttendanceCreateManyInput[] = [];
 
 	for (const occurrence of recentOccurrences) {
-		const occStart = new Date(occurrence.timestamp);
+		const occStart = computeOccurrenceStart(
+			new Date(occurrence.timestamp),
+			occurrence.shiftSchedule.startTime,
+		);
 		const occEnd = computeOccurrenceEnd(
 			occStart,
 			occurrence.shiftSchedule.startTime,
@@ -106,14 +113,21 @@ async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
 		// Skip occurrences that haven't started yet or ended more than a day ago
 		if (occStart > now || occEnd < lookbackTime) continue;
 
-		const existingAttendanceUserIds = new Set(
-			occurrence.attendances.map((a) => a.userId),
+		// Map existing attendances by userId for status checking
+		const existingAttendancesMap = new Map(
+			occurrence.attendances.map((a) => [a.userId, a]),
 		);
 
 		// Create attendance records for all assigned users who don't have one yet
 		for (const user of occurrence.users) {
+			const existingAttendance = existingAttendancesMap.get(user.id);
+
 			// Skip if attendance already exists
-			if (existingAttendanceUserIds.has(user.id)) continue;
+			if (existingAttendance) {
+				// If attendance exists with "upcoming" status and shift has started,
+				// it will be transitioned to "absent" in a separate query below
+				continue;
+			}
 
 			// Create attendance with "absent" status by default
 			// This will be updated to "present" if the user has an active session
@@ -132,6 +146,49 @@ async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
 		await prisma.shiftAttendance.createMany({
 			data: attendancesToCreate,
 			skipDuplicates: true,
+		});
+	}
+
+	// Update any "upcoming" attendances to "absent" for shifts that have started
+	// This handles makeup shifts that were scheduled in the future but have now started
+	// We need to check the computed start time, not just the timestamp
+	const upcomingAttendances = await prisma.shiftAttendance.findMany({
+		where: {
+			status: "upcoming",
+			timeIn: null, // Only if user hasn't tapped in
+		},
+		include: {
+			shiftOccurrence: {
+				include: {
+					shiftSchedule: {
+						select: {
+							startTime: true,
+						},
+					},
+				},
+			},
+		},
+	});
+
+	const attendanceIdsToMarkAbsent: number[] = [];
+	for (const attendance of upcomingAttendances) {
+		const occStart = computeOccurrenceStart(
+			new Date(attendance.shiftOccurrence.timestamp),
+			attendance.shiftOccurrence.shiftSchedule.startTime,
+		);
+		if (occStart <= now) {
+			attendanceIdsToMarkAbsent.push(attendance.id);
+		}
+	}
+
+	if (attendanceIdsToMarkAbsent.length > 0) {
+		await prisma.shiftAttendance.updateMany({
+			where: {
+				id: { in: attendanceIdsToMarkAbsent },
+			},
+			data: {
+				status: "absent",
+			},
 		});
 	}
 }
@@ -164,10 +221,17 @@ async function createAttendancesForRecentStarts(
 	});
 
 	const attendancesToCreate: Prisma.ShiftAttendanceCreateManyInput[] = [];
-	const attendancesToUpdate: Array<{ id: number; timeIn: Date }> = [];
+	const attendancesToUpdate: Array<{
+		id: number;
+		timeIn: Date;
+		didArriveLate: boolean;
+	}> = [];
 
 	for (const occurrence of recentOccurrences) {
-		const occStart = new Date(occurrence.timestamp);
+		const scheduledStart = computeOccurrenceStart(
+			new Date(occurrence.timestamp),
+			occurrence.shiftSchedule.startTime,
+		);
 		const assignedUserIds = new Set(occurrence.users.map((u) => u.id));
 
 		// Map existing attendances by userId
@@ -186,10 +250,14 @@ async function createAttendancesForRecentStarts(
 				// update it to "present" with timeIn
 				if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
 					const timeIn =
-						session.startedAt > occStart ? session.startedAt : occStart;
+						session.startedAt > scheduledStart
+							? session.startedAt
+							: scheduledStart;
+					const didArriveLate = isArrivalLate(scheduledStart, timeIn);
 					attendancesToUpdate.push({
 						id: existingAttendance.id,
 						timeIn,
+						didArriveLate,
 					});
 				}
 				// If timeIn or timeOut exists, skip (preserve first tap-in)
@@ -198,13 +266,15 @@ async function createAttendancesForRecentStarts(
 
 			// Create new attendance if none exists
 			const timeIn =
-				session.startedAt > occStart ? session.startedAt : occStart;
+				session.startedAt > scheduledStart ? session.startedAt : scheduledStart;
+			const didArriveLate = isArrivalLate(scheduledStart, timeIn);
 
 			attendancesToCreate.push({
 				shiftOccurrenceId: occurrence.id,
 				userId: session.userId,
 				status: "present",
 				timeIn,
+				didArriveLate,
 			});
 		}
 	}
@@ -224,6 +294,7 @@ async function createAttendancesForRecentStarts(
 			data: {
 				status: "present",
 				timeIn: update.timeIn,
+				didArriveLate: update.didArriveLate,
 			},
 		});
 	}
@@ -262,12 +333,19 @@ async function closeAttendancesForRecentEnds(
 	});
 
 	const activeSessionUserIds = new Set(activeSessions.map((s) => s.userId));
-	const attendanceUpdates: Array<{ id: number; timeOut: Date }> = [];
+	const attendanceUpdates: Array<{
+		id: number;
+		timeOut: Date;
+		didLeaveEarly: boolean;
+	}> = [];
 
 	for (const occurrence of occurrences) {
-		const occStart = new Date(occurrence.timestamp);
+		const scheduledStart = computeOccurrenceStart(
+			new Date(occurrence.timestamp),
+			occurrence.shiftSchedule.startTime,
+		);
 		const occEnd = computeOccurrenceEnd(
-			occStart,
+			scheduledStart,
 			occurrence.shiftSchedule.startTime,
 			occurrence.shiftSchedule.endTime,
 		);
@@ -284,6 +362,7 @@ async function closeAttendancesForRecentEnds(
 				attendanceUpdates.push({
 					id: attendance.id,
 					timeOut: occEnd,
+					didLeaveEarly: false,
 				});
 			}
 		}
@@ -297,7 +376,10 @@ async function closeAttendancesForRecentEnds(
 				id: update.id,
 				timeOut: null, // Only update if still null
 			},
-			data: { timeOut: update.timeOut },
+			data: {
+				timeOut: update.timeOut,
+				didLeaveEarly: update.didLeaveEarly,
+			},
 		});
 	}
 }
@@ -327,18 +409,25 @@ async function ensureOngoingOccurrenceAttendances(
 	});
 
 	const attendancesToCreate: Prisma.ShiftAttendanceCreateManyInput[] = [];
-	const attendancesToUpdate: Array<{ id: number; timeIn: Date }> = [];
+	const attendancesToUpdate: Array<{
+		id: number;
+		timeIn: Date;
+		didArriveLate: boolean;
+	}> = [];
 
 	for (const occurrence of ongoingOccurrences) {
-		const occStart = new Date(occurrence.timestamp);
+		const scheduledStart = computeOccurrenceStart(
+			new Date(occurrence.timestamp),
+			occurrence.shiftSchedule.startTime,
+		);
 		const occEnd = computeOccurrenceEnd(
-			occStart,
+			scheduledStart,
 			occurrence.shiftSchedule.startTime,
 			occurrence.shiftSchedule.endTime,
 		);
 
 		// Skip if occurrence is not currently ongoing
-		if (!(occStart <= now && occEnd > now)) continue;
+		if (!(scheduledStart <= now && occEnd > now)) continue;
 
 		const assignedUserIds = new Set(occurrence.users.map((u) => u.id));
 
@@ -358,10 +447,14 @@ async function ensureOngoingOccurrenceAttendances(
 				// update it to "present" with timeIn
 				if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
 					const timeIn =
-						session.startedAt > occStart ? session.startedAt : occStart;
+						session.startedAt > scheduledStart
+							? session.startedAt
+							: scheduledStart;
+					const didArriveLate = isArrivalLate(scheduledStart, timeIn);
 					attendancesToUpdate.push({
 						id: existingAttendance.id,
 						timeIn,
+						didArriveLate,
 					});
 				}
 				// If timeIn or timeOut exists, skip (preserve first tap-in)
@@ -370,13 +463,15 @@ async function ensureOngoingOccurrenceAttendances(
 
 			// Create new attendance if none exists
 			const timeIn =
-				session.startedAt > occStart ? session.startedAt : occStart;
+				session.startedAt > scheduledStart ? session.startedAt : scheduledStart;
+			const didArriveLate = isArrivalLate(scheduledStart, timeIn);
 
 			attendancesToCreate.push({
 				shiftOccurrenceId: occurrence.id,
 				userId: session.userId,
 				status: "present",
 				timeIn,
+				didArriveLate,
 			});
 		}
 	}
@@ -396,6 +491,7 @@ async function ensureOngoingOccurrenceAttendances(
 			data: {
 				status: "present",
 				timeIn: update.timeIn,
+				didArriveLate: update.didArriveLate,
 			},
 		});
 	}

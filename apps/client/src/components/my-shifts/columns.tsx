@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { CheckCircle2, Clock, RadioIcon, XCircle } from "lucide-react";
+import type { JSX } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -29,6 +30,10 @@ export type ShiftOccurrenceRow = {
 		status: string;
 		timeIn: Date | null;
 		timeOut: Date | null;
+		didArriveLate?: boolean;
+		didLeaveEarly?: boolean;
+		isMakeup?: boolean;
+		droppedNotes?: string | null;
 	} | null;
 };
 
@@ -148,34 +153,80 @@ export function createColumns(
 					);
 				}
 
-				const { status } = occurrence.attendance;
-
-				switch (status) {
-					case "present":
-						return (
-							<div className="flex items-center gap-1 text-green-600">
-								<CheckCircle2 className="w-4 h-4" />
-								<span className="text-sm font-medium">Present</span>
-							</div>
-						);
-					case "absent":
-						return (
-							<div className="flex items-center gap-1 text-red-600">
-								<XCircle className="w-4 h-4" />
-								<span className="text-sm font-medium">Absent</span>
-							</div>
-						);
-					case "arrived_late":
-						return <Badge className="bg-yellow-600">Late</Badge>;
-					case "left_early":
-						return <Badge className="bg-orange-600">Left Early</Badge>;
-					case "dropped":
-						return <Badge variant="outline">Dropped</Badge>;
-					case "dropped_makeup":
-						return <Badge variant="outline">Dropped + Makeup</Badge>;
-					default:
-						return <Badge variant="outline">{status}</Badge>;
+				const { status, didArriveLate, didLeaveEarly, isMakeup, droppedNotes } =
+					occurrence.attendance;
+				const badges: JSX.Element[] = [];
+				if (isMakeup) {
+					badges.push(
+						<Badge key="makeup" variant="outline">
+							Makeup
+						</Badge>,
+					);
 				}
+				if (didArriveLate) {
+					badges.push(
+						<Badge key="late" className="bg-yellow-600">
+							Arrived Late
+						</Badge>,
+					);
+				}
+				if (didLeaveEarly) {
+					badges.push(
+						<Badge key="left-early" className="bg-orange-600">
+							Left Early
+						</Badge>,
+					);
+				}
+
+				const statusBadge = (() => {
+					switch (status) {
+						case "upcoming":
+							return (
+								<Badge variant="outline" className="text-muted-foreground">
+									Upcoming
+								</Badge>
+							);
+						case "present":
+							return (
+								<div className="flex items-center gap-1 text-green-600">
+									<CheckCircle2 className="w-4 h-4" />
+									<span className="text-sm font-medium">Present</span>
+								</div>
+							);
+						case "absent":
+							return (
+								<div className="flex items-center gap-1 text-red-600">
+									<XCircle className="w-4 h-4" />
+									<span className="text-sm font-medium">Absent</span>
+								</div>
+							);
+						case "dropped":
+						case "dropped_makeup":
+							return (
+								<div className="flex flex-col gap-1">
+									<Badge variant="outline">
+										{status === "dropped" ? "Dropped" : "Dropped + Makeup"}
+									</Badge>
+									{droppedNotes ? (
+										<span className="text-xs text-muted-foreground">
+											{droppedNotes}
+										</span>
+									) : null}
+								</div>
+							);
+						default:
+							return <Badge variant="outline">{status}</Badge>;
+					}
+				})();
+
+				return (
+					<div className="flex flex-col gap-1">
+						{statusBadge}
+						{badges.length > 0 ? (
+							<div className="flex flex-wrap gap-1">{badges}</div>
+						) : null}
+					</div>
+				);
 			},
 		},
 		{
