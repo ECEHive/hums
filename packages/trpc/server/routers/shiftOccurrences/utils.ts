@@ -1,5 +1,4 @@
-import type { Period, Prisma } from "@ecehive/prisma";
-import type { ShiftAttendanceStatus } from "@ecehive/prisma/generated/prisma/enums";
+import type { Period, Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
 
 export function isWithinModifyWindow(
 	period: Pick<Period, "scheduleModifyStart" | "scheduleModifyEnd">,
