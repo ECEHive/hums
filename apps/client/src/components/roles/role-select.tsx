@@ -58,7 +58,7 @@ export function RoleSelect({
 	}
 
 	return (
-		<div className="flex items-center gap-2">
+		<div className="flex items-center gap-3">
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<Button
@@ -118,12 +118,11 @@ export function RoleSelect({
 			{/* Clear button when a value is selected */}
 			{value ? (
 				<Button
-					className="h-full"
 					variant="outline"
 					aria-label="Clear role"
 					onClick={() => onChange(null)}
 				>
-					<XIcon className="size-4" />
+					<XIcon className="w-4 h-4" />
 				</Button>
 			) : null}
 		</div>

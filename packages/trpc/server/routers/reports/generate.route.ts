@@ -3,8 +3,6 @@ import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 export const ZGenerateSchema = z.object({
-	limit: z.number().min(1).max(100).optional(),
-	offset: z.number().min(0).optional(),
 	startDate: z.string().optional(),
 	endDate: z.string().optional(),
 	staffingRoleId: z.number(),
@@ -18,13 +16,7 @@ export type TGenerateOptions = {
 };
 
 export async function generateHandler(options: TGenerateOptions) {
-	const {
-		staffingRoleId,
-		startDate,
-		endDate,
-		limit = 20,
-		offset = 0,
-	} = options.input;
+	const { staffingRoleId, startDate, endDate } = options.input;
 
 	const where: Prisma.ShiftAttendanceWhereInput = {
 		user: {
@@ -34,19 +26,35 @@ export async function generateHandler(options: TGenerateOptions) {
 				},
 			},
 		},
-		...(startDate && endDate
-			? {
-					shift: {
-						start: {
-							gte: new Date(startDate),
-						},
-						end: {
-							lte: new Date(endDate),
-						},
-					},
-				}
-			: {}),
 	};
+
+	// If startDate / endDate provided, filter by the related shiftOccurrence.timestamp
+	if (startDate || endDate) {
+		const timestampFilter: Prisma.DateTimeFilter = {};
+
+		if (startDate) {
+			const sd = new Date(startDate);
+			if (!Number.isNaN(sd.getTime())) {
+				timestampFilter.gte = sd;
+			}
+		}
+
+		if (endDate) {
+			const ed = new Date(endDate);
+			if (!Number.isNaN(ed.getTime())) {
+				timestampFilter.lte = ed;
+			}
+		}
+
+		// Only attach the filter if at least one bound is valid
+		if (Object.keys(timestampFilter).length > 0) {
+			// avoid using `any` by casting to a minimal mutable shape
+			const whereMutable = where as unknown as {
+				shiftOccurrence?: { timestamp?: Prisma.DateTimeFilter };
+			};
+			whereMutable.shiftOccurrence = { timestamp: timestampFilter };
+		}
+	}
 
 	const shiftAttendances = await prisma.shiftAttendance.findMany({
 		where: where,
@@ -56,11 +64,9 @@ export async function generateHandler(options: TGenerateOptions) {
 		orderBy: {
 			user: { username: "asc" },
 		},
-		skip: offset,
-		take: limit,
 	});
 
-	// Aggregate shiftAttendences by username
+	// Aggregate shiftAttendances by username
 	const userMap = new Map<
 		string,
 		{
@@ -103,14 +109,17 @@ export async function generateHandler(options: TGenerateOptions) {
 	});
 
 	const userReports: {
-		id: number;
-		name: string;
-		username: string;
-		totalScheduledTime: number;
-		totalAttendedTime: number;
-		totalMissedTime: number;
-		attendancePercentage: number;
-	}[] = [];
+		reports: {
+			id: number;
+			name: string;
+			username: string;
+			totalScheduledTime: number;
+			totalAttendedTime: number;
+			totalMissedTime: number;
+			attendancePercentage: number;
+		}[];
+		total: number;
+	} = { reports: [], total: 0 };
 
 	userMap.forEach((user) => {
 		const totalScheduledTime = user.shiftAttendances.reduce(
@@ -128,7 +137,7 @@ export async function generateHandler(options: TGenerateOptions) {
 		const totalAttendedTime = user.shiftAttendances.reduce(
 			(acc, attendance) => {
 				if (
-					attendance.status === "attended" &&
+					attendance.status === "present" &&
 					attendance.timeIn &&
 					attendance.timeOut
 				) {
@@ -147,7 +156,7 @@ export async function generateHandler(options: TGenerateOptions) {
 				? (totalAttendedTime / totalScheduledTime) * 100
 				: 0;
 
-		userReports.push({
+		userReports.reports.push({
 			id: user.id,
 			name: user.name,
 			username: user.username,
@@ -157,6 +166,9 @@ export async function generateHandler(options: TGenerateOptions) {
 			attendancePercentage,
 		});
 	});
+
+	// Add total count
+	userReports.total = userReports.reports.length;
 
 	return userReports;
 }

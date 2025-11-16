@@ -1,26 +1,24 @@
 import { trpc } from "@ecehive/trpc/client";
-import { PopoverTrigger } from "@radix-ui/react-popover";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { NotebookTextIcon, ScrollTextIcon } from "lucide-react";
+import { ChevronDownIcon, NotebookTextIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
 import DateRangeSelector from "@/components/date-range-selector";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { usePeriod } from "@/components/period-provider";
+import { generateColumns } from "@/components/reports/columns";
 import { DataTable } from "@/components/reports/data-table";
-import { RoleMultiSelect } from "@/components/roles/role-multiselect";
 import { RoleSelect } from "@/components/roles/role-select";
+import { TablePagination } from "@/components/table-pagination";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -40,14 +38,53 @@ function Reports() {
 	const [end, setEnd] = React.useState<Date | null>(null);
 	const [selectedRange, setSelectedRange] =
 		React.useState<string>("fullperiod");
-	const [openRoleSelector, setOpenRoleSelector] = React.useState(false);
-	const [roleQuery, setRoleQuery] = React.useState("");
 	const [selectedRole, setSelectedRole] = React.useState<number | null>(null);
 	const { period: periodId } = usePeriod();
 
-	const { data: periodData, isLoading } = useQuery({
+	const [page, setPage] = React.useState(1);
+	const [pageSize, setPageSize] = React.useState(10);
+
+	const offset = (page - 1) * pageSize;
+
+	const reportParams = {
+		startDate: start?.toISOString() ?? undefined,
+		endDate: end?.toISOString() ?? undefined,
+		// do not provide a default role; generation requires an explicit selection
+		staffingRoleId: selectedRole ?? undefined,
+	};
+
+	const {
+		data: reportData,
+		isLoading: reportLoading,
+		refetch: refetchReport,
+	} = useQuery({
+		queryKey: ["reports.generate", reportParams],
+		queryFn: async () => {
+			// only generate when a role is explicitly selected
+			if (selectedRole == null) return { reports: [], total: 0 };
+			console.log("Generating report with params:", {
+				...reportParams,
+				staffingRoleId: selectedRole,
+			});
+			return trpc.reports.generate.query({
+				...reportParams,
+				staffingRoleId: selectedRole as number,
+			});
+		},
+		retry: false,
+		// don't auto-run the query on mount or when params change; only run when the user presses Generate
+		enabled: false,
+	});
+
+	const totalPages = Math.max(
+		1,
+		Math.ceil((reportData?.total ?? 0) / pageSize),
+	);
+
+	const { data: periodData, isLoading: periodLoading } = useQuery({
 		queryKey: ["period", Number(periodId)],
 		queryFn: async () => {
+			if (!periodId) return null;
 			const res = await trpc.periods.get.query({ id: Number(periodId) });
 			setStart(res?.period?.start ?? null);
 			setEnd(res?.period?.end ?? null);
@@ -55,32 +92,17 @@ function Reports() {
 		},
 	});
 
-	const { data: rolesData } = useQuery({
+	const { data: rolesData, isLoading: rolesLoading } = useQuery({
 		queryKey: ["roles.list"],
 		queryFn: async () => {
 			return await trpc.roles.list.query({});
 		},
 	});
 
-	const { data: reportData } = useQuery({
-		queryKey: [
-			"reports.generate",
-			{
-				startDate: start?.toDateString() ?? undefined,
-				endDate: end?.toDateString() ?? undefined,
-			},
-		],
-		queryFn: async () => {
-			return trpc.reports.generate.query({
-				staffingRoleId: 1,
-				startDate: start?.toDateString() ?? undefined,
-				endDate: end?.toDateString() ?? undefined,
-			});
-		},
-	});
-
 	return (
-		<div className="p-6 inline-block w-full space-y-6">
+		<div className="container p-4 space-y-4">
+			<h1 className="text-2xl font-bold">Reports</h1>
+
 			<Card>
 				<CardHeader>
 					<div className="flex items-center justify-between">
@@ -162,7 +184,7 @@ function Reports() {
 											}
 										}}
 									>
-										{isLoading || !periodData?.period ? (
+										{periodLoading || !periodData?.period ? (
 											<Spinner />
 										) : (
 											periodData.period.name
@@ -185,31 +207,104 @@ function Reports() {
 						</div>
 						<div>
 							<div className="text-sm font-medium mb-1">Staffing Role</div>
-							<RoleSelect
-								value={
-									selectedRole
-										? (rolesData?.roles.find((r) => r.id === selectedRole) ??
-											null)
-										: null
-								}
-								onChange={(role) => setSelectedRole(role?.id ?? null)}
-								placeholder="Select staffing role..."
-							/>
+							{rolesLoading ? (
+								<Spinner />
+							) : (
+								<RoleSelect
+									value={
+										selectedRole
+											? (rolesData?.roles.find((r) => r.id === selectedRole) ??
+												null)
+											: null
+									}
+									onChange={(role) => setSelectedRole(role?.id ?? null)}
+									placeholder="Select staffing role..."
+								/>
+							)}
 						</div>
 						<div className="pt-2">
 							<Button
 								variant="default"
-								onClick={() => {
-									// Trigger report generation
+								onClick={async () => {
+									await refetchReport();
+									setPage(1);
 								}}
+								disabled={reportLoading || selectedRole == null}
 							>
-								Generate Report
+								{selectedRole == null
+									? "Select a role"
+									: reportLoading
+										? "Generating..."
+										: "Generate Report"}
 							</Button>
 						</div>
 					</div>
 				</CardContent>
 			</Card>
-			<DataTable columns={[]} data={[]} isLoading={false} />
+			<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+				{/* <div className="flex items-center gap-2">
+					<FilterDialog
+						onFilterChange={(newFilterRoles) => {
+							setPage(1);
+							setFilterRoles(newFilterRoles);
+						}}
+						filterRoles={filterRoles}
+						trigger={
+							<Button variant="outline">
+								<Filter className="size-4" />
+							</Button>
+						}
+					/>
+					<Input
+						placeholder="Search users..."
+						value={search}
+						onChange={(e) => {
+							setSearch(e.target.value);
+							setPage(1);
+						}}
+						className="max-w-xs"
+					/>
+				</div> */}
+				<div className="flex items-center gap-2">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline">
+								{pageSize} per page <ChevronDownIcon className="ml-2 size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							{[10, 25, 50, 100].map((size) => (
+								<DropdownMenuItem
+									key={size}
+									onClick={async () => {
+										setPageSize(size);
+										await refetchReport();
+										setPage(1);
+									}}
+								>
+									{size} per page
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			</div>
+			<DataTable
+				columns={generateColumns()}
+				data={reportData?.reports ?? []}
+				isLoading={reportLoading}
+			/>
+			<div className="flex flex-col justify-between items-center gap-2">
+				<TablePagination
+					page={page}
+					totalPages={totalPages}
+					onPageChange={setPage}
+				/>
+				<p className="text-sm text-muted-foreground">
+					Showing {offset + 1} - {offset + (reportData?.reports.length ?? 0)} of{" "}
+					{reportData?.total ?? 0}
+				</p>
+			</div>
 		</div>
 	);
 }
