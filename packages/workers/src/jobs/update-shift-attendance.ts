@@ -3,13 +3,24 @@ import {
 	computeOccurrenceStart,
 	isArrivalLate,
 } from "@ecehive/features";
-import type { Prisma } from "@ecehive/prisma";
+import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
 
 interface ActiveSession {
 	userId: number;
 	startedAt: Date;
+}
+
+const PROTECTED_ATTENDANCE_STATUSES: ShiftAttendanceStatus[] = [
+	"dropped",
+	"dropped_makeup",
+];
+
+function isProtectedAttendanceStatus(
+	status?: ShiftAttendanceStatus | null,
+): boolean {
+	return status ? PROTECTED_ATTENDANCE_STATUSES.includes(status) : false;
 }
 
 /**
@@ -215,7 +226,13 @@ async function createAttendancesForRecentStarts(
 			shiftSchedule: true,
 			users: { select: { id: true } },
 			attendances: {
-				select: { id: true, userId: true, timeIn: true, timeOut: true },
+				select: {
+					id: true,
+					userId: true,
+					timeIn: true,
+					timeOut: true,
+					status: true,
+				},
 			},
 		},
 	});
@@ -246,6 +263,9 @@ async function createAttendancesForRecentStarts(
 			const existingAttendance = existingAttendances.get(session.userId);
 
 			if (existingAttendance) {
+				if (isProtectedAttendanceStatus(existingAttendance.status)) {
+					continue;
+				}
 				// If attendance exists and doesn't have timeIn yet (was created as "absent"),
 				// update it to "present" with timeIn
 				if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
@@ -327,7 +347,7 @@ async function closeAttendancesForRecentEnds(
 			shiftSchedule: true,
 			attendances: {
 				where: { timeOut: null },
-				select: { id: true, userId: true },
+				select: { id: true, userId: true, status: true },
 			},
 		},
 	});
@@ -356,6 +376,7 @@ async function closeAttendancesForRecentEnds(
 		}
 
 		for (const attendance of occurrence.attendances) {
+			if (isProtectedAttendanceStatus(attendance.status)) continue;
 			// Only close attendance if user still has an active session
 			// (they were present when shift ended)
 			if (activeSessionUserIds.has(attendance.userId)) {
@@ -375,6 +396,7 @@ async function closeAttendancesForRecentEnds(
 			where: {
 				id: update.id,
 				timeOut: null, // Only update if still null
+				status: { notIn: PROTECTED_ATTENDANCE_STATUSES },
 			},
 			data: {
 				timeOut: update.timeOut,
@@ -403,7 +425,13 @@ async function ensureOngoingOccurrenceAttendances(
 			shiftSchedule: true,
 			users: { select: { id: true } },
 			attendances: {
-				select: { id: true, userId: true, timeIn: true, timeOut: true },
+				select: {
+					id: true,
+					userId: true,
+					timeIn: true,
+					timeOut: true,
+					status: true,
+				},
 			},
 		},
 	});
@@ -443,6 +471,9 @@ async function ensureOngoingOccurrenceAttendances(
 			const existingAttendance = existingAttendances.get(session.userId);
 
 			if (existingAttendance) {
+				if (isProtectedAttendanceStatus(existingAttendance.status)) {
+					continue;
+				}
 				// If attendance exists and doesn't have timeIn yet (was created as "absent"),
 				// update it to "present" with timeIn
 				if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
