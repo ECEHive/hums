@@ -9,6 +9,7 @@ import {
 	FileClockIcon,
 	FileTextIcon,
 	HomeIcon,
+	KeyIcon,
 	LaptopMinimalCheckIcon,
 	MoonIcon,
 	ShieldIcon,
@@ -41,6 +42,7 @@ import {
 } from "@/components/ui/sidebar";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
+import { permissions as apiTokensPagePermissions } from "@/routes/app/api-tokens";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
 import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
@@ -113,6 +115,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app/kiosks",
 				icon: LaptopMinimalCheckIcon,
 				permissions: kiosksPagePermissions,
+			},
+			{
+				title: "API Tokens",
+				url: "/app/api-tokens",
+				icon: KeyIcon,
+				permissions: apiTokensPagePermissions,
 			},
 			{
 				title: "Sessions",

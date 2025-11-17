@@ -1,3 +1,4 @@
+import { restApiRoute } from "@ecehive/rest";
 import { appRouter, createContext } from "@ecehive/trpc/server";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import type { FastifyPluginAsync } from "fastify";
@@ -31,5 +32,9 @@ export const apiRoute: FastifyPluginAsync = async (fastify) => {
 				);
 			},
 		},
+	});
+
+	fastify.register(restApiRoute, {
+		prefix: "/rest",
 	});
 };

@@ -11,6 +11,7 @@
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
 		"@ecehive/features": "workspace:*",
+		"@ecehive/rest": "workspace:*",
 		"@ecehive/trpc": "workspace:*",
 		"@ecehive/workers": "workspace:*",
 		"@fastify/cors": "^11.1.0",
