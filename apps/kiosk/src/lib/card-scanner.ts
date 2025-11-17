@@ -23,6 +23,8 @@ export interface ConnectSerialOptions {
 	requestOnNoPorts?: boolean;
 	// Custom port picker if multiple are available
 	pick?: (ports: SerialPort[]) => SerialPort | null;
+	// Optional hook for card scans we cannot parse
+	onInvalidScan?: (raw: string) => void;
 }
 
 export async function connectSerial(
@@ -110,27 +112,36 @@ export async function connectSerial(
 		//   return characters 10..15 (1-based) which yields "123456" in the example.
 		const bufferParts: { buf: string } = { buf: "" };
 
+		const normalizeDigits = (digits: string): string | null => {
+			const cleaned = digits.replace(/\D/g, "");
+			if (cleaned.length >= 16) {
+				return cleaned.slice(0, 16);
+			}
+			return cleaned.length >= 6 ? cleaned : null;
+		};
+
 		const parseCardData = (raw: string): string | null => {
 			const s = raw.trim();
 			if (!s) return null;
-			// If contains '=', treat as long form
-			if (s.includes("=")) {
-				const parts = s.split("=");
-				const last = parts[parts.length - 1] ?? "";
-				// Extract characters 10..15 (1-based) => substring(9, 15)
-				if (last.length >= 15) {
-					const extracted = last.substring(9, 9 + 6);
-					const digits = extracted.replace(/\D/g, "");
-					return digits || null;
-				}
-				// Fallback: return continuous digits from last segment if it's shorter
-				const fallback = last.replace(/\D/g, "");
-				return fallback || null;
+
+			// Track 2 style: ;<digits>=<metadata>
+			const trackTwoMatch = s.match(/;?(\d{6,})=(\d+)/);
+			if (trackTwoMatch?.[1]) {
+				return normalizeDigits(trackTwoMatch[1]);
 			}
 
-			// Traditional: just return contiguous digits in the string
-			const digits = s.replace(/\D/g, "");
-			return digits || null;
+			if (s.includes("=")) {
+				const bestSegment = s
+					.split("=")
+					.map((segment) => segment.replace(/\D/g, ""))
+					.filter((segment) => segment.length >= 6)
+					.sort((a, b) => b.length - a.length)[0];
+				if (bestSegment) {
+					return normalizeDigits(bestSegment);
+				}
+			}
+
+			return normalizeDigits(s);
 		};
 
 		(async () => {
@@ -167,7 +178,7 @@ export async function connectSerial(
 							});
 						} else {
 							log.warn(formatLog("Card parse failed", { raw: trimmed }));
-							// If parsing failed, ignore the record
+							options?.onInvalidScan?.(trimmed);
 						}
 					}
 				} catch (err) {
