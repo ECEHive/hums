@@ -1,4 +1,5 @@
 import { agreementsRouter } from "./routers/agreements/_route";
+import { apiTokensRouter } from "./routers/apiTokens/_route";
 import { authRouter } from "./routers/auth/_route";
 import { kiosksRouter } from "./routers/kiosks/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
@@ -16,6 +17,7 @@ import { router } from "./trpc";
 
 export const appRouter = router({
 	auth: authRouter,
+	apiTokens: apiTokensRouter,
 	users: usersRouter,
 	roles: rolesRouter,
 	permissions: permissionsRouter,

@@ -66,6 +66,7 @@ model User {
   
   // Many-to-many (explicit)
   userAgreements UserAgreement[]
+  apiTokens     ApiToken[]
 }
 
 model Role {
@@ -309,4 +310,24 @@ model UserAgreement {
 
   // constraints
   @@unique([userId, agreementId])
+}
+
+model ApiToken {
+  id Int @id @default(autoincrement())
+
+  // fields
+  name        String
+  description String?
+  prefix      String @unique
+  hashedKey   String @unique
+  createdById Int?
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
 }
