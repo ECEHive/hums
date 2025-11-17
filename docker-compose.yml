@@ -68,6 +68,7 @@ services:
         VITE_CAS_PROXY_URL: ${VITE_CAS_PROXY_URL}
         VITE_CLIENT_SENTRY_DSN: ${VITE_CLIENT_SENTRY_DSN}
         VITE_KIOSK_SENTRY_DSN: ${VITE_KIOSK_SENTRY_DSN}
+        TZ: ${TZ:-America/New_York}
     container_name: hums-nginx
     restart: unless-stopped
     ports:
