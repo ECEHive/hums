@@ -5,7 +5,7 @@ import {
 	isArrivalLate,
 	isDepartureEarly,
 } from "@ecehive/features";
-import type { Prisma } from "@ecehive/prisma";
+import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TKioskProtectedProcedureContext } from "../../trpc";
@@ -24,6 +24,17 @@ export type TTapInOutOptions = {
 	ctx: TKioskProtectedProcedureContext;
 	input: TTapInOutSchema;
 };
+
+const PROTECTED_ATTENDANCE_STATUSES: ShiftAttendanceStatus[] = [
+	"dropped",
+	"dropped_makeup",
+];
+
+function isProtectedAttendanceStatus(
+	status?: ShiftAttendanceStatus | null,
+): boolean {
+	return status ? PROTECTED_ATTENDANCE_STATUSES.includes(status) : false;
+}
 
 /**
  * Find active shift occurrences for a user at the current time
@@ -55,6 +66,7 @@ async function findActiveShiftOccurrences(
 					id: true,
 					timeIn: true,
 					timeOut: true,
+					status: true,
 				},
 			},
 		},
@@ -97,6 +109,9 @@ async function handleTapInAttendance(
 		);
 
 		if (existingAttendance) {
+			if (isProtectedAttendanceStatus(existingAttendance.status)) {
+				continue;
+			}
 			// If attendance exists but doesn't have a timeIn yet (was created as "absent"),
 			// update it to "present" with timeIn
 			if (!existingAttendance.timeIn && !existingAttendance.timeOut) {
@@ -148,6 +163,7 @@ async function handleTapOutAttendance(
 		where: {
 			userId,
 			timeOut: null,
+			status: { notIn: PROTECTED_ATTENDANCE_STATUSES },
 			shiftOccurrence: {
 				timestamp: { lte: tapOutTime },
 			},
@@ -167,6 +183,7 @@ async function handleTapOutAttendance(
 	});
 
 	for (const attendance of openAttendances) {
+		if (isProtectedAttendanceStatus(attendance.status)) continue;
 		const scheduledStart = computeOccurrenceStart(
 			new Date(attendance.shiftOccurrence.timestamp),
 			attendance.shiftOccurrence.shiftSchedule.startTime,
