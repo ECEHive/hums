@@ -44,6 +44,12 @@ export function FlowOverlays({
 	onAgreementError,
 	onAgreementProgress,
 }: FlowOverlaysProps) {
+	const hasBlockingOverlay =
+		!!errorDialog.message ||
+		!!pendingAgreement ||
+		!!sessionTypeSelection ||
+		!!tapOutActionSelection;
+
 	return (
 		<>
 			{errorDialog.message && (
@@ -82,7 +88,7 @@ export function FlowOverlays({
 				/>
 			)}
 
-			{tapNotification.event && (
+			{tapNotification.event && !hasBlockingOverlay && (
 				<TapNotification
 					event={tapNotification.event}
 					isExiting={tapNotification.isExiting}

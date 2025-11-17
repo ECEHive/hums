@@ -80,6 +80,13 @@ export function useTapWorkflow() {
 	const tapOutActionSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const agreementFlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+	const dismissTapNotification = useCallback(() => {
+		clearTimer(tapEventTimeoutRef);
+		clearTimer(exitTimeoutRef);
+		setCurrentTapEvent(null);
+		setIsNotificationExiting(false);
+	}, []);
+
 	const scheduleEventHide = useCallback(() => {
 		clearTimer(tapEventTimeoutRef);
 		tapEventTimeoutRef.current = setTimeout(() => {
@@ -135,6 +142,7 @@ export function useTapWorkflow() {
 			sessionType?: "regular" | "staffing",
 			tapAction?: "end_session" | "switch_to_staffing" | "switch_to_regular",
 		) => {
+			dismissTapNotification();
 			clearTimer(sessionTypeSelectorTimeoutRef);
 			clearTimer(tapOutActionSelectorTimeoutRef);
 			clearTimer(agreementFlowTimeoutRef);
@@ -257,7 +265,7 @@ export function useTapWorkflow() {
 				showError(message);
 			}
 		},
-		[log, showError],
+		[dismissTapNotification, log, showError],
 	);
 
 	const handleAgreementComplete = useCallback(async () => {
@@ -364,5 +372,6 @@ export function useTapWorkflow() {
 		handleTapOutActionCancel,
 		resetAgreementTimeout,
 		showError,
+		dismissTapNotification,
 	};
 }
