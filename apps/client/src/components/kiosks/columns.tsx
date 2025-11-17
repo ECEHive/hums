@@ -1,5 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { formatDateInAppTimezone } from "@/lib/timezone";
 import { DeleteDialog } from "./delete-dialog";
 import { UpdateDialog } from "./update-dialog";
 
@@ -41,9 +42,10 @@ export function generateColumns(): ColumnDef<Kiosk>[] {
 		{
 			accessorKey: "createdAt",
 			header: "Created",
-			cell: ({ row }) => {
-				return new Date(row.original.createdAt).toLocaleDateString();
-			},
+			cell: ({ row }) =>
+				formatDateInAppTimezone(row.original.createdAt, {
+					formatString: "MMM d, yyyy",
+				}),
 		},
 		{
 			accessorKey: "modify",

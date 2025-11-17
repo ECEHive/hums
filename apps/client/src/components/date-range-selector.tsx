@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import type * as React from "react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,12 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	formatLocalInput,
+	formatLocalRange,
+	getAppTimezoneDisplayLabel,
+	isUserInAppTimezone,
+} from "@/lib/timezone";
 
 type Range = [Date | undefined, Date | undefined];
 
@@ -40,10 +45,20 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 		setRange(value ?? [undefined, undefined]);
 		// Extract time from dates if they exist
 		if (value?.[0]) {
-			setStartTime(format(value[0], "HH:mm"));
+			setStartTime(
+				`${value[0].getHours().toString().padStart(2, "0")}:${value[0]
+					.getMinutes()
+					.toString()
+					.padStart(2, "0")}`,
+			);
 		}
 		if (value?.[1]) {
-			setEndTime(format(value[1], "HH:mm"));
+			setEndTime(
+				`${value[1].getHours().toString().padStart(2, "0")}:${value[1]
+					.getMinutes()
+					.toString()
+					.padStart(2, "0")}`,
+			);
 		}
 	}, [value]);
 
@@ -51,13 +66,17 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 		const [s, e] = range;
 		if (!s && !e) return "Pick a date range";
 		if (s && !e) {
-			return withTime ? format(s, "PPP p") : format(s, "PPP");
+			return formatLocalInput(s, {
+				formatString: withTime ? undefined : "MMM D, YYYY",
+				includeTimezoneWhenDifferent: withTime,
+				// Value came directly from the picker, so treat it as local input
+				treatAsLocalInput: true,
+			});
 		}
 		if (s && e) {
-			if (withTime) {
-				return `${format(s, "PPP p")} → ${format(e, "PPP p")}`;
-			}
-			return `${format(s, "PPP")} → ${format(e, "PPP")}`;
+			return formatLocalRange(s, e, {
+				includeTime: withTime,
+			});
 		}
 		return "Pick a date range";
 	};
@@ -116,7 +135,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start">
-					<div className="p-4">
+					<div className="p-4 space-y-3">
 						<div className="flex items-center justify-between mb-2">
 							<span className="text-sm font-medium">Select range</span>
 							<Button
@@ -128,6 +147,11 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 								Clear
 							</Button>
 						</div>
+						{!isUserInAppTimezone && (
+							<p className="text-xs text-muted-foreground">
+								All selections use {getAppTimezoneDisplayLabel()}.
+							</p>
+						)}
 						<Calendar
 							mode="range"
 							selected={range ? { from: range[0], to: range[1] } : undefined}

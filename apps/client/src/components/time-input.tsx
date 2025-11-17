@@ -1,6 +1,7 @@
 import { ClockIcon } from "lucide-react";
 import type * as React from "react";
 import { Input } from "@/components/ui/input";
+import { getAppTimezoneDisplayLabel } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
 interface TimeInputProps {
@@ -86,6 +87,7 @@ export function TimeInput({
 				id={id}
 				name={name}
 				aria-invalid={ariaInvalid}
+				title={`Time in ${getAppTimezoneDisplayLabel()}`}
 				maxLength={5}
 			/>
 		</div>
