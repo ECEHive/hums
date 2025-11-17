@@ -51,6 +51,7 @@ function Reports() {
 		endDate: end?.toISOString() ?? undefined,
 		// do not provide a default role; generation requires an explicit selection
 		staffingRoleId: selectedRole ?? undefined,
+		periodId: Number(periodId),
 	};
 
 	const {

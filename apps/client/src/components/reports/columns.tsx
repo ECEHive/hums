@@ -4,6 +4,7 @@ export type UserReport = {
 	id: number;
 	name: string;
 	username: string;
+	periodScheduledTime: number;
 	pastScheduledTime: number;
 	pastAttendedTime: number;
 	pastMissedTime: number;
@@ -19,6 +20,13 @@ export function generateColumns(): ColumnDef<UserReport>[] {
 		{
 			accessorKey: "username",
 			header: "Username",
+		},
+		{
+			accessorKey: "periodScheduledTime",
+			header: "Scheduled Time For Period",
+			cell: ({ row }) => {
+				return <span>{row.original.periodScheduledTime.toFixed(2)} hrs</span>;
+			},
 		},
 		{
 			accessorKey: "pastScheduledTime",
