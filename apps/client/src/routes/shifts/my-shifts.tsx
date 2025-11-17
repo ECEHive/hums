@@ -1,7 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { format } from "date-fns";
 import { ChevronDownIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
@@ -52,6 +51,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shifts/my-shifts")({
@@ -67,21 +67,12 @@ export const permissions = {
 	any: ["shift_schedules.register", "shift_schedules.unregister"],
 } as RequiredPermissions;
 
-function formatTimeLabel(time: string): string {
-	const [hoursStr, minutesStr] = time.split(":");
-	let hours = Number(hoursStr);
-	const minutes = Number(minutesStr);
-	const period = hours >= 12 ? "PM" : "AM";
-	if (hours === 0) {
-		hours = 12;
-	} else if (hours > 12) {
-		hours -= 12;
-	}
-	return `${hours}:${minutes.toString().padStart(2, "0")} ${period}`;
-}
-
 function formatShiftSummary(occurrence: ShiftOccurrenceRow) {
-	return `${format(occurrence.timestamp, "EEE, MMM d")}, ${formatTimeLabel(occurrence.startTime)} - ${formatTimeLabel(occurrence.endTime)}`;
+	const dateLabel = formatDateInAppTimezone(occurrence.timestamp, {
+		formatString: "ddd, MMM D",
+	});
+	const timeLabel = formatTimeRange(occurrence.startTime, occurrence.endTime);
+	return `${dateLabel}, ${timeLabel}`;
 }
 
 function getErrorMessage(error: unknown) {
@@ -519,11 +510,12 @@ function MyShifts() {
 															</div>
 														</TableCell>
 														<TableCell>
-															{format(occ.timestamp, "MMM d")}
+															{formatDateInAppTimezone(occ.timestamp, {
+																formatString: "MMM D",
+															})}
 														</TableCell>
 														<TableCell>
-															{formatTimeLabel(occ.startTime)} -{" "}
-															{formatTimeLabel(occ.endTime)}
+															{formatTimeRange(occ.startTime, occ.endTime)}
 														</TableCell>
 													</TableRow>
 												);

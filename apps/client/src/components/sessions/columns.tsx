@@ -1,5 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { formatInAppTimezone } from "@/lib/timezone";
 
 type Session = {
 	id: number;
@@ -15,15 +16,7 @@ type Session = {
 	};
 };
 
-const formatDate = (date: Date) => {
-	return new Date(date).toLocaleString("en-US", {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	});
-};
+const formatDate = (date: Date) => formatInAppTimezone(date);
 
 const formatDuration = (start: Date, end: Date | null) => {
 	const startTime = new Date(start).getTime();
