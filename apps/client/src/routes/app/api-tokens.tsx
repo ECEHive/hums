@@ -59,8 +59,12 @@ type GeneratedToken = {
 
 function ApiTokensPage() {
 	const { user } = useAuth();
-	const canCreate = user ? checkPermissions(user, ["api_tokens.create"]) : false;
-	const canDelete = user ? checkPermissions(user, ["api_tokens.delete"]) : false;
+	const canCreate = user
+		? checkPermissions(user, ["api_tokens.create"])
+		: false;
+	const canDelete = user
+		? checkPermissions(user, ["api_tokens.delete"])
+		: false;
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebounce(search, 250);
 	const [tokenToShow, setTokenToShow] = useState<GeneratedToken | null>(null);
