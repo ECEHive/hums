@@ -23,6 +23,8 @@ export interface ConnectSerialOptions {
 	requestOnNoPorts?: boolean;
 	// Custom port picker if multiple are available
 	pick?: (ports: SerialPort[]) => SerialPort | null;
+	// Optional hook for card scans we cannot parse
+	onInvalidScan?: (raw: string) => void;
 }
 
 export async function connectSerial(
@@ -167,7 +169,7 @@ export async function connectSerial(
 							});
 						} else {
 							log.warn(formatLog("Card parse failed", { raw: trimmed }));
-							// If parsing failed, ignore the record
+							options?.onInvalidScan?.(trimmed);
 						}
 					}
 				} catch (err) {
