@@ -41,7 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDebounce } from "@/lib/debounce";
 import { checkPermissions } from "@/lib/permissions";
 
-export const permissions = ["apiTokens.list"];
+export const permissions = ["api_tokens.list"];
 
 export const Route = createFileRoute("/app/api-tokens")({
 	component: () =>
@@ -59,8 +59,8 @@ type GeneratedToken = {
 
 function ApiTokensPage() {
 	const { user } = useAuth();
-	const canCreate = user ? checkPermissions(user, ["apiTokens.create"]) : false;
-	const canDelete = user ? checkPermissions(user, ["apiTokens.delete"]) : false;
+	const canCreate = user ? checkPermissions(user, ["api_tokens.create"]) : false;
+	const canDelete = user ? checkPermissions(user, ["api_tokens.delete"]) : false;
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebounce(search, 250);
 	const [tokenToShow, setTokenToShow] = useState<GeneratedToken | null>(null);
