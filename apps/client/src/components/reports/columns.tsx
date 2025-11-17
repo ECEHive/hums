@@ -4,10 +4,10 @@ export type UserReport = {
 	id: number;
 	name: string;
 	username: string;
-	totalScheduledTime: number;
-	totalAttendedTime: number;
-	totalMissedTime: number;
-	attendancePercentage: number;
+	pastScheduledTime: number;
+	pastAttendedTime: number;
+	pastMissedTime: number;
+	pastAttendancePercentage: number;
 };
 
 export function generateColumns(): ColumnDef<UserReport>[] {
@@ -21,31 +21,31 @@ export function generateColumns(): ColumnDef<UserReport>[] {
 			header: "Username",
 		},
 		{
-			accessorKey: "totalScheduledTime",
-			header: "Total Scheduled Time",
+			accessorKey: "pastScheduledTime",
+			header: "Past Scheduled Time",
 			cell: ({ row }) => {
-				return <span>{row.original.totalScheduledTime} hrs</span>;
+				return <span>{row.original.pastScheduledTime.toFixed(2)} hrs</span>;
 			},
 		},
 		{
-			accessorKey: "totalAttendedTime",
-			header: "Total Attended Time",
+			accessorKey: "pastAttendedTime",
+			header: "Past Attended Time",
 			cell: ({ row }) => {
-				return <span>{row.original.totalAttendedTime}%</span>;
+				return <span>{row.original.pastAttendedTime.toFixed(2)} hrs</span>;
 			},
 		},
 		{
-			accessorKey: "totalMissedTime",
-			header: "Total Missed Time",
+			accessorKey: "pastMissedTime",
+			header: "Past Missed Time",
 			cell: ({ row }) => {
-				return <span>{row.original.totalMissedTime}%</span>;
+				return <span>{row.original.pastMissedTime.toFixed(2)} hrs</span>;
 			},
 		},
 		{
-			accessorKey: "attendancePercentage",
-			header: "Attendance Percentage",
+			accessorKey: "pastAttendancePercentage",
+			header: "Past Attendance Percentage",
 			cell: ({ row }) => {
-				return <span>{row.original.attendancePercentage}%</span>;
+				return <span>{row.original.pastAttendancePercentage.toFixed(2)}%</span>;
 			},
 		},
 	];

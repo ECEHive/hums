@@ -15,6 +15,11 @@ export type TGenerateOptions = {
 	input: TGenerateSchema;
 };
 
+function convert24HourToMS(timeStr: string): number {
+	const [hours, minutes] = timeStr.split(":").map(Number);
+	return hours * 3600000 + minutes * 60000;
+}
+
 export async function generateHandler(options: TGenerateOptions) {
 	const { staffingRoleId, startDate, endDate } = options.input;
 
@@ -60,6 +65,11 @@ export async function generateHandler(options: TGenerateOptions) {
 		where: where,
 		include: {
 			user: true,
+			shiftOccurrence: {
+				include: {
+					shiftSchedule: true,
+				},
+			}
 		},
 		orderBy: {
 			user: { username: "asc" },
@@ -78,6 +88,8 @@ export async function generateHandler(options: TGenerateOptions) {
 				status: string;
 				timeIn: Date | null;
 				timeOut: Date | null;
+				startTime: string;
+				endTime: string;
 			}[];
 		}
 	>();
@@ -95,6 +107,8 @@ export async function generateHandler(options: TGenerateOptions) {
 						status: attendance.status,
 						timeIn: attendance.timeIn,
 						timeOut: attendance.timeOut,
+						startTime: attendance.shiftOccurrence.shiftSchedule.startTime,
+						endTime: attendance.shiftOccurrence.shiftSchedule.endTime,
 					},
 				],
 			});
@@ -104,6 +118,8 @@ export async function generateHandler(options: TGenerateOptions) {
 				status: attendance.status,
 				timeIn: attendance.timeIn,
 				timeOut: attendance.timeOut,
+				startTime: attendance.shiftOccurrence.shiftSchedule.startTime,
+				endTime: attendance.shiftOccurrence.shiftSchedule.endTime,
 			});
 		}
 	});
@@ -113,10 +129,10 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: number;
 			name: string;
 			username: string;
-			totalScheduledTime: number;
-			totalAttendedTime: number;
-			totalMissedTime: number;
-			attendancePercentage: number;
+			pastScheduledTime: number;
+			pastAttendedTime: number;
+			pastMissedTime: number;
+			pastAttendancePercentage: number;
 		}[];
 		total: number;
 	} = { reports: [], total: 0 };
@@ -124,12 +140,9 @@ export async function generateHandler(options: TGenerateOptions) {
 	userMap.forEach((user) => {
 		const totalScheduledTime = user.shiftAttendances.reduce(
 			(acc, attendance) => {
-				if (attendance.timeIn && attendance.timeOut) {
-					return (
-						acc + (attendance.timeOut.getTime() - attendance.timeIn.getTime())
-					);
-				}
-				return acc;
+				return (
+					acc + (convert24HourToMS(attendance.endTime) - convert24HourToMS(attendance.startTime)) / 3600000 // convert ms to hours
+				);
 			},
 			0,
 		);
@@ -142,7 +155,7 @@ export async function generateHandler(options: TGenerateOptions) {
 					attendance.timeOut
 				) {
 					return (
-						acc + (attendance.timeOut.getTime() - attendance.timeIn.getTime())
+						acc + (attendance.timeOut.getTime() - attendance.timeIn.getTime()) / 3600000 // convert ms to hours
 					);
 				}
 				return acc;
@@ -150,7 +163,18 @@ export async function generateHandler(options: TGenerateOptions) {
 			0,
 		);
 
-		const totalMissedTime = totalScheduledTime - totalAttendedTime;
+		const totalMissedTime = user.shiftAttendances.reduce(
+			(acc, attendance) => {
+				if (attendance.status === "absent") {
+					return (
+						acc + (convert24HourToMS(attendance.endTime) - convert24HourToMS(attendance.startTime)) / 3600000 // convert ms to hours
+					);
+				}
+				return acc;
+			},
+			0,
+		);
+
 		const attendancePercentage =
 			totalScheduledTime > 0
 				? (totalAttendedTime / totalScheduledTime) * 100
@@ -160,10 +184,10 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: user.id,
 			name: user.name,
 			username: user.username,
-			totalScheduledTime,
-			totalAttendedTime,
-			totalMissedTime,
-			attendancePercentage,
+			pastScheduledTime: totalScheduledTime,
+			pastAttendedTime: totalAttendedTime,
+			pastMissedTime: totalMissedTime,
+			pastAttendancePercentage: attendancePercentage,
 		});
 	});
 

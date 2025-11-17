@@ -62,10 +62,6 @@ function Reports() {
 		queryFn: async () => {
 			// only generate when a role is explicitly selected
 			if (selectedRole == null) return { reports: [], total: 0 };
-			console.log("Generating report with params:", {
-				...reportParams,
-				staffingRoleId: selectedRole,
-			});
 			return trpc.reports.generate.query({
 				...reportParams,
 				staffingRoleId: selectedRole as number,
@@ -278,7 +274,6 @@ function Reports() {
 									key={size}
 									onClick={async () => {
 										setPageSize(size);
-										await refetchReport();
 										setPage(1);
 									}}
 								>
