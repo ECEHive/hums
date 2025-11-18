@@ -52,10 +52,9 @@ export async function listForRegistrationHandler(
 
 	// Check if period is within visibility window
 	const now = new Date();
-	const isVisibleByStart =
-		!period.visibleStart || new Date(period.visibleStart) <= now;
-	const isVisibleByEnd =
-		!period.visibleEnd || new Date(period.visibleEnd) >= now;
+	const nowTime = now.getTime();
+	const isVisibleByStart = period.visibleStart.getTime() <= nowTime;
+	const isVisibleByEnd = period.visibleEnd.getTime() >= nowTime;
 	const isWithinVisibilityWindow = isVisibleByStart && isVisibleByEnd;
 
 	if (!isWithinVisibilityWindow) {
@@ -66,17 +65,13 @@ export async function listForRegistrationHandler(
 	}
 
 	// Check if we're within the schedule signup window
-	const isSignupByStart =
-		!period.scheduleSignupStart || new Date(period.scheduleSignupStart) <= now;
-	const isSignupByEnd =
-		!period.scheduleSignupEnd || new Date(period.scheduleSignupEnd) >= now;
+	const isSignupByStart = period.scheduleSignupStart.getTime() <= nowTime;
+	const isSignupByEnd = period.scheduleSignupEnd.getTime() >= nowTime;
 	const isWithinSignupWindow = isSignupByStart && isSignupByEnd;
 
 	// Check if we're within the schedule modify window
-	const isModifyByStart =
-		!period.scheduleModifyStart || new Date(period.scheduleModifyStart) <= now;
-	const isModifyByEnd =
-		!period.scheduleModifyEnd || new Date(period.scheduleModifyEnd) >= now;
+	const isModifyByStart = period.scheduleModifyStart.getTime() <= nowTime;
+	const isModifyByEnd = period.scheduleModifyEnd.getTime() >= nowTime;
 	const isWithinModifyWindow = isModifyByStart && isModifyByEnd;
 
 	// Build where clause

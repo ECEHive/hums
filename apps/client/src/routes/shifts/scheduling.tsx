@@ -96,19 +96,18 @@ function Scheduling() {
 
 		const { scheduleSignupStart, scheduleSignupEnd } = schedulesData.period;
 
-		if (!isWithinSignupWindow && (scheduleSignupStart || scheduleSignupEnd)) {
+		if (!isWithinSignupWindow) {
 			const now = new Date();
-			const signupStartDate = scheduleSignupStart
-				? new Date(scheduleSignupStart)
-				: null;
-			if (signupStartDate && signupStartDate > now) {
+			const signupStartDate = new Date(scheduleSignupStart);
+			const signupEndDate = new Date(scheduleSignupEnd);
+			if (signupStartDate > now) {
 				return {
 					type: "primary",
 					title: "Registration Opens Soon",
 					message: `Shift registration will open on ${formatInAppTimezone(signupStartDate)}`,
 				};
 			}
-			if (scheduleSignupEnd && new Date(scheduleSignupEnd) < now) {
+			if (signupEndDate < now) {
 				return {
 					type: "destructive",
 					title: "Registration Closed",

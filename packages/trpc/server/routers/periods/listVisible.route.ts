@@ -26,24 +26,7 @@ export async function listVisibleHandler(options: TListVisibleOptions) {
 
 	// Filter by visibility window - only return periods that are currently visible
 	const where: Prisma.PeriodWhereInput = {
-		OR: [
-			// No visibility window defined (always visible)
-			{
-				AND: [{ visibleStart: null }, { visibleEnd: null }],
-			},
-			// Only visibleStart defined and now is after it
-			{
-				AND: [{ visibleStart: { lte: now } }, { visibleEnd: null }],
-			},
-			// Only visibleEnd defined and now is before it
-			{
-				AND: [{ visibleStart: null }, { visibleEnd: { gte: now } }],
-			},
-			// Both defined and now is between them
-			{
-				AND: [{ visibleStart: { lte: now } }, { visibleEnd: { gte: now } }],
-			},
-		],
+		AND: [{ visibleStart: { lte: now } }, { visibleEnd: { gte: now } }],
 	};
 
 	const [result, total] = await Promise.all([

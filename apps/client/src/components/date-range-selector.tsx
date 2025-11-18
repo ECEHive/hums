@@ -135,7 +135,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start">
-					<div className="p-4 space-y-3">
+					<div className="flex flex-col items-center p-4 space-y-3">
 						<div className="flex items-center justify-between mb-2">
 							<span className="text-sm font-medium">Select range</span>
 							<Button
@@ -185,7 +185,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 							}}
 						/>
 						{withTime && (
-							<div className="border-t pt-4 space-y-3">
+							<div className="flex flex-row border-t pt-4 space-x-2">
 								<div className="space-y-2">
 									<label htmlFor={startTimeId} className="text-sm font-medium">
 										Start Time
