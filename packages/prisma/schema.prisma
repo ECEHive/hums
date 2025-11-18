@@ -89,7 +89,8 @@ model Role {
   // relations
   permissions Permission[]
   users       User[]
-  shiftTypes  ShiftType[]
+  shiftTypes ShiftType[]
+  periods    Period[]   @relation("PeriodRoles")
 }
 
 model Permission {
@@ -135,7 +136,8 @@ model Period {
 
   // relations
   periodExceptions PeriodException[]
-  shiftTypes       ShiftType[]
+  shiftTypes ShiftType[]
+  roles      Role[]     @relation("PeriodRoles")
 }
 
 model PeriodException {

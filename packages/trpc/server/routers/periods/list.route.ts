@@ -60,6 +60,9 @@ export async function listHandler(options: TListOptions) {
 			orderBy: { start: "asc" },
 			skip: offset,
 			take: limit,
+			include: {
+				roles: true,
+			},
 		}),
 		prisma.period.count({ where }),
 	]);

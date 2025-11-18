@@ -6,6 +6,10 @@ import { z } from "zod";
 // DateField removed in favor of DateRangeSelector
 import DateRangeSelector from "@/components/date-range-selector";
 import { normalizeRangeToDayBounds } from "@/components/periods/date-range-helpers";
+import {
+	type Role,
+	RoleMultiSelect,
+} from "@/components/roles/role-multiselect";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,
@@ -52,6 +56,7 @@ const formSchema = z
 		scheduleSignupEnd: z.date(),
 		scheduleModifyStart: z.date(),
 		scheduleModifyEnd: z.date(),
+		periodRoleIds: z.array(z.number().int().min(1)),
 	})
 	.superRefine((data, ctx) => {
 		const hasMin = data.min !== null && data.min !== undefined;
@@ -94,6 +99,7 @@ interface Period {
 	min: number | null;
 	max: number | null;
 	minMaxUnit: z.infer<typeof unitSchema> | null;
+	roles: Role[];
 }
 
 interface EditPeriodSheetProps {
@@ -111,6 +117,7 @@ export function EditPeriodSheet({
 }: EditPeriodSheetProps) {
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
+	const [selectedRoles, setSelectedRoles] = useState<Role[]>(period.roles);
 	const formId = useId();
 
 	const updatePeriodMutation = useMutation({
@@ -128,6 +135,7 @@ export function EditPeriodSheet({
 			scheduleSignupEnd: Date;
 			scheduleModifyStart: Date;
 			scheduleModifyEnd: Date;
+			periodRoleIds: number[];
 		}) => {
 			return trpc.periods.update.mutate(input);
 		},
@@ -151,6 +159,7 @@ export function EditPeriodSheet({
 			scheduleSignupEnd: new Date(period.scheduleSignupEnd) as Date | null,
 			scheduleModifyStart: new Date(period.scheduleModifyStart) as Date | null,
 			scheduleModifyEnd: new Date(period.scheduleModifyEnd) as Date | null,
+			periodRoleIds: period.roles.map((role) => role.id),
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -202,6 +211,7 @@ export function EditPeriodSheet({
 					scheduleSignupEnd: signupEndUtc,
 					scheduleModifyStart: modifyStartUtc,
 					scheduleModifyEnd: modifyEndUtc,
+					periodRoleIds: value.periodRoleIds,
 				});
 				handleSheetChange(false);
 			} catch (err) {
@@ -218,7 +228,8 @@ export function EditPeriodSheet({
 	useEffect(() => {
 		form.reset();
 		setServerError(null);
-	}, [period.id, form]);
+		setSelectedRoles(period.roles);
+	}, [period, form]);
 
 	const handleSheetChange = useCallback(
 		(nextOpen: boolean) => {
@@ -226,11 +237,11 @@ export function EditPeriodSheet({
 			if (!nextOpen) {
 				form.reset();
 				setServerError(null);
+				setSelectedRoles(period.roles);
 			}
 		},
-		[form, onOpenChange],
+		[form, onOpenChange, period.roles],
 	);
-
 	return (
 		<Sheet open={open} onOpenChange={handleSheetChange}>
 			{trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
@@ -389,6 +400,32 @@ export function EditPeriodSheet({
 								/>
 							</div>
 						</div>
+
+						<form.Field
+							name="periodRoleIds"
+							children={(field) => (
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<FieldLabel>Allowed Roles</FieldLabel>
+										<span className="text-xs text-muted-foreground">
+											Optional
+										</span>
+									</div>
+									<FieldDescription>
+										Limit period visibility and interactions to selected roles.
+										Leave blank to allow all users.
+									</FieldDescription>
+									<RoleMultiSelect
+										value={selectedRoles}
+										onChange={(roles) => {
+											setSelectedRoles(roles);
+											field.handleChange(roles.map((role) => role.id));
+										}}
+										placeholder="Search roles..."
+									/>
+								</div>
+							)}
+						/>
 
 						<div className="space-y-2">
 							<FieldLabel>

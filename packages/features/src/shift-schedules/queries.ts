@@ -113,5 +113,10 @@ export async function getPeriodById(
 ) {
 	return prisma.period.findUnique({
 		where: { id: periodId },
+		include: {
+			roles: {
+				select: { id: true },
+			},
+		},
 	});
 }

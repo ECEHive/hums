@@ -41,6 +41,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
 import { permissions as apiTokensPagePermissions } from "@/routes/app/api-tokens";
@@ -59,6 +60,7 @@ type AppSidebarItem = {
 	url: string;
 	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 	permissions: string[] | Record<string, string[]>;
+	allowWithShiftAccess?: boolean;
 	hasChildren?: boolean;
 };
 
@@ -87,6 +89,7 @@ export const items: AppSidebarGroup[] = [
 				url: "/shifts",
 				icon: CalendarIcon,
 				permissions: schedulingIndexPagePermissions,
+				allowWithShiftAccess: true,
 				hasChildren: true,
 			},
 		],
@@ -146,10 +149,21 @@ export function AppSidebar() {
 	const { setTheme } = useTheme();
 	const location = useLocation();
 	const pathname = location?.pathname ?? "/";
+	const { canAccessShifts } = useShiftAccess();
+
+	const canViewItem = (item: AppSidebarItem) => {
+		if (checkPermissions(user, item.permissions)) {
+			return true;
+		}
+		if (item.allowWithShiftAccess) {
+			return canAccessShifts;
+		}
+		return false;
+	};
 
 	// Collect all visible items across all groups to find the best match
 	const allVisibleItems = items.flatMap((group) =>
-		group.items.filter((item) => checkPermissions(user, item.permissions)),
+		group.items.filter((item) => canViewItem(item)),
 	);
 
 	const isPathActive = (itemUrl: string) => {
@@ -179,9 +193,7 @@ export function AppSidebar() {
 			</SidebarHeader>
 			<SidebarContent>
 				{items.map((group) => {
-					const visibleItems = group.items.filter((item) =>
-						checkPermissions(user, item.permissions),
-					);
+					const visibleItems = group.items.filter((item) => canViewItem(item));
 					if (visibleItems.length === 0) return null;
 					return (
 						<SidebarGroup key={group.name || "group"}>

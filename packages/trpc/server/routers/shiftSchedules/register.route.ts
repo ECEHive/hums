@@ -1,4 +1,5 @@
 import {
+	assertCanAccessPeriod,
 	assignUserToScheduleOccurrences,
 	calculateRequirementComparableValue,
 	convertRequirementThresholdToComparable,
@@ -16,7 +17,7 @@ import {
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZRegisterSchema = z.object({
 	shiftScheduleId: z.number().min(1),
@@ -25,7 +26,7 @@ export const ZRegisterSchema = z.object({
 export type TRegisterSchema = z.infer<typeof ZRegisterSchema>;
 
 export type TRegisterOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TRegisterSchema;
 };
 
@@ -60,6 +61,11 @@ export async function registerHandler(options: TRegisterOptions) {
 		// Get the period to check time windows
 		const period = await tx.period.findUnique({
 			where: { id: targetSchedule.shiftType.periodId },
+			include: {
+				roles: {
+					select: { id: true },
+				},
+			},
 		});
 
 		if (!period) {
@@ -123,6 +129,9 @@ export async function registerHandler(options: TRegisterOptions) {
 		}
 
 		const userRoleIds = new Set(user.roles.map((r) => r.id));
+		assertCanAccessPeriod(period, userRoleIds, {
+			isSystemUser: options.ctx.user.isSystemUser,
+		});
 
 		// Validate role requirements (throws if not met)
 		try {

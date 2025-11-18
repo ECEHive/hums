@@ -17,6 +17,7 @@ export const ZCreateSchema = z
 		scheduleSignupEnd: z.date(),
 		scheduleModifyStart: z.date(),
 		scheduleModifyEnd: z.date(),
+		periodRoleIds: z.array(z.number().int().min(1)).default([]),
 	})
 	.superRefine((data, ctx) => {
 		// Start must be before end
@@ -103,7 +104,10 @@ export async function createHandler(options: TCreateOptions) {
 		scheduleSignupEnd,
 		scheduleModifyStart,
 		scheduleModifyEnd,
+		periodRoleIds,
 	} = options.input;
+
+	const uniqueRoleIds = Array.from(new Set(periodRoleIds ?? []));
 
 	return await prisma.$transaction(async (tx) => {
 		const inserted = await tx.period.create({
@@ -120,6 +124,11 @@ export async function createHandler(options: TCreateOptions) {
 				scheduleSignupEnd,
 				scheduleModifyStart,
 				scheduleModifyEnd,
+				roles: uniqueRoleIds.length
+					? {
+							connect: uniqueRoleIds.map((roleId) => ({ id: roleId })),
+						}
+					: undefined,
 			},
 		});
 
@@ -130,6 +139,13 @@ export async function createHandler(options: TCreateOptions) {
 		// Generate shift occurrences for all schedules in this period
 		await generatePeriodShiftOccurrences(tx, inserted.id);
 
-		return { period: inserted };
+		const periodWithRoles = await tx.period.findUnique({
+			where: { id: inserted.id },
+			include: {
+				roles: true,
+			},
+		});
+
+		return { period: periodWithRoles ?? inserted };
 	});
 }

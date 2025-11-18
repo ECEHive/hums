@@ -87,6 +87,8 @@ function PeriodDetail() {
 		min: period.min,
 		max: period.max,
 		minMaxUnit: period.minMaxUnit,
+		roles:
+			period.roles?.map((role) => ({ id: role.id, name: role.name })) ?? [],
 	};
 
 	const unitLabels = {
@@ -134,6 +136,27 @@ function PeriodDetail() {
 								Period Name
 							</div>
 							<div className="text-lg font-semibold">{period.name}</div>
+						</div>
+						<div>
+							<div className="text-sm font-medium text-muted-foreground">
+								Allowed Roles
+							</div>
+							{period.roles.length > 0 ? (
+								<div className="flex flex-wrap gap-2 mt-2">
+									{period.roles.map((role) => (
+										<span
+											key={role.id}
+											className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
+										>
+											{role.name ?? "Unknown role"}
+										</span>
+									))}
+								</div>
+							) : (
+								<p className="text-sm text-muted-foreground mt-1">
+									All users can view and interact with this period.
+								</p>
+							)}
 						</div>
 						<div>
 							<div className="text-sm font-medium text-muted-foreground mb-3">

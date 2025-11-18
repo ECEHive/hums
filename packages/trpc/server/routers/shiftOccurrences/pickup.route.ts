@@ -1,11 +1,13 @@
 import {
+	assertCanAccessPeriod,
 	computeOccurrenceEnd,
 	computeOccurrenceStart,
+	getUserWithRoles,
 } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 import { isWithinModifyWindow, upsertAttendanceStatus } from "./utils";
 
 export const ZPickupSchema = z.object({
@@ -15,13 +17,24 @@ export const ZPickupSchema = z.object({
 export type TPickupSchema = z.infer<typeof ZPickupSchema>;
 
 export type TPickupOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TPickupSchema;
 };
 
 export async function pickupHandler(options: TPickupOptions) {
 	const { shiftOccurrenceId } = options.input;
 	const userId = options.ctx.user.id;
+
+	const user = await getUserWithRoles(prisma, userId);
+
+	if (!user) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message: "User not found",
+		});
+	}
+
+	const userRoleIds = new Set(user.roles.map((role) => role.id));
 
 	// Verify the shift occurrence exists and get related data
 	const occurrence = await prisma.shiftOccurrence.findUnique({
@@ -32,7 +45,13 @@ export async function pickupHandler(options: TPickupOptions) {
 				include: {
 					shiftType: {
 						include: {
-							period: true,
+							period: {
+								include: {
+									roles: {
+										select: { id: true },
+									},
+								},
+							},
 						},
 					},
 				},
@@ -49,6 +68,9 @@ export async function pickupHandler(options: TPickupOptions) {
 
 	const shiftType = occurrence.shiftSchedule.shiftType;
 	const period = shiftType.period;
+	assertCanAccessPeriod(period, userRoleIds, {
+		isSystemUser: options.ctx.user.isSystemUser,
+	});
 	const now = new Date();
 
 	// Check if shift type allows self-assignment
