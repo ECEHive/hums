@@ -12,6 +12,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
+import { formatTimeRange } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
 interface ShiftSchedule {
@@ -55,16 +56,6 @@ const DAYS_OF_WEEK = [
 	"Friday",
 	"Saturday",
 ];
-
-/**
- * Format time from HH:MM to h:MM AM/PM
- */
-function formatTime(time: string): string {
-	const [hours, minutes] = time.split(":").map(Number);
-	const period = hours >= 12 ? "PM" : "AM";
-	const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-	return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
-}
 
 export function ShiftDetailSheet({
 	open,
@@ -146,8 +137,7 @@ export function ShiftDetailSheet({
 										<div className="flex items-center gap-1">
 											<ClockIcon className="w-4 h-4" />
 											<span>
-												{formatTime(schedule.startTime)} -{" "}
-												{formatTime(schedule.endTime)}
+												{formatTimeRange(schedule.startTime, schedule.endTime)}
 											</span>
 										</div>
 										<div className="flex items-center gap-1">

@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -10,6 +9,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatLocalInput } from "@/lib/timezone";
 
 // Minimal shape of the field object provided by @tanstack/react-form's form.Field
 export type FormField<T> = {
@@ -65,7 +65,14 @@ export function DateField({
 						className={"w-full justify-start text-left font-normal"}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
-						{value ? format(value, "PPP") : <span>Pick a date</span>}
+						{value ? (
+							formatLocalInput(value, {
+								formatString: "MMM D, YYYY",
+								includeTimezoneWhenDifferent: false,
+							})
+						) : (
+							<span>Pick a date</span>
+						)}
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-auto p-0" align="start">

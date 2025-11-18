@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import type { RequiredPermissions } from "@/lib/permissions";
+import { formatInAppTimezone } from "@/lib/timezone";
 
 export const Route = createFileRoute("/shifts/scheduling")({
 	component: () =>
@@ -97,11 +98,14 @@ function Scheduling() {
 
 		if (!isWithinSignupWindow && (scheduleSignupStart || scheduleSignupEnd)) {
 			const now = new Date();
-			if (scheduleSignupStart && new Date(scheduleSignupStart) > now) {
+			const signupStartDate = scheduleSignupStart
+				? new Date(scheduleSignupStart)
+				: null;
+			if (signupStartDate && signupStartDate > now) {
 				return {
 					type: "primary",
 					title: "Registration Opens Soon",
-					message: `Shift registration will open on ${new Date(scheduleSignupStart).toLocaleString()}`,
+					message: `Shift registration will open on ${formatInAppTimezone(signupStartDate)}`,
 				};
 			}
 			if (scheduleSignupEnd && new Date(scheduleSignupEnd) < now) {

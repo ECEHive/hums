@@ -38,6 +38,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { RequiredPermissions } from "@/lib/permissions";
+import { formatInAppTimezone, formatTimeRange } from "@/lib/timezone";
 
 export const Route = createFileRoute("/shifts/attendance")({
 	component: () =>
@@ -91,15 +92,7 @@ function AttendancePage() {
 		return <PeriodNotSelected />;
 	}
 
-	const formatDate = (date: Date) => {
-		return new Date(date).toLocaleString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "numeric",
-			minute: "2-digit",
-		});
-	};
+	const formatDate = (date: Date) => formatInAppTimezone(date);
 
 	const formatDuration = (timeIn: Date | null, timeOut: Date | null) => {
 		if (!timeIn) return "-";
@@ -344,8 +337,10 @@ function AttendancePage() {
 													{getDayOfWeek(
 														attendance.shiftOccurrence.shiftSchedule.dayOfWeek,
 													)}{" "}
-													{attendance.shiftOccurrence.shiftSchedule.startTime} -{" "}
-													{attendance.shiftOccurrence.shiftSchedule.endTime}
+													{formatTimeRange(
+														attendance.shiftOccurrence.shiftSchedule.startTime,
+														attendance.shiftOccurrence.shiftSchedule.endTime,
+													)}
 												</span>
 											</div>
 										</TableCell>

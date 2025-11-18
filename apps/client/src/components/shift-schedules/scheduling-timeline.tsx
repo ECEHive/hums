@@ -7,6 +7,10 @@ import {
 	HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Spinner } from "@/components/ui/spinner";
+import {
+	getAppTimezoneAbbreviation,
+	isUserInAppTimezone,
+} from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
 interface ShiftSchedule {
@@ -43,6 +47,9 @@ const DAYS_OF_WEEK = [
 
 const TIME_COLUMN_WIDTH = "clamp(68px, 18vw, 120px)";
 const DAY_COLUMN_WIDTH = "clamp(120px, 15vw, 170px)";
+const TIME_HEADER_LABEL = isUserInAppTimezone
+	? "Time"
+	: `Time (${getAppTimezoneAbbreviation()})`;
 
 function renderEmptyState(
 	message = "No shift schedules available for this period",
@@ -289,7 +296,7 @@ export function SchedulingTimeline({
 					style={{ gridTemplateColumns }}
 				>
 					<div className="sticky left-0 z-30 text-xs sm:text-sm font-medium text-muted-foreground py-2 pr-4 bg-card/50 backdrop-blur-md">
-						Time
+						{TIME_HEADER_LABEL}
 					</div>
 					{visibleDays.map((day) => (
 						<div

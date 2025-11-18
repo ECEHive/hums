@@ -1,7 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { format } from "date-fns";
 import { Calendar, Pencil } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
@@ -15,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+import { formatInAppTimezone } from "@/lib/timezone";
 
 export const Route = createFileRoute("/shifts/period-details")({
 	component: () =>
@@ -143,13 +143,13 @@ function PeriodDetail() {
 								<div className="text-sm font-medium text-muted-foreground">
 									Start Date
 								</div>
-								<div>{format(period.start, "PPP p")}</div>
+								<div>{formatInAppTimezone(period.start)}</div>
 							</div>
 							<div>
 								<div className="text-sm font-medium text-muted-foreground">
 									End Date
 								</div>
-								<div>{format(period.end, "PPP p")}</div>
+								<div>{formatInAppTimezone(period.end)}</div>
 							</div>
 						</div>
 					</div>
@@ -164,7 +164,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.visibleStart
-											? format(period.visibleStart, "PPP p")
+											? formatInAppTimezone(period.visibleStart)
 											: "Not set"}
 									</div>
 								</div>
@@ -174,7 +174,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.visibleEnd
-											? format(period.visibleEnd, "PPP p")
+											? formatInAppTimezone(period.visibleEnd)
 											: "Not set"}
 									</div>
 								</div>
@@ -198,7 +198,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleSignupStart
-											? format(period.scheduleSignupStart, "PPP p")
+											? formatInAppTimezone(period.scheduleSignupStart)
 											: "Not set"}
 									</div>
 								</div>
@@ -208,7 +208,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleSignupEnd
-											? format(period.scheduleSignupEnd, "PPP p")
+											? formatInAppTimezone(period.scheduleSignupEnd)
 											: "Not set"}
 									</div>
 								</div>
@@ -232,7 +232,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleModifyStart
-											? format(period.scheduleModifyStart, "PPP p")
+											? formatInAppTimezone(period.scheduleModifyStart)
 											: "Not set"}
 									</div>
 								</div>
@@ -242,7 +242,7 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.scheduleModifyEnd
-											? format(period.scheduleModifyEnd, "PPP p")
+											? formatInAppTimezone(period.scheduleModifyEnd)
 											: "Not set"}
 									</div>
 								</div>

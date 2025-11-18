@@ -1,9 +1,9 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
 import { CheckCircle2, Clock, RadioIcon, XCircle } from "lucide-react";
 import type { JSX } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
 
 export type ShiftOccurrenceRow = {
 	id: number;
@@ -44,13 +44,6 @@ type ColumnOptions = {
 	canMakeupPermission: boolean;
 };
 
-function formatTime(time: string): string {
-	const [hours, minutes] = time.split(":").map(Number);
-	const period = hours >= 12 ? "PM" : "AM";
-	const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-	return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
-}
-
 export function createColumns(
 	options: ColumnOptions,
 ): ColumnDef<ShiftOccurrenceRow>[] {
@@ -58,14 +51,13 @@ export function createColumns(
 		{
 			accessorKey: "timestamp",
 			header: "Date",
-			cell: ({ row }) => {
-				const occurrence = row.original;
-				return (
-					<span className="font-medium">
-						{format(new Date(occurrence.timestamp), "MMM d, yyyy")}
-					</span>
-				);
-			},
+			cell: ({ row }) => (
+				<span className="font-medium">
+					{formatDateInAppTimezone(row.original.timestamp, {
+						formatString: "MMM D, YYYY",
+					})}
+				</span>
+			),
 		},
 		{
 			accessorKey: "startTime",
@@ -76,8 +68,7 @@ export function createColumns(
 					<div className="flex items-center gap-1">
 						<Clock className="w-4 h-4 text-muted-foreground" />
 						<span>
-							{formatTime(occurrence.startTime)} -{" "}
-							{formatTime(occurrence.endTime)}
+							{formatTimeRange(occurrence.startTime, occurrence.endTime)}
 						</span>
 					</div>
 				);

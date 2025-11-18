@@ -30,6 +30,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
+import { toUtcDateFromLocalInput } from "@/lib/timezone";
 
 const unitSchema = z.enum(["count", "minutes", "hours"]);
 
@@ -168,22 +169,29 @@ export function EditPeriodSheet({
 		},
 		onSubmit: async ({ value }) => {
 			if (!value.start || !value.end) return;
+			const startUtc = toUtcDateFromLocalInput(value.start);
+			const endUtc = toUtcDateFromLocalInput(value.end);
+			if (!startUtc || !endUtc) return;
 
 			try {
 				await updatePeriodMutation.mutateAsync({
 					id: period.id,
 					name: value.name,
-					start: value.start,
-					end: value.end,
+					start: startUtc,
+					end: endUtc,
 					min: value.min,
 					max: value.max,
 					minMaxUnit: value.minMaxUnit,
-					visibleStart: value.visibleStart,
-					visibleEnd: value.visibleEnd,
-					scheduleSignupStart: value.scheduleSignupStart,
-					scheduleSignupEnd: value.scheduleSignupEnd,
-					scheduleModifyStart: value.scheduleModifyStart,
-					scheduleModifyEnd: value.scheduleModifyEnd,
+					visibleStart: toUtcDateFromLocalInput(value.visibleStart),
+					visibleEnd: toUtcDateFromLocalInput(value.visibleEnd),
+					scheduleSignupStart: toUtcDateFromLocalInput(
+						value.scheduleSignupStart,
+					),
+					scheduleSignupEnd: toUtcDateFromLocalInput(value.scheduleSignupEnd),
+					scheduleModifyStart: toUtcDateFromLocalInput(
+						value.scheduleModifyStart,
+					),
+					scheduleModifyEnd: toUtcDateFromLocalInput(value.scheduleModifyEnd),
 				});
 				handleSheetChange(false);
 			} catch (err) {
