@@ -16,7 +16,7 @@ export type TAgreeOptions = {
 
 export async function agreeHandler(options: TAgreeOptions) {
 	const { agreementId } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 
 	// Verify agreement exists and is enabled
 	const agreement = await prisma.agreement.findUnique({

@@ -20,7 +20,7 @@ export type TListMakeupOptions = {
 
 export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 	const { periodId, shiftTypeId, limit = 10, offset = 0 } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 
 	const period = await prisma.period.findUnique({
 		where: { id: periodId },

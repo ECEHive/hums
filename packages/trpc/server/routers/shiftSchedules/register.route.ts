@@ -31,7 +31,7 @@ export type TRegisterOptions = {
 
 export async function registerHandler(options: TRegisterOptions) {
 	const { shiftScheduleId } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 	let emittedPeriodId: number = 0;
 
 	await prisma.$transaction(async (tx) => {

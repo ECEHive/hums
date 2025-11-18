@@ -21,7 +21,7 @@ export type TPickupOptions = {
 
 export async function pickupHandler(options: TPickupOptions) {
 	const { shiftOccurrenceId } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 
 	// Verify the shift occurrence exists and get related data
 	const occurrence = await prisma.shiftOccurrence.findUnique({

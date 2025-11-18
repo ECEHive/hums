@@ -22,7 +22,7 @@ export type TListMyOptions = {
  */
 export async function listMyHandler(options: TListMyOptions) {
 	const { periodId, limit = 50, offset = 0 } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 
 	const now = new Date();
 

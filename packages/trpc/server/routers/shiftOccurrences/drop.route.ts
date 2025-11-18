@@ -19,7 +19,7 @@ export type TDropOptions = {
 
 export async function dropHandler(options: TDropOptions) {
 	const { shiftOccurrenceId, notes } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 	const sanitizedNotes = notes?.trim() ? notes.trim() : undefined;
 
 	await prisma.$transaction(async (tx) => {

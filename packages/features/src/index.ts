@@ -1,5 +1,7 @@
 export * from "./api-tokens";
 export * from "./assignments/generators";
+export * from "./audit-logs/list-audit-logs";
+export * from "./audit-logs/logger";
 export * from "./db/locking";
 export * from "./periods/generate";
 export * from "./shift-schedules/events";

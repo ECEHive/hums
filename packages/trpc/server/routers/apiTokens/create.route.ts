@@ -24,7 +24,7 @@ export async function createHandler(options: TCreateOptions) {
 		name: options.input.name,
 		description: options.input.description ?? null,
 		expiresAt,
-		createdById: options.ctx.userId,
+		createdById: options.ctx.user.id,
 	});
 
 	return { token, apiToken: record };
