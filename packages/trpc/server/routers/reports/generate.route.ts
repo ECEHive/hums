@@ -90,76 +90,54 @@ export async function generateHandler(options: TGenerateOptions) {
 		}
 	}
 
-	const shiftAttendances = await prisma.shiftAttendance.findMany({
-		where: whereForAttendance,
-		include: {
-			user: true,
-			shiftOccurrence: {
+	// Build report by querying users once and including filtered attendances/occurrences.
+	// This keeps a single DB round-trip and still lets us compute timezone-aware durations in JS.
+	const periodStartDate = startDate ? new Date(startDate) : null;
+	const periodEndDate = endDate ? new Date(endDate) : null;
+
+	// Prepare include filters for relations (strip top-level user role filters)
+	const attendanceIncludeWhere: Prisma.ShiftAttendanceWhereInput | undefined = whereForAttendance.shiftOccurrence
+		? { shiftOccurrence: whereForAttendance.shiftOccurrence }
+		: undefined;
+
+	const occurrenceIncludeWhere: Prisma.ShiftOccurrenceWhereInput = {
+		...whereForOccurrence,
+	} as Prisma.ShiftOccurrenceWhereInput;
+
+	type UserWithRelations = {
+		id: number;
+		username: string;
+		name: string;
+		attendances?: Array<{
+			status: string;
+			timeIn: Date | null;
+			timeOut: Date | null;
+			shiftOccurrence: { shiftSchedule: { startTime: string; endTime: string } };
+		}>;
+		shiftOccurrences?: Array<{ timestamp: Date; shiftSchedule: { startTime: string; endTime: string } }>;
+	};
+
+	const usersWithRelations = (await prisma.user.findMany({
+		where: { roles: { some: { id: staffingRoleId } } },
+		select: {
+			id: true,
+			username: true,
+			name: true,
+			attendances: {
+				where: attendanceIncludeWhere,
 				include: {
-					shiftSchedule: true,
-				},
-			}
-		},
-		orderBy: {
-			user: { username: "asc" },
-		},
-	});
-
-	const shiftOccurrences = await prisma.shiftOccurrence.findMany({
-		where: whereForOccurrence,
-		include: {
-			users: true,
-			shiftSchedule: true,
-		},
-	});
-
-	// Aggregate shiftAttendances by user id for robust lookups
-	const userMap = new Map<
-		number,
-		{
-			id: number;
-			username: string;
-			name: string;
-			shiftAttendances: {
-				id: number;
-				status: string;
-				timeIn: Date | null;
-				timeOut: Date | null;
-				startTime: string;
-				endTime: string;
-			}[];
-		}
-	>();
-
-	shiftAttendances.forEach((attendance) => {
-		const uid = attendance.user.id;
-		if (!userMap.has(uid)) {
-			userMap.set(uid, {
-				id: attendance.user.id,
-				username: attendance.user.username,
-				name: attendance.user.name,
-				shiftAttendances: [
-					{
-						id: attendance.id,
-						status: attendance.status,
-						timeIn: attendance.timeIn,
-						timeOut: attendance.timeOut,
-						startTime: attendance.shiftOccurrence.shiftSchedule.startTime,
-						endTime: attendance.shiftOccurrence.shiftSchedule.endTime,
+					shiftOccurrence: {
+						include: { shiftSchedule: true },
 					},
-				],
-			});
-		} else {
-			userMap.get(uid)?.shiftAttendances.push({
-				id: attendance.id,
-				status: attendance.status,
-				timeIn: attendance.timeIn,
-				timeOut: attendance.timeOut,
-				startTime: attendance.shiftOccurrence.shiftSchedule.startTime,
-				endTime: attendance.shiftOccurrence.shiftSchedule.endTime,
-			});
-		}
-	});
+				},
+			},
+			shiftOccurrences: {
+				where: occurrenceIncludeWhere,
+				include: { shiftSchedule: true },
+			},
+		},
+		orderBy: { username: "asc" },
+	})) as UserWithRelations[];
 
 	const userReports: {
 		reports: {
@@ -173,114 +151,54 @@ export async function generateHandler(options: TGenerateOptions) {
 			pastAttendancePercentage: number;
 		}[];
 		total: number;
-	} = { reports: [], total: 0 };
+	} = { reports: [], total: usersWithRelations.length };
 
-	userMap.forEach((user) => {
-		const totalScheduledTime = user.shiftAttendances.reduce(
-			(acc, attendance) => {
-				return (
-					acc + (convert24HourToMS(attendance.endTime) - convert24HourToMS(attendance.startTime)) / 3600000 // convert ms to hours
-				);
-			},
-			0,
-		);
+	for (const u of usersWithRelations) {
+		let pastScheduledTime = 0;
+		let pastAttendedTime = 0;
+		let pastMissedTime = 0;
 
-		const totalAttendedTime = user.shiftAttendances.reduce(
-			(acc, attendance) => {
-				if (
-					attendance.status === "present" &&
-					attendance.timeIn &&
-					attendance.timeOut
-				) {
-					return (
-						acc + (attendance.timeOut.getTime() - attendance.timeIn.getTime()) / 3600000 // convert ms to hours
-					);
-				}
-				return acc;
-			},
-			0,
-		);
+	for (const attendance of u.attendances ?? []) {
+			const scheduledHours =
+				(convert24HourToMS(attendance.shiftOccurrence.shiftSchedule.endTime) -
+					convert24HourToMS(attendance.shiftOccurrence.shiftSchedule.startTime)) /
+				3600000;
 
-		const totalMissedTime = user.shiftAttendances.reduce(
-			(acc, attendance) => {
-				if (attendance.status === "absent") {
-					return (
-						acc + (convert24HourToMS(attendance.endTime) - convert24HourToMS(attendance.startTime)) / 3600000 // convert ms to hours
-					);
-				}
-				return acc;
-			},
-			0,
-		);
+			const attendedHours =
+				attendance.status === "present" && attendance.timeIn && attendance.timeOut
+					? (attendance.timeOut.getTime() - attendance.timeIn.getTime()) / 3600000
+					: 0;
 
-		const attendancePercentage =
-			totalScheduledTime > 0
-				? (totalAttendedTime / totalScheduledTime) * 100
-				: 0;
+			const missedHours = attendance.status === "absent" ? scheduledHours : 0;
+
+			pastScheduledTime += scheduledHours;
+			pastAttendedTime += attendedHours;
+			pastMissedTime += missedHours;
+		}
+
+		// Sum scheduled time from occurrences (clamped to report window)
+		let periodScheduledTime = 0;
+	for (const occ of u.shiftOccurrences ?? []) {
+			const occStart = computeOccurrenceStart(occ.timestamp, occ.shiftSchedule.startTime);
+			const occEnd = computeOccurrenceEnd(occ.timestamp, occ.shiftSchedule.startTime, occ.shiftSchedule.endTime);
+
+			const effectiveStart = periodStartDate ? new Date(Math.max(occStart.getTime(), periodStartDate.getTime())) : occStart;
+			const effectiveEnd = periodEndDate ? new Date(Math.min(occEnd.getTime(), periodEndDate.getTime())) : occEnd;
+
+			const durationHours = Math.max(0, effectiveEnd.getTime() - effectiveStart.getTime()) / 3600000;
+			periodScheduledTime += durationHours;
+		}
 
 		userReports.reports.push({
-			id: user.id,
-			name: user.name,
-			username: user.username,
-			periodScheduledTime: 0, // Will be calculated next
-			pastScheduledTime: totalScheduledTime,
-			pastAttendedTime: totalAttendedTime,
-			pastMissedTime: totalMissedTime,
-			pastAttendancePercentage: attendancePercentage,
+			id: u.id,
+			name: u.name,
+			username: u.username,
+			periodScheduledTime,
+			pastScheduledTime,
+			pastAttendedTime,
+			pastMissedTime,
+			pastAttendancePercentage: pastScheduledTime > 0 ? (pastAttendedTime / pastScheduledTime) * 100 : 0,
 		});
-	});
-
-	// Build an index by user id into the reports array for O(1) updates
-	const idIndex = new Map<number, number>();
-	userReports.reports.forEach((r, i) => {
-		idIndex.set(r.id, i);
-	});
-
-	// Parse the report window bounds once
-	const periodStartDate = startDate ? new Date(startDate) : null;
-	const periodEndDate = endDate ? new Date(endDate) : null;
-
-	for (const occurrence of shiftOccurrences) {
-		const occStart = computeOccurrenceStart(
-			occurrence.timestamp,
-			occurrence.shiftSchedule.startTime,
-		);
-		const occEnd = computeOccurrenceEnd(
-			occurrence.timestamp,
-			occurrence.shiftSchedule.startTime,
-			occurrence.shiftSchedule.endTime,
-		);
-
-		// Clamp to report bounds if provided
-		const effectiveStart = periodStartDate
-			? new Date(Math.max(occStart.getTime(), periodStartDate.getTime()))
-			: occStart;
-		const effectiveEnd = periodEndDate
-			? new Date(Math.min(occEnd.getTime(), periodEndDate.getTime()))
-			: occEnd;
-
-		const durationHours = Math.max(0, effectiveEnd.getTime() - effectiveStart.getTime()) / 3600000;
-		if (durationHours <= 0) continue;
-
-		for (const user of occurrence.users) {
-			const idx = idIndex.get(user.id);
-			if (idx !== undefined) {
-				userReports.reports[idx].periodScheduledTime += durationHours;
-			} else {
-				// User present in occurrences but not in attendances; add them
-				userReports.reports.push({
-					id: user.id,
-					name: user.name,
-					username: user.username,
-					periodScheduledTime: durationHours,
-					pastScheduledTime: 0,
-					pastAttendedTime: 0,
-					pastMissedTime: 0,
-					pastAttendancePercentage: 0,
-				});
-				idIndex.set(user.id, userReports.reports.length - 1);
-			}
-		}
 	}
 
 	// Add total count

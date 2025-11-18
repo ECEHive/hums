@@ -73,6 +73,11 @@ function Reports() {
 		enabled: false,
 	});
 
+	// Track the params for which a report was last generated so the button
+	// can show "Regenerage Report" when the current params match the last generated ones.
+	const [lastGeneratedKey, setLastGeneratedKey] = React.useState<string | null>(null);
+	const currentReportKey = JSON.stringify(reportParams);
+
 	const totalPages = Math.max(
 		1,
 		Math.ceil((reportData?.total ?? 0) / pageSize),
@@ -223,8 +228,12 @@ function Reports() {
 							<Button
 								variant="default"
 								onClick={async () => {
-									await refetchReport();
+									const result = await refetchReport();
 									setPage(1);
+									// mark generated if query succeeded
+									if (result?.error == null) {
+										setLastGeneratedKey(currentReportKey);
+									}
 								}}
 								disabled={reportLoading || selectedRole == null}
 							>
@@ -232,7 +241,9 @@ function Reports() {
 									? "Select a role"
 									: reportLoading
 										? "Generating..."
-										: "Generate Report"}
+										: lastGeneratedKey === currentReportKey
+											? "Regenerage Report"
+											: "Generate Report"}
 							</Button>
 						</div>
 					</div>
