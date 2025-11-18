@@ -1,5 +1,7 @@
 import {
+	assertCanAccessPeriod,
 	getShiftScheduleForRegistration,
+	getUserWithRoles,
 	lockShiftSchedule,
 	shiftScheduleEvents,
 	unassignUserFromScheduleOccurrences,
@@ -7,7 +9,7 @@ import {
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZUnregisterSchema = z.object({
 	shiftScheduleId: z.number().min(1),
@@ -16,13 +18,23 @@ export const ZUnregisterSchema = z.object({
 export type TUnregisterSchema = z.infer<typeof ZUnregisterSchema>;
 
 export type TUnregisterOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TUnregisterSchema;
 };
 
 export async function unregisterHandler(options: TUnregisterOptions) {
 	const { shiftScheduleId } = options.input;
 	const userId = options.ctx.user.id;
+	const user = await getUserWithRoles(prisma, userId);
+
+	if (!user) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message: "User not found",
+		});
+	}
+
+	const userRoleIds = new Set(user.roles.map((r) => r.id));
 
 	let periodId = 0;
 
@@ -55,6 +67,11 @@ export async function unregisterHandler(options: TUnregisterOptions) {
 		// Get the period to check time windows
 		const period = await tx.period.findUnique({
 			where: { id: periodId },
+			include: {
+				roles: {
+					select: { id: true },
+				},
+			},
 		});
 
 		if (!period) {
@@ -64,13 +81,15 @@ export async function unregisterHandler(options: TUnregisterOptions) {
 			});
 		}
 
+		assertCanAccessPeriod(period, userRoleIds, {
+			isSystemUser: options.ctx.user.isSystemUser,
+		});
+
 		// Check if we're within the schedule signup window
 		const now = new Date();
-		const isSignupByStart =
-			!period.scheduleSignupStart ||
-			new Date(period.scheduleSignupStart) <= now;
-		const isSignupByEnd =
-			!period.scheduleSignupEnd || new Date(period.scheduleSignupEnd) >= now;
+		const nowTime = now.getTime();
+		const isSignupByStart = period.scheduleSignupStart.getTime() <= nowTime;
+		const isSignupByEnd = period.scheduleSignupEnd.getTime() >= nowTime;
 		const isWithinSignupWindow = isSignupByStart && isSignupByEnd;
 
 		if (!isWithinSignupWindow) {

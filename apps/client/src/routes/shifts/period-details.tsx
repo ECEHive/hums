@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Calendar, Pencil } from "lucide-react";
+import { CalendarIcon, CheckCircleIcon, InfoIcon, Pencil } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/missing-permissions";
@@ -78,15 +78,17 @@ function PeriodDetail() {
 		name: period.name,
 		start: period.start.toISOString(),
 		end: period.end.toISOString(),
-		visibleStart: period.visibleStart?.toISOString() ?? null,
-		visibleEnd: period.visibleEnd?.toISOString() ?? null,
-		scheduleSignupStart: period.scheduleSignupStart?.toISOString() ?? null,
-		scheduleSignupEnd: period.scheduleSignupEnd?.toISOString() ?? null,
-		scheduleModifyStart: period.scheduleModifyStart?.toISOString() ?? null,
-		scheduleModifyEnd: period.scheduleModifyEnd?.toISOString() ?? null,
+		visibleStart: period.visibleStart.toISOString(),
+		visibleEnd: period.visibleEnd.toISOString(),
+		scheduleSignupStart: period.scheduleSignupStart.toISOString(),
+		scheduleSignupEnd: period.scheduleSignupEnd.toISOString(),
+		scheduleModifyStart: period.scheduleModifyStart.toISOString(),
+		scheduleModifyEnd: period.scheduleModifyEnd.toISOString(),
 		min: period.min,
 		max: period.max,
 		minMaxUnit: period.minMaxUnit,
+		roles:
+			period.roles?.map((role) => ({ id: role.id, name: role.name })) ?? [],
 	};
 
 	const unitLabels = {
@@ -101,165 +103,153 @@ function PeriodDetail() {
 		: null;
 
 	return (
-		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">Period Detail</h1>
+		<div className="container p-4 space-y-6">
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+				<div>
+					<h1 className="text-2xl font-bold">{period.name}</h1>
+					<p className="text-sm text-muted-foreground">
+						Review the selected period's schedule windows and requirements.
+					</p>
+				</div>
+				<div className="flex items-center gap-2">
+					{canEdit && (
+						<Button variant="outline" onClick={() => setEditSheetOpen(true)}>
+							<Pencil className="h-4 w-4 mr-2" /> Edit
+						</Button>
+					)}
+					{canDelete && (
+						<DeleteDialog periodId={period.id} periodName={period.name} />
+					)}
+				</div>
+			</div>
 
-			<Card>
-				<CardHeader>
-					<div className="flex items-center justify-between">
+			<div className="grid gap-6">
+				<Card>
+					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<Calendar className="h-5 w-5" />
-							Period Information
+							<InfoIcon className="h-5 w-5" /> General Information
 						</CardTitle>
-						<div className="flex items-center gap-2">
-							{canEdit && (
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => setEditSheetOpen(true)}
-									aria-label="Edit period"
-								>
-									<Pencil className="h-4 w-4" />
-								</Button>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						<div>
+							<div className="text-sm font-medium text-muted-foreground">
+								Period Name
+							</div>
+							<div className="text-lg font-semibold">{period.name}</div>
+						</div>
+						<div>
+							<div className="text-sm font-medium text-muted-foreground">
+								Allowed Roles
+							</div>
+							{period.roles.length > 0 ? (
+								<div className="flex flex-wrap gap-2 mt-2">
+									{period.roles.map((role) => (
+										<span
+											key={role.id}
+											className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
+										>
+											{role.name ?? "Unknown role"}
+										</span>
+									))}
+								</div>
+							) : (
+								<p className="text-sm text-muted-foreground mt-1">
+									All users can view and interact with this period.
+								</p>
 							)}
-							{canDelete && (
-								<DeleteDialog periodId={period.id} periodName={period.name} />
-							)}
 						</div>
-					</div>
-				</CardHeader>
-				<CardContent className="space-y-6">
-					<div>
-						<div className="text-sm font-medium text-muted-foreground">
-							Name
-						</div>
-						<div className="text-lg">{period.name}</div>
-					</div>
-
-					<div>
-						<div className="text-sm font-semibold mb-3">Period Dates</div>
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<div className="text-sm font-medium text-muted-foreground">
-									Start Date
-								</div>
-								<div>{formatInAppTimezone(period.start)}</div>
+						<div>
+							<div className="text-sm font-medium text-muted-foreground mb-3">
+								Period Dates
 							</div>
-							<div>
-								<div className="text-sm font-medium text-muted-foreground">
-									End Date
+							<div className="grid gap-4 sm:grid-cols-2">
+								<div>
+									<div className="text-xs uppercase text-muted-foreground tracking-wide">
+										Start
+									</div>
+									<div>{formatInAppTimezone(period.start)}</div>
 								</div>
-								<div>{formatInAppTimezone(period.end)}</div>
+								<div>
+									<div className="text-xs uppercase text-muted-foreground tracking-wide">
+										End
+									</div>
+									<div>{formatInAppTimezone(period.end)}</div>
+								</div>
 							</div>
 						</div>
-					</div>
+					</CardContent>
+				</Card>
 
-					<div>
-						<div className="text-sm font-semibold mb-3">Visibility Window</div>
-						{period.visibleStart || period.visibleEnd ? (
-							<div className="grid grid-cols-2 gap-4">
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<CalendarIcon className="h-5 w-5" /> Windows
+						</CardTitle>
+						<p className="text-sm text-muted-foreground">
+							Visibility, signup, and modification access windows.
+						</p>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						{[
+							{
+								title: "Visibility Window",
+								description: "Controls when the period can be seen by users.",
+								start: period.visibleStart,
+								end: period.visibleEnd,
+							},
+							{
+								title: "Signup Window",
+								description: "Defines when users may schedule shifts.",
+								start: period.scheduleSignupStart,
+								end: period.scheduleSignupEnd,
+							},
+							{
+								title: "Modification Window",
+								description: "Determines when users may drop or makeup shifts.",
+								start: period.scheduleModifyStart,
+								end: period.scheduleModifyEnd,
+							},
+						].map((window) => (
+							<div key={window.title} className="space-y-2">
 								<div>
-									<div className="text-sm font-medium text-muted-foreground">
-										Visible Start
-									</div>
-									<div>
-										{period.visibleStart
-											? formatInAppTimezone(period.visibleStart)
-											: "Not set"}
-									</div>
+									<div className="text-sm font-semibold">{window.title}</div>
+									<p className="text-xs text-muted-foreground">
+										{window.description}
+									</p>
 								</div>
-								<div>
-									<div className="text-sm font-medium text-muted-foreground">
-										Visible End
+								<div className="grid gap-4 sm:grid-cols-2">
+									<div>
+										<div className="text-xs uppercase text-muted-foreground tracking-wide">
+											Start
+										</div>
+										<div>{formatInAppTimezone(window.start)}</div>
 									</div>
 									<div>
-										{period.visibleEnd
-											? formatInAppTimezone(period.visibleEnd)
-											: "Not set"}
+										<div className="text-xs uppercase text-muted-foreground tracking-wide">
+											End
+										</div>
+										<div>{formatInAppTimezone(window.end)}</div>
 									</div>
 								</div>
 							</div>
-						) : (
-							<div className="text-sm text-muted-foreground">
-								No visibility window configured
-							</div>
-						)}
-					</div>
+						))}
+					</CardContent>
+				</Card>
 
-					<div>
-						<div className="text-sm font-semibold mb-3">
-							Schedule Signup Window
-						</div>
-						{period.scheduleSignupStart || period.scheduleSignupEnd ? (
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<div className="text-sm font-medium text-muted-foreground">
-										Signup Start
-									</div>
-									<div>
-										{period.scheduleSignupStart
-											? formatInAppTimezone(period.scheduleSignupStart)
-											: "Not set"}
-									</div>
-								</div>
-								<div>
-									<div className="text-sm font-medium text-muted-foreground">
-										Signup End
-									</div>
-									<div>
-										{period.scheduleSignupEnd
-											? formatInAppTimezone(period.scheduleSignupEnd)
-											: "Not set"}
-									</div>
-								</div>
-							</div>
-						) : (
-							<div className="text-sm text-muted-foreground">
-								No signup window configured
-							</div>
-						)}
-					</div>
-
-					<div>
-						<div className="text-sm font-semibold mb-3">
-							Schedule Modification Window
-						</div>
-						{period.scheduleModifyStart || period.scheduleModifyEnd ? (
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<div className="text-sm font-medium text-muted-foreground">
-										Modify Start
-									</div>
-									<div>
-										{period.scheduleModifyStart
-											? formatInAppTimezone(period.scheduleModifyStart)
-											: "Not set"}
-									</div>
-								</div>
-								<div>
-									<div className="text-sm font-medium text-muted-foreground">
-										Modify End
-									</div>
-									<div>
-										{period.scheduleModifyEnd
-											? formatInAppTimezone(period.scheduleModifyEnd)
-											: "Not set"}
-									</div>
-								</div>
-							</div>
-						) : (
-							<div className="text-sm text-muted-foreground">
-								No modification window configured
-							</div>
-						)}
-					</div>
-
-					<div>
-						<div className="text-sm font-semibold mb-3">Shift Requirements</div>
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<CheckCircleIcon className="h-5 w-5" /> Shift Requirements
+						</CardTitle>
+						<p className="text-sm text-muted-foreground">
+							Minimum and maximum obligations for the period.
+						</p>
+					</CardHeader>
+					<CardContent>
 						{hasRequirements && unitLabel ? (
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div>
-									<div className="text-sm font-medium text-muted-foreground">
+									<div className="text-xs uppercase text-muted-foreground tracking-wide">
 										Minimum
 									</div>
 									<div>
@@ -269,7 +259,7 @@ function PeriodDetail() {
 									</div>
 								</div>
 								<div>
-									<div className="text-sm font-medium text-muted-foreground">
+									<div className="text-xs uppercase text-muted-foreground tracking-wide">
 										Maximum
 									</div>
 									<div>
@@ -284,9 +274,9 @@ function PeriodDetail() {
 								No shift requirements configured
 							</div>
 						)}
-					</div>
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
+			</div>
 
 			<CreatePeriodSheet
 				open={createSheetOpen}

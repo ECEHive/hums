@@ -26,16 +26,12 @@ export const shiftOccurrencesRouter = router({
 	get: permissionProtectedProcedure("shift_occurrences.get")
 		.input(ZGetSchema)
 		.query(getHandler),
-	pickup: permissionProtectedProcedure("shift_occurrences.pickup")
-		.input(ZPickupSchema)
-		.mutation(pickupHandler),
-	drop: permissionProtectedProcedure("shift_occurrences.drop")
-		.input(ZDropSchema)
-		.mutation(dropHandler),
-	dropMakeup: permissionProtectedProcedure("shift_occurrences.drop")
+	pickup: protectedProcedure.input(ZPickupSchema).mutation(pickupHandler),
+	drop: protectedProcedure.input(ZDropSchema).mutation(dropHandler),
+	dropMakeup: protectedProcedure
 		.input(ZDropMakeupSchema)
 		.mutation(dropMakeupHandler),
-	listMakeupOptions: permissionProtectedProcedure("shift_occurrences.drop")
+	listMakeupOptions: protectedProcedure
 		.input(ZListMakeupOptionsSchema)
 		.query(listMakeupOptionsHandler),
 });

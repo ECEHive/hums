@@ -1,8 +1,13 @@
-import { computeOccurrenceStart, lockShiftOccurrence } from "@ecehive/features";
+import {
+	assertCanAccessPeriod,
+	computeOccurrenceStart,
+	getUserWithRoles,
+	lockShiftOccurrence,
+} from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 import { isWithinModifyWindow, upsertAttendanceStatus } from "./utils";
 
 export const ZDropSchema = z.object({
@@ -13,7 +18,7 @@ export const ZDropSchema = z.object({
 export type TDropSchema = z.infer<typeof ZDropSchema>;
 
 export type TDropOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TDropSchema;
 };
 
@@ -21,6 +26,17 @@ export async function dropHandler(options: TDropOptions) {
 	const { shiftOccurrenceId, notes } = options.input;
 	const userId = options.ctx.user.id;
 	const sanitizedNotes = notes?.trim() ? notes.trim() : undefined;
+
+	const user = await getUserWithRoles(prisma, userId);
+
+	if (!user) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message: "User not found",
+		});
+	}
+
+	const userRoleIds = new Set(user.roles.map((role) => role.id));
 
 	await prisma.$transaction(async (tx) => {
 		const hasLock = await lockShiftOccurrence(tx, shiftOccurrenceId);
@@ -41,7 +57,13 @@ export async function dropHandler(options: TDropOptions) {
 					include: {
 						shiftType: {
 							include: {
-								period: true,
+								period: {
+									include: {
+										roles: {
+											select: { id: true },
+										},
+									},
+								},
 							},
 						},
 					},
@@ -79,6 +101,9 @@ export async function dropHandler(options: TDropOptions) {
 
 		// Check if we're within the schedule modify window
 		const period = occurrence.shiftSchedule.shiftType.period;
+		assertCanAccessPeriod(period, userRoleIds, {
+			isSystemUser: options.ctx.user.isSystemUser,
+		});
 		if (!isWithinModifyWindow(period, now)) {
 			throw new TRPCError({
 				code: "FORBIDDEN",

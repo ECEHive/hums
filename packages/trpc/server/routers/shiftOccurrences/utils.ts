@@ -4,11 +4,11 @@ export function isWithinModifyWindow(
 	period: Pick<Period, "scheduleModifyStart" | "scheduleModifyEnd">,
 	referenceDate: Date = new Date(),
 ): boolean {
-	const afterWindowStart =
-		!period.scheduleModifyStart || period.scheduleModifyStart <= referenceDate;
-	const beforeWindowEnd =
-		!period.scheduleModifyEnd || period.scheduleModifyEnd >= referenceDate;
-	return afterWindowStart && beforeWindowEnd;
+	const referenceTime = referenceDate.getTime();
+	return (
+		period.scheduleModifyStart.getTime() <= referenceTime &&
+		period.scheduleModifyEnd.getTime() >= referenceTime
+	);
 }
 
 type UpsertAttendanceStatusOptions = {

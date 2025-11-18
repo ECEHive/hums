@@ -6,7 +6,7 @@ import { RequirePermissions, useCurrentUser } from "@/auth";
 import { MissingPermissions } from "@/components/missing-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { checkPermissions } from "@/lib/permissions";
+import { useShiftAccess } from "@/hooks/use-shift-access";
 
 export const Route = createFileRoute("/app/")({
 	component: () =>
@@ -21,6 +21,7 @@ export const permissions = [];
 
 function AppIndexLayout() {
 	const user = useCurrentUser();
+	const { canAccessShifts } = useShiftAccess();
 
 	const { data: sessionStats } = useQuery({
 		queryKey: ["mySessionStats"],
@@ -70,12 +71,7 @@ function AppIndexLayout() {
 					<Card className="md:col-span-1">
 						<CardContent>
 							<div className="flex flex-col space-y-3">
-								{checkPermissions(user, {
-									any: [
-										"shift_schedules.register",
-										"shift_schedules.unregister",
-									],
-								}) && (
+								{canAccessShifts && (
 									<Link to="/shifts/scheduling">
 										<Button
 											variant="outline"
@@ -86,12 +82,7 @@ function AppIndexLayout() {
 										</Button>
 									</Link>
 								)}
-								{checkPermissions(user, {
-									any: [
-										"shift_schedules.register",
-										"shift_schedules.unregister",
-									],
-								}) && (
+								{canAccessShifts && (
 									<Link to="/shifts/my-shifts">
 										<Button
 											variant="outline"

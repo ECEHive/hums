@@ -89,7 +89,8 @@ model Role {
   // relations
   permissions Permission[]
   users       User[]
-  shiftTypes  ShiftType[]
+  shiftTypes ShiftType[]
+  periods    Period[]   @relation("PeriodRoles")
 }
 
 model Permission {
@@ -120,14 +121,14 @@ model Period {
   max       Int?
   minMaxUnit MinMaxUnit?
 
-  visibleStart DateTime?
-  visibleEnd   DateTime?
+  visibleStart DateTime
+  visibleEnd   DateTime
 
-  scheduleSignupStart DateTime?
-  scheduleSignupEnd   DateTime?
+  scheduleSignupStart DateTime
+  scheduleSignupEnd   DateTime
 
-  scheduleModifyStart DateTime?
-  scheduleModifyEnd   DateTime?
+  scheduleModifyStart DateTime
+  scheduleModifyEnd   DateTime
 
   // timestamps
   createdAt DateTime @default(now())
@@ -135,7 +136,8 @@ model Period {
 
   // relations
   periodExceptions PeriodException[]
-  shiftTypes       ShiftType[]
+  shiftTypes ShiftType[]
+  roles      Role[]     @relation("PeriodRoles")
 }
 
 model PeriodException {

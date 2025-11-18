@@ -1,4 +1,5 @@
 import {
+	assertCanAccessPeriod,
 	calculateRequirementComparableValue,
 	convertComparableValueToUnit,
 	convertRequirementThresholdToComparable,
@@ -14,7 +15,7 @@ import {
 import { type Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZListForRegistrationSchema = z.object({
 	periodId: z.number().min(1),
@@ -26,7 +27,7 @@ export type TListForRegistrationSchema = z.infer<
 >;
 
 export type TListForRegistrationOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TListForRegistrationSchema;
 };
 
@@ -52,10 +53,9 @@ export async function listForRegistrationHandler(
 
 	// Check if period is within visibility window
 	const now = new Date();
-	const isVisibleByStart =
-		!period.visibleStart || new Date(period.visibleStart) <= now;
-	const isVisibleByEnd =
-		!period.visibleEnd || new Date(period.visibleEnd) >= now;
+	const nowTime = now.getTime();
+	const isVisibleByStart = period.visibleStart.getTime() <= nowTime;
+	const isVisibleByEnd = period.visibleEnd.getTime() >= nowTime;
 	const isWithinVisibilityWindow = isVisibleByStart && isVisibleByEnd;
 
 	if (!isWithinVisibilityWindow) {
@@ -65,18 +65,29 @@ export async function listForRegistrationHandler(
 		});
 	}
 
+	// Get user's roles to check role requirements & period access
+	const user = await getUserWithRoles(prisma, userId);
+
+	if (!user) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message: "User not found",
+		});
+	}
+
+	const userRoleIds = new Set(user.roles.map((r) => r.id));
+	assertCanAccessPeriod(period, userRoleIds, {
+		isSystemUser: options.ctx.user.isSystemUser,
+	});
+
 	// Check if we're within the schedule signup window
-	const isSignupByStart =
-		!period.scheduleSignupStart || new Date(period.scheduleSignupStart) <= now;
-	const isSignupByEnd =
-		!period.scheduleSignupEnd || new Date(period.scheduleSignupEnd) >= now;
+	const isSignupByStart = period.scheduleSignupStart.getTime() <= nowTime;
+	const isSignupByEnd = period.scheduleSignupEnd.getTime() >= nowTime;
 	const isWithinSignupWindow = isSignupByStart && isSignupByEnd;
 
 	// Check if we're within the schedule modify window
-	const isModifyByStart =
-		!period.scheduleModifyStart || new Date(period.scheduleModifyStart) <= now;
-	const isModifyByEnd =
-		!period.scheduleModifyEnd || new Date(period.scheduleModifyEnd) >= now;
+	const isModifyByStart = period.scheduleModifyStart.getTime() <= nowTime;
+	const isModifyByEnd = period.scheduleModifyEnd.getTime() >= nowTime;
 	const isWithinModifyWindow = isModifyByStart && isModifyByEnd;
 
 	// Build where clause
@@ -90,18 +101,6 @@ export async function listForRegistrationHandler(
 
 	// Fetch shift schedules with related data
 	const schedules = await getShiftSchedulesForListing(prisma, where);
-
-	// Get user's roles to check role requirements
-	const user = await getUserWithRoles(prisma, userId);
-
-	if (!user) {
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
-			message: "User not found",
-		});
-	}
-
-	const userRoleIds = new Set(user.roles.map((r) => r.id));
 
 	// Get all shift schedules the user is already registered for
 	const userRegisteredSchedules = await getUserRegisteredSchedules(

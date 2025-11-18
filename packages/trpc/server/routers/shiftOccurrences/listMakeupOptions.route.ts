@@ -1,7 +1,12 @@
+import {
+	assertCanAccessPeriod,
+	getUserWithRoles,
+	type PeriodWithRoleIds,
+} from "@ecehive/features";
 import { type Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 import { isWithinModifyWindow } from "./utils";
 
 export const ZListMakeupOptionsSchema = z.object({
@@ -14,7 +19,7 @@ export const ZListMakeupOptionsSchema = z.object({
 export type TListMakeupOptionsSchema = z.infer<typeof ZListMakeupOptionsSchema>;
 
 export type TListMakeupOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TListMakeupOptionsSchema;
 };
 
@@ -22,14 +27,20 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 	const { periodId, shiftTypeId, limit = 10, offset = 0 } = options.input;
 	const userId = options.ctx.user.id;
 
-	const period = await prisma.period.findUnique({
-		where: { id: periodId },
-		select: {
-			id: true,
-			scheduleModifyStart: true,
-			scheduleModifyEnd: true,
-		},
-	});
+	const [period, user] = await Promise.all([
+		prisma.period.findUnique({
+			where: { id: periodId },
+			select: {
+				id: true,
+				scheduleModifyStart: true,
+				scheduleModifyEnd: true,
+				roles: {
+					select: { id: true },
+				},
+			},
+		}),
+		getUserWithRoles(prisma, userId),
+	]);
 
 	if (!period) {
 		throw new TRPCError({
@@ -37,6 +48,22 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 			message: "Selected period was not found",
 		});
 	}
+
+	if (!user) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message: "User not found",
+		});
+	}
+
+	const userRoleIds = new Set(user.roles.map((role) => role.id));
+	const periodForAccess: PeriodWithRoleIds = {
+		id: period.id,
+		roles: period.roles,
+	};
+	assertCanAccessPeriod(periodForAccess, userRoleIds, {
+		isSystemUser: options.ctx.user.isSystemUser,
+	});
 
 	const now = new Date();
 
