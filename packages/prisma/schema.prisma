@@ -37,6 +37,11 @@ enum MinMaxUnit {
   hours
 }
 
+enum AuditLogSource {
+  trpc
+  rest
+}
+
 //
 // Models
 //
@@ -58,7 +63,9 @@ model User {
   // relations
   roles            Role[]
   shiftSchedules   ShiftSchedule[]
-  shiftOccurrences ShiftOccurrence[]
+  shiftOccurrences     ShiftOccurrence[]
+  auditLogs            AuditLog[]
+  impersonatedAuditLogs AuditLog[] @relation("AuditLogImpersonators")
 
   // One-to-many
   sessions    Session[]
@@ -330,4 +337,29 @@ model ApiToken {
 
   // relations
   createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  auditLogs AuditLog[]
+}
+
+model AuditLog {
+  id Int @id @default(autoincrement())
+
+  // fields
+  userId           Int
+  impersonatedById Int?
+  apiTokenId       Int?
+  action           String
+  metadata         Json    @default("{}")
+  source           AuditLogSource
+  createdAt        DateTime @default(now())
+
+  // relations
+  user           User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  impersonatedBy User?     @relation("AuditLogImpersonators", fields: [impersonatedById], references: [id], onDelete: SetNull)
+  apiToken       ApiToken? @relation(fields: [apiTokenId], references: [id], onDelete: SetNull)
+
+  // indexes
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([apiTokenId, createdAt])
+  @@index([action, createdAt])
 }

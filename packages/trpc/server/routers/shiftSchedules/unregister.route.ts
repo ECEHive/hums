@@ -22,7 +22,7 @@ export type TUnregisterOptions = {
 
 export async function unregisterHandler(options: TUnregisterOptions) {
 	const { shiftScheduleId } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 
 	let periodId = 0;
 

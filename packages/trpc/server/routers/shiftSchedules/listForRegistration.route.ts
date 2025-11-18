@@ -38,7 +38,7 @@ export async function listForRegistrationHandler(
 	options: TListForRegistrationOptions,
 ) {
 	const { periodId, dayOfWeek } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 
 	// Get period to check visibility window
 	const period = await getPeriodById(prisma, periodId);

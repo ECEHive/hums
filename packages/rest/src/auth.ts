@@ -1,4 +1,5 @@
-import { verifyApiToken } from "@ecehive/features";
+import type { AuditLogger } from "@ecehive/features";
+import { createAuditLogger, verifyApiToken } from "@ecehive/features";
 import type { ApiToken } from "@ecehive/prisma";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -42,7 +43,19 @@ async function apiTokenGuard(request: FastifyRequest, reply: FastifyReply) {
 		});
 	}
 
+	if (!record.createdById) {
+		return reply.code(403).send({
+			error: "api_token_missing_owner",
+			message: "API token must be associated with a user",
+		});
+	}
+
 	request.apiToken = record;
+	request.audit = createAuditLogger({
+		userId: record.createdById,
+		apiTokenId: record.id,
+		source: "rest",
+	});
 }
 
 export function registerApiTokenGuard(instance: FastifyInstance) {
@@ -52,5 +65,6 @@ export function registerApiTokenGuard(instance: FastifyInstance) {
 declare module "fastify" {
 	interface FastifyRequest {
 		apiToken?: ApiToken;
+		audit?: AuditLogger;
 	}
 }

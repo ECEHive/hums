@@ -12,7 +12,7 @@ export type TGetStatusOptions = {
 };
 
 export async function getStatusHandler(options: TGetStatusOptions) {
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 
 	// Get all enabled agreements
 	const enabledAgreements = await prisma.agreement.findMany({
