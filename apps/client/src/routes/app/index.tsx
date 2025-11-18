@@ -38,7 +38,7 @@ function AppIndexLayout() {
 
 	return (
 		<div className="min-h-svh w-full p-6">
-			<div className="mx-auto max-w-6xl">
+			<div className="mx-auto max-w-6xl space-y-6">
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					<Card className="md:col-span-2">
 						<CardHeader>
@@ -108,7 +108,7 @@ function AppIndexLayout() {
 				</div>
 
 				{/* Session Stats */}
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6">
+				<div className="grid grid-cols-4 md:grid-cols-4 gap-6">
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-sm font-medium">
