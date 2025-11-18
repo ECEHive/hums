@@ -44,7 +44,7 @@ export function generateColumns(): ColumnDef<Kiosk>[] {
 			header: "Created",
 			cell: ({ row }) =>
 				formatDateInAppTimezone(row.original.createdAt, {
-					formatString: "MMM d, yyyy",
+					formatString: "MMM D, YYYY",
 				}),
 		},
 		{
