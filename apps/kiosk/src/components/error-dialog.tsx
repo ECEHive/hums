@@ -1,5 +1,5 @@
 import { AlertCircle } from "lucide-react";
-import { KioskCard } from "@/components/kiosk-ui";
+import { motion } from "motion/react";
 
 interface ErrorDialogProps {
 	message: string;
@@ -8,42 +8,65 @@ interface ErrorDialogProps {
 
 export function ErrorDialog({ message, isExiting }: ErrorDialogProps) {
 	return (
-		<div
-			className={`absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md transition-opacity duration-300 ${
-				isExiting ? "opacity-0" : "opacity-100 animate-in fade-in"
-			}`}
+		<motion.div
+			className="absolute inset-0 z-50 p-8 flex items-center justify-center bg-black/95 backdrop-blur-md"
+			initial={{ opacity: 0 }}
+			animate={{ opacity: isExiting ? 0 : 1 }}
+			transition={{ duration: 0.3 }}
 		>
-			<div
-				className={`kiosk-max-w-2xl mx-auto transition-all duration-500 ${
-					isExiting
-						? "scale-95 opacity-0 translate-y-4"
-						: "scale-100 opacity-100 translate-y-0 animate-in zoom-in-95 slide-in-from-bottom-4"
-				}`}
-				style={{ padding: "calc(1rem * var(--kiosk-scale))" }}
+			<motion.div
+				className="p-4 max-w-2xl mx-auto"
+				initial={{ opacity: 0, scale: 0.95, y: 16 }}
+				animate={{
+					opacity: isExiting ? 0 : 1,
+					scale: isExiting ? 0.95 : 1,
+					y: isExiting ? 16 : 0,
+				}}
+				transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
 			>
-				<KioskCard
-					className="border-destructive shadow-2xl transition-colors duration-300"
-					style={{
-						borderWidth: "calc(8px * var(--kiosk-scale))",
-						padding: "calc(4rem * var(--kiosk-scale))",
-					}}
+				<div
+					className="border-destructive shadow-2xl transition-colors duration-300 p-4"
 				>
-					<div className="flex flex-col items-center kiosk-gap-8">
-						<div className="relative">
-							<AlertCircle className="kiosk-icon-3xl text-destructive animate-in zoom-in-50 duration-700" />
-							<div className="absolute inset-0 animate-ping">
-								<AlertCircle className="kiosk-icon-3xl text-destructive opacity-40" />
-							</div>
+					<div className="flex flex-col items-center gap-8">
+						<div className="relative flex items-center justify-center">
+							<motion.div
+								initial={{ scale: 0.85, opacity: 0 }}
+								animate={{ scale: isExiting ? 0.85 : 1, opacity: isExiting ? 0 : 1 }}
+								transition={{ duration: 0.6, ease: "easeOut" }}
+							>
+								<AlertCircle className="w-32 h-32 text-destructive" />
+							</motion.div>
+							<motion.div
+								className="absolute inset-0"
+								initial={{ scale: 0.9, opacity: 0.4 }}
+								animate={
+									isExiting
+										? { scale: 0.9, opacity: 0 }
+										: { scale: [0.9, 1.4], opacity: [0.4, 0] }
+								}
+								transition={
+									isExiting
+										? { duration: 0.3, ease: "easeInOut" }
+										: { duration: 1.2, repeat: Infinity, ease: "easeOut" }
+								}
+							>
+								<AlertCircle className="w-32 h-32 text-destructive opacity-40" />
+							</motion.div>
 						</div>
-						<div className="text-center kiosk-gap-3 flex flex-col animate-in slide-in-from-bottom-2 duration-500 delay-200">
-							<h2 className="kiosk-text-6xl font-bold text-destructive">
+						<motion.div
+							className="text-center gap-3 flex flex-col"
+							initial={{ opacity: 0, y: 12 }}
+							animate={{ opacity: isExiting ? 0 : 1, y: isExiting ? 12 : 0 }}
+							transition={{ duration: 0.5, delay: 0.2 }}
+						>
+							<h2 className="text-6xl font-bold text-destructive">
 								Error
 							</h2>
-							<p className="kiosk-text-4xl font-semibold">{message}</p>
-						</div>
+							<p className="text-4xl font-semibold">{message}</p>
+						</motion.div>
 					</div>
-				</KioskCard>
-			</div>
-		</div>
+				</div>
+			</motion.div>
+		</motion.div>
 	);
 }

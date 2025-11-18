@@ -1,12 +1,11 @@
+import * as Sentry from "@sentry/react";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import "./globals.css";
-import "./kiosk.css";
-import * as Sentry from "@sentry/react";
 import App from "./App";
+import "./globals.css";
 
 if ((import.meta.env.VITE_KIOSK_SENTRY_DSN ?? "").trim().length > 0) {
 	Sentry.init({

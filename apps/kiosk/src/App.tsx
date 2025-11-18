@@ -1,6 +1,3 @@
-import { trpc } from "@ecehive/trpc/client";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
@@ -9,6 +6,9 @@ import { SetupView } from "@/components/setup-view";
 import { useCardReader } from "@/hooks/use-card-reader";
 import { useTapWorkflow } from "@/hooks/use-tap-workflow";
 import type { KioskStatus } from "@/types";
+import { trpc } from "@ecehive/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 function App() {
 	const [isFullscreen, setIsFullscreen] = useState(false);
@@ -81,7 +81,7 @@ function App() {
 
 	return (
 		<KioskContainer>
-			<div className="h-full w-full overflow-hidden dark flex flex-col">
+			<div className="h-full min-w-full overflow-hidden dark flex flex-col">
 				{isPreConnection && (
 					<KioskHeader
 						logoUrl={logoUrl}
@@ -92,7 +92,7 @@ function App() {
 					/>
 				)}
 
-				<main className="flex-1 overflow-hidden relative">
+				<main className="min-w-full flex-1 overflow-hidden relative">
 					<FlowOverlays
 						errorDialog={tapWorkflow.errorDialog}
 						sessionTypeSelection={tapWorkflow.sessionTypeSelection}
@@ -109,7 +109,7 @@ function App() {
 						onAgreementProgress={tapWorkflow.resetAgreementTimeout}
 					/>
 
-					<div className="h-full flex items-center justify-center">
+					<div className="min-w-full h-full flex items-center justify-center">
 						{connectionStatus !== "connected" ? (
 							<SetupView
 								connectionStatus={connectionStatus}

@@ -1,3 +1,4 @@
+import type { ConnectionStatus, KioskStatus } from "@/types";
 import {
 	CheckCircle2,
 	Loader2,
@@ -5,8 +6,9 @@ import {
 	Minimize2,
 	XCircle,
 } from "lucide-react";
-import { KioskBadge, KioskButton } from "@/components/kiosk-ui";
-import type { ConnectionStatus, KioskStatus } from "@/types";
+import { motion } from "motion/react";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 
 interface KioskHeaderProps {
 	logoUrl: string;
@@ -31,13 +33,17 @@ export function KioskHeader({
 					text: "Connected",
 					variant: "default" as const,
 					className: "bg-green-500 hover:bg-green-600",
+					pulse: false,
+					spin: false,
 				};
 			case "connecting":
 				return {
 					icon: Loader2,
 					text: "Connecting...",
 					variant: "secondary" as const,
-					className: "animate-pulse",
+					className: "",
+					pulse: true,
+					spin: true,
 				};
 			case "error":
 				return {
@@ -45,6 +51,8 @@ export function KioskHeader({
 					text: "Error",
 					variant: "destructive" as const,
 					className: "",
+					pulse: false,
+					spin: false,
 				};
 			default:
 				return {
@@ -52,6 +60,8 @@ export function KioskHeader({
 					text: "Disconnected",
 					variant: "outline" as const,
 					className: "",
+					pulse: false,
+					spin: false,
 				};
 		}
 	};
@@ -62,73 +72,78 @@ export function KioskHeader({
 	return (
 		<div
 			className="flex-none"
-			style={{
-				padding: `calc(0.75rem * var(--kiosk-scale)) calc(1.5rem * var(--kiosk-scale))`,
-			}}
 		>
-			<div className="flex items-center justify-between kiosk-gap-4">
+			<div className="flex items-center justify-between gap-4">
 				<img
 					src={logoUrl}
 					alt="HUMS"
-					style={{
-						height: "calc(2.5rem * var(--kiosk-scale))",
-						width: "auto",
-					}}
+					className="w-24 h-auto"
 				/>
-				<div className="flex items-center kiosk-gap-3">
-					<KioskButton
+				<div className="flex items-center gap-3">
+					<Button
 						variant="ghost"
 						onClick={onToggleFullscreen}
 						title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-						style={{
-							width: "calc(2.5rem * var(--kiosk-scale))",
-							height: "calc(2.5rem * var(--kiosk-scale))",
-							padding: 0,
-						}}
 					>
 						{isFullscreen ? (
-							<Minimize2 className="kiosk-icon-md" />
+							<Minimize2 className="h-5 w-5" />
 						) : (
-							<Maximize className="kiosk-icon-md" />
+							<Maximize className="h-5 w-5" />
 						)}
-					</KioskButton>
+					</Button>
 					{!kioskStatus.checking && (
-						<KioskBadge
+						<Badge
 							variant={kioskStatus.isKiosk ? "default" : "destructive"}
-							className={`flex items-center kiosk-gap-2 ${kioskStatus.isKiosk ? "bg-blue-500 hover:bg-blue-600" : ""}`}
-							style={{
-								fontSize: "calc(0.875rem * var(--kiosk-scale))",
-								padding:
-									"calc(0.25rem * var(--kiosk-scale)) calc(0.75rem * var(--kiosk-scale))",
-							}}
+							className={`flex items-center gap-2 ${kioskStatus.isKiosk ? "bg-blue-500 hover:bg-blue-600" : ""}`}
 						>
 							{kioskStatus.isKiosk ? (
 								<>
-									<CheckCircle2 className="kiosk-icon-sm" />
-									<span>Kiosk Registered</span>
+									<CheckCircle2 className="h-4 w-4" />
+									Kiosk Registered
 								</>
 							) : (
 								<>
-									<XCircle className="kiosk-icon-sm" />
-									<span>Not Registered</span>
+									<XCircle className="h-4 w-4" />
+									Not Registered
 								</>
 							)}
-						</KioskBadge>
+						</Badge>
 					)}
-					<KioskBadge
-						variant={statusConfig.variant}
-						className={`flex items-center kiosk-gap-2 ${statusConfig.className}`}
-						style={{
-							fontSize: "calc(0.875rem * var(--kiosk-scale))",
-							padding:
-								"calc(0.25rem * var(--kiosk-scale)) calc(0.75rem * var(--kiosk-scale))",
-						}}
+					<motion.div
+						className="flex"
+						animate={
+							statusConfig.pulse
+								? { scale: [1, 0.98, 1], opacity: [1, 0.7, 1] }
+								: { scale: 1, opacity: 1 }
+						}
+						transition={
+							statusConfig.pulse
+								? { duration: 1, repeat: Infinity, ease: "easeInOut" }
+								: { duration: 0 }
+						}
 					>
-						<StatusIcon
-							className={`kiosk-icon-sm ${connectionStatus === "connecting" ? "animate-spin" : ""}`}
-						/>
-						<span>{statusConfig.text}</span>
-					</KioskBadge>
+						<Badge
+							variant={statusConfig.variant}
+							className={`flex items-center gap-2 ${statusConfig.className}`}
+						>
+							<motion.span
+								animate={
+									statusConfig.spin
+										? { rotate: 360 }
+										: { rotate: 0 }
+								}
+								transition={
+									statusConfig.spin
+										? { repeat: Infinity, duration: 1, ease: "linear" }
+										: { duration: 0 }
+								}
+								style={{ display: "flex" }}
+							>
+								<StatusIcon className="h-4 w-4" />
+							</motion.span>
+							<span>{statusConfig.text}</span>
+						</Badge>
+					</motion.div>
 				</div>
 			</div>
 		</div>
