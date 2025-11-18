@@ -1,3 +1,4 @@
+import { formatInAppTimezone } from "@/lib/timezone";
 import type {
 	AuditLogFilterApiToken,
 	AuditLogFilterUser,
@@ -7,7 +8,7 @@ import type {
 export function formatDateTime(value: Date | string) {
 	const date = value instanceof Date ? value : new Date(value);
 	if (Number.isNaN(date.getTime())) return "—";
-	return date.toLocaleString();
+	return formatInAppTimezone(date, { includeTimezoneWhenDifferent: true });
 }
 
 export function formatActor(actor: AuditLogRow["user"]) {

@@ -150,7 +150,10 @@ export function toUtcDateFromLocalInput(value?: Date | null) {
 
 export function formatTimeString(
 	time: string,
-	options?: { includeTimezoneWhenDifferent?: boolean },
+	options?: {
+		includeTimezoneWhenDifferent?: boolean;
+		referenceDate?: DateInput;
+	},
 ) {
 	if (!time) return "";
 	const [hourPart, minutePart = "0"] = time.split(":");
@@ -163,7 +166,10 @@ export function formatTimeString(
 		.padStart(2, "0")} ${period}`;
 
 	if (shouldAnnotateTimezone(options?.includeTimezoneWhenDifferent)) {
-		return `${formatted} ${getAppTimezoneAbbreviation()}`;
+		const abbreviation = options?.referenceDate
+			? getAppTimezoneAbbreviation(options.referenceDate)
+			: getAppTimezoneAbbreviation();
+		return `${formatted} ${abbreviation}`;
 	}
 
 	return formatted;
@@ -172,19 +178,27 @@ export function formatTimeString(
 export function formatTimeRange(
 	start: string,
 	end: string,
-	options?: { includeTimezoneWhenDifferent?: boolean },
+	options?: {
+		includeTimezoneWhenDifferent?: boolean;
+		referenceDate?: DateInput;
+	},
 ) {
 	const includeTimezone = options?.includeTimezoneWhenDifferent ?? true;
 	const startLabel = formatTimeString(start, {
 		includeTimezoneWhenDifferent: false,
+		referenceDate: options?.referenceDate,
 	});
 	const endLabel = formatTimeString(end, {
 		includeTimezoneWhenDifferent: false,
+		referenceDate: options?.referenceDate,
 	});
 	const combined = `${startLabel} - ${endLabel}`;
 
 	if (shouldAnnotateTimezone(includeTimezone)) {
-		return `${combined} ${getAppTimezoneAbbreviation()}`;
+		const abbreviation = options?.referenceDate
+			? getAppTimezoneAbbreviation(options.referenceDate)
+			: getAppTimezoneAbbreviation();
+		return `${combined} ${abbreviation}`;
 	}
 
 	return combined;

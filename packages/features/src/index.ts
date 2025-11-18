@@ -11,4 +11,5 @@ export * from "./shift-schedules/queries";
 export * from "./shift-schedules/utils";
 export * from "./shift-schedules/validation";
 export * from "./time-utils";
+export * from "./timezone";
 export * from "./users";

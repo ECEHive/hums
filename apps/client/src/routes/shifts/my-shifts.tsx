@@ -67,7 +67,9 @@ function formatShiftSummary(occurrence: ShiftOccurrenceRow) {
 	const dateLabel = formatDateInAppTimezone(occurrence.timestamp, {
 		formatString: "ddd, MMM D",
 	});
-	const timeLabel = formatTimeRange(occurrence.startTime, occurrence.endTime);
+	const timeLabel = formatTimeRange(occurrence.startTime, occurrence.endTime, {
+		referenceDate: occurrence.timestamp,
+	});
 	return `${dateLabel}, ${timeLabel}`;
 }
 
@@ -500,7 +502,9 @@ function MyShifts() {
 															})}
 														</TableCell>
 														<TableCell>
-															{formatTimeRange(occ.startTime, occ.endTime)}
+															{formatTimeRange(occ.startTime, occ.endTime, {
+																referenceDate: occ.timestamp,
+															})}
 														</TableCell>
 													</TableRow>
 												);

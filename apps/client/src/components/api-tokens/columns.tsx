@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { formatInAppTimezone } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 import type { ApiTokenRow } from "./types";
 
@@ -76,5 +77,5 @@ function formatDate(value: Date | null) {
 	if (!value) return "—";
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return "—";
-	return date.toLocaleString();
+	return formatInAppTimezone(date, { includeTimezoneWhenDifferent: true });
 }
