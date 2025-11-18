@@ -38,7 +38,7 @@ export async function impersonateHandler({
 
 	// Generate a token for the target user
 	const token = await generateToken(input.userId, {
-		impersonatedById: ctx.user.id || undefined,
+		impersonatedById: ctx.user.id ?? undefined,
 	});
 
 	if (!token) {
