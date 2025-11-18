@@ -16,6 +16,9 @@ export async function getHandler(options: TGetOptions) {
 
 	const period = await prisma.period.findUnique({
 		where: { id },
+		include: {
+			roles: true,
+		},
 	});
 
 	return { period };

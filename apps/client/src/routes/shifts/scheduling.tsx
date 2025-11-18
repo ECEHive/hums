@@ -2,10 +2,9 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import React from "react";
-import { RequirePermissions } from "@/auth/AuthProvider";
-import { MissingPermissions } from "@/components/missing-permissions";
 import { PeriodNotSelected } from "@/components/period-not-selected";
 import { usePeriod } from "@/components/period-provider";
+import { RequireShiftAccess } from "@/components/require-shift-access";
 import { SchedulingTimeline } from "@/components/shift-schedules/scheduling-timeline";
 import { ShiftDetailSheet } from "@/components/shift-schedules/shift-detail-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,15 +15,14 @@ import type { RequiredPermissions } from "@/lib/permissions";
 import { formatInAppTimezone } from "@/lib/timezone";
 
 export const Route = createFileRoute("/shifts/scheduling")({
-	component: () =>
-		RequirePermissions({
-			permissions,
-			children: <Scheduling />,
-			forbiddenFallback: <MissingPermissions />,
-		}),
+	component: () => (
+		<RequireShiftAccess>
+			<Scheduling />
+		</RequireShiftAccess>
+	),
 });
 
-export const permissions = ["shift_schedules.register"] as RequiredPermissions;
+export const permissions = [] as RequiredPermissions;
 
 interface SelectedBlock {
 	dayOfWeek: number;

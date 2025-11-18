@@ -1,4 +1,8 @@
-import { permissionProtectedProcedure, router } from "../../trpc";
+import {
+	permissionProtectedProcedure,
+	protectedProcedure,
+	router,
+} from "../../trpc";
 import { bulkCreateHandler, ZBulkCreateSchema } from "./bulkCreate.route";
 import { bulkDeleteHandler, ZBulkDeleteSchema } from "./bulkDelete.route";
 import { createHandler, ZCreateSchema } from "./create.route";
@@ -21,7 +25,7 @@ export const shiftSchedulesRouter = router({
 	list: permissionProtectedProcedure("shift_schedules.list")
 		.input(ZListSchema)
 		.query(listHandler),
-	listForRegistration: permissionProtectedProcedure("shift_schedules.register")
+	listForRegistration: protectedProcedure
 		.input(ZListForRegistrationSchema)
 		.query(listForRegistrationHandler),
 	get: permissionProtectedProcedure("shift_schedules.get")
@@ -42,13 +46,11 @@ export const shiftSchedulesRouter = router({
 	delete: permissionProtectedProcedure("shift_schedules.delete")
 		.input(ZDeleteSchema)
 		.mutation(deleteHandler),
-	register: permissionProtectedProcedure("shift_schedules.register")
-		.input(ZRegisterSchema)
-		.mutation(registerHandler),
-	unregister: permissionProtectedProcedure("shift_schedules.unregister")
+	register: protectedProcedure.input(ZRegisterSchema).mutation(registerHandler),
+	unregister: protectedProcedure
 		.input(ZUnregisterSchema)
 		.mutation(unregisterHandler),
-	onScheduleUpdate: permissionProtectedProcedure("shift_schedules.register")
+	onScheduleUpdate: protectedProcedure
 		.input(ZOnScheduleUpdateSchema)
 		.subscription(onScheduleUpdateHandler),
 });

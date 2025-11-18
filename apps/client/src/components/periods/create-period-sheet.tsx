@@ -8,6 +8,10 @@ import { z } from "zod";
 import DateRangeSelector from "@/components/date-range-selector";
 import { usePeriod } from "@/components/period-provider";
 import { normalizeRangeToDayBounds } from "@/components/periods/date-range-helpers";
+import {
+	type Role,
+	RoleMultiSelect,
+} from "@/components/roles/role-multiselect";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,
@@ -54,6 +58,7 @@ const formSchema = z
 		scheduleSignupEnd: z.date(),
 		scheduleModifyStart: z.date(),
 		scheduleModifyEnd: z.date(),
+		periodRoleIds: z.array(z.number().int().min(1)),
 	})
 	.superRefine((data, ctx) => {
 		const hasMin = data.min !== null && data.min !== undefined;
@@ -96,6 +101,7 @@ export function CreatePeriodSheet({
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
+	const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
 	const formId = useId();
 
 	// access period context so we can set the newly created period
@@ -115,6 +121,7 @@ export function CreatePeriodSheet({
 			scheduleSignupEnd: Date;
 			scheduleModifyStart: Date;
 			scheduleModifyEnd: Date;
+			periodRoleIds: number[];
 		}) => {
 			return trpc.periods.create.mutate(input);
 		},
@@ -150,6 +157,7 @@ export function CreatePeriodSheet({
 			scheduleSignupEnd: null as Date | null,
 			scheduleModifyStart: null as Date | null,
 			scheduleModifyEnd: null as Date | null,
+			periodRoleIds: [] as number[],
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -200,6 +208,7 @@ export function CreatePeriodSheet({
 					scheduleSignupEnd: signupEndUtc,
 					scheduleModifyStart: modifyStartUtc,
 					scheduleModifyEnd: modifyEndUtc,
+					periodRoleIds: value.periodRoleIds ?? [],
 				});
 				handleSheetChange(false);
 			} catch (err) {
@@ -218,6 +227,7 @@ export function CreatePeriodSheet({
 			if (!nextOpen) {
 				form.reset();
 				setServerError(null);
+				setSelectedRoles([]);
 			}
 		},
 		[form, onOpenChange],
@@ -446,6 +456,32 @@ export function CreatePeriodSheet({
 								/>
 							</div>
 						</div>
+
+						<form.Field
+							name="periodRoleIds"
+							children={(field) => (
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<FieldLabel>Allowed Roles</FieldLabel>
+										<span className="text-xs text-muted-foreground">
+											Optional
+										</span>
+									</div>
+									<FieldDescription>
+										Users must have at least one selected role to view or
+										interact with this period. Leave empty to allow all users.
+									</FieldDescription>
+									<RoleMultiSelect
+										value={selectedRoles}
+										onChange={(roles) => {
+											setSelectedRoles(roles);
+											field.handleChange(roles.map((role) => role.id));
+										}}
+										placeholder="Search roles..."
+									/>
+								</div>
+							)}
+						/>
 
 						<div className="space-y-2">
 							<div className="space-y-1">

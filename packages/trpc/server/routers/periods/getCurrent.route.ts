@@ -35,6 +35,9 @@ export type TGetCurrentOptions = {
  */
 export async function getCurrentHandler(options: TGetCurrentOptions) {
 	const now = new Date();
+	const include = {
+		roles: true,
+	};
 
 	const input = options?.input;
 
@@ -59,6 +62,7 @@ export async function getCurrentHandler(options: TGetCurrentOptions) {
 			end: { gte: now },
 		},
 		orderBy: { start: "desc" },
+		include,
 	});
 
 	if (containing) return { period: containing };
@@ -69,6 +73,7 @@ export async function getCurrentHandler(options: TGetCurrentOptions) {
 			start: { gte: now },
 		},
 		orderBy: { start: "asc" },
+		include,
 	});
 
 	if (upcoming) return { period: upcoming };
@@ -79,6 +84,7 @@ export async function getCurrentHandler(options: TGetCurrentOptions) {
 			start: { lte: now },
 		},
 		orderBy: { start: "desc" },
+		include,
 	});
 
 	return { period: past || null };

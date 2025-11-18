@@ -19,6 +19,7 @@ export const ZUpdateSchema = z
 		scheduleSignupEnd: z.date().optional(),
 		scheduleModifyStart: z.date().optional(),
 		scheduleModifyEnd: z.date().optional(),
+		periodRoleIds: z.array(z.number().int().min(1)).optional(),
 	})
 	.superRefine((data, ctx) => {
 		// Start must be before end
@@ -92,7 +93,13 @@ export async function updateHandler(options: TUpdateOptions) {
 		scheduleSignupEnd,
 		scheduleModifyStart,
 		scheduleModifyEnd,
+		periodRoleIds,
 	} = options.input;
+
+	const shouldUpdatePeriodRoles = periodRoleIds !== undefined;
+	const uniqueRoleIds = shouldUpdatePeriodRoles
+		? Array.from(new Set(periodRoleIds ?? []))
+		: [];
 
 	const existing = await prisma.period.findUnique({ where: { id } });
 
@@ -210,6 +217,14 @@ export async function updateHandler(options: TUpdateOptions) {
 				scheduleSignupEnd: nextScheduleSignupEnd,
 				scheduleModifyStart: nextScheduleModifyStart,
 				scheduleModifyEnd: nextScheduleModifyEnd,
+				...(shouldUpdatePeriodRoles && {
+					roles: {
+						set: uniqueRoleIds.map((roleId) => ({ id: roleId })),
+					},
+				}),
+			},
+			include: {
+				roles: true,
 			},
 		});
 

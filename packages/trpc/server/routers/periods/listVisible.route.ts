@@ -1,6 +1,6 @@
 import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZListVisibleSchema = z.object({
 	limit: z.number().min(1).max(100).optional(),
@@ -10,7 +10,7 @@ export const ZListVisibleSchema = z.object({
 export type TListVisibleSchema = z.infer<typeof ZListVisibleSchema>;
 
 export type TListVisibleOptions = {
-	ctx?: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TListVisibleSchema;
 };
 
@@ -21,23 +21,50 @@ export type TListVisibleOptions = {
  */
 export async function listVisibleHandler(options: TListVisibleOptions) {
 	const { limit = 10, offset = 0 } = options.input;
-
 	const now = new Date();
 
-	// Filter by visibility window - only return periods that are currently visible
+	const filters: Prisma.PeriodWhereInput[] = [
+		{ visibleStart: { lte: now } },
+		{ visibleEnd: { gte: now } },
+	];
+
+	if (!options.ctx.user.isSystemUser) {
+		filters.push({
+			OR: [
+				{ roles: { none: {} } },
+				{
+					roles: {
+						some: {
+							users: {
+								some: { id: options.ctx.user.id },
+							},
+						},
+					},
+				},
+			],
+		});
+	}
+
 	const where: Prisma.PeriodWhereInput = {
-		AND: [{ visibleStart: { lte: now } }, { visibleEnd: { gte: now } }],
+		AND: filters,
 	};
 
-	const [result, total] = await Promise.all([
+	const [periods, total] = await Promise.all([
 		prisma.period.findMany({
 			where,
 			orderBy: { start: "asc" },
 			skip: offset,
 			take: limit,
+			include: {
+				roles: {
+					include: {
+						permissions: true,
+					},
+				},
+			},
 		}),
 		prisma.period.count({ where }),
 	]);
 
-	return { periods: result, total };
+	return { periods, total };
 }

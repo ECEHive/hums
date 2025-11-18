@@ -38,6 +38,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as attendancePagePermissions } from "@/routes/shifts/attendance";
 import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index";
@@ -61,24 +62,28 @@ export const items = [
 				url: "/shifts",
 				icon: HomeIcon,
 				permissions: shiftsIndexPagePermissions,
+				allowWithShiftAccess: true,
 			},
 			{
 				title: "Scheduling",
 				url: "/shifts/scheduling",
 				icon: CalendarIcon,
 				permissions: schedulingPagePermissions,
+				allowWithShiftAccess: true,
 			},
 			{
 				title: "My Shifts",
 				url: "/shifts/my-shifts",
 				icon: ClipboardListIcon,
 				permissions: myShiftsPagePermissions,
+				allowWithShiftAccess: true,
 			},
 			{
 				title: "Attendance",
 				url: "/shifts/attendance",
 				icon: CalendarCheckIcon,
 				permissions: attendancePagePermissions,
+				allowWithShiftAccess: true,
 			},
 		],
 	},
@@ -119,10 +124,21 @@ export function ShiftsSidebar() {
 	const { setTheme } = useTheme();
 	const location = useLocation();
 	const pathname = location?.pathname ?? "/";
+	const { canAccessShifts } = useShiftAccess();
+
+	const canViewItem = (item: (typeof items)[number]["items"][number]) => {
+		if (checkPermissions(user, item.permissions)) {
+			return true;
+		}
+		if (item.allowWithShiftAccess) {
+			return canAccessShifts;
+		}
+		return false;
+	};
 
 	// Collect all visible items across all groups to find the best match
 	const allVisibleItems = items.flatMap((group) =>
-		group.items.filter((item) => checkPermissions(user, item.permissions)),
+		group.items.filter((item) => canViewItem(item)),
 	);
 
 	const isPathActive = (itemUrl: string) => {
@@ -174,9 +190,7 @@ export function ShiftsSidebar() {
 					</SidebarGroupContent>
 				</SidebarGroup>
 				{items.map((group) => {
-					const visibleItems = group.items.filter((item) =>
-						checkPermissions(user, item.permissions),
-					);
+					const visibleItems = group.items.filter((item) => canViewItem(item));
 					if (visibleItems.length === 0) return null;
 					return (
 						<SidebarGroup key={group.name || "group"}>

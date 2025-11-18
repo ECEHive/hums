@@ -4,8 +4,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronDownIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
-import { RequirePermissions, useCurrentUser } from "@/auth";
-import { MissingPermissions } from "@/components/missing-permissions";
 import {
 	createColumns,
 	type ShiftOccurrenceRow,
@@ -13,6 +11,7 @@ import {
 import { DataTable } from "@/components/my-shifts/data-table";
 import { PeriodNotSelected } from "@/components/period-not-selected";
 import { usePeriod } from "@/components/period-provider";
+import { RequireShiftAccess } from "@/components/require-shift-access";
 import { TablePagination } from "@/components/table-pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -50,22 +49,19 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+import type { RequiredPermissions } from "@/lib/permissions";
 import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shifts/my-shifts")({
-	component: () =>
-		RequirePermissions({
-			permissions,
-			children: <MyShifts />,
-			forbiddenFallback: <MissingPermissions />,
-		}),
+	component: () => (
+		<RequireShiftAccess>
+			<MyShifts />
+		</RequireShiftAccess>
+	),
 });
 
-export const permissions = {
-	any: ["shift_schedules.register", "shift_schedules.unregister"],
-} as RequiredPermissions;
+export const permissions = [] as RequiredPermissions;
 
 function formatShiftSummary(occurrence: ShiftOccurrenceRow) {
 	const dateLabel = formatDateInAppTimezone(occurrence.timestamp, {
@@ -87,7 +83,6 @@ function getErrorMessage(error: unknown) {
 
 function MyShifts() {
 	const { period: selectedPeriodId } = usePeriod();
-	const user = useCurrentUser();
 	const [page, setPage] = React.useState(1);
 	const [pageSize, setPageSize] = React.useState(20);
 	const restrictCheckboxId = React.useId();
@@ -112,18 +107,8 @@ function MyShifts() {
 	const makeupLimit = 5;
 	const makeupOffset = (makeupPage - 1) * makeupLimit;
 
-	const canDropPermission = React.useMemo(
-		() => checkPermissions(user, ["shift_occurrences.drop"]),
-		[user],
-	);
-	const canPickupPermission = React.useMemo(
-		() => checkPermissions(user, ["shift_occurrences.pickup"]),
-		[user],
-	);
-	const canMakeupPermission = React.useMemo(
-		() => canDropPermission && canPickupPermission,
-		[canDropPermission, canPickupPermission],
-	);
+	const canDropPermission = true;
+	const canMakeupPermission = true;
 
 	const handleDropClick = React.useCallback(
 		(occurrence: ShiftOccurrenceRow) => {

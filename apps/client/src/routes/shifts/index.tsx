@@ -1,44 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheckIcon, ClockIcon, UserPlusIcon } from "lucide-react";
-import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
-import { MissingPermissions } from "@/components/missing-permissions";
 import { PeriodNotSelected } from "@/components/period-not-selected";
 import { usePeriod } from "@/components/period-provider";
+import { RequireShiftAccess } from "@/components/require-shift-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useShiftAccess } from "@/hooks/use-shift-access";
 import type { RequiredPermissions } from "@/lib/permissions";
-import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/shifts/")({
-	component: () =>
-		RequirePermissions({
-			permissions,
-			children: <ShiftsIndex />,
-			forbiddenFallback: <MissingPermissions />,
-		}),
+	component: () => (
+		<RequireShiftAccess>
+			<ShiftsIndex />
+		</RequireShiftAccess>
+	),
 });
 
 export const permissions = {
-	any: [
-		"periods.list",
-		"shift_types.list",
-		"shift_schedules.list",
-		"shift_schedules.register",
-		"shift_schedules.unregister",
-	],
+	any: ["periods.list", "shift_types.list", "shift_schedules.list"],
 } as RequiredPermissions;
 
 function ShiftsIndex() {
 	const { period: periodId } = usePeriod();
-	const user = useCurrentUser();
+	const { canAccessShifts } = useShiftAccess();
 
 	if (periodId === null) {
 		return <PeriodNotSelected />;
 	}
 
-	const hasShiftPermissions = checkPermissions(user, {
-		any: ["shift_schedules.register", "shift_schedules.unregister"],
-	});
+	const showQuickActions = canAccessShifts;
 
 	return (
 		<div className="container p-4 space-y-4">
@@ -47,7 +37,7 @@ function ShiftsIndex() {
 			</div>
 
 			{/* Quick Actions */}
-			{hasShiftPermissions && (
+			{showQuickActions && (
 				<Card>
 					<CardHeader>
 						<CardTitle>Quick Actions</CardTitle>

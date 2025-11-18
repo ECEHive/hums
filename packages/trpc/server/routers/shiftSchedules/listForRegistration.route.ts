@@ -1,4 +1,5 @@
 import {
+	assertCanAccessPeriod,
 	calculateRequirementComparableValue,
 	convertComparableValueToUnit,
 	convertRequirementThresholdToComparable,
@@ -14,7 +15,7 @@ import {
 import { type Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZListForRegistrationSchema = z.object({
 	periodId: z.number().min(1),
@@ -26,7 +27,7 @@ export type TListForRegistrationSchema = z.infer<
 >;
 
 export type TListForRegistrationOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TListForRegistrationSchema;
 };
 
@@ -64,6 +65,21 @@ export async function listForRegistrationHandler(
 		});
 	}
 
+	// Get user's roles to check role requirements & period access
+	const user = await getUserWithRoles(prisma, userId);
+
+	if (!user) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message: "User not found",
+		});
+	}
+
+	const userRoleIds = new Set(user.roles.map((r) => r.id));
+	assertCanAccessPeriod(period, userRoleIds, {
+		isSystemUser: options.ctx.user.isSystemUser,
+	});
+
 	// Check if we're within the schedule signup window
 	const isSignupByStart = period.scheduleSignupStart.getTime() <= nowTime;
 	const isSignupByEnd = period.scheduleSignupEnd.getTime() >= nowTime;
@@ -85,18 +101,6 @@ export async function listForRegistrationHandler(
 
 	// Fetch shift schedules with related data
 	const schedules = await getShiftSchedulesForListing(prisma, where);
-
-	// Get user's roles to check role requirements
-	const user = await getUserWithRoles(prisma, userId);
-
-	if (!user) {
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
-			message: "User not found",
-		});
-	}
-
-	const userRoleIds = new Set(user.roles.map((r) => r.id));
 
 	// Get all shift schedules the user is already registered for
 	const userRegisteredSchedules = await getUserRegisteredSchedules(

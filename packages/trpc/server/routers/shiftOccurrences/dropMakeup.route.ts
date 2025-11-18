@@ -1,13 +1,14 @@
 import {
+	assertCanAccessPeriod,
 	computeOccurrenceEnd,
 	computeOccurrenceStart,
+	getUserWithRoles,
 	lockShiftOccurrences,
 } from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import type { TPermissionProtectedProcedureContext } from "../../trpc";
-import { ensureUserHasPermission } from "../../utils/permissions";
+import type { TProtectedProcedureContext } from "../../trpc";
 import { isWithinModifyWindow, upsertAttendanceStatus } from "./utils";
 
 export const ZDropMakeupSchema = z
@@ -29,28 +30,25 @@ export const ZDropMakeupSchema = z
 export type TDropMakeupSchema = z.infer<typeof ZDropMakeupSchema>;
 
 export type TDropMakeupOptions = {
-	ctx: TPermissionProtectedProcedureContext;
+	ctx: TProtectedProcedureContext;
 	input: TDropMakeupSchema;
 };
 
 export async function dropMakeupHandler(options: TDropMakeupOptions) {
 	const { shiftOccurrenceId, makeupShiftOccurrenceId, notes } = options.input;
 	const userId = options.ctx.user.id;
-	const skipPermissionCheck = options.ctx.user.isSystemUser;
 	const sanitizedNotes = notes?.trim() ? notes.trim() : undefined;
 
-	await Promise.all([
-		ensureUserHasPermission({
-			userId,
-			permission: "shift_occurrences.drop",
-			skip: skipPermissionCheck,
-		}),
-		ensureUserHasPermission({
-			userId,
-			permission: "shift_occurrences.pickup",
-			skip: skipPermissionCheck,
-		}),
-	]);
+	const user = await getUserWithRoles(prisma, userId);
+
+	if (!user) {
+		throw new TRPCError({
+			code: "UNAUTHORIZED",
+			message: "User not found",
+		});
+	}
+
+	const userRoleIds = new Set(user.roles.map((role) => role.id));
 
 	await prisma.$transaction(async (tx) => {
 		await lockShiftOccurrences(tx, [
@@ -66,7 +64,13 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 					include: {
 						shiftType: {
 							include: {
-								period: true,
+								period: {
+									include: {
+										roles: {
+											select: { id: true },
+										},
+									},
+								},
 							},
 						},
 					},
@@ -103,6 +107,9 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 		}
 
 		const dropPeriod = dropOccurrence.shiftSchedule.shiftType.period;
+		assertCanAccessPeriod(dropPeriod, userRoleIds, {
+			isSystemUser: options.ctx.user.isSystemUser,
+		});
 		if (!isWithinModifyWindow(dropPeriod, now)) {
 			throw new TRPCError({
 				code: "FORBIDDEN",
@@ -119,7 +126,13 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 					include: {
 						shiftType: {
 							include: {
-								period: true,
+								period: {
+									include: {
+										roles: {
+											select: { id: true },
+										},
+									},
+								},
 							},
 						},
 					},
@@ -161,6 +174,10 @@ export async function dropMakeupHandler(options: TDropMakeupOptions) {
 					"The selected makeup shift is outside the allowed modification window",
 			});
 		}
+
+		assertCanAccessPeriod(makeupPeriod, userRoleIds, {
+			isSystemUser: options.ctx.user.isSystemUser,
+		});
 
 		const makeupOccurrenceStart = computeOccurrenceStart(
 			new Date(makeupOccurrence.timestamp),

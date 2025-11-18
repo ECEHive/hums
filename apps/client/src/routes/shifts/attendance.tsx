@@ -9,10 +9,9 @@ import {
 	ClockIcon,
 } from "lucide-react";
 import React from "react";
-import { RequirePermissions } from "@/auth";
-import { MissingPermissions } from "@/components/missing-permissions";
 import { PeriodNotSelected } from "@/components/period-not-selected";
 import { usePeriod } from "@/components/period-provider";
+import { RequireShiftAccess } from "@/components/require-shift-access";
 import { TablePagination } from "@/components/table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,17 +40,14 @@ import type { RequiredPermissions } from "@/lib/permissions";
 import { formatInAppTimezone, formatTimeRange } from "@/lib/timezone";
 
 export const Route = createFileRoute("/shifts/attendance")({
-	component: () =>
-		RequirePermissions({
-			permissions,
-			children: <AttendancePage />,
-			forbiddenFallback: <MissingPermissions />,
-		}),
+	component: () => (
+		<RequireShiftAccess>
+			<AttendancePage />
+		</RequireShiftAccess>
+	),
 });
 
-export const permissions = {
-	any: ["shift_schedules.register", "shift_schedules.unregister"],
-} as RequiredPermissions;
+export const permissions = [] as RequiredPermissions;
 
 function AttendancePage() {
 	const { period: selectedPeriodId } = usePeriod();
