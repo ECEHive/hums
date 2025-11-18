@@ -1,6 +1,6 @@
 import type { Role } from "@ecehive/prisma";
 import { Prisma, prisma } from "@ecehive/prisma";
-import type { FastifyPluginAsync, FastifyReply } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
 const ListUsersQuerySchema = z.object({
@@ -38,6 +38,37 @@ function validationError(reply: FastifyReply, error: z.ZodError) {
 }
 
 type UserWithRoles = Prisma.UserGetPayload<{ include: { roles: true } }>;
+
+function sanitizeMetadata(value: unknown): Prisma.JsonValue {
+	try {
+		return JSON.parse(
+			JSON.stringify(value ?? null, (_, candidate) =>
+				typeof candidate === "bigint" ? Number(candidate) : candidate,
+			),
+		);
+	} catch {
+		return null;
+	}
+}
+
+async function logRestAction(
+	request: FastifyRequest,
+	action: string,
+	data: Record<string, unknown>,
+) {
+	if (!request.audit) {
+		return;
+	}
+
+	await request.audit.log({
+		action,
+		metadata: sanitizeMetadata({
+			method: request.method,
+			url: request.url,
+			...data,
+		}),
+	});
+}
 
 function serializeUser(user: UserWithRoles) {
 	return {
@@ -213,6 +244,12 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			});
 		}
 
+		await logRestAction(request, "rest.users.upsert", {
+			username: params.data.username,
+			body: body.data,
+			userId: upserted.id,
+		});
+
 		return respondWithFreshUser(params.data.username, reply);
 	});
 
@@ -247,6 +284,11 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					set: roles.map((role) => ({ id: role.id })),
 				},
 			},
+		});
+
+		await logRestAction(request, "rest.users.roles.replace", {
+			username: params.data.username,
+			roles: body.data.roles,
 		});
 
 		return respondWithFreshUser(params.data.username, reply);
@@ -285,6 +327,11 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			},
 		});
 
+		await logRestAction(request, "rest.users.roles.add", {
+			username: params.data.username,
+			role: body.data.role,
+		});
+
 		return respondWithFreshUser(params.data.username, reply);
 	});
 
@@ -316,6 +363,11 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					disconnect: roles.map((role) => ({ id: role.id })),
 				},
 			},
+		});
+
+		await logRestAction(request, "rest.users.roles.remove", {
+			username: params.data.username,
+			role: params.data.role,
 		});
 
 		return respondWithFreshUser(params.data.username, reply);

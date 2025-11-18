@@ -27,6 +27,7 @@ import { Route as AppRolesRouteImport } from './routes/app/roles'
 import { Route as AppMySessionsRouteImport } from './routes/app/my-sessions'
 import { Route as AppMyAgreementsRouteImport } from './routes/app/my-agreements'
 import { Route as AppKiosksRouteImport } from './routes/app/kiosks'
+import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
 import { Route as AppApiTokensRouteImport } from './routes/app/api-tokens'
 import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
 
@@ -120,6 +121,11 @@ const AppKiosksRoute = AppKiosksRouteImport.update({
   path: '/kiosks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAuditLogsRoute = AppAuditLogsRouteImport.update({
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppApiTokensRoute = AppApiTokensRouteImport.update({
   id: '/api-tokens',
   path: '/api-tokens',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/shifts': typeof ShiftsRouteWithChildren
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
+  '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
+  '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/shifts': typeof ShiftsRouteWithChildren
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
+  '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/shifts'
     | '/app/agreements'
     | '/app/api-tokens'
+    | '/app/audit-logs'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/app/agreements'
     | '/app/api-tokens'
+    | '/app/audit-logs'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/shifts'
     | '/app/agreements'
     | '/app/api-tokens'
+    | '/app/audit-logs'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -398,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKiosksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/audit-logs': {
+      id: '/app/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/app/audit-logs'
+      preLoaderRoute: typeof AppAuditLogsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/api-tokens': {
       id: '/app/api-tokens'
       path: '/api-tokens'
@@ -418,6 +437,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAgreementsRoute: typeof AppAgreementsRoute
   AppApiTokensRoute: typeof AppApiTokensRoute
+  AppAuditLogsRoute: typeof AppAuditLogsRoute
   AppKiosksRoute: typeof AppKiosksRoute
   AppMyAgreementsRoute: typeof AppMyAgreementsRoute
   AppMySessionsRoute: typeof AppMySessionsRoute
@@ -430,6 +450,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAgreementsRoute: AppAgreementsRoute,
   AppApiTokensRoute: AppApiTokensRoute,
+  AppAuditLogsRoute: AppAuditLogsRoute,
   AppKiosksRoute: AppKiosksRoute,
   AppMyAgreementsRoute: AppMyAgreementsRoute,
   AppMySessionsRoute: AppMySessionsRoute,

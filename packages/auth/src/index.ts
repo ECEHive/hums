@@ -50,9 +50,21 @@ export async function validateTicket(ticket: string, service: string) {
  * @param userId - The user ID to generate a token for.
  * @returns The generated JWT or null if token generation fails.
  */
-export async function generateToken(userId: number) {
+export type GenerateTokenOptions = {
+	impersonatedById?: number;
+};
+
+export async function generateToken(
+	userId: number,
+	options?: GenerateTokenOptions,
+) {
 	try {
-		const jwt = await new SignJWT({ userId })
+		const payload: Record<string, unknown> = { userId };
+		if (options?.impersonatedById) {
+			payload.impersonatedById = options.impersonatedById;
+		}
+
+		const jwt = await new SignJWT(payload)
 			.setProtectedHeader({ alg: "HS256" })
 			.setIssuedAt()
 			.setExpirationTime("24h")
@@ -70,7 +82,14 @@ export async function generateToken(userId: number) {
  * @param token - The provided token to validate.
  * @returns The user ID or null if validation fails.
  */
-export async function validateToken(token: string) {
+export type ValidatedToken = {
+	userId: number;
+	impersonatedById?: number;
+};
+
+export async function validateToken(
+	token: string,
+): Promise<ValidatedToken | null> {
 	try {
 		const { payload } = await jwtVerify(token, env.AUTH_SECRET);
 		const userId = payload.userId;
@@ -79,7 +98,15 @@ export async function validateToken(token: string) {
 			return null;
 		}
 
-		return userId as number;
+		const validated: ValidatedToken = { userId };
+		if (
+			"impersonatedById" in payload &&
+			typeof payload.impersonatedById === "number"
+		) {
+			validated.impersonatedById = payload.impersonatedById;
+		}
+
+		return validated;
 	} catch (error) {
 		console.error("Error validating token:", error);
 		return null;

@@ -35,7 +35,7 @@ export type TDropMakeupOptions = {
 
 export async function dropMakeupHandler(options: TDropMakeupOptions) {
 	const { shiftOccurrenceId, makeupShiftOccurrenceId, notes } = options.input;
-	const userId = options.ctx.userId;
+	const userId = options.ctx.user.id;
 	const skipPermissionCheck = options.ctx.user.isSystemUser;
 	const sanitizedNotes = notes?.trim() ? notes.trim() : undefined;
 

@@ -1,4 +1,5 @@
 import { validateToken } from "@ecehive/auth";
+import type { AuditLogger } from "@ecehive/features";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
 
 export async function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -15,9 +16,17 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
 		token = req.query.token as string;
 	}
 
-	const userId = token ? await validateToken(token) : null;
+	const validated = token ? await validateToken(token) : null;
 
-	return { req, res, userId, token };
+	return {
+		req,
+		res,
+		token,
+		userId: validated?.userId ?? null,
+		impersonatedById: validated?.impersonatedById ?? null,
+	};
 }
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type Context = Awaited<ReturnType<typeof createContext>> & {
+	audit?: AuditLogger;
+};
