@@ -19,9 +19,7 @@ export function LoadingIndicator({
 			>
 				<Loader2 className="h-8 w-8 text-primary" />
 			</motion.span>
-			<p className="text-xl font-semibold text-muted-foreground">
-				{message}
-			</p>
+			<p className="text-xl font-semibold text-muted-foreground">{message}</p>
 		</div>
 	);
 }

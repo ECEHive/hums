@@ -1,7 +1,13 @@
-import type { TapEvent } from "@/types";
-import { CatIcon, LogIn, LogOut, type LucideIcon, RefreshCw } from "lucide-react";
+import {
+	CatIcon,
+	LogIn,
+	LogOut,
+	type LucideIcon,
+	RefreshCw,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import type { TapEvent } from "@/types";
 
 interface TapNotificationProps {
 	event: TapEvent;
@@ -22,7 +28,11 @@ const pingLoopTransition = {
 	ease: "easeOut",
 } as const;
 
-function AnimatedIcon({ icon: Icon, colorClass, isExiting }: AnimatedIconProps) {
+function AnimatedIcon({
+	icon: Icon,
+	colorClass,
+	isExiting,
+}: AnimatedIconProps) {
 	return (
 		<motion.div
 			className="relative flex items-center justify-center"
@@ -40,9 +50,7 @@ function AnimatedIcon({ icon: Icon, colorClass, isExiting }: AnimatedIconProps) 
 						: { scale: [0.9, 1.4], opacity: [0.4, 0] }
 				}
 				transition={
-					isExiting
-						? { duration: 0.3, ease: "easeInOut" }
-						: pingLoopTransition
+					isExiting ? { duration: 0.3, ease: "easeInOut" } : pingLoopTransition
 				}
 			>
 				<Icon className={`w-36 h-36 ${colorClass} opacity-40`} />
@@ -57,26 +65,28 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 	const isSwitchToRegular = event.status === "switched_to_regular";
 
 	const welcomeOverrides = {
-		"alemons8":
-		{
-			"text": "Meow",
-			"icon": CatIcon
-		}
+		alemons8: {
+			text: "Meow",
+			icon: CatIcon,
+		},
 	};
 
 	const goodbyeOverrides = {
-		"alemons8":
-		{
-			"text": "Good Boy",
-			"icon": null,
-		}
+		alemons8: {
+			text: "Good Boy",
+			icon: null,
+		},
 	};
 
 	const notificationContent = useMemo(() => {
 		if (isTapIn) {
 			return {
-				icon: welcomeOverrides[event.user.username as keyof typeof welcomeOverrides]?.icon || LogIn,
-				title: welcomeOverrides[event.user.username as keyof typeof welcomeOverrides]?.text || "Welcome",
+				icon:
+					welcomeOverrides[event.user.username as keyof typeof welcomeOverrides]
+						?.icon || LogIn,
+				title:
+					welcomeOverrides[event.user.username as keyof typeof welcomeOverrides]
+						?.text || "Welcome",
 				color: "text-green-500",
 				subtitle: event.user.name,
 			};
@@ -101,13 +111,16 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 		}
 
 		return {
-			icon: goodbyeOverrides[event.user.username as keyof typeof goodbyeOverrides]?.icon || LogOut,
-			title: goodbyeOverrides[event.user.username as keyof typeof goodbyeOverrides]?.text || "Goodbye",
+			icon:
+				goodbyeOverrides[event.user.username as keyof typeof goodbyeOverrides]
+					?.icon || LogOut,
+			title:
+				goodbyeOverrides[event.user.username as keyof typeof goodbyeOverrides]
+					?.text || "Goodbye",
 			color: "text-blue-500",
 			subtitle: event.user.name,
 		};
 	}, [event.user.name, isTapIn, isSwitchToRegular, isSwitchToStaffing]);
-
 
 	return (
 		<motion.div
@@ -127,7 +140,6 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 				}}
 				transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
 			>
-
 				<div className="flex flex-col items-center gap-8">
 					<AnimatedIcon
 						icon={notificationContent.icon}

@@ -24,14 +24,15 @@ export function ErrorDialog({ message, isExiting }: ErrorDialogProps) {
 				}}
 				transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
 			>
-				<div
-					className="border-destructive shadow-2xl transition-colors duration-300 p-4"
-				>
+				<div className="border-destructive shadow-2xl transition-colors duration-300 p-4">
 					<div className="flex flex-col items-center gap-8">
 						<div className="relative flex items-center justify-center">
 							<motion.div
 								initial={{ scale: 0.85, opacity: 0 }}
-								animate={{ scale: isExiting ? 0.85 : 1, opacity: isExiting ? 0 : 1 }}
+								animate={{
+									scale: isExiting ? 0.85 : 1,
+									opacity: isExiting ? 0 : 1,
+								}}
 								transition={{ duration: 0.6, ease: "easeOut" }}
 							>
 								<AlertCircle className="w-32 h-32 text-destructive" />
@@ -59,9 +60,7 @@ export function ErrorDialog({ message, isExiting }: ErrorDialogProps) {
 							animate={{ opacity: isExiting ? 0 : 1, y: isExiting ? 12 : 0 }}
 							transition={{ duration: 0.5, delay: 0.2 }}
 						>
-							<h2 className="text-6xl font-bold text-destructive">
-								Error
-							</h2>
+							<h2 className="text-6xl font-bold text-destructive">Error</h2>
 							<p className="text-4xl font-semibold">{message}</p>
 						</motion.div>
 					</div>

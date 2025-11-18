@@ -1,4 +1,3 @@
-
 interface KioskContainerProps {
 	children: React.ReactNode;
 }
@@ -14,7 +13,6 @@ interface KioskContainerProps {
  * - Use a base size of 1024x768 (standard 4:3 resolution)
  */
 export function KioskContainer({ children }: KioskContainerProps) {
-
 	return (
 		<div className="w-dvw h-dvh bg-black flex items-center justify-center overflow-hidden p-4">
 			{children}

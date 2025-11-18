@@ -1,4 +1,4 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useState } from "react";
 
 interface KioskClockProps {
@@ -37,9 +37,7 @@ export function KioskClock({ className = "" }: KioskClockProps) {
 			aria-live="polite"
 		>
 			<p className="leading-none w-full flex flex-row items-center justify-center">
-				{now.format("HH")}
-				:
-				{now.format("mm")}
+				{now.format("HH")}:{now.format("mm")}
 			</p>
 		</div>
 	);

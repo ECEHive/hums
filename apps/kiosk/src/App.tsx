@@ -1,3 +1,6 @@
+import { trpc } from "@ecehive/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
@@ -6,9 +9,6 @@ import { SetupView } from "@/components/setup-view";
 import { useCardReader } from "@/hooks/use-card-reader";
 import { useTapWorkflow } from "@/hooks/use-tap-workflow";
 import type { KioskStatus } from "@/types";
-import { trpc } from "@ecehive/trpc/client";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 
 function App() {
 	const [isFullscreen, setIsFullscreen] = useState(false);

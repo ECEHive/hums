@@ -1,3 +1,5 @@
+import { Clock, LogOut, RefreshCw, Users } from "lucide-react";
+import type { ReactNode } from "react";
 import { AgreementFlow } from "@/components/agreement-flow";
 import { ErrorDialog } from "@/components/error-dialog";
 import type { SelectionOverlayOption } from "@/components/session-type-selector";
@@ -10,8 +12,6 @@ import type {
 	TapNotificationState,
 	TapOutActionSelectionState,
 } from "@/hooks/use-tap-workflow";
-import { Clock, LogOut, RefreshCw, Users } from "lucide-react";
-import type { ReactNode } from "react";
 import { Badge } from "./ui/badge";
 
 interface FlowOverlaysProps {
@@ -101,7 +101,8 @@ export function FlowOverlays({
 		}
 
 		if (tapOutActionSelection) {
-			const isStaffing = tapOutActionSelection.currentSessionType === "staffing";
+			const isStaffing =
+				tapOutActionSelection.currentSessionType === "staffing";
 			const switchColor = isStaffing ? "text-orange-500" : "text-purple-500";
 			const switchBorder = isStaffing
 				? "hover:border-orange-500"
@@ -141,13 +142,8 @@ export function FlowOverlays({
 							Goodbye, {tapOutActionSelection.userName}!
 						</h2>
 						<div className="flex items-center justify-center gap-2">
-							<p className="text-2xl text-muted-foreground">
-								Current session:
-							</p>
-							<Badge
-								variant="outline"
-								className="text-md"
-							>
+							<p className="text-2xl text-muted-foreground">Current session:</p>
+							<Badge variant="outline" className="text-md">
 								{tapOutActionSelection.currentSessionType === "regular"
 									? "Regular"
 									: "Staffing"}

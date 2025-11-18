@@ -1,8 +1,8 @@
-import { formatLog, getLogger } from "@/lib/logging";
-import type { TapEvent } from "@/types";
 import { trpc } from "@ecehive/trpc/client";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { formatLog, getLogger } from "@/lib/logging";
+import type { TapEvent } from "@/types";
 
 const SESSION_TYPE_TIMEOUT_MS = 15000;
 const TAP_OUT_ACTION_TIMEOUT_MS = 15000;

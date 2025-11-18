@@ -1,7 +1,7 @@
-import { KioskCard } from "@/components/kiosk-ui";
 import type { LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
+import { KioskCard } from "@/components/kiosk-ui";
 import { Button } from "./ui/button";
 
 interface SelectionOverlayOption {
@@ -20,7 +20,11 @@ interface SelectionOverlayProps {
 	onCancel: () => void;
 }
 
-export function SelectionOverlay({ header, options, onCancel }: SelectionOverlayProps) {
+export function SelectionOverlay({
+	header,
+	options,
+	onCancel,
+}: SelectionOverlayProps) {
 	return (
 		<motion.div
 			className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
@@ -74,7 +78,10 @@ export function SelectionOverlay({ header, options, onCancel }: SelectionOverlay
 											className="text-center gap-2 flex flex-col"
 											initial={{ opacity: 0, y: 8 }}
 											animate={{ opacity: 1, y: 0 }}
-											transition={{ duration: 0.35, delay: 0.25 + index * 0.05 }}
+											transition={{
+												duration: 0.35,
+												delay: 0.25 + index * 0.05,
+											}}
 										>
 											<h3 className={`text-4xl font-bold ${option.colorClass}`}>
 												{option.title}
@@ -96,10 +103,7 @@ export function SelectionOverlay({ header, options, onCancel }: SelectionOverlay
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.25, duration: 0.35 }}
 				>
-					<Button
-						variant="ghost"
-						onClick={onCancel}
-					>
+					<Button variant="ghost" onClick={onCancel}>
 						Cancel
 					</Button>
 				</motion.div>

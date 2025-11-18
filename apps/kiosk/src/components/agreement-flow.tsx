@@ -1,8 +1,8 @@
-import { formatLog, getLogger } from "@/lib/logging";
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { formatLog, getLogger } from "@/lib/logging";
 import { Button } from "./ui/button";
 
 const log = getLogger("agreement-flow");
@@ -101,13 +101,9 @@ export function AgreementFlow({
 	};
 
 	return (
-		<div
-			className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
-		>
+		<div className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md">
 			<div className="w-full max-w-3xl max-h-full flex flex-col">
-				<div
-					className="bg-card rounded-md border-primary shadow-2xl flex-1 flex flex-col min-h-0 p-8"
-				>
+				<div className="bg-card rounded-md border-primary shadow-2xl flex-1 flex flex-col min-h-0 p-8">
 					<div className="gap-4 flex flex-col flex-1 min-h-0">
 						<div className="text-center gap-2 flex flex-col ">
 							<h2 className="text-3xl font-bold">Welcome, {userName}</h2>
@@ -123,9 +119,7 @@ export function AgreementFlow({
 								{currentAgreement.title}
 							</h3>
 
-							<div
-								className="flex-1 w-full rounded-md p-4 bg-muted/30 overflow-y-auto min-h-0"
-							>
+							<div className="flex-1 w-full rounded-md p-4 bg-muted/30 overflow-y-auto min-h-0">
 								<div className="whitespace-pre-wrap text-base">
 									{currentAgreement.content}
 								</div>

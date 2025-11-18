@@ -34,4 +34,3 @@ export function KioskCard({
 		</Component>
 	);
 }
-

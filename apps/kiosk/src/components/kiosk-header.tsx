@@ -1,4 +1,3 @@
-import type { ConnectionStatus, KioskStatus } from "@/types";
 import {
 	CheckCircle2,
 	Loader2,
@@ -7,6 +6,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
+import type { ConnectionStatus, KioskStatus } from "@/types";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
@@ -70,15 +70,9 @@ export function KioskHeader({
 	const StatusIcon = statusConfig.icon;
 
 	return (
-		<div
-			className="flex-none"
-		>
+		<div className="flex-none">
 			<div className="flex items-center justify-between gap-4">
-				<img
-					src={logoUrl}
-					alt="HUMS"
-					className="w-24 h-auto"
-				/>
+				<img src={logoUrl} alt="HUMS" className="w-24 h-auto" />
 				<div className="flex items-center gap-3">
 					<Button
 						variant="ghost"
@@ -127,11 +121,7 @@ export function KioskHeader({
 							className={`flex items-center gap-2 ${statusConfig.className}`}
 						>
 							<motion.span
-								animate={
-									statusConfig.spin
-										? { rotate: 360 }
-										: { rotate: 0 }
-								}
+								animate={statusConfig.spin ? { rotate: 360 } : { rotate: 0 }}
 								transition={
 									statusConfig.spin
 										? { repeat: Infinity, duration: 1, ease: "linear" }
