@@ -13,12 +13,12 @@ export const ZUpdateSchema = z
 		min: z.number().int().min(0).optional().nullable(),
 		max: z.number().int().min(0).optional().nullable(),
 		minMaxUnit: z.enum(["count", "minutes", "hours"]).optional().nullable(),
-		visibleStart: z.date().optional().nullable(),
-		visibleEnd: z.date().optional().nullable(),
-		scheduleSignupStart: z.date().optional().nullable(),
-		scheduleSignupEnd: z.date().optional().nullable(),
-		scheduleModifyStart: z.date().optional().nullable(),
-		scheduleModifyEnd: z.date().optional().nullable(),
+		visibleStart: z.date().optional(),
+		visibleEnd: z.date().optional(),
+		scheduleSignupStart: z.date().optional(),
+		scheduleSignupEnd: z.date().optional(),
+		scheduleModifyStart: z.date().optional(),
+		scheduleModifyEnd: z.date().optional(),
 	})
 	.superRefine((data, ctx) => {
 		// Start must be before end

@@ -46,12 +46,12 @@ const formSchema = z
 		min: z.number().int().min(0).nullable(),
 		max: z.number().int().min(0).nullable(),
 		minMaxUnit: unitSchema.nullable(),
-		visibleStart: z.date().nullable(),
-		visibleEnd: z.date().nullable(),
-		scheduleSignupStart: z.date().nullable(),
-		scheduleSignupEnd: z.date().nullable(),
-		scheduleModifyStart: z.date().nullable(),
-		scheduleModifyEnd: z.date().nullable(),
+		visibleStart: z.date(),
+		visibleEnd: z.date(),
+		scheduleSignupStart: z.date(),
+		scheduleSignupEnd: z.date(),
+		scheduleModifyStart: z.date(),
+		scheduleModifyEnd: z.date(),
 	})
 	.superRefine((data, ctx) => {
 		const hasMin = data.min !== null && data.min !== undefined;
@@ -85,12 +85,12 @@ interface Period {
 	name: string;
 	start: string;
 	end: string;
-	visibleStart: string | null;
-	visibleEnd: string | null;
-	scheduleSignupStart: string | null;
-	scheduleSignupEnd: string | null;
-	scheduleModifyStart: string | null;
-	scheduleModifyEnd: string | null;
+	visibleStart: string;
+	visibleEnd: string;
+	scheduleSignupStart: string;
+	scheduleSignupEnd: string;
+	scheduleModifyStart: string;
+	scheduleModifyEnd: string;
 	min: number | null;
 	max: number | null;
 	minMaxUnit: z.infer<typeof unitSchema> | null;
@@ -122,12 +122,12 @@ export function EditPeriodSheet({
 			min: number | null;
 			max: number | null;
 			minMaxUnit: z.infer<typeof unitSchema> | null;
-			visibleStart: Date | null;
-			visibleEnd: Date | null;
-			scheduleSignupStart: Date | null;
-			scheduleSignupEnd: Date | null;
-			scheduleModifyStart: Date | null;
-			scheduleModifyEnd: Date | null;
+			visibleStart: Date;
+			visibleEnd: Date;
+			scheduleSignupStart: Date;
+			scheduleSignupEnd: Date;
+			scheduleModifyStart: Date;
+			scheduleModifyEnd: Date;
 		}) => {
 			return trpc.periods.update.mutate(input);
 		},
@@ -145,33 +145,47 @@ export function EditPeriodSheet({
 			min: period.min,
 			max: period.max,
 			minMaxUnit: period.minMaxUnit,
-			visibleStart: period.visibleStart
-				? new Date(period.visibleStart)
-				: (null as Date | null),
-			visibleEnd: period.visibleEnd
-				? new Date(period.visibleEnd)
-				: (null as Date | null),
-			scheduleSignupStart: period.scheduleSignupStart
-				? new Date(period.scheduleSignupStart)
-				: (null as Date | null),
-			scheduleSignupEnd: period.scheduleSignupEnd
-				? new Date(period.scheduleSignupEnd)
-				: (null as Date | null),
-			scheduleModifyStart: period.scheduleModifyStart
-				? new Date(period.scheduleModifyStart)
-				: (null as Date | null),
-			scheduleModifyEnd: period.scheduleModifyEnd
-				? new Date(period.scheduleModifyEnd)
-				: (null as Date | null),
+			visibleStart: new Date(period.visibleStart) as Date | null,
+			visibleEnd: new Date(period.visibleEnd) as Date | null,
+			scheduleSignupStart: new Date(period.scheduleSignupStart) as Date | null,
+			scheduleSignupEnd: new Date(period.scheduleSignupEnd) as Date | null,
+			scheduleModifyStart: new Date(period.scheduleModifyStart) as Date | null,
+			scheduleModifyEnd: new Date(period.scheduleModifyEnd) as Date | null,
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
-			if (!value.start || !value.end) return;
+			if (
+				!value.start ||
+				!value.end ||
+				!value.visibleStart ||
+				!value.visibleEnd ||
+				!value.scheduleSignupStart ||
+				!value.scheduleSignupEnd ||
+				!value.scheduleModifyStart ||
+				!value.scheduleModifyEnd
+			)
+				return;
 			const startUtc = toUtcDateFromLocalInput(value.start);
 			const endUtc = toUtcDateFromLocalInput(value.end);
-			if (!startUtc || !endUtc) return;
+			const visibleStartUtc = toUtcDateFromLocalInput(value.visibleStart);
+			const visibleEndUtc = toUtcDateFromLocalInput(value.visibleEnd);
+			const signupStartUtc = toUtcDateFromLocalInput(value.scheduleSignupStart);
+			const signupEndUtc = toUtcDateFromLocalInput(value.scheduleSignupEnd);
+			const modifyStartUtc = toUtcDateFromLocalInput(value.scheduleModifyStart);
+			const modifyEndUtc = toUtcDateFromLocalInput(value.scheduleModifyEnd);
+			if (
+				!startUtc ||
+				!endUtc ||
+				!visibleStartUtc ||
+				!visibleEndUtc ||
+				!signupStartUtc ||
+				!signupEndUtc ||
+				!modifyStartUtc ||
+				!modifyEndUtc
+			)
+				return;
 
 			try {
 				await updatePeriodMutation.mutateAsync({
@@ -182,16 +196,12 @@ export function EditPeriodSheet({
 					min: value.min,
 					max: value.max,
 					minMaxUnit: value.minMaxUnit,
-					visibleStart: toUtcDateFromLocalInput(value.visibleStart),
-					visibleEnd: toUtcDateFromLocalInput(value.visibleEnd),
-					scheduleSignupStart: toUtcDateFromLocalInput(
-						value.scheduleSignupStart,
-					),
-					scheduleSignupEnd: toUtcDateFromLocalInput(value.scheduleSignupEnd),
-					scheduleModifyStart: toUtcDateFromLocalInput(
-						value.scheduleModifyStart,
-					),
-					scheduleModifyEnd: toUtcDateFromLocalInput(value.scheduleModifyEnd),
+					visibleStart: visibleStartUtc,
+					visibleEnd: visibleEndUtc,
+					scheduleSignupStart: signupStartUtc,
+					scheduleSignupEnd: signupEndUtc,
+					scheduleModifyStart: modifyStartUtc,
+					scheduleModifyEnd: modifyEndUtc,
 				});
 				handleSheetChange(false);
 			} catch (err) {
@@ -447,14 +457,12 @@ export function EditPeriodSheet({
 
 						<div className="space-y-2">
 							<div className="space-y-1">
-								<h3 className="text-sm font-medium">
-									Visibility Window{" "}
-									<span className="text-muted-foreground text-xs font-normal">
-										(optional)
-									</span>
-								</h3>
+								<FieldLabel>
+									Visibility Window <span className="text-destructive">*</span>
+								</FieldLabel>
 								<FieldDescription>
-									Control when this period is visible to users.
+									Control when this period is visible to users. Includes
+									specific start and end times.
 								</FieldDescription>
 							</div>
 							<form.Field
@@ -469,29 +477,46 @@ export function EditPeriodSheet({
 												<DateRangeSelector
 													value={[start ?? undefined, end ?? undefined]}
 													onChange={([s, e]) => {
-														const [normalizedStart, normalizedEnd] =
-															normalizeRangeToDayBounds(s, e);
-														startField.handleChange(normalizedStart);
-														endField.handleChange(normalizedEnd);
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
 													}}
+													withTime
 												/>
 											)}
 										/>
 									);
 								}}
 							/>
+							<form.Field
+								name="visibleStart"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
+							<form.Field
+								name="visibleEnd"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
 						</div>
 
 						<div className="space-y-2">
 							<div className="space-y-1">
-								<h3 className="text-sm font-medium">
-									Signup Window{" "}
-									<span className="text-muted-foreground text-xs font-normal">
-										(optional)
-									</span>
-								</h3>
+								<FieldLabel>
+									Signup Window <span className="text-destructive">*</span>
+								</FieldLabel>
 								<FieldDescription>
-									Control when users can sign up for shifts.
+									Control when users can sign up for shifts. Includes specific
+									start and end times.
 								</FieldDescription>
 							</div>
 							<form.Field
@@ -506,29 +531,47 @@ export function EditPeriodSheet({
 												<DateRangeSelector
 													value={[start ?? undefined, end ?? undefined]}
 													onChange={([s, e]) => {
-														const [normalizedStart, normalizedEnd] =
-															normalizeRangeToDayBounds(s, e);
-														startField.handleChange(normalizedStart);
-														endField.handleChange(normalizedEnd);
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
 													}}
+													withTime
 												/>
 											)}
 										/>
 									);
 								}}
 							/>
+							<form.Field
+								name="scheduleSignupStart"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
+							<form.Field
+								name="scheduleSignupEnd"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
 						</div>
 
 						<div className="space-y-2">
 							<div className="space-y-1">
-								<h3 className="text-sm font-medium">
+								<FieldLabel>
 									Modification Window{" "}
-									<span className="text-muted-foreground text-xs font-normal">
-										(optional)
-									</span>
-								</h3>
+									<span className="text-destructive">*</span>
+								</FieldLabel>
 								<FieldDescription>
 									Control when users can modify their shift assignments.
+									Includes specific start and end times.
 								</FieldDescription>
 							</div>
 							<form.Field
@@ -543,15 +586,34 @@ export function EditPeriodSheet({
 												<DateRangeSelector
 													value={[start ?? undefined, end ?? undefined]}
 													onChange={([s, e]) => {
-														const [normalizedStart, normalizedEnd] =
-															normalizeRangeToDayBounds(s, e);
-														startField.handleChange(normalizedStart);
-														endField.handleChange(normalizedEnd);
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
 													}}
+													withTime
 												/>
 											)}
 										/>
 									);
+								}}
+							/>
+							<form.Field
+								name="scheduleModifyStart"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
+							<form.Field
+								name="scheduleModifyEnd"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
 								}}
 							/>
 						</div>

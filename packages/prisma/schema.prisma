@@ -120,14 +120,14 @@ model Period {
   max       Int?
   minMaxUnit MinMaxUnit?
 
-  visibleStart DateTime?
-  visibleEnd   DateTime?
+  visibleStart DateTime
+  visibleEnd   DateTime
 
-  scheduleSignupStart DateTime?
-  scheduleSignupEnd   DateTime?
+  scheduleSignupStart DateTime
+  scheduleSignupEnd   DateTime
 
-  scheduleModifyStart DateTime?
-  scheduleModifyEnd   DateTime?
+  scheduleModifyStart DateTime
+  scheduleModifyEnd   DateTime
 
   // timestamps
   createdAt DateTime @default(now())

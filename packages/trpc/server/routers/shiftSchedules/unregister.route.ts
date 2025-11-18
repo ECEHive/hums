@@ -66,11 +66,9 @@ export async function unregisterHandler(options: TUnregisterOptions) {
 
 		// Check if we're within the schedule signup window
 		const now = new Date();
-		const isSignupByStart =
-			!period.scheduleSignupStart ||
-			new Date(period.scheduleSignupStart) <= now;
-		const isSignupByEnd =
-			!period.scheduleSignupEnd || new Date(period.scheduleSignupEnd) >= now;
+		const nowTime = now.getTime();
+		const isSignupByStart = period.scheduleSignupStart.getTime() <= nowTime;
+		const isSignupByEnd = period.scheduleSignupEnd.getTime() >= nowTime;
 		const isWithinSignupWindow = isSignupByStart && isSignupByEnd;
 
 		if (!isWithinSignupWindow) {
