@@ -233,7 +233,7 @@ function AuditLogsPage() {
 				<h1 className="text-2xl font-bold">Audit Logs</h1>
 				<Button
 					variant="outline"
-                    size="sm"
+					size="sm"
 					onClick={() => refetch()}
 					disabled={isFetching}
 				>
