@@ -1,4 +1,6 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { describe, expect, it } from "vitest";
+import { APP_TIME_ZONE } from "../timezone";
 import {
 	compareTimestamps,
 	filterExceptionPeriods,
@@ -6,6 +8,29 @@ import {
 	generateOccurrenceTimestamps,
 	parseTimeString,
 } from "./utils";
+
+const TEST_TIME_ZONE = APP_TIME_ZONE;
+
+function zonedDate(
+	year: number,
+	month: number,
+	day: number,
+	hour = 0,
+	minute = 0,
+	second = 0,
+) {
+	return new Date(
+		Temporal.ZonedDateTime.from({
+			timeZone: TEST_TIME_ZONE,
+			year,
+			month,
+			day,
+			hour,
+			minute,
+			second,
+		}).epochMilliseconds,
+	);
+}
 
 describe("parseTimeString", () => {
 	it("should parse a full time string with hours, minutes, and seconds", () => {
@@ -47,54 +72,43 @@ describe("parseTimeString", () => {
 
 describe("findNextDayOfWeek", () => {
 	it("should find the next Monday when starting on a Monday", () => {
-		// Monday, January 1, 2024
-		const startDate = new Date("2024-01-01T00:00:00Z");
+		const startDate = zonedDate(2024, 1, 1);
 		const result = findNextDayOfWeek(startDate, 1); // 1 = Monday
 
 		expect(result).not.toBeNull();
 		expect(result?.getUTCDay()).toBe(1); // Monday
-		expect(result?.toISOString()).toBe("2024-01-01T00:00:00.000Z");
+		expect(result?.toISOString()).toBe(zonedDate(2024, 1, 1).toISOString());
 	});
 
 	it("should find the next Friday when starting on a Monday", () => {
-		// Monday, January 1, 2024
-		const startDate = new Date("2024-01-01T00:00:00Z");
+		const startDate = zonedDate(2024, 1, 1);
 		const result = findNextDayOfWeek(startDate, 5); // 5 = Friday
 
 		expect(result).not.toBeNull();
 		expect(result?.getUTCDay()).toBe(5); // Friday
-		// Should be Friday, January 5, 2024
-		expect(result?.toISOString()).toBe("2024-01-05T00:00:00.000Z");
+		expect(result?.toISOString()).toBe(zonedDate(2024, 1, 5).toISOString());
 	});
 
 	it("should find the next Sunday when starting on Saturday", () => {
-		// Saturday, January 6, 2024
-		const startDate = new Date("2024-01-06T00:00:00Z");
+		const startDate = zonedDate(2024, 1, 6);
 		const result = findNextDayOfWeek(startDate, 0); // 0 = Sunday
 
 		expect(result).not.toBeNull();
 		expect(result?.getUTCDay()).toBe(0); // Sunday
-		// Should be Sunday, January 7, 2024
-		expect(result?.toISOString()).toBe("2024-01-07T00:00:00.000Z");
+		expect(result?.toISOString()).toBe(zonedDate(2024, 1, 7).toISOString());
 	});
 
 	it("should return null if target day is not found before end date", () => {
-		// Monday, January 1, 2024
-		const startDate = new Date("2024-01-01T00:00:00Z");
-		// Tuesday, January 2, 2024
-		const endDate = new Date("2024-01-02T00:00:00Z");
-		// Looking for Friday (5)
+		const startDate = zonedDate(2024, 1, 1);
+		const endDate = zonedDate(2024, 1, 2);
 		const result = findNextDayOfWeek(startDate, 5, endDate);
 
 		expect(result).toBeNull();
 	});
 
 	it("should find the day within the end date boundary", () => {
-		// Monday, January 1, 2024
-		const startDate = new Date("2024-01-01T00:00:00Z");
-		// Friday, January 5, 2024
-		const endDate = new Date("2024-01-05T23:59:59Z");
-		// Looking for Friday (5)
+		const startDate = zonedDate(2024, 1, 1);
+		const endDate = zonedDate(2024, 1, 5, 23, 59, 59);
 		const result = findNextDayOfWeek(startDate, 5, endDate);
 
 		expect(result).not.toBeNull();
@@ -104,11 +118,8 @@ describe("findNextDayOfWeek", () => {
 
 describe("generateOccurrenceTimestamps", () => {
 	it("should generate weekly occurrences for a month-long period", () => {
-		// Period: January 1-31, 2024 (Monday to Wednesday)
-		const periodStart = new Date("2024-01-01T00:00:00Z");
-		const periodEnd = new Date("2024-01-31T23:59:59Z");
-
-		// Every Monday at 9:00 AM
+		const periodStart = zonedDate(2024, 1, 1);
+		const periodEnd = zonedDate(2024, 1, 31, 23, 59, 59);
 		const dayOfWeek = 1; // Monday
 		const startTime = "09:00:00";
 
@@ -119,13 +130,14 @@ describe("generateOccurrenceTimestamps", () => {
 			startTime,
 		);
 
-		// Should have 5 Mondays in January 2024: 1, 8, 15, 22, 29
 		expect(occurrences).toHaveLength(5);
 
-		// Check first occurrence
-		expect(occurrences[0].toISOString()).toBe("2024-01-01T09:00:00.000Z");
-		// Check last occurrence
-		expect(occurrences[4].toISOString()).toBe("2024-01-29T09:00:00.000Z");
+		expect(occurrences[0].toISOString()).toBe(
+			zonedDate(2024, 1, 1, 9).toISOString(),
+		);
+		expect(occurrences[4].toISOString()).toBe(
+			zonedDate(2024, 1, 29, 9).toISOString(),
+		);
 
 		// All should be Mondays
 		occurrences.forEach((date) => {
@@ -134,11 +146,8 @@ describe("generateOccurrenceTimestamps", () => {
 	});
 
 	it("should generate occurrences starting mid-week", () => {
-		// Period: January 3-31, 2024 (Wednesday to Wednesday)
-		const periodStart = new Date("2024-01-03T00:00:00Z");
-		const periodEnd = new Date("2024-01-31T23:59:59Z");
-
-		// Every Monday at 14:30:00
+		const periodStart = zonedDate(2024, 1, 3);
+		const periodEnd = zonedDate(2024, 1, 31, 23, 59, 59);
 		const dayOfWeek = 1; // Monday
 		const startTime = "14:30:00";
 
@@ -149,17 +158,16 @@ describe("generateOccurrenceTimestamps", () => {
 			startTime,
 		);
 
-		// Should have 4 Mondays: 8, 15, 22, 29 (1st is before period start)
 		expect(occurrences).toHaveLength(4);
 
-		// Check first occurrence
-		expect(occurrences[0].toISOString()).toBe("2024-01-08T14:30:00.000Z");
+		expect(occurrences[0].toISOString()).toBe(
+			zonedDate(2024, 1, 8, 14, 30).toISOString(),
+		);
 	});
 
 	it("should generate no occurrences if day of week doesn't occur in period", () => {
-		// Period: Monday Jan 1 to Tuesday Jan 2, 2024
-		const periodStart = new Date("2024-01-01T00:00:00Z");
-		const periodEnd = new Date("2024-01-02T23:59:59Z");
+		const periodStart = zonedDate(2024, 1, 1);
+		const periodEnd = zonedDate(2024, 1, 2, 23, 59, 59);
 
 		// Looking for Friday
 		const dayOfWeek = 5; // Friday
@@ -176,9 +184,8 @@ describe("generateOccurrenceTimestamps", () => {
 	});
 
 	it("should handle occurrences at different times of day", () => {
-		// Period: January 1-31, 2024
-		const periodStart = new Date("2024-01-01T00:00:00Z");
-		const periodEnd = new Date("2024-01-31T23:59:59Z");
+		const periodStart = zonedDate(2024, 1, 1);
+		const periodEnd = zonedDate(2024, 1, 31, 23, 59, 59);
 
 		// Every Monday at 23:45:30
 		const dayOfWeek = 1; // Monday
@@ -193,18 +200,17 @@ describe("generateOccurrenceTimestamps", () => {
 
 		expect(occurrences).toHaveLength(5);
 
-		// Check time is correctly set
-		occurrences.forEach((date) => {
-			expect(date.getUTCHours()).toBe(23);
-			expect(date.getUTCMinutes()).toBe(45);
-			expect(date.getUTCSeconds()).toBe(30);
+		occurrences.forEach((date, index) => {
+			const monday = 1 + index * 7;
+			expect(date.toISOString()).toBe(
+				zonedDate(2024, 1, monday, 23, 45, 30).toISOString(),
+			);
 		});
 	});
 
 	it("should handle Sunday as day of week (0)", () => {
-		// Period: January 1-31, 2024
-		const periodStart = new Date("2024-01-01T00:00:00Z");
-		const periodEnd = new Date("2024-01-31T23:59:59Z");
+		const periodStart = zonedDate(2024, 1, 1);
+		const periodEnd = zonedDate(2024, 1, 31, 23, 59, 59);
 
 		// Every Sunday at 08:00:00
 		const dayOfWeek = 0; // Sunday
@@ -217,19 +223,19 @@ describe("generateOccurrenceTimestamps", () => {
 			startTime,
 		);
 
-		// Sundays in January 2024: 7, 14, 21, 28
 		expect(occurrences).toHaveLength(4);
 
-		// All should be Sundays
-		occurrences.forEach((date) => {
-			expect(date.getUTCDay()).toBe(0);
+		occurrences.forEach((date, index) => {
+			const sunday = 7 + index * 7;
+			expect(date.toISOString()).toBe(
+				zonedDate(2024, 1, sunday, 8).toISOString(),
+			);
 		});
 	});
 
 	it("should exclude occurrences that fall exactly on period end", () => {
-		// Period: Jan 1-7, 2024 (exactly one week)
-		const periodStart = new Date("2024-01-01T09:00:00Z");
-		const periodEnd = new Date("2024-01-08T09:00:00Z");
+		const periodStart = zonedDate(2024, 1, 1, 9);
+		const periodEnd = zonedDate(2024, 1, 8, 9);
 
 		// Every Monday at 9:00 AM
 		const dayOfWeek = 1; // Monday
@@ -242,9 +248,66 @@ describe("generateOccurrenceTimestamps", () => {
 			startTime,
 		);
 
-		// Should only include Jan 1, not Jan 8 (which equals periodEnd)
 		expect(occurrences).toHaveLength(1);
-		expect(occurrences[0].toISOString()).toBe("2024-01-01T09:00:00.000Z");
+		expect(occurrences[0].toISOString()).toBe(
+			zonedDate(2024, 1, 1, 9).toISOString(),
+		);
+	});
+
+	it("should preserve wall time through spring DST shift", () => {
+		const periodStart = zonedDate(2024, 3, 1);
+		const periodEnd = zonedDate(2024, 3, 31, 23, 59, 59);
+		const dayOfWeek = 0; // Sunday
+		const startTime = "10:00:00";
+
+		const occurrences = generateOccurrenceTimestamps(
+			periodStart,
+			periodEnd,
+			dayOfWeek,
+			startTime,
+		);
+
+		const beforeDst = occurrences.find((date) =>
+			date.toISOString().startsWith("2024-03-03"),
+		);
+		const afterDst = occurrences.find((date) =>
+			date.toISOString().startsWith("2024-03-10"),
+		);
+
+		expect(beforeDst?.toISOString()).toBe(
+			zonedDate(2024, 3, 3, 10).toISOString(),
+		);
+		expect(afterDst?.toISOString()).toBe(
+			zonedDate(2024, 3, 10, 10).toISOString(),
+		);
+	});
+
+	it("should preserve wall time through fall DST shift", () => {
+		const periodStart = zonedDate(2024, 10, 1);
+		const periodEnd = zonedDate(2024, 11, 30, 23, 59, 59);
+		const dayOfWeek = 0; // Sunday
+		const startTime = "10:00:00";
+
+		const occurrences = generateOccurrenceTimestamps(
+			periodStart,
+			periodEnd,
+			dayOfWeek,
+			startTime,
+		);
+
+		const beforeDst = occurrences.find((date) =>
+			date.toISOString().startsWith("2024-10-27"),
+		);
+		const afterDst = occurrences.find((date) =>
+			date.toISOString().startsWith("2024-11-03"),
+		);
+
+		expect(beforeDst?.toISOString()).toBe(
+			zonedDate(2024, 10, 27, 10).toISOString(),
+		);
+		expect(afterDst?.toISOString()).toBe(
+			zonedDate(2024, 11, 3, 10).toISOString(),
+		);
 	});
 });
 

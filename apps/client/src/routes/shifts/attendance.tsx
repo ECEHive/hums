@@ -336,6 +336,10 @@ function AttendancePage() {
 													{formatTimeRange(
 														attendance.shiftOccurrence.shiftSchedule.startTime,
 														attendance.shiftOccurrence.shiftSchedule.endTime,
+														{
+															referenceDate:
+																attendance.shiftOccurrence.timestamp,
+														},
 													)}
 												</span>
 											</div>

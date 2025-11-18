@@ -11,8 +11,8 @@
 		"@ecehive/env": "workspace:*",
 		"@ecehive/ldap": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
-		"@trpc/server": "11.5.1",
-		"dayjs": "^1.11.18"
+		"@js-temporal/polyfill": "^0.4.4",
+		"@trpc/server": "11.5.1"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
