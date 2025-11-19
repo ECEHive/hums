@@ -116,8 +116,7 @@ function Login() {
 						</CardContent>
 					</Card>
 					<div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-						Use of this application is for authorized Hive Makerspace members
-						with Georgia Tech accounts only.
+						Use of this application is for authorized users with Georgia Tech accounts only.
 					</div>
 					<div className="text-muted-foreground text-center text-xs text-balance">
 						HUMS v{__APP_VERSION__}
