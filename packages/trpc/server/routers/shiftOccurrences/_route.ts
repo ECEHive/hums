@@ -7,6 +7,7 @@ import { dropHandler, ZDropSchema } from "./drop.route";
 import { dropMakeupHandler, ZDropMakeupSchema } from "./dropMakeup.route";
 import { getHandler, ZGetSchema } from "./get.route";
 import { listHandler, ZListSchema } from "./list.route";
+import { listForUserHandler, ZListForUserSchema } from "./listForUser.route";
 import {
 	listMakeupOptionsHandler,
 	ZListMakeupOptionsSchema,
@@ -19,6 +20,9 @@ export const shiftOccurrencesRouter = router({
 	list: permissionProtectedProcedure("shift_occurrences.list")
 		.input(ZListSchema)
 		.query(listHandler),
+	listForUser: permissionProtectedProcedure("shift_schedules.manipulate")
+		.input(ZListForUserSchema)
+		.query(listForUserHandler),
 	listMy: protectedProcedure.input(ZListMySchema).query(listMyHandler),
 	listMyPast: protectedProcedure
 		.input(ZListMyPastSchema)

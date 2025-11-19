@@ -1,12 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarCheckIcon, ClockIcon, UserPlusIcon } from "lucide-react";
+import {
+	CalendarCheckIcon,
+	ClockIcon,
+	ShieldCheckIcon,
+	UserPlusIcon,
+} from "lucide-react";
+import { useCurrentUser } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/period-not-selected";
 import { usePeriod } from "@/components/period-provider";
 import { RequireShiftAccess } from "@/components/require-shift-access";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShiftAccess } from "@/hooks/use-shift-access";
-import type { RequiredPermissions } from "@/lib/permissions";
+import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/shifts/")({
 	component: () => (
@@ -23,6 +29,10 @@ export const permissions = {
 function ShiftsIndex() {
 	const { period: periodId } = usePeriod();
 	const { canAccessShifts } = useShiftAccess();
+	const currentUser = useCurrentUser();
+	const canManageUsers = checkPermissions(currentUser, [
+		"shift_schedules.manipulate",
+	]);
 
 	if (periodId === null) {
 		return <PeriodNotSelected />;
@@ -61,6 +71,14 @@ function ShiftsIndex() {
 								View Attendance History
 							</Button>
 						</Link>
+						{canManageUsers ? (
+							<Link to="/shifts/manage-users">
+								<Button variant="outline" className="w-full justify-start">
+									<ShieldCheckIcon className="mr-2 h-4 w-4" />
+									Manage User Shifts
+								</Button>
+							</Link>
+						) : null}
 					</CardContent>
 				</Card>
 			)}
