@@ -12,6 +12,7 @@ import {
 	ListIcon,
 	MoonIcon,
 	NotebookTextIcon,
+	ShieldCheckIcon,
 	SunIcon,
 	SunMoonIcon,
 	User2Icon,
@@ -42,6 +43,7 @@ import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as attendancePagePermissions } from "@/routes/shifts/attendance";
 import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index";
+import { permissions as manageUsersPagePermissions } from "@/routes/shifts/manage-users";
 import { permissions as myShiftsPagePermissions } from "@/routes/shifts/my-shifts";
 import { permissions as periodDetailsPagePermissions } from "@/routes/shifts/period-details";
 import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
@@ -108,6 +110,12 @@ export const items = [
 				url: "/shifts/shift-schedules",
 				icon: ClockIcon,
 				permissions: shiftSchedulesPagePermissions,
+			},
+			{
+				title: "Manage Users",
+				url: "/shifts/manage-users",
+				icon: ShieldCheckIcon,
+				permissions: manageUsersPagePermissions,
 			},
 			{
 				title: "Reports",
