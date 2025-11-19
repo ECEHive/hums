@@ -119,6 +119,9 @@ function Login() {
 						Use of this application is for authorized Hive Makerspace members
 						with Georgia Tech accounts only.
 					</div>
+					<div className="text-muted-foreground text-center text-xs text-balance">
+						HUMS v{__APP_VERSION__}
+					</div>
 				</div>
 			</div>
 		</div>
