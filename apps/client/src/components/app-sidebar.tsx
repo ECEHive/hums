@@ -241,6 +241,8 @@ export function AppSidebar() {
 								side="top"
 								className="w-[--radix-popper-anchor-width]"
 							>
+								<DropdownMenuLabel>HUMS v{__APP_VERSION__}</DropdownMenuLabel>
+								<DropdownMenuSeparator />
 								<DropdownMenuLabel>Theme</DropdownMenuLabel>
 								<DropdownMenuItem onSelect={() => setTheme("light")}>
 									<SunIcon />
