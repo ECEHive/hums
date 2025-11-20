@@ -1,3 +1,4 @@
+import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useState } from "react";
 
 interface KioskClockProps {
@@ -5,11 +6,11 @@ interface KioskClockProps {
 }
 
 export function KioskClock({ className = "" }: KioskClockProps) {
-	const [now, setNow] = useState<Date>(() => new Date());
+	const [now, setNow] = useState<Dayjs>(dayjs());
 
 	useEffect(() => {
 		// Update the time immediately
-		const updateTime = () => setNow(new Date());
+		const updateTime = () => setNow(dayjs());
 		updateTime();
 
 		// Calculate milliseconds until the next minute boundary
@@ -30,19 +31,14 @@ export function KioskClock({ className = "" }: KioskClockProps) {
 		};
 	}, []);
 
-	const formatTime = (d: Date) =>
-		d.toLocaleTimeString("en-GB", {
-			hour12: false,
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-
 	return (
 		<div
-			className={`font-mono font-bold tabular-nums ${className}`}
+			className={`font-mono font-bold ${className} leading-none`}
 			aria-live="polite"
 		>
-			{formatTime(now)}
+			<p className="leading-none w-full flex flex-row items-center justify-center">
+				{now.format("HH")}:{now.format("mm")}
+			</p>
 		</div>
 	);
 }
