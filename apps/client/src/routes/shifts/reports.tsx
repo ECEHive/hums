@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDownIcon, NotebookTextIcon } from "lucide-react";
+import { CircleAlert, DownloadIcon, NotebookTextIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
 import DateRangeSelector from "@/components/date-range-selector";
@@ -9,16 +9,9 @@ import { MissingPermissions } from "@/components/missing-permissions";
 import { usePeriod } from "@/components/period-provider";
 import { generateColumns } from "@/components/reports/columns";
 import { DataTable } from "@/components/reports/data-table";
-import { RoleSelect } from "@/components/roles/role-select";
-import { TablePagination } from "@/components/table-pagination";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
@@ -38,50 +31,18 @@ function Reports() {
 	const [end, setEnd] = React.useState<Date | null>(null);
 	const [selectedRange, setSelectedRange] =
 		React.useState<string>("fullperiod");
-	const [selectedRole, setSelectedRole] = React.useState<number | null>(null);
+	const [staffingRoles, setStaffingRoles] = React.useState<number[] | null>(
+		null,
+	);
 	const { period: periodId } = usePeriod();
-
-	const [page, setPage] = React.useState(1);
-	const [pageSize, setPageSize] = React.useState(10);
-
-	const offset = (page - 1) * pageSize;
 
 	const reportParams = {
 		startDate: start?.toISOString() ?? undefined,
 		endDate: end?.toISOString() ?? undefined,
-		// do not provide a default role; generation requires an explicit selection
-		staffingRoleId: selectedRole ?? undefined,
+		// use the period-provided staffing roles
+		staffingRoleIds: staffingRoles ?? undefined,
 		periodId: Number(periodId),
 	};
-
-	const {
-		data: reportData,
-		isLoading: reportLoading,
-		refetch: refetchReport,
-	} = useQuery({
-		queryKey: ["reports.generate", reportParams],
-		queryFn: async () => {
-			// only generate when a role is explicitly selected
-			if (selectedRole == null) return { reports: [], total: 0 };
-			return trpc.reports.generate.query({
-				...reportParams,
-				staffingRoleId: selectedRole as number,
-			});
-		},
-		retry: false,
-		// don't auto-run the query on mount or when params change; only run when the user presses Generate
-		enabled: false,
-	});
-
-	// Track the params for which a report was last generated so the button
-	// can show "Regenerage Report" when the current params match the last generated ones.
-	const [lastGeneratedKey, setLastGeneratedKey] = React.useState<string | null>(null);
-	const currentReportKey = JSON.stringify(reportParams);
-
-	const totalPages = Math.max(
-		1,
-		Math.ceil((reportData?.total ?? 0) / pageSize),
-	);
 
 	const { data: periodData, isLoading: periodLoading } = useQuery({
 		queryKey: ["period", Number(periodId)],
@@ -90,16 +51,70 @@ function Reports() {
 			const res = await trpc.periods.get.query({ id: Number(periodId) });
 			setStart(res?.period?.start ?? null);
 			setEnd(res?.period?.end ?? null);
+			setStaffingRoles(res?.period?.roles.map((role) => role.id) ?? null);
 			return res;
 		},
 	});
 
-	const { data: rolesData, isLoading: rolesLoading } = useQuery({
-		queryKey: ["roles.list"],
+	const {
+		data: reportData,
+		isLoading: reportLoading,
+		refetch: refetchReport,
+	} = useQuery({
+		queryKey: ["reports.generate", reportParams],
 		queryFn: async () => {
-			return await trpc.roles.list.query({});
+			// If `staffingRoles` is null or an empty array, reportParams may
+			// contain `staffingRoleIds` as `undefined` or `[]`. The server treats
+			// both cases as no role filter and will return all users.
+			return trpc.reports.generate.query(reportParams);
 		},
+		retry: false,
+		// don't auto-run the query on mount or when params change; only run when the user presses Generate
+		enabled: false,
 	});
+
+	// Track the params for which a report was last generated so the button
+	// can show "Regenerate Report" when the current params match the last generated ones.
+	const [lastGeneratedKey, setLastGeneratedKey] = React.useState<string | null>(
+		null,
+	);
+	const currentReportKey = JSON.stringify(reportParams);
+
+	const exportCsv = React.useCallback(() => {
+		const rows = (reportData?.reports ?? []) as Record<string, unknown>[];
+		if (!rows || rows.length === 0) return;
+
+		const headers = Object.keys(rows[0]);
+		const csvEscape = (v: unknown) => {
+			if (v === null || v === undefined) return "";
+			if (typeof v === "number" || typeof v === "boolean") return String(v);
+			const s = String(v);
+			return `"${s.replace(/"/g, '""')}"`;
+		};
+
+		const csv = [
+			headers.join(","),
+			...rows.map((r) => headers.map((h) => csvEscape(r[h])).join(",")),
+		].join("\n");
+
+		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		// Format current date/time as YYYY-MM-DD_HH-MM-SS for filenames
+		const now = new Date();
+		const pad = (n: number) => String(n).padStart(2, "0");
+		const filename = `report-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.csv`;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(() => {
+			URL.revokeObjectURL(url);
+			document.body.removeChild(a);
+		}, 0);
+	}, [reportData?.reports]);
+
+	// roles list no longer needed; staffing roles come from the period
 
 	return (
 		<div className="container p-4 space-y-4">
@@ -208,20 +223,32 @@ function Reports() {
 							/>
 						</div>
 						<div>
-							<div className="text-sm font-medium mb-1">Staffing Role</div>
-							{rolesLoading ? (
+							<div className="text-sm font-medium mb-1">Staffing Roles</div>
+							{periodLoading ? (
 								<Spinner />
+							) : staffingRoles && staffingRoles.length > 0 ? (
+								<div className="flex flex-wrap gap-2">
+									{staffingRoles.map((id) => {
+										const roleName =
+											periodData?.period?.roles?.find((r) => r.id === id)
+												?.name ?? `Role ${id}`;
+										return (
+											<Badge
+												key={id}
+												variant="secondary"
+												className="flex items-center gap-1"
+											>
+												<span>{roleName}</span>
+											</Badge>
+										);
+									})}
+								</div>
 							) : (
-								<RoleSelect
-									value={
-										selectedRole
-											? (rolesData?.roles.find((r) => r.id === selectedRole) ??
-												null)
-											: null
-									}
-									onChange={(role) => setSelectedRole(role?.id ?? null)}
-									placeholder="Select staffing role..."
-								/>
+								<div className="text-sm text-muted-foreground">
+									<CircleAlert className="inline-block mr-1 h-4 w-4" />
+									No staffing roles defined for this period! Returning all
+									users.
+								</div>
 							)}
 						</div>
 						<div className="pt-2">
@@ -229,72 +256,32 @@ function Reports() {
 								variant="default"
 								onClick={async () => {
 									const result = await refetchReport();
-									setPage(1);
 									// mark generated if query succeeded
 									if (result?.error == null) {
 										setLastGeneratedKey(currentReportKey);
 									}
 								}}
-								disabled={reportLoading || selectedRole == null}
+								disabled={reportLoading}
 							>
-								{selectedRole == null
-									? "Select a role"
-									: reportLoading
-										? "Generating..."
-										: lastGeneratedKey === currentReportKey
-											? "Regenerage Report"
-											: "Generate Report"}
+								{reportLoading
+									? "Generating..."
+									: lastGeneratedKey === currentReportKey
+										? "Regenerate Report"
+										: "Generate Report"}
 							</Button>
 						</div>
 					</div>
 				</CardContent>
 			</Card>
-			<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-				{/* <div className="flex items-center gap-2">
-					<FilterDialog
-						onFilterChange={(newFilterRoles) => {
-							setPage(1);
-							setFilterRoles(newFilterRoles);
-						}}
-						filterRoles={filterRoles}
-						trigger={
-							<Button variant="outline">
-								<Filter className="size-4" />
-							</Button>
-						}
-					/>
-					<Input
-						placeholder="Search users..."
-						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-							setPage(1);
-						}}
-						className="max-w-xs"
-					/>
-				</div> */}
-				<div className="flex items-center gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline">
-								{pageSize} per page <ChevronDownIcon className="ml-2 size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							{[10, 25, 50, 100].map((size) => (
-								<DropdownMenuItem
-									key={size}
-									onClick={async () => {
-										setPageSize(size);
-										setPage(1);
-									}}
-								>
-									{size} per page
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+			<div className="flex justify-left">
+				<Button
+					variant="outline"
+					onClick={exportCsv}
+					disabled={reportLoading || (reportData?.reports ?? []).length === 0}
+				>
+					<DownloadIcon className="mr-2 h-4 w-4" />
+					Download CSV
+				</Button>
 			</div>
 			<DataTable
 				columns={generateColumns()}
@@ -302,14 +289,8 @@ function Reports() {
 				isLoading={reportLoading}
 			/>
 			<div className="flex flex-col justify-between items-center gap-2">
-				<TablePagination
-					page={page}
-					totalPages={totalPages}
-					onPageChange={setPage}
-				/>
 				<p className="text-sm text-muted-foreground">
-					Showing {offset + 1} - {offset + (reportData?.reports.length ?? 0)} of{" "}
-					{reportData?.total ?? 0}
+					Showing {reportData?.total ?? 0} records
 				</p>
 			</div>
 		</div>

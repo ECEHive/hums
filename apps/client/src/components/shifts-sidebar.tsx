@@ -46,11 +46,10 @@ import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index
 import { permissions as manageUsersPagePermissions } from "@/routes/shifts/manage-users";
 import { permissions as myShiftsPagePermissions } from "@/routes/shifts/my-shifts";
 import { permissions as periodDetailsPagePermissions } from "@/routes/shifts/period-details";
+import { permissions as reportsPagePermissions } from "@/routes/shifts/reports";
 import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
 import { permissions as shiftSchedulesPagePermissions } from "@/routes/shifts/shift-schedules";
 import { permissions as shiftTypesPagePermissions } from "@/routes/shifts/shift-types";
-import { permissions as reportsPagePermissions } from "@/routes/shifts/reports";
-// import { permissions as reportsPagePermissions } from "@/routes/shifts/reports"; // To be implemented
 import { Logo } from "./logo";
 import { usePeriod } from "./period-provider";
 import { PeriodSelector } from "./periods/period-selector";
