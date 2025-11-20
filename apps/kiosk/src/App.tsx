@@ -81,7 +81,7 @@ function App() {
 
 	return (
 		<KioskContainer>
-			<div className="h-full w-full overflow-hidden dark flex flex-col">
+			<div className="h-full min-w-full overflow-hidden dark flex flex-col">
 				{isPreConnection && (
 					<KioskHeader
 						logoUrl={logoUrl}
@@ -92,7 +92,7 @@ function App() {
 					/>
 				)}
 
-				<main className="flex-1 overflow-hidden relative">
+				<main className="min-w-full flex-1 overflow-hidden relative">
 					<FlowOverlays
 						errorDialog={tapWorkflow.errorDialog}
 						sessionTypeSelection={tapWorkflow.sessionTypeSelection}
@@ -109,7 +109,7 @@ function App() {
 						onAgreementProgress={tapWorkflow.resetAgreementTimeout}
 					/>
 
-					<div className="h-full flex items-center justify-center">
+					<div className="min-w-full h-full flex items-center justify-center">
 						{connectionStatus !== "connected" ? (
 							<SetupView
 								connectionStatus={connectionStatus}

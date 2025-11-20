@@ -2,8 +2,8 @@ import { trpc } from "@ecehive/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { KioskButton, KioskCard } from "@/components/kiosk-ui";
 import { formatLog, getLogger } from "@/lib/logging";
+import { Button } from "./ui/button";
 
 const log = getLogger("agreement-flow");
 
@@ -101,90 +101,59 @@ export function AgreementFlow({
 	};
 
 	return (
-		<div
-			className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
-			style={{ padding: "calc(1rem * var(--kiosk-scale))" }}
-		>
-			<div className="w-full kiosk-max-w-3xl max-h-full flex flex-col">
-				<KioskCard
-					className="border-primary shadow-2xl flex-1 flex flex-col min-h-0"
-					style={{
-						borderWidth: "calc(4px * var(--kiosk-scale))",
-						padding: "calc(1.5rem * var(--kiosk-scale))",
-					}}
-				>
-					<div className="kiosk-gap-4 flex flex-col flex-1 min-h-0">
-						<div className="text-center kiosk-gap-2 flex flex-col flex-shrink-0">
-							<h2 className="kiosk-text-3xl font-bold">Welcome, {userName}!</h2>
-							<p className="kiosk-text-lg text-muted-foreground">
+		<div className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md">
+			<div className="w-full max-w-3xl max-h-full flex flex-col">
+				<div className="bg-card rounded-md border-primary shadow-2xl flex-1 flex flex-col min-h-0 p-8">
+					<div className="gap-4 flex flex-col flex-1 min-h-0">
+						<div className="text-center gap-2 flex flex-col ">
+							<h2 className="text-3xl font-bold">Welcome, {userName}</h2>
+							<p className="text-lg text-muted-foreground">
 								Please review and accept the following agreement
 								{agreements.length > 1 &&
 									` (${currentIndex + 1} of ${agreements.length})`}
 							</p>
 						</div>
 
-						<div className="kiosk-gap-4 flex flex-col flex-1 min-h-0">
-							<h3 className="kiosk-text-2xl font-semibold text-center flex-shrink-0">
+						<div className="gap-4 flex flex-col flex-1 min-h-0">
+							<h3 className="text-2xl font-semibold text-center">
 								{currentAgreement.title}
 							</h3>
 
-							<div
-								className="flex-1 w-full kiosk-rounded-md kiosk-p-4 bg-muted/30 overflow-y-auto min-h-0"
-								style={{
-									border:
-										"calc(1px * var(--kiosk-scale)) solid hsl(var(--border))",
-								}}
-							>
-								<div className="whitespace-pre-wrap kiosk-text-base">
+							<div className="flex-1 w-full rounded-md p-4 bg-muted/30 overflow-y-auto min-h-0">
+								<div className="whitespace-pre-wrap text-base">
 									{currentAgreement.content}
 								</div>
 							</div>
 						</div>
 
-						<div className="flex kiosk-gap-4 justify-center flex-shrink-0">
-							<KioskButton
+						<div className="flex gap-4 justify-center">
+							<Button
 								variant="outline"
 								onClick={onCancel}
 								disabled={isProcessing}
-								style={{
-									fontSize: "calc(1.125rem * var(--kiosk-scale))",
-									padding:
-										"calc(0.75rem * var(--kiosk-scale)) calc(1.5rem * var(--kiosk-scale))",
-								}}
+								size="lg"
 							>
-								<X
-									className="kiosk-icon-md"
-									style={{ marginRight: "calc(0.5rem * var(--kiosk-scale))" }}
-								/>
+								<X />
 								Cancel
-							</KioskButton>
-							<KioskButton
+							</Button>
+							<Button
 								onClick={handleAgree}
 								disabled={isProcessing || !isCountdownComplete}
-								style={{
-									fontSize: "calc(1.125rem * var(--kiosk-scale))",
-									padding:
-										"calc(0.75rem * var(--kiosk-scale)) calc(1.5rem * var(--kiosk-scale))",
-								}}
+								size="lg"
 							>
-								<Check
-									className="kiosk-icon-md"
-									style={{ marginRight: "calc(0.5rem * var(--kiosk-scale))" }}
-								/>
+								<Check />
 								{isCountdownComplete
 									? currentAgreement.confirmationText
 									: `${currentAgreement.confirmationText} (${countdown})`}
-							</KioskButton>
+							</Button>
 						</div>
 						{agreements.length > 1 && (
-							<div className="flex justify-center kiosk-gap-2 flex-shrink-0">
+							<div className="flex justify-center gap-2">
 								{agreements.map((_, idx) => (
 									<div
 										key={idx}
-										className="kiosk-rounded-xl transition-colors"
+										className="rounded-xl"
 										style={{
-											height: "calc(0.5rem * var(--kiosk-scale))",
-											width: "calc(2rem * var(--kiosk-scale))",
 											backgroundColor:
 												idx === currentIndex
 													? "hsl(var(--primary))"
@@ -197,7 +166,7 @@ export function AgreementFlow({
 							</div>
 						)}
 					</div>
-				</KioskCard>
+				</div>
 			</div>
 		</div>
 	);

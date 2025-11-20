@@ -1,7 +1,7 @@
 import { Maximize } from "lucide-react";
 import { KioskClock } from "@/components/kiosk-clock";
-import { KioskButton } from "@/components/kiosk-ui";
 import { LoadingIndicator } from "@/components/loading-indicator";
+import { Button } from "./ui/button";
 
 interface ReadyViewProps {
 	logoUrl: string;
@@ -17,58 +17,34 @@ export function ReadyView({
 	onToggleFullscreen,
 }: ReadyViewProps) {
 	return (
-		<div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+		<div className="min-w-full h-full flex items-center justify-center overflow-hidden relative">
 			{!isFullscreen && (
-				<div
-					className="absolute z-40"
-					style={{
-						top: "calc(1rem * var(--kiosk-scale))",
-						right: "calc(1rem * var(--kiosk-scale))",
-					}}
-				>
-					<KioskButton
+				<div className="absolute z-40 top-0 right-4">
+					<Button
 						variant="ghost"
 						onClick={onToggleFullscreen}
 						title="Enter Fullscreen"
-						style={{
-							width: "calc(2.5rem * var(--kiosk-scale))",
-							height: "calc(2.5rem * var(--kiosk-scale))",
-							padding: 0,
-						}}
 					>
-						<Maximize className="kiosk-icon-md" />
-					</KioskButton>
+						<Maximize className="w-15 h-15" />
+					</Button>
 				</div>
 			)}
 
-			<div className="text-center kiosk-gap-6 flex flex-col items-center justify-center">
-				<img
-					src={logoUrl}
-					alt="HUMS"
-					className="flex-shrink-0"
-					style={{
-						height: "calc(6rem * var(--kiosk-scale))",
-						width: "auto",
-					}}
-				/>
+			<div className="flex flex-col items-center justify-center gap-16">
+				<div className="w-full flex flex-row items-center justify-center gap-4">
+					<p className="text-6xl font-semibold">Hi, welcome to</p>
+					<img src={logoUrl} alt="HUMS" className="h-12 w-auto" />
+				</div>
 
-				<KioskClock className="kiosk-text-9xl leading-tight max-w-full" />
+				<KioskClock className="text-[10rem]" />
 
-				<div
-					className="flex items-center justify-center"
-					style={{
-						minHeight: "calc(5rem * var(--kiosk-scale))",
-					}}
-				>
+				<div className="flex items-center justify-center">
 					{isProcessing ? (
 						<LoadingIndicator message="Processing..." />
 					) : (
-						<div className="kiosk-gap-2 flex flex-col">
-							<h1 className="kiosk-text-4xl font-bold leading-tight">
-								Ready to Scan
-							</h1>
-							<p className="kiosk-text-xl text-muted-foreground kiosk-max-w-lg mx-auto">
-								Please scan your card to tap in or out
+						<div className="gap-2 flex flex-col">
+							<p className="text-xl text-muted-foreground mx-auto">
+								Tap your BuzzCard
 							</p>
 						</div>
 					)}
