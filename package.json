@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/hums",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
 		"check": "biome check --write",
