@@ -14,6 +14,9 @@ importers:
       '@ecehive/config':
         specifier: workspace:*
         version: link:packages/config
+      tsx:
+        specifier: ^4.20.6
+        version: 4.20.6
 
   apps/client:
     dependencies:
