@@ -6,6 +6,7 @@ import { kiosksRouter } from "./routers/kiosks/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
 import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
+import { reportsRouter } from "./routers/reports/_route";
 import { rolesRouter } from "./routers/roles/_route";
 import { sessionsRouter } from "./routers/sessions/_route";
 import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
@@ -31,6 +32,7 @@ export const appRouter = router({
 	shiftAttendances: shiftAttendancesRouter,
 	sessions: sessionsRouter,
 	kiosks: kiosksRouter,
+	reports: reportsRouter,
 });
 
 export type AppRouter = typeof appRouter;
