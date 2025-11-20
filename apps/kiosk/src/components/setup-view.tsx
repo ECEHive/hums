@@ -26,25 +26,7 @@ export function SetupView({
 					<KioskCard className="border-destructive shadow-2xl p-6">
 						<div className="flex flex-col items-center gap-6">
 							<div className="relative flex items-center justify-center">
-								<motion.div
-									initial={{ scale: 0.85, opacity: 0 }}
-									animate={{ scale: 1, opacity: 1 }}
-									transition={{ duration: 0.6, ease: "easeOut" }}
-								>
-									<AlertCircle className="icon-2xl text-destructive" />
-								</motion.div>
-								<motion.div
-									className="absolute inset-0"
-									initial={{ scale: 0.9, opacity: 0.4 }}
-									animate={{ scale: [0.9, 1.4], opacity: [0.4, 0] }}
-									transition={{
-										duration: 1.4,
-										repeat: Infinity,
-										ease: "easeOut",
-									}}
-								>
-									<AlertCircle className="w-32 h-32 text-destructive opacity-40" />
-								</motion.div>
+								<AlertCircle className="w-12 h-12 text-destructive" />
 							</div>
 							<div className="text-center gap-3 flex flex-col">
 								<h2 className="text-4xl font-bold text-destructive">
