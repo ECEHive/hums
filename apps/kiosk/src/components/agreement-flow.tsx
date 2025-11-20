@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { formatLog, getLogger } from "@/lib/logging";
 import { Button } from "./ui/button";
 
@@ -117,11 +117,7 @@ export function AgreementFlow({
 								<X />
 								Cancel
 							</Button>
-							<Button
-								onClick={handleAgree}
-								disabled={isProcessing}
-								size="lg"
-							>
+							<Button onClick={handleAgree} disabled={isProcessing} size="lg">
 								<Check />
 								{currentAgreement.confirmationText}
 							</Button>
