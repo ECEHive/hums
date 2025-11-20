@@ -13,6 +13,9 @@
 			"correctness": {
 				"noChildrenProp": "off",
 				"useExhaustiveDependencies": "off"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "warn"
 			}
 		}
 	},

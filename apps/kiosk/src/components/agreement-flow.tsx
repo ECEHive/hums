@@ -118,11 +118,11 @@ export function AgreementFlow({
 							<h3 className="text-2xl font-semibold text-center">
 								{currentAgreement.title}
 							</h3>
-
-							<div className="flex-1 w-full rounded-md p-4 bg-muted/30 overflow-y-auto min-h-0">
-								<div className="whitespace-pre-wrap text-base">
-									{currentAgreement.content}
-								</div>
+							<div className="flex-1 w-full rounded-md p-4 bg-neutral-200 overflow-y-auto min-h-0">
+								<div
+									className="whitespace-pre-wrap text-neutral-800"
+									dangerouslySetInnerHTML={{ __html: currentAgreement.content }}
+								/>
 							</div>
 						</div>
 
