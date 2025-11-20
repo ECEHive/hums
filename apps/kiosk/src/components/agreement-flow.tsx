@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { formatLog, getLogger } from "@/lib/logging";
 import { Button } from "./ui/button";
 
@@ -35,28 +35,9 @@ export function AgreementFlow({
 }: AgreementFlowProps) {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isProcessing, setIsProcessing] = useState(false);
-	const [countdown, setCountdown] = useState(3);
-	const [isCountdownComplete, setIsCountdownComplete] = useState(false);
 
 	const currentAgreement = agreements[currentIndex];
 	const isLastAgreement = currentIndex === agreements.length - 1;
-
-	// Countdown timer effect
-	useEffect(() => {
-		if (countdown > 0) {
-			const timer = setTimeout(() => {
-				setCountdown(countdown - 1);
-			}, 1000);
-			return () => clearTimeout(timer);
-		}
-		setIsCountdownComplete(true);
-	}, [countdown]);
-
-	// Reset countdown when changing agreements
-	useEffect(() => {
-		setCountdown(3);
-		setIsCountdownComplete(false);
-	}, [currentIndex]);
 
 	const agreeMutation = useMutation({
 		mutationFn: (agreementId: number) => {
@@ -118,11 +99,11 @@ export function AgreementFlow({
 							<h3 className="text-2xl font-semibold text-center">
 								{currentAgreement.title}
 							</h3>
-
-							<div className="flex-1 w-full rounded-md p-4 bg-muted/30 overflow-y-auto min-h-0">
-								<div className="whitespace-pre-wrap text-base">
-									{currentAgreement.content}
-								</div>
+							<div className="flex-1 w-full rounded-md p-4 bg-neutral-200 overflow-y-auto min-h-0">
+								<div
+									className="prose text-black"
+									dangerouslySetInnerHTML={{ __html: currentAgreement.content }}
+								/>
 							</div>
 						</div>
 
@@ -136,15 +117,9 @@ export function AgreementFlow({
 								<X />
 								Cancel
 							</Button>
-							<Button
-								onClick={handleAgree}
-								disabled={isProcessing || !isCountdownComplete}
-								size="lg"
-							>
+							<Button onClick={handleAgree} disabled={isProcessing} size="lg">
 								<Check />
-								{isCountdownComplete
-									? currentAgreement.confirmationText
-									: `${currentAgreement.confirmationText} (${countdown})`}
+								{currentAgreement.confirmationText}
 							</Button>
 						</div>
 						{agreements.length > 1 && (
