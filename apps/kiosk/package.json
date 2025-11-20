@@ -34,6 +34,7 @@
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
+		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.13",
 		"@types/node": "^24.5.2",
 		"@types/react": "^19.1.13",

@@ -35,28 +35,9 @@ export function AgreementFlow({
 }: AgreementFlowProps) {
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isProcessing, setIsProcessing] = useState(false);
-	const [countdown, setCountdown] = useState(3);
-	const [isCountdownComplete, setIsCountdownComplete] = useState(false);
 
 	const currentAgreement = agreements[currentIndex];
 	const isLastAgreement = currentIndex === agreements.length - 1;
-
-	// Countdown timer effect
-	useEffect(() => {
-		if (countdown > 0) {
-			const timer = setTimeout(() => {
-				setCountdown(countdown - 1);
-			}, 1000);
-			return () => clearTimeout(timer);
-		}
-		setIsCountdownComplete(true);
-	}, [countdown]);
-
-	// Reset countdown when changing agreements
-	useEffect(() => {
-		setCountdown(3);
-		setIsCountdownComplete(false);
-	}, [currentIndex]);
 
 	const agreeMutation = useMutation({
 		mutationFn: (agreementId: number) => {
@@ -120,7 +101,7 @@ export function AgreementFlow({
 							</h3>
 							<div className="flex-1 w-full rounded-md p-4 bg-neutral-200 overflow-y-auto min-h-0">
 								<div
-									className="whitespace-pre-wrap text-neutral-800"
+									className="prose text-black"
 									dangerouslySetInnerHTML={{ __html: currentAgreement.content }}
 								/>
 							</div>
@@ -138,13 +119,11 @@ export function AgreementFlow({
 							</Button>
 							<Button
 								onClick={handleAgree}
-								disabled={isProcessing || !isCountdownComplete}
+								disabled={isProcessing}
 								size="lg"
 							>
 								<Check />
-								{isCountdownComplete
-									? currentAgreement.confirmationText
-									: `${currentAgreement.confirmationText} (${countdown})`}
+								{currentAgreement.confirmationText}
 							</Button>
 						</div>
 						{agreements.length > 1 && (
