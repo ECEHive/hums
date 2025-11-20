@@ -3,6 +3,7 @@ import {
 	BugIcon,
 	CalendarCheckIcon,
 	CalendarIcon,
+	CalendarXIcon,
 	ChevronLeft,
 	ChevronUpIcon,
 	ClipboardListIcon,
@@ -46,6 +47,7 @@ import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index
 import { permissions as manageUsersPagePermissions } from "@/routes/shifts/manage-users";
 import { permissions as myShiftsPagePermissions } from "@/routes/shifts/my-shifts";
 import { permissions as periodDetailsPagePermissions } from "@/routes/shifts/period-details";
+import { permissions as periodExceptionsPagePermissions } from "@/routes/shifts/period-exceptions";
 import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
 import { permissions as shiftSchedulesPagePermissions } from "@/routes/shifts/shift-schedules";
 import { permissions as shiftTypesPagePermissions } from "@/routes/shifts/shift-types";
@@ -97,6 +99,12 @@ export const items = [
 				url: "/shifts/period-details",
 				icon: CalendarIcon,
 				permissions: periodDetailsPagePermissions,
+			},
+			{
+				title: "Period Exceptions",
+				url: "/shifts/period-exceptions",
+				icon: CalendarXIcon,
+				permissions: periodExceptionsPagePermissions,
 			},
 			{
 				title: "Shift Types",
