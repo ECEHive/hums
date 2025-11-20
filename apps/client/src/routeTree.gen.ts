@@ -82,6 +82,8 @@ const ShiftsSchedulingRoute = ShiftsSchedulingRouteImport.update({
 const ShiftsReportsRoute = ShiftsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => ShiftsRoute,
+} as any)
 const ShiftsPeriodExceptionsRoute = ShiftsPeriodExceptionsRouteImport.update({
   id: '/period-exceptions',
   path: '/period-exceptions',
@@ -171,8 +173,8 @@ export interface FileRoutesByFullPath {
   '/shifts/manage-users': typeof ShiftsManageUsersRoute
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
-  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -195,8 +197,8 @@ export interface FileRoutesByTo {
   '/shifts/manage-users': typeof ShiftsManageUsersRoute
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
-  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -222,8 +224,8 @@ export interface FileRoutesById {
   '/shifts/manage-users': typeof ShiftsManageUsersRoute
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
-  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -250,8 +252,8 @@ export interface FileRouteTypes {
     | '/shifts/manage-users'
     | '/shifts/my-shifts'
     | '/shifts/period-details'
-    | '/shifts/reports'
     | '/shifts/period-exceptions'
+    | '/shifts/reports'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -274,8 +276,8 @@ export interface FileRouteTypes {
     | '/shifts/manage-users'
     | '/shifts/my-shifts'
     | '/shifts/period-details'
-    | '/shifts/reports'
     | '/shifts/period-exceptions'
+    | '/shifts/reports'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -300,8 +302,8 @@ export interface FileRouteTypes {
     | '/shifts/manage-users'
     | '/shifts/my-shifts'
     | '/shifts/period-details'
-    | '/shifts/reports'
     | '/shifts/period-exceptions'
+    | '/shifts/reports'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -386,6 +388,8 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/shifts/reports'
       preLoaderRoute: typeof ShiftsReportsRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
     '/shifts/period-exceptions': {
       id: '/shifts/period-exceptions'
       path: '/period-exceptions'
@@ -520,8 +524,8 @@ interface ShiftsRouteChildren {
   ShiftsManageUsersRoute: typeof ShiftsManageUsersRoute
   ShiftsMyShiftsRoute: typeof ShiftsMyShiftsRoute
   ShiftsPeriodDetailsRoute: typeof ShiftsPeriodDetailsRoute
-  ShiftsReportsRoute: typeof ShiftsReportsRoute
   ShiftsPeriodExceptionsRoute: typeof ShiftsPeriodExceptionsRoute
+  ShiftsReportsRoute: typeof ShiftsReportsRoute
   ShiftsSchedulingRoute: typeof ShiftsSchedulingRoute
   ShiftsShiftSchedulesRoute: typeof ShiftsShiftSchedulesRoute
   ShiftsShiftTypesRoute: typeof ShiftsShiftTypesRoute
@@ -533,8 +537,8 @@ const ShiftsRouteChildren: ShiftsRouteChildren = {
   ShiftsManageUsersRoute: ShiftsManageUsersRoute,
   ShiftsMyShiftsRoute: ShiftsMyShiftsRoute,
   ShiftsPeriodDetailsRoute: ShiftsPeriodDetailsRoute,
-  ShiftsReportsRoute: ShiftsReportsRoute,
   ShiftsPeriodExceptionsRoute: ShiftsPeriodExceptionsRoute,
+  ShiftsReportsRoute: ShiftsReportsRoute,
   ShiftsSchedulingRoute: ShiftsSchedulingRoute,
   ShiftsShiftSchedulesRoute: ShiftsShiftSchedulesRoute,
   ShiftsShiftTypesRoute: ShiftsShiftTypesRoute,
