@@ -19,6 +19,7 @@ import { Route as ShiftsShiftTypesRouteImport } from './routes/shifts/shift-type
 import { Route as ShiftsShiftSchedulesRouteImport } from './routes/shifts/shift-schedules'
 import { Route as ShiftsSchedulingRouteImport } from './routes/shifts/scheduling'
 import { Route as ShiftsReportsRouteImport } from './routes/shifts/reports'
+import { Route as ShiftsPeriodExceptionsRouteImport } from './routes/shifts/period-exceptions'
 import { Route as ShiftsPeriodDetailsRouteImport } from './routes/shifts/period-details'
 import { Route as ShiftsMyShiftsRouteImport } from './routes/shifts/my-shifts'
 import { Route as ShiftsManageUsersRouteImport } from './routes/shifts/manage-users'
@@ -81,6 +82,9 @@ const ShiftsSchedulingRoute = ShiftsSchedulingRouteImport.update({
 const ShiftsReportsRoute = ShiftsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+const ShiftsPeriodExceptionsRoute = ShiftsPeriodExceptionsRouteImport.update({
+  id: '/period-exceptions',
+  path: '/period-exceptions',
   getParentRoute: () => ShiftsRoute,
 } as any)
 const ShiftsPeriodDetailsRoute = ShiftsPeriodDetailsRouteImport.update({
@@ -168,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
   '/shifts/reports': typeof ShiftsReportsRoute
+  '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -191,6 +196,7 @@ export interface FileRoutesByTo {
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
   '/shifts/reports': typeof ShiftsReportsRoute
+  '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -217,6 +223,7 @@ export interface FileRoutesById {
   '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
   '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
   '/shifts/reports': typeof ShiftsReportsRoute
+  '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
   '/shifts/scheduling': typeof ShiftsSchedulingRoute
   '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
   '/shifts/shift-types': typeof ShiftsShiftTypesRoute
@@ -244,6 +251,7 @@ export interface FileRouteTypes {
     | '/shifts/my-shifts'
     | '/shifts/period-details'
     | '/shifts/reports'
+    | '/shifts/period-exceptions'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -267,6 +275,7 @@ export interface FileRouteTypes {
     | '/shifts/my-shifts'
     | '/shifts/period-details'
     | '/shifts/reports'
+    | '/shifts/period-exceptions'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/shifts/my-shifts'
     | '/shifts/period-details'
     | '/shifts/reports'
+    | '/shifts/period-exceptions'
     | '/shifts/scheduling'
     | '/shifts/shift-schedules'
     | '/shifts/shift-types'
@@ -376,6 +386,11 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/shifts/reports'
       preLoaderRoute: typeof ShiftsReportsRouteImport
+    '/shifts/period-exceptions': {
+      id: '/shifts/period-exceptions'
+      path: '/period-exceptions'
+      fullPath: '/shifts/period-exceptions'
+      preLoaderRoute: typeof ShiftsPeriodExceptionsRouteImport
       parentRoute: typeof ShiftsRoute
     }
     '/shifts/period-details': {
@@ -506,6 +521,7 @@ interface ShiftsRouteChildren {
   ShiftsMyShiftsRoute: typeof ShiftsMyShiftsRoute
   ShiftsPeriodDetailsRoute: typeof ShiftsPeriodDetailsRoute
   ShiftsReportsRoute: typeof ShiftsReportsRoute
+  ShiftsPeriodExceptionsRoute: typeof ShiftsPeriodExceptionsRoute
   ShiftsSchedulingRoute: typeof ShiftsSchedulingRoute
   ShiftsShiftSchedulesRoute: typeof ShiftsShiftSchedulesRoute
   ShiftsShiftTypesRoute: typeof ShiftsShiftTypesRoute
@@ -518,6 +534,7 @@ const ShiftsRouteChildren: ShiftsRouteChildren = {
   ShiftsMyShiftsRoute: ShiftsMyShiftsRoute,
   ShiftsPeriodDetailsRoute: ShiftsPeriodDetailsRoute,
   ShiftsReportsRoute: ShiftsReportsRoute,
+  ShiftsPeriodExceptionsRoute: ShiftsPeriodExceptionsRoute,
   ShiftsSchedulingRoute: ShiftsSchedulingRoute,
   ShiftsShiftSchedulesRoute: ShiftsShiftSchedulesRoute,
   ShiftsShiftTypesRoute: ShiftsShiftTypesRoute,
