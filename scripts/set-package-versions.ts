@@ -76,7 +76,13 @@ async function main(): Promise<void> {
 		verbose: flags.has("--verbose"),
 	};
 
-	const knownFlags = new Set(["--check", "--dry-run", "--verbose", "--help", "-h"]);
+	const knownFlags = new Set([
+		"--check",
+		"--dry-run",
+		"--verbose",
+		"--help",
+		"-h",
+	]);
 	for (const flag of flags) {
 		if (!knownFlags.has(flag)) {
 			console.error(`Unknown option: ${flag}\n`);
@@ -182,10 +188,14 @@ async function main(): Promise<void> {
 	}
 
 	const summaryAction = options.dryRun ? "Would update" : "Updated";
-	console.log(`${summaryAction} ${updates.length} package.json file(s) to version ${version}.`);
+	console.log(
+		`${summaryAction} ${updates.length} package.json file(s) to version ${version}.`,
+	);
 	for (const change of updates) {
 		const relativePath = path.relative(repoRoot, change.filePath);
-		console.log(`  - ${relativePath}: ${change.from ?? "<unset>"} -> ${version}`);
+		console.log(
+			`  - ${relativePath}: ${change.from ?? "<unset>"} -> ${version}`,
+		);
 	}
 
 	if (options.dryRun) {
