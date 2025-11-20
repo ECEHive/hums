@@ -1,48 +1,64 @@
-import {
-	db,
-	permissions,
-	rolePermissions,
-	roles,
-	type SelectUser,
-	userRoles,
-} from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
 import z from "zod";
+import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZMeSchema = z.object({});
 
 export type TMeSchema = z.infer<typeof ZMeSchema>;
 
 export type TMeOptions = {
-	ctx: {
-		userId: number;
-		user: SelectUser;
-	};
+	ctx: TProtectedProcedureContext;
 	input: TMeSchema;
 };
 
 export async function meHandler(options: TMeOptions) {
-	// Get roles for the user
-	const rolesResult = await db
-		.select({ id: roles.id, name: roles.name })
-		.from(roles)
-		.innerJoin(userRoles, eq(userRoles.roleId, roles.id))
-		.where(eq(userRoles.userId, options.ctx.userId));
+	// Get user with roles and permissions in a single optimized query
+	const userWithRolesAndPermissions = await prisma.user.findUnique({
+		where: { id: options.ctx.user.id },
+		include: {
+			roles: {
+				select: {
+					id: true,
+					name: true,
+					permissions: {
+						select: {
+							name: true,
+						},
+					},
+				},
+			},
+		},
+	});
 
-	// Get permissions for the user (permission name strings)
-	const permissionsResult = await db
-		.select({ name: permissions.name })
-		.from(rolePermissions)
-		.innerJoin(userRoles, eq(rolePermissions.roleId, userRoles.roleId))
-		.innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-		.where(eq(userRoles.userId, options.ctx.userId));
+	if (!userWithRolesAndPermissions) {
+		return {
+			user: {
+				...options.ctx.user,
+				roles: [],
+				permissions: [],
+			},
+		};
+	}
+
+	// Extract unique permission names from all roles
+	const permissionNames = new Set<string>();
+	userWithRolesAndPermissions.roles.forEach((role) => {
+		role.permissions.forEach((permission) => {
+			permissionNames.add(permission.name);
+		});
+	});
+
+	// Transform roles to exclude nested permissions
+	const roles = userWithRolesAndPermissions.roles.map((role) => ({
+		id: role.id,
+		name: role.name,
+	}));
 
 	return {
 		user: {
 			...options.ctx.user,
-			roles: rolesResult,
-			// Return the permissions as names only with no duplicates
-			permissions: Array.from(new Set(permissionsResult.map((p) => p.name))),
+			roles,
+			permissions: Array.from(permissionNames),
 		},
 	};
 }

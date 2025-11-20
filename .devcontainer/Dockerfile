@@ -5,6 +5,7 @@ FROM node:${VARIANT}
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         git \
+        ldap-utils \
     && apt-get auto-remove -y \
     && apt-get clean -y \
     && chsh -s $(which bash) node

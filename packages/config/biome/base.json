@@ -7,11 +7,15 @@
 		"enabled": true,
 		"rules": {
 			"suspicious": {
-				"noUnknownAtRules": "off"
+				"noUnknownAtRules": "off",
+				"noArrayIndexKey": "off"
 			},
 			"correctness": {
 				"noChildrenProp": "off",
 				"useExhaustiveDependencies": "off"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "warn"
 			}
 		}
 	},

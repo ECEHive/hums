@@ -1,0 +1,111 @@
+# Dependencies
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build outputs
+dist
+**/dist
+build
+**/build
+out
+**/out
+
+# Development files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+circle.yml
+
+# Documentation
+*.md
+!README.md
+docs
+**/docs
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage
+**/coverage
+.nyc_output
+**/.nyc_output
+test-results
+**/__tests__
+**/*.test.*
+**/*.spec.*
+*.test.ts
+*.spec.ts
+
+# Dev containers
+.devcontainer
+
+# Docker
+docker-compose*.yml
+!docker-compose.yml
+Dockerfile*
+!Dockerfile
+.dockerignore
+
+# Misc
+.cache
+**/.cache
+tmp
+temp
+.tmp
+.temp
+*.tsbuildinfo
+.eslintcache
+
+# Generated files
+routeTree.gen.ts
+**/routeTree.gen.ts
+generated
+**/generated
+!packages/prisma/generated
+
+# Package manager files
+.yarn
+.pnp.*
+*.lock
+!pnpm-lock.yaml
+
+# IDE specific
+.vscode-test
+.history
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore

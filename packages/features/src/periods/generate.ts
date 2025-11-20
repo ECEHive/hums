@@ -1,6 +1,4 @@
-import { shiftSchedules, shiftTypes } from "@ecehive/drizzle";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import { generateShiftScheduleShiftOccurrences } from "../shift-schedules/generate";
 import type { Transaction } from "../types/transaction";
 
@@ -20,26 +18,22 @@ export async function generatePeriodShiftOccurrences(
 	tx: Transaction,
 	periodId: number,
 ) {
-	// Get all shift types for this period
-	const periodShiftTypes = await tx
-		.select()
-		.from(shiftTypes)
-		.where(eq(shiftTypes.periodId, periodId));
+	// Get all shift types for this period with their shift schedules
+	const periodShiftTypes = await tx.shiftType.findMany({
+		where: { periodId },
+		include: {
+			shiftSchedules: true,
+		},
+	});
 
 	if (periodShiftTypes.length === 0) {
 		// No shift types found for this period - this is valid, just return
 		return;
 	}
 
-	// For each shift type, get all its shift schedules
+	// For each shift type, generate shift occurrences for each schedule
 	for (const shiftType of periodShiftTypes) {
-		const schedules = await tx
-			.select()
-			.from(shiftSchedules)
-			.where(eq(shiftSchedules.shiftTypeId, shiftType.id));
-
-		// Generate shift occurrences for each schedule
-		for (const schedule of schedules) {
+		for (const schedule of shiftType.shiftSchedules) {
 			try {
 				await generateShiftScheduleShiftOccurrences(tx, schedule.id);
 			} catch (error) {

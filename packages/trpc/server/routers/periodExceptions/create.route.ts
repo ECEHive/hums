@@ -1,7 +1,6 @@
-import { db, periodExceptions, periods } from "@ecehive/drizzle";
 import { generatePeriodShiftOccurrences } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -33,13 +32,11 @@ export type TCreateOptions = {
 export async function createHandler(options: TCreateOptions) {
 	const { periodId, name, start, end } = options.input;
 
-	return await db.transaction(async (tx) => {
+	return await prisma.$transaction(async (tx) => {
 		// Verify the period exists
-		const [period] = await tx
-			.select()
-			.from(periods)
-			.where(eq(periods.id, periodId))
-			.limit(1);
+		const period = await tx.period.findUnique({
+			where: { id: periodId },
+		});
 
 		if (!period) {
 			throw new TRPCError({
@@ -56,15 +53,14 @@ export async function createHandler(options: TCreateOptions) {
 			});
 		}
 
-		const [periodException] = await tx
-			.insert(periodExceptions)
-			.values({
+		const periodException = await tx.periodException.create({
+			data: {
 				periodId,
 				name,
 				start,
 				end,
-			})
-			.returning();
+			},
+		});
 
 		if (!periodException) {
 			return { periodException: undefined };

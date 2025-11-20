@@ -15,8 +15,8 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { checkPermissions } from "@/lib/permissions";
+import { type Role, RoleMultiSelect } from "../roles/role-multiselect";
 import { Spinner } from "../ui/spinner";
-import { type Role, RoleMultiSelect } from "./role-multiselect";
 
 type User = {
 	id: number;
@@ -52,17 +52,10 @@ export function RolesDialog({ user, trigger }: RolesDialogProps): JSX.Element {
 	};
 
 	const currentUser = useAuth().user;
-	const canCreate =
-		currentUser && checkPermissions(currentUser, ["userRoles.create"]);
-	const canDelete =
-		currentUser && checkPermissions(currentUser, ["userRoles.delete"]);
+	const canUpdate =
+		currentUser && checkPermissions(currentUser, ["users.update"]);
 
-	// compute what would be added/removed from current selection
-	const added = roles.filter((r) => !user.roles.find((p) => p.id === r.id));
-	const removed = user.roles.filter((r) => !roles.find((p) => p.id === r.id));
-
-	const permissionDisabled =
-		(added.length > 0 && !canCreate) || (removed.length > 0 && !canDelete);
+	const permissionDisabled = !canUpdate;
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -103,39 +96,22 @@ export function RolesDialog({ user, trigger }: RolesDialogProps): JSX.Element {
 					</DialogClose>
 					<Button
 						onClick={async () => {
-							// persist changes
+							// persist changes via users.update with roleIds
 							const previous = user.roles;
-							const next = roles;
-							const added = next.filter(
-								(r) => !previous.find((p) => p.id === r.id),
-							);
-							const removed = previous.filter(
-								(r) => !next.find((p) => p.id === r.id),
-							);
+							const roleIds = roles.map((r) => r.id);
+
 							setIsSaving(true);
 							setServerError(null);
 							try {
-								// bulk create for added mappings
-								if (added.length > 0) {
-									const mappings = added.map((r) => ({
-										userId: user.id,
-										roleId: r.id,
-									}));
-									await trpc.userRoles.createBulk.mutate({ mappings });
-								}
-
-								// bulk delete for removed mappings
-								if (removed.length > 0) {
-									const mappings = removed.map((r) => ({
-										userId: user.id,
-										roleId: r.id,
-									}));
-									await trpc.userRoles.deleteBulk.mutate({ mappings });
-								}
+								await trpc.users.update.mutate({
+									id: user.id,
+									name: user.name,
+									email: user.email,
+									roleIds,
+								});
 
 								// refresh queries
 								queryClient.invalidateQueries({ queryKey: ["users"] });
-								queryClient.invalidateQueries({ queryKey: ["userRoles"] });
 								queryClient.invalidateQueries({ queryKey: ["roles"] });
 
 								// close dialog
@@ -155,8 +131,7 @@ export function RolesDialog({ user, trigger }: RolesDialogProps): JSX.Element {
 					</Button>
 					{permissionDisabled && (
 						<p className="text-sm text-muted-foreground mt-2">
-							You don't have the permissions required to apply these role
-							changes.
+							You don't have permission to update user roles.
 						</p>
 					)}
 				</DialogFooter>

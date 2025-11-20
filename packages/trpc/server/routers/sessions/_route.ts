@@ -1,0 +1,25 @@
+import {
+	kioskProtectedProcedure,
+	permissionProtectedProcedure,
+	protectedProcedure,
+	router,
+} from "../../trpc";
+import { listHandler, ZListSchema } from "./list.route";
+import { listMyHandler, ZListMySchema } from "./listMy.route";
+import { myStatsHandler, ZMyStatsSchema } from "./myStats.route";
+import { statsHandler, ZStatsSchema } from "./stats.route";
+import { tapInOutHandler, ZTapInOutSchema } from "./tap-in-out.route";
+
+export const sessionsRouter = router({
+	list: permissionProtectedProcedure("sessions.list")
+		.input(ZListSchema)
+		.query(listHandler),
+	stats: permissionProtectedProcedure("sessions.list")
+		.input(ZStatsSchema)
+		.query(statsHandler),
+	listMy: protectedProcedure.input(ZListMySchema).query(listMyHandler),
+	myStats: protectedProcedure.input(ZMyStatsSchema).query(myStatsHandler),
+	tapInOut: kioskProtectedProcedure
+		.input(ZTapInOutSchema)
+		.mutation(tapInOutHandler),
+});

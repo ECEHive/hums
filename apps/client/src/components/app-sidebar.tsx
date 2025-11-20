@@ -2,11 +2,17 @@ import { Link, useLocation } from "@tanstack/react-router";
 import {
 	BugIcon,
 	CalendarIcon,
+	ChevronRightIcon,
 	ChevronUpIcon,
+	ClockIcon,
 	DoorOpenIcon,
+	FileClockIcon,
+	FileTextIcon,
 	HomeIcon,
+	KeyIcon,
+	LaptopMinimalCheckIcon,
 	MoonIcon,
-	NotebookTextIcon,
+	ScrollTextIcon,
 	ShieldIcon,
 	SunIcon,
 	SunMoonIcon,
@@ -14,7 +20,7 @@ import {
 	UserIcon,
 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
-import { useTheme } from "@/components/theme-provider"; // Import useTheme from theme-provider
+import { useTheme } from "@/components/theme-provider";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -35,14 +41,35 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
+import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
+import { permissions as apiTokensPagePermissions } from "@/routes/app/api-tokens";
+import { permissions as auditLogsPagePermissions } from "@/routes/app/audit-logs";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
+import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
-import { permissions as schedulingPagePermissions } from "@/routes/app/scheduling";
+import { permissions as sessionsPagePermissions } from "@/routes/app/sessions";
+import { permissions as usersPagePermissions } from "@/routes/app/users";
+import { permissions as schedulingIndexPagePermissions } from "@/routes/shifts/scheduling";
 import { Logo } from "./logo";
 
 // Sidebar menu items, grouped by section
-export const items = [
+type AppSidebarItem = {
+	title: string;
+	url: string;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+	permissions: string[] | Record<string, string[]>;
+	allowWithShiftAccess?: boolean;
+	hasChildren?: boolean;
+};
+
+type AppSidebarGroup = {
+	name?: string;
+	items: AppSidebarItem[];
+};
+
+export const items: AppSidebarGroup[] = [
 	{
 		items: [
 			{
@@ -52,10 +79,18 @@ export const items = [
 				permissions: appIndexPagePermissions,
 			},
 			{
-				title: "Scheduling",
-				url: "/app/scheduling",
+				title: "My Sessions",
+				url: "/app/my-sessions",
+				icon: ClockIcon,
+				permissions: [], // Available to all authenticated users
+			},
+			{
+				title: "Shifts",
+				url: "/shifts",
 				icon: CalendarIcon,
-				permissions: schedulingPagePermissions,
+				permissions: schedulingIndexPagePermissions,
+				allowWithShiftAccess: true,
+				hasChildren: true,
 			},
 		],
 	},
@@ -66,25 +101,43 @@ export const items = [
 				title: "Roles",
 				url: "/app/roles",
 				icon: ShieldIcon,
-				permissions: rolesPagePermissions, // Example, will be changed based on real permissions
+				permissions: rolesPagePermissions,
 			},
 			{
 				title: "Users",
-				url: "/app/users", // To be implemented
+				url: "/app/users",
 				icon: UserIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				permissions: usersPagePermissions,
 			},
 			{
-				title: "Periods",
-				url: "/app/periods", // To be implemented
-				icon: CalendarIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				title: "Agreements",
+				url: "/app/agreements",
+				icon: FileTextIcon,
+				permissions: agreementsPagePermissions,
 			},
 			{
-				title: "Reports",
-				url: "/app/reports", // To be implemented
-				icon: NotebookTextIcon,
-				permissions: [], // Example, will be changed based on real permissions
+				title: "Kiosks",
+				url: "/app/kiosks",
+				icon: LaptopMinimalCheckIcon,
+				permissions: kiosksPagePermissions,
+			},
+			{
+				title: "API Tokens",
+				url: "/app/api-tokens",
+				icon: KeyIcon,
+				permissions: apiTokensPagePermissions,
+			},
+			{
+				title: "Audit Logs",
+				url: "/app/audit-logs",
+				icon: ScrollTextIcon,
+				permissions: auditLogsPagePermissions,
+			},
+			{
+				title: "Sessions",
+				url: "/app/sessions",
+				icon: FileClockIcon,
+				permissions: sessionsPagePermissions,
 			},
 		],
 	},
@@ -96,10 +149,21 @@ export function AppSidebar() {
 	const { setTheme } = useTheme();
 	const location = useLocation();
 	const pathname = location?.pathname ?? "/";
+	const { canAccessShifts } = useShiftAccess();
+
+	const canViewItem = (item: AppSidebarItem) => {
+		if (checkPermissions(user, item.permissions)) {
+			return true;
+		}
+		if (item.allowWithShiftAccess) {
+			return canAccessShifts;
+		}
+		return false;
+	};
 
 	// Collect all visible items across all groups to find the best match
 	const allVisibleItems = items.flatMap((group) =>
-		group.items.filter((item) => checkPermissions(user, item.permissions)),
+		group.items.filter((item) => canViewItem(item)),
 	);
 
 	const isPathActive = (itemUrl: string) => {
@@ -125,13 +189,11 @@ export function AppSidebar() {
 	return (
 		<Sidebar>
 			<SidebarHeader>
-				<Logo className="h-8" />
+				<Logo className="h-8 p-1" />
 			</SidebarHeader>
 			<SidebarContent>
 				{items.map((group) => {
-					const visibleItems = group.items.filter((item) =>
-						checkPermissions(user, item.permissions),
-					);
+					const visibleItems = group.items.filter((item) => canViewItem(item));
 					if (visibleItems.length === 0) return null;
 					return (
 						<SidebarGroup key={group.name || "group"}>
@@ -146,9 +208,15 @@ export function AppSidebar() {
 												asChild
 												isActive={isPathActive(item.url)}
 											>
-												<Link to={item.url}>
-													<item.icon />
-													<span>{item.title}</span>
+												<Link
+													to={item.url}
+													className="flex w-full items-center gap-3"
+												>
+													<item.icon className="h-4 w-4" />
+													<span className="flex-1">{item.title}</span>
+													{item.hasChildren && (
+														<ChevronRightIcon className="ml-2 h-4 w-4 text-muted-foreground" />
+													)}
 												</Link>
 											</SidebarMenuButton>
 										</SidebarMenuItem>
@@ -173,6 +241,8 @@ export function AppSidebar() {
 								side="top"
 								className="w-[--radix-popper-anchor-width]"
 							>
+								<DropdownMenuLabel>HUMS v{__APP_VERSION__}</DropdownMenuLabel>
+								<DropdownMenuSeparator />
 								<DropdownMenuLabel>Theme</DropdownMenuLabel>
 								<DropdownMenuItem onSelect={() => setTheme("light")}>
 									<SunIcon />
@@ -188,7 +258,7 @@ export function AppSidebar() {
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<a
-									href="https://github.com/ECEHive/scheduler/issues"
+									href="https://github.com/ECEHive/hums/issues"
 									target="_blank"
 									rel="noopener noreferrer"
 								>

@@ -1,0 +1,17 @@
+{
+	"name": "@ecehive/ldap",
+	"version": "1.0.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"scripts": {
+		"tsc": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"@types/node": "^24.5.2",
+		"typescript": "^5.9.2"
+	},
+	"dependencies": {
+		"@ecehive/env": "workspace:*"
+	}
+}

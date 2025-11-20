@@ -1,0 +1,112 @@
+name: Create Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  create-release:
+    # Only run if PR was merged (not just closed)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Validate and extract version
+        id: extract_version
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Check if PR title matches version format
+          if [[ ! "$PR_TITLE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\.]+)?$ ]]; then
+            echo "❌ PR title must be a valid version string (e.g., v1.0.0)"
+            exit 1
+          fi
+          
+          echo "tag=$PR_TITLE" >> $GITHUB_OUTPUT
+          echo "version=${PR_TITLE#v}" >> $GITHUB_OUTPUT
+          echo "✅ Version tag: $PR_TITLE"
+      
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          TAG="${{ steps.extract_version.outputs.tag }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Tag $TAG already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Tag $TAG does not exist yet"
+          fi
+      
+      - name: Create Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = '${{ steps.extract_version.outputs.tag }}';
+            const prTitle = '${{ github.event.pull_request.title }}';
+            const prBody = `${{ github.event.pull_request.body }}`;
+            const prNumber = ${{ github.event.pull_request.number }};
+            const prUrl = '${{ github.event.pull_request.html_url }}';
+            
+            // Create the release body
+            let releaseBody = `## Release ${tag}\n\n`;
+            
+            if (prBody && prBody.trim() !== '') {
+              releaseBody += prBody;
+            } else {
+              releaseBody += `See PR #${prNumber} for details.`;
+            }
+            
+            try {
+              // Create the release (this also creates the tag)
+              const release = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tag,
+                name: prTitle,
+                body: releaseBody,
+                draft: false,
+                prerelease: tag.includes('-'),
+                target_commitish: context.sha
+              });
+              
+              console.log(`✅ Release created: ${release.data.html_url}`);
+              
+              // Comment on the PR
+              await github.rest.issues.createComment({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🎉 Release [${tag}](${release.data.html_url}) has been created!`
+              });
+            } catch (error) {
+              console.error('❌ Error creating release:', error);
+              throw error;
+            }
+      
+      - name: Skip release (tag exists)
+        if: steps.check_tag.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = '${{ steps.extract_version.outputs.tag }}';
+            const prNumber = ${{ github.event.pull_request.number }};
+            
+            await github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚠️ Release ${tag} already exists. No new release was created.`
+            });

@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { PencilIcon } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
@@ -103,8 +104,14 @@ export function UserUpdateDialog({
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" disabled={!canUpdate}>
-					Update
+				<Button
+					variant="ghost"
+					size="sm"
+					disabled={!canUpdate}
+					aria-label={`Edit user ${user.username}`}
+					title={`Edit user ${user.username}`}
+				>
+					<PencilIcon className="h-4 w-4" />
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[600px]">

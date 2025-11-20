@@ -9,16 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShiftsRouteImport } from './routes/shifts'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShiftsIndexRouteImport } from './routes/shifts/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as ShiftsShiftTypesRouteImport } from './routes/shifts/shift-types'
+import { Route as ShiftsShiftSchedulesRouteImport } from './routes/shifts/shift-schedules'
+import { Route as ShiftsSchedulingRouteImport } from './routes/shifts/scheduling'
+import { Route as ShiftsReportsRouteImport } from './routes/shifts/reports'
+import { Route as ShiftsPeriodExceptionsRouteImport } from './routes/shifts/period-exceptions'
+import { Route as ShiftsPeriodDetailsRouteImport } from './routes/shifts/period-details'
+import { Route as ShiftsMyShiftsRouteImport } from './routes/shifts/my-shifts'
+import { Route as ShiftsManageUsersRouteImport } from './routes/shifts/manage-users'
+import { Route as ShiftsAttendanceRouteImport } from './routes/shifts/attendance'
 import { Route as AppUsersRouteImport } from './routes/app/users'
-import { Route as AppSchedulingRouteImport } from './routes/app/scheduling'
+import { Route as AppSessionsRouteImport } from './routes/app/sessions'
 import { Route as AppRolesRouteImport } from './routes/app/roles'
-import { Route as AppPeriodsRouteImport } from './routes/app/periods'
-import { Route as AppPeriodsPeriodIdRouteImport } from './routes/app/periods_.$periodId'
+import { Route as AppMySessionsRouteImport } from './routes/app/my-sessions'
+import { Route as AppMyAgreementsRouteImport } from './routes/app/my-agreements'
+import { Route as AppKiosksRouteImport } from './routes/app/kiosks'
+import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
+import { Route as AppApiTokensRouteImport } from './routes/app/api-tokens'
+import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
 
+const ShiftsRoute = ShiftsRouteImport.update({
+  id: '/shifts',
+  path: '/shifts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -34,19 +54,69 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShiftsIndexRoute = ShiftsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShiftsRoute,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const ShiftsShiftTypesRoute = ShiftsShiftTypesRouteImport.update({
+  id: '/shift-types',
+  path: '/shift-types',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsShiftSchedulesRoute = ShiftsShiftSchedulesRouteImport.update({
+  id: '/shift-schedules',
+  path: '/shift-schedules',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsSchedulingRoute = ShiftsSchedulingRouteImport.update({
+  id: '/scheduling',
+  path: '/scheduling',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsReportsRoute = ShiftsReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsPeriodExceptionsRoute = ShiftsPeriodExceptionsRouteImport.update({
+  id: '/period-exceptions',
+  path: '/period-exceptions',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsPeriodDetailsRoute = ShiftsPeriodDetailsRouteImport.update({
+  id: '/period-details',
+  path: '/period-details',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsMyShiftsRoute = ShiftsMyShiftsRouteImport.update({
+  id: '/my-shifts',
+  path: '/my-shifts',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsManageUsersRoute = ShiftsManageUsersRouteImport.update({
+  id: '/manage-users',
+  path: '/manage-users',
+  getParentRoute: () => ShiftsRoute,
+} as any)
+const ShiftsAttendanceRoute = ShiftsAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => ShiftsRoute,
 } as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
-const AppSchedulingRoute = AppSchedulingRouteImport.update({
-  id: '/scheduling',
-  path: '/scheduling',
+const AppSessionsRoute = AppSessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRolesRoute = AppRolesRouteImport.update({
@@ -54,14 +124,34 @@ const AppRolesRoute = AppRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPeriodsRoute = AppPeriodsRouteImport.update({
-  id: '/periods',
-  path: '/periods',
+const AppMySessionsRoute = AppMySessionsRouteImport.update({
+  id: '/my-sessions',
+  path: '/my-sessions',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPeriodsPeriodIdRoute = AppPeriodsPeriodIdRouteImport.update({
-  id: '/periods_/$periodId',
-  path: '/periods/$periodId',
+const AppMyAgreementsRoute = AppMyAgreementsRouteImport.update({
+  id: '/my-agreements',
+  path: '/my-agreements',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKiosksRoute = AppKiosksRouteImport.update({
+  id: '/kiosks',
+  path: '/kiosks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAuditLogsRoute = AppAuditLogsRouteImport.update({
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppApiTokensRoute = AppApiTokensRouteImport.update({
+  id: '/api-tokens',
+  path: '/api-tokens',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgreementsRoute = AppAgreementsRouteImport.update({
+  id: '/agreements',
+  path: '/agreements',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -69,34 +159,78 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/app/periods': typeof AppPeriodsRoute
+  '/shifts': typeof ShiftsRouteWithChildren
+  '/app/agreements': typeof AppAgreementsRoute
+  '/app/api-tokens': typeof AppApiTokensRoute
+  '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/kiosks': typeof AppKiosksRoute
+  '/app/my-agreements': typeof AppMyAgreementsRoute
+  '/app/my-sessions': typeof AppMySessionsRoute
   '/app/roles': typeof AppRolesRoute
-  '/app/scheduling': typeof AppSchedulingRoute
+  '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
+  '/shifts/attendance': typeof ShiftsAttendanceRoute
+  '/shifts/manage-users': typeof ShiftsManageUsersRoute
+  '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
+  '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
+  '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
+  '/shifts/scheduling': typeof ShiftsSchedulingRoute
+  '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
+  '/shifts/shift-types': typeof ShiftsShiftTypesRoute
   '/app/': typeof AppIndexRoute
-  '/app/periods/$periodId': typeof AppPeriodsPeriodIdRoute
+  '/shifts/': typeof ShiftsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/app/periods': typeof AppPeriodsRoute
+  '/app/agreements': typeof AppAgreementsRoute
+  '/app/api-tokens': typeof AppApiTokensRoute
+  '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/kiosks': typeof AppKiosksRoute
+  '/app/my-agreements': typeof AppMyAgreementsRoute
+  '/app/my-sessions': typeof AppMySessionsRoute
   '/app/roles': typeof AppRolesRoute
-  '/app/scheduling': typeof AppSchedulingRoute
+  '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
+  '/shifts/attendance': typeof ShiftsAttendanceRoute
+  '/shifts/manage-users': typeof ShiftsManageUsersRoute
+  '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
+  '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
+  '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
+  '/shifts/scheduling': typeof ShiftsSchedulingRoute
+  '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
+  '/shifts/shift-types': typeof ShiftsShiftTypesRoute
   '/app': typeof AppIndexRoute
-  '/app/periods/$periodId': typeof AppPeriodsPeriodIdRoute
+  '/shifts': typeof ShiftsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/app/periods': typeof AppPeriodsRoute
+  '/shifts': typeof ShiftsRouteWithChildren
+  '/app/agreements': typeof AppAgreementsRoute
+  '/app/api-tokens': typeof AppApiTokensRoute
+  '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/kiosks': typeof AppKiosksRoute
+  '/app/my-agreements': typeof AppMyAgreementsRoute
+  '/app/my-sessions': typeof AppMySessionsRoute
   '/app/roles': typeof AppRolesRoute
-  '/app/scheduling': typeof AppSchedulingRoute
+  '/app/sessions': typeof AppSessionsRoute
   '/app/users': typeof AppUsersRoute
+  '/shifts/attendance': typeof ShiftsAttendanceRoute
+  '/shifts/manage-users': typeof ShiftsManageUsersRoute
+  '/shifts/my-shifts': typeof ShiftsMyShiftsRoute
+  '/shifts/period-details': typeof ShiftsPeriodDetailsRoute
+  '/shifts/period-exceptions': typeof ShiftsPeriodExceptionsRoute
+  '/shifts/reports': typeof ShiftsReportsRoute
+  '/shifts/scheduling': typeof ShiftsSchedulingRoute
+  '/shifts/shift-schedules': typeof ShiftsShiftSchedulesRoute
+  '/shifts/shift-types': typeof ShiftsShiftTypesRoute
   '/app/': typeof AppIndexRoute
-  '/app/periods_/$periodId': typeof AppPeriodsPeriodIdRoute
+  '/shifts/': typeof ShiftsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -104,43 +238,95 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
-    | '/app/periods'
+    | '/shifts'
+    | '/app/agreements'
+    | '/app/api-tokens'
+    | '/app/audit-logs'
+    | '/app/kiosks'
+    | '/app/my-agreements'
+    | '/app/my-sessions'
     | '/app/roles'
-    | '/app/scheduling'
+    | '/app/sessions'
     | '/app/users'
+    | '/shifts/attendance'
+    | '/shifts/manage-users'
+    | '/shifts/my-shifts'
+    | '/shifts/period-details'
+    | '/shifts/period-exceptions'
+    | '/shifts/reports'
+    | '/shifts/scheduling'
+    | '/shifts/shift-schedules'
+    | '/shifts/shift-types'
     | '/app/'
-    | '/app/periods/$periodId'
+    | '/shifts/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
-    | '/app/periods'
+    | '/app/agreements'
+    | '/app/api-tokens'
+    | '/app/audit-logs'
+    | '/app/kiosks'
+    | '/app/my-agreements'
+    | '/app/my-sessions'
     | '/app/roles'
-    | '/app/scheduling'
+    | '/app/sessions'
     | '/app/users'
+    | '/shifts/attendance'
+    | '/shifts/manage-users'
+    | '/shifts/my-shifts'
+    | '/shifts/period-details'
+    | '/shifts/period-exceptions'
+    | '/shifts/reports'
+    | '/shifts/scheduling'
+    | '/shifts/shift-schedules'
+    | '/shifts/shift-types'
     | '/app'
-    | '/app/periods/$periodId'
+    | '/shifts'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/login'
-    | '/app/periods'
+    | '/shifts'
+    | '/app/agreements'
+    | '/app/api-tokens'
+    | '/app/audit-logs'
+    | '/app/kiosks'
+    | '/app/my-agreements'
+    | '/app/my-sessions'
     | '/app/roles'
-    | '/app/scheduling'
+    | '/app/sessions'
     | '/app/users'
+    | '/shifts/attendance'
+    | '/shifts/manage-users'
+    | '/shifts/my-shifts'
+    | '/shifts/period-details'
+    | '/shifts/period-exceptions'
+    | '/shifts/reports'
+    | '/shifts/scheduling'
+    | '/shifts/shift-schedules'
+    | '/shifts/shift-types'
     | '/app/'
-    | '/app/periods_/$periodId'
+    | '/shifts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ShiftsRoute: typeof ShiftsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/shifts': {
+      id: '/shifts'
+      path: '/shifts'
+      fullPath: '/shifts'
+      preLoaderRoute: typeof ShiftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -162,12 +348,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shifts/': {
+      id: '/shifts/'
+      path: '/'
+      fullPath: '/shifts/'
+      preLoaderRoute: typeof ShiftsIndexRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
     '/app/': {
       id: '/app/'
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/shifts/shift-types': {
+      id: '/shifts/shift-types'
+      path: '/shift-types'
+      fullPath: '/shifts/shift-types'
+      preLoaderRoute: typeof ShiftsShiftTypesRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/shift-schedules': {
+      id: '/shifts/shift-schedules'
+      path: '/shift-schedules'
+      fullPath: '/shifts/shift-schedules'
+      preLoaderRoute: typeof ShiftsShiftSchedulesRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/scheduling': {
+      id: '/shifts/scheduling'
+      path: '/scheduling'
+      fullPath: '/shifts/scheduling'
+      preLoaderRoute: typeof ShiftsSchedulingRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/reports': {
+      id: '/shifts/reports'
+      path: '/reports'
+      fullPath: '/shifts/reports'
+      preLoaderRoute: typeof ShiftsReportsRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/period-exceptions': {
+      id: '/shifts/period-exceptions'
+      path: '/period-exceptions'
+      fullPath: '/shifts/period-exceptions'
+      preLoaderRoute: typeof ShiftsPeriodExceptionsRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/period-details': {
+      id: '/shifts/period-details'
+      path: '/period-details'
+      fullPath: '/shifts/period-details'
+      preLoaderRoute: typeof ShiftsPeriodDetailsRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/my-shifts': {
+      id: '/shifts/my-shifts'
+      path: '/my-shifts'
+      fullPath: '/shifts/my-shifts'
+      preLoaderRoute: typeof ShiftsMyShiftsRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/manage-users': {
+      id: '/shifts/manage-users'
+      path: '/manage-users'
+      fullPath: '/shifts/manage-users'
+      preLoaderRoute: typeof ShiftsManageUsersRouteImport
+      parentRoute: typeof ShiftsRoute
+    }
+    '/shifts/attendance': {
+      id: '/shifts/attendance'
+      path: '/attendance'
+      fullPath: '/shifts/attendance'
+      preLoaderRoute: typeof ShiftsAttendanceRouteImport
+      parentRoute: typeof ShiftsRoute
     }
     '/app/users': {
       id: '/app/users'
@@ -176,11 +432,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/scheduling': {
-      id: '/app/scheduling'
-      path: '/scheduling'
-      fullPath: '/app/scheduling'
-      preLoaderRoute: typeof AppSchedulingRouteImport
+    '/app/sessions': {
+      id: '/app/sessions'
+      path: '/sessions'
+      fullPath: '/app/sessions'
+      preLoaderRoute: typeof AppSessionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/roles': {
@@ -190,47 +446,113 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRolesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/periods': {
-      id: '/app/periods'
-      path: '/periods'
-      fullPath: '/app/periods'
-      preLoaderRoute: typeof AppPeriodsRouteImport
+    '/app/my-sessions': {
+      id: '/app/my-sessions'
+      path: '/my-sessions'
+      fullPath: '/app/my-sessions'
+      preLoaderRoute: typeof AppMySessionsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/periods_/$periodId': {
-      id: '/app/periods_/$periodId'
-      path: '/periods/$periodId'
-      fullPath: '/app/periods/$periodId'
-      preLoaderRoute: typeof AppPeriodsPeriodIdRouteImport
+    '/app/my-agreements': {
+      id: '/app/my-agreements'
+      path: '/my-agreements'
+      fullPath: '/app/my-agreements'
+      preLoaderRoute: typeof AppMyAgreementsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/kiosks': {
+      id: '/app/kiosks'
+      path: '/kiosks'
+      fullPath: '/app/kiosks'
+      preLoaderRoute: typeof AppKiosksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/audit-logs': {
+      id: '/app/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/app/audit-logs'
+      preLoaderRoute: typeof AppAuditLogsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/api-tokens': {
+      id: '/app/api-tokens'
+      path: '/api-tokens'
+      fullPath: '/app/api-tokens'
+      preLoaderRoute: typeof AppApiTokensRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agreements': {
+      id: '/app/agreements'
+      path: '/agreements'
+      fullPath: '/app/agreements'
+      preLoaderRoute: typeof AppAgreementsRouteImport
       parentRoute: typeof AppRoute
     }
   }
 }
 
 interface AppRouteChildren {
-  AppPeriodsRoute: typeof AppPeriodsRoute
+  AppAgreementsRoute: typeof AppAgreementsRoute
+  AppApiTokensRoute: typeof AppApiTokensRoute
+  AppAuditLogsRoute: typeof AppAuditLogsRoute
+  AppKiosksRoute: typeof AppKiosksRoute
+  AppMyAgreementsRoute: typeof AppMyAgreementsRoute
+  AppMySessionsRoute: typeof AppMySessionsRoute
   AppRolesRoute: typeof AppRolesRoute
-  AppSchedulingRoute: typeof AppSchedulingRoute
+  AppSessionsRoute: typeof AppSessionsRoute
   AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppPeriodsPeriodIdRoute: typeof AppPeriodsPeriodIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppPeriodsRoute: AppPeriodsRoute,
+  AppAgreementsRoute: AppAgreementsRoute,
+  AppApiTokensRoute: AppApiTokensRoute,
+  AppAuditLogsRoute: AppAuditLogsRoute,
+  AppKiosksRoute: AppKiosksRoute,
+  AppMyAgreementsRoute: AppMyAgreementsRoute,
+  AppMySessionsRoute: AppMySessionsRoute,
   AppRolesRoute: AppRolesRoute,
-  AppSchedulingRoute: AppSchedulingRoute,
+  AppSessionsRoute: AppSessionsRoute,
   AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,
-  AppPeriodsPeriodIdRoute: AppPeriodsPeriodIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface ShiftsRouteChildren {
+  ShiftsAttendanceRoute: typeof ShiftsAttendanceRoute
+  ShiftsManageUsersRoute: typeof ShiftsManageUsersRoute
+  ShiftsMyShiftsRoute: typeof ShiftsMyShiftsRoute
+  ShiftsPeriodDetailsRoute: typeof ShiftsPeriodDetailsRoute
+  ShiftsPeriodExceptionsRoute: typeof ShiftsPeriodExceptionsRoute
+  ShiftsReportsRoute: typeof ShiftsReportsRoute
+  ShiftsSchedulingRoute: typeof ShiftsSchedulingRoute
+  ShiftsShiftSchedulesRoute: typeof ShiftsShiftSchedulesRoute
+  ShiftsShiftTypesRoute: typeof ShiftsShiftTypesRoute
+  ShiftsIndexRoute: typeof ShiftsIndexRoute
+}
+
+const ShiftsRouteChildren: ShiftsRouteChildren = {
+  ShiftsAttendanceRoute: ShiftsAttendanceRoute,
+  ShiftsManageUsersRoute: ShiftsManageUsersRoute,
+  ShiftsMyShiftsRoute: ShiftsMyShiftsRoute,
+  ShiftsPeriodDetailsRoute: ShiftsPeriodDetailsRoute,
+  ShiftsPeriodExceptionsRoute: ShiftsPeriodExceptionsRoute,
+  ShiftsReportsRoute: ShiftsReportsRoute,
+  ShiftsSchedulingRoute: ShiftsSchedulingRoute,
+  ShiftsShiftSchedulesRoute: ShiftsShiftSchedulesRoute,
+  ShiftsShiftTypesRoute: ShiftsShiftTypesRoute,
+  ShiftsIndexRoute: ShiftsIndexRoute,
+}
+
+const ShiftsRouteWithChildren =
+  ShiftsRoute._addFileChildren(ShiftsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ShiftsRoute: ShiftsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

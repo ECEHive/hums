@@ -1,0 +1,92 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: hums-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hums
+      POSTGRES_USER: hums
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hums-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hums"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prisma migration runner (one-shot)
+  prisma-migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prisma-migrate
+    container_name: hums-prisma-migrate
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+    networks:
+      - hums-network
+
+  # Server application
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: server
+    container_name: hums-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      prisma-migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+      NODE_ENV: production
+      LDAP_HOST: ${LDAP_HOST}
+      LDAP_BASE_DN: ${LDAP_BASE_DN}
+      LDAP_FALLBACK_EMAIL_DOMAIN: ${LDAP_FALLBACK_EMAIL_DOMAIN}
+      SYSTEM_USERS: ${SYSTEM_USERS}
+      AUTH_CAS_SERVER: ${AUTH_CAS_SERVER}
+    networks:
+      - hums-network
+
+  # NGINX reverse proxy with client and kiosk static files
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx
+      args:
+        VITE_CAS_PROXY_URL: ${VITE_CAS_PROXY_URL}
+        VITE_CLIENT_SENTRY_DSN: ${VITE_CLIENT_SENTRY_DSN}
+        VITE_KIOSK_SENTRY_DSN: ${VITE_KIOSK_SENTRY_DSN}
+        TZ: ${TZ:-America/New_York}
+    container_name: hums-nginx
+    restart: unless-stopped
+    ports:
+      - "4483:80"
+    depends_on:
+      - server
+    networks:
+      - hums-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  hums-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

@@ -1,13 +1,6 @@
-import {
-	db,
-	periods,
-	shiftOccurrences,
-	shiftSchedules,
-	shiftTypes,
-} from "@ecehive/drizzle";
 import { generateOccurrenceTimestamps } from "@ecehive/features";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -23,7 +16,8 @@ export const ZUpdateSchema = z.object({
 	isBalancedAcrossDay: z.boolean().optional(),
 	isBalancedAcrossPeriod: z.boolean().optional(),
 	canSelfAssign: z.boolean().optional(),
-	doRequireRoles: z.boolean().optional(),
+	doRequireRoles: z.enum(["disabled", "all", "any"]).optional(),
+	roleIds: z.array(z.number().min(1)).optional(),
 });
 
 export type TUpdateSchema = z.infer<typeof ZUpdateSchema>;
@@ -33,7 +27,10 @@ export type TUpdateOptions = {
 	input: TUpdateSchema;
 };
 
-type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type TransactionClient = Omit<
+	typeof prisma,
+	"$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 export async function updateHandler(options: TUpdateOptions) {
 	const {
@@ -49,26 +46,23 @@ export async function updateHandler(options: TUpdateOptions) {
 		isBalancedAcrossPeriod,
 		canSelfAssign,
 		doRequireRoles,
+		roleIds,
 	} = options.input;
 
-	const [existing] = await db
-		.select()
-		.from(shiftTypes)
-		.where(eq(shiftTypes.id, id))
-		.limit(1);
+	const existing = await prisma.shiftType.findUnique({
+		where: { id },
+	});
 
 	if (!existing) {
 		return { shiftType: undefined };
 	}
 
-	let targetPeriod: typeof periods.$inferSelect | undefined;
+	let targetPeriod: Prisma.PeriodGetPayload<object> | undefined;
 
 	if (periodId !== undefined && periodId !== existing.periodId) {
-		const [period] = await db
-			.select()
-			.from(periods)
-			.where(eq(periods.id, periodId))
-			.limit(1);
+		const period = await prisma.period.findUnique({
+			where: { id: periodId },
+		});
 
 		if (!period) {
 			throw new TRPCError({
@@ -80,62 +74,37 @@ export async function updateHandler(options: TUpdateOptions) {
 		targetPeriod = period;
 	}
 
-	return await db.transaction(async (tx) => {
-		const updates: Partial<typeof shiftTypes.$inferInsert> = {};
-
-		if (periodId !== undefined) {
-			updates.periodId = periodId;
-		}
-
-		if (name !== undefined) {
-			updates.name = name;
-		}
-
-		if (location !== undefined) {
-			updates.location = location;
-		}
-
-		if (description !== undefined) {
-			updates.description = description;
-		}
-
-		if (color !== undefined) {
-			updates.color = color;
-		}
-
-		if (icon !== undefined) {
-			updates.icon = icon;
-		}
-
-		if (isBalancedAcrossOverlap !== undefined) {
-			updates.isBalancedAcrossOverlap = isBalancedAcrossOverlap;
-		}
-
-		if (isBalancedAcrossDay !== undefined) {
-			updates.isBalancedAcrossDay = isBalancedAcrossDay;
-		}
-
-		if (isBalancedAcrossPeriod !== undefined) {
-			updates.isBalancedAcrossPeriod = isBalancedAcrossPeriod;
-		}
-
-		if (canSelfAssign !== undefined) {
-			updates.canSelfAssign = canSelfAssign;
-		}
-
-		if (doRequireRoles !== undefined) {
-			updates.doRequireRoles = doRequireRoles;
-		}
-
-		updates.updatedAt = new Date();
-
-		const updatedRows = await tx
-			.update(shiftTypes)
-			.set(updates)
-			.where(eq(shiftTypes.id, id))
-			.returning();
-
-		const updated = updatedRows[0];
+	return await prisma.$transaction(async (tx) => {
+		const updated = await tx.shiftType.update({
+			where: { id },
+			data: {
+				...(periodId !== undefined && { periodId }),
+				...(name !== undefined && { name }),
+				...(location !== undefined && { location }),
+				...(description !== undefined && { description }),
+				...(color !== undefined && { color }),
+				...(icon !== undefined && { icon }),
+				...(isBalancedAcrossOverlap !== undefined && {
+					isBalancedAcrossOverlap,
+				}),
+				...(isBalancedAcrossDay !== undefined && { isBalancedAcrossDay }),
+				...(isBalancedAcrossPeriod !== undefined && { isBalancedAcrossPeriod }),
+				...(canSelfAssign !== undefined && { canSelfAssign }),
+				...(doRequireRoles !== undefined && { doRequireRoles }),
+				...(roleIds !== undefined
+					? {
+							roles: {
+								set: roleIds.map((roleId) => ({ id: roleId })),
+							},
+						}
+					: {}),
+			},
+			include: {
+				roles: {
+					orderBy: { name: "asc" },
+				},
+			},
+		});
 
 		if (!updated) {
 			return { shiftType: undefined };
@@ -161,50 +130,50 @@ export async function updateHandler(options: TUpdateOptions) {
 async function getPeriod(
 	tx: TransactionClient,
 	periodId: number,
-): Promise<typeof periods.$inferSelect | undefined> {
-	const [period] = await tx
-		.select()
-		.from(periods)
-		.where(eq(periods.id, periodId))
-		.limit(1);
-
-	return period;
+): Promise<Prisma.PeriodGetPayload<object> | null> {
+	return await tx.period.findUnique({
+		where: { id: periodId },
+	});
 }
 
 async function syncShiftTypeSchedules(
 	tx: TransactionClient,
 	shiftTypeId: number,
-	period: typeof periods.$inferSelect,
+	period: Prisma.PeriodGetPayload<object>,
 ) {
-	const schedules = await tx
-		.select({
-			id: shiftSchedules.id,
-			dayOfWeek: shiftSchedules.dayOfWeek,
-			startTime: shiftSchedules.startTime,
-		})
-		.from(shiftSchedules)
-		.where(eq(shiftSchedules.shiftTypeId, shiftTypeId));
+	const schedules = await tx.shiftSchedule.findMany({
+		where: { shiftTypeId },
+		select: {
+			id: true,
+			dayOfWeek: true,
+			startTime: true,
+		},
+	});
 
 	for (const schedule of schedules) {
-		await tx
-			.delete(shiftOccurrences)
-			.where(eq(shiftOccurrences.shiftScheduleId, schedule.id));
-
-		const occurrences = generateOccurrenceTimestamps({
-			period: { id: period.id, start: period.start, end: period.end },
-			schedule,
+		await tx.shiftOccurrence.deleteMany({
+			where: { shiftScheduleId: schedule.id },
 		});
 
+		const occurrences = generateOccurrenceTimestamps(
+			period.start,
+			period.end,
+			schedule.dayOfWeek,
+			schedule.startTime,
+		);
+
 		if (occurrences.length === 0) {
-			await tx.delete(shiftSchedules).where(eq(shiftSchedules.id, schedule.id));
+			await tx.shiftSchedule.delete({
+				where: { id: schedule.id },
+			});
 			continue;
 		}
 
-		const values = occurrences.map((timestamp) => ({
-			shiftScheduleId: schedule.id,
-			timestamp,
-		}));
-
-		await tx.insert(shiftOccurrences).values(values);
+		await tx.shiftOccurrence.createMany({
+			data: occurrences.map((timestamp) => ({
+				shiftScheduleId: schedule.id,
+				timestamp,
+			})),
+		});
 	}
 }

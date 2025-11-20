@@ -1,11 +1,15 @@
 {
-	"name": "@ecehive/hive-scheduler",
+	"name": "@ecehive/hums",
+	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
-		"check": "biome check --write"
+		"check": "biome check --write",
+		"tsc": "pnpm -r --stream run tsc",
+		"set-version": "tsx scripts/set-package-versions.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
-		"@ecehive/config": "workspace:*"
+		"@ecehive/config": "workspace:*",
+		"tsx": "^4.20.6"
 	}
 }

@@ -1,5 +1,6 @@
 {
 	"name": "@ecehive/config",
+	"version": "1.0.0",
 	"type": "module",
 	"files": [
 		"biome/base.json",

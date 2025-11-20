@@ -1,14 +1,23 @@
-import { initialize } from "@ecehive/drizzle";
 import { env } from "@ecehive/env";
+import { updateSystemUsers } from "@ecehive/features";
+import * as workers from "@ecehive/workers";
 import { server } from "./fastify";
 
 Promise.resolve()
-	.then(() => initialize())
+	.then(() => updateSystemUsers())
 	.then(() => {
-		console.log("Database initialized");
+		console.log("System users updated");
 	})
 	.catch((err) => {
-		console.error("Error initializing database:", err);
+		console.error("Error updating system users:", err);
+		process.exit(1);
+	})
+	.then(() => workers.start())
+	.then(() => {
+		console.log("Workers started");
+	})
+	.catch((err) => {
+		console.error("Error starting workers:", err);
 		process.exit(1);
 	})
 	.then(() =>

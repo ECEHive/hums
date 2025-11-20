@@ -1,0 +1,21 @@
+{
+	"name": "@ecehive/workers",
+	"version": "1.0.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"scripts": {
+		"tsc": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@date-fns/tz": "^1.4.1",
+		"@ecehive/env": "workspace:*",
+		"@ecehive/features": "workspace:*",
+		"@ecehive/prisma": "workspace:*",
+		"cron": "^4.3.4"
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"@types/node": "^24.10.0",
+		"typescript": "^5.9.2"
+	}
+}

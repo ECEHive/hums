@@ -1,5 +1,5 @@
-import { db, shiftSchedules } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -14,10 +14,9 @@ export type TDeleteOptions = {
 export async function deleteHandler(options: TDeleteOptions) {
 	const { id } = options.input;
 
-	const deleted = await db
-		.delete(shiftSchedules)
-		.where(eq(shiftSchedules.id, id))
-		.returning();
+	const deleted = await prisma.shiftSchedule.delete({
+		where: { id },
+	});
 
-	return { shiftSchedule: deleted[0] };
+	return { shiftSchedule: deleted };
 }

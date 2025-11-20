@@ -14,11 +14,13 @@ pnpm dev
 
 | Variable | Default | Description |
 | - | - | - |
-| `VITE_PUBLIC_SERVER_URL` | `""` | Public URL of the server. |
 | `VITE_CAS_PROXY_URL` | `""` | URL that the user will be redirected to for CAS authentication. | 
+| `VITE_CLIENT_SENTRY_DSN` | `""` | Optional DSN if you wish to include Sentry. |
+| `TZ` | `"America/New_York"` | Primary timezone. |
 
 ### Development Variables
 
 | Variable | Default | Description |
 | - | - | - |
-| `PROXY_PRIVATE_SERVER_URL` | `"http://localhost:8080"` | Internal URL of the server for the proxy to serve. |
+| `VITE_DEV_PORT` | `44831` | Port to host the development client on. |
+| `VITE_DEV_SERVER_URL` | `"http://localhost:44830"` | URL of the development server to be proxied. |

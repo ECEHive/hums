@@ -1,6 +1,17 @@
 {
-	"name": "hive-scheduler",
+	"name": "hums",
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "node",
-	"workspaceFolder": "/home/node/workspace"
+	"workspaceFolder": "/home/node/workspace",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"github.vscode-github-actions",
+				"github.vscode-pull-request-github",
+				"biomejs.biome",
+				"streetsidesoftware.code-spell-checker",
+				"Prisma.prisma"
+			]
+		}
+	}
 }

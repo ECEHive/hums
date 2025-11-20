@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: hums-dev-node
     volumes:
       - ..:/home/node/workspace:cached
     depends_on:
@@ -13,14 +14,15 @@ services:
 
   postgres:
     image: postgres:16
+    container_name: hums-dev-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hive
     volumes:
-      - hive-scheduler-postgres-data:/var/lib/postgresql/data
+      - hums-dev-postgres-data:/var/lib/postgresql/data
 
 volumes:
-  hive-scheduler-postgres-data:
-    name: hive-scheduler-postgres-data
+  hums-dev-postgres-data:
+    name: hums-dev-postgres-data

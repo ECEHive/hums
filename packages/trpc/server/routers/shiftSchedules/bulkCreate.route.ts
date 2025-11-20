@@ -1,18 +1,18 @@
-import { db, shiftSchedules, shiftTypes } from "@ecehive/drizzle";
 import {
 	generateShiftScheduleShiftOccurrences,
-	parseTimeString,
+	TIME_REGEX,
+	timeToSeconds,
 } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-const TIME_REGEX = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
 const timeStringSchema = z.string().regex(TIME_REGEX, "Invalid time format");
 
 export const ZBulkCreateSchema = z.object({
-	shiftTypeId: z.number().min(1),
+	shiftTypeIds: z.array(z.number().min(1)).min(1),
+	slots: z.number().min(1).max(100).default(1),
 	schedules: z
 		.array(
 			z
@@ -45,46 +45,79 @@ export type TBulkCreateOptions = {
 };
 
 export async function bulkCreateHandler(options: TBulkCreateOptions) {
-	const { shiftTypeId, schedules } = options.input;
+	const { shiftTypeIds, slots, schedules } = options.input;
 
-	return await db.transaction(async (tx) => {
-		// Verify the shift type exists
-		const [shiftType] = await tx
-			.select()
-			.from(shiftTypes)
-			.where(eq(shiftTypes.id, shiftTypeId))
-			.limit(1);
+	return await prisma.$transaction(async (tx) => {
+		// Verify all shift types exist
+		const shiftTypes = await tx.shiftType.findMany({
+			where: { id: { in: shiftTypeIds } },
+		});
 
-		if (!shiftType) {
+		if (shiftTypes.length !== shiftTypeIds.length) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
-				message: "Shift type not found",
+				message: "One or more shift types not found",
 			});
 		}
 
-		// Insert all schedules
-		const insertedSchedules = await tx
-			.insert(shiftSchedules)
-			.values(
-				schedules.map((schedule) => ({
+		// Build all schedules to create
+		const schedulesToCreate = [];
+		for (const shiftTypeId of shiftTypeIds) {
+			for (const schedule of schedules) {
+				schedulesToCreate.push({
 					shiftTypeId,
+					slots,
 					dayOfWeek: schedule.dayOfWeek,
 					startTime: schedule.startTime,
 					endTime: schedule.endTime,
-				})),
-			)
-			.returning();
+				});
+			}
+		}
 
-		// Generate shift occurrences for each schedule
+		// Find existing schedules to skip them
+		const existingSchedules = await tx.shiftSchedule.findMany({
+			where: {
+				OR: schedulesToCreate.map((s) => ({
+					shiftTypeId: s.shiftTypeId,
+					dayOfWeek: s.dayOfWeek,
+					startTime: s.startTime,
+				})),
+			},
+			select: {
+				id: true,
+				shiftTypeId: true,
+				dayOfWeek: true,
+				startTime: true,
+			},
+		});
+
+		// Create a Set for quick lookup of existing schedules
+		const existingKeys = new Set(
+			existingSchedules.map(
+				(s) => `${s.shiftTypeId}-${s.dayOfWeek}-${s.startTime}`,
+			),
+		);
+
+		// Filter out schedules that already exist
+		const newSchedules = schedulesToCreate.filter(
+			(s) =>
+				!existingKeys.has(`${s.shiftTypeId}-${s.dayOfWeek}-${s.startTime}`),
+		);
+
+		// Insert only new schedules
+		const insertedSchedules = [];
+		for (const schedule of newSchedules) {
+			const inserted = await tx.shiftSchedule.create({
+				data: schedule,
+			});
+			insertedSchedules.push(inserted);
+		}
+
+		// Generate shift occurrences for each inserted schedule
 		for (const schedule of insertedSchedules) {
 			await generateShiftScheduleShiftOccurrences(tx, schedule.id);
 		}
 
 		return { shiftSchedules: insertedSchedules };
 	});
-}
-
-function timeToSeconds(time: string) {
-	const { hours, minutes, seconds } = parseTimeString(time);
-	return hours * 3600 + minutes * 60 + seconds;
 }

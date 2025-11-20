@@ -11,11 +11,13 @@ import {
 	useState,
 } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import type { RequiredPermissions } from "@/lib/permissions";
 import { checkPermissions } from "@/lib/permissions";
 
 export type AuthUser = {
 	id: number;
 	name: string | null;
+	username: string;
 	email: string | null;
 	permissions: string[];
 	isSystemUser: boolean;
@@ -169,7 +171,7 @@ export function RequirePermissions({
 	to = "/login",
 	forbiddenFallback,
 }: {
-	permissions: string[];
+	permissions: RequiredPermissions;
 	children: React.ReactNode;
 	to?: string;
 	forbiddenFallback?: React.ReactNode;

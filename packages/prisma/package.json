@@ -1,0 +1,26 @@
+{
+	"name": "@ecehive/prisma",
+	"version": "1.0.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"scripts": {
+		"generate": "prisma generate",
+		"migrate": "prisma migrate deploy",
+		"migrate:dev": "prisma migrate dev",
+		"reset": "prisma migrate reset",
+		"tsc": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@ecehive/env": "workspace:*",
+		"@prisma/client": "^6.19.0",
+		"prisma": "^6.19.0",
+		"dotenv": "^17.2.2"
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"@types/node": "^24.5.2",
+		"ts-node": "^10.9.2",
+		"tsx": "^4.20.5",
+		"typescript": "^5.9.2"
+	}
+}

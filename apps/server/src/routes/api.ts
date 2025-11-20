@@ -1,8 +1,6 @@
-import { type AppRouter, appRouter, createContext } from "@ecehive/trpc/server";
-import {
-	type FastifyTRPCPluginOptions,
-	fastifyTRPCPlugin,
-} from "@trpc/server/adapters/fastify";
+import { restApiRoute } from "@ecehive/rest";
+import { appRouter, createContext } from "@ecehive/trpc/server";
+import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import type { FastifyPluginAsync } from "fastify";
 
 export const apiRoute: FastifyPluginAsync = async (fastify) => {
@@ -27,9 +25,16 @@ export const apiRoute: FastifyPluginAsync = async (fastify) => {
 		trpcOptions: {
 			router: appRouter,
 			createContext,
-			onError({ path, error }) {
-				console.error(`Error in tRPC handler on path '${path}':`, error);
+			onError(opts: { path?: string; error: Error }) {
+				console.error(
+					`Error in tRPC handler on path '${opts.path}':`,
+					opts.error,
+				);
 			},
-		} satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
+		},
+	});
+
+	fastify.register(restApiRoute, {
+		prefix: "/rest",
 	});
 };

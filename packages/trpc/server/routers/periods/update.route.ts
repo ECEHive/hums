@@ -1,7 +1,6 @@
-import { db, periods } from "@ecehive/drizzle";
 import { generatePeriodShiftOccurrences } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -11,12 +10,16 @@ export const ZUpdateSchema = z
 		name: z.string().min(1).max(100).optional(),
 		start: z.date().optional(),
 		end: z.date().optional(),
-		visibleStart: z.date().optional().nullable(),
-		visibleEnd: z.date().optional().nullable(),
-		scheduleSignupStart: z.date().optional().nullable(),
-		scheduleSignupEnd: z.date().optional().nullable(),
-		scheduleModifyStart: z.date().optional().nullable(),
-		scheduleModifyEnd: z.date().optional().nullable(),
+		min: z.number().int().min(0).optional().nullable(),
+		max: z.number().int().min(0).optional().nullable(),
+		minMaxUnit: z.enum(["count", "minutes", "hours"]).optional().nullable(),
+		visibleStart: z.date().optional(),
+		visibleEnd: z.date().optional(),
+		scheduleSignupStart: z.date().optional(),
+		scheduleSignupEnd: z.date().optional(),
+		scheduleModifyStart: z.date().optional(),
+		scheduleModifyEnd: z.date().optional(),
+		periodRoleIds: z.array(z.number().int().min(1)).optional(),
 	})
 	.superRefine((data, ctx) => {
 		// Start must be before end
@@ -81,15 +84,24 @@ export async function updateHandler(options: TUpdateOptions) {
 		name,
 		start,
 		end,
+		min,
+		max,
+		minMaxUnit,
 		visibleStart,
 		visibleEnd,
 		scheduleSignupStart,
 		scheduleSignupEnd,
 		scheduleModifyStart,
 		scheduleModifyEnd,
+		periodRoleIds,
 	} = options.input;
 
-	const [existing] = await db.select().from(periods).where(eq(periods.id, id));
+	const shouldUpdatePeriodRoles = periodRoleIds !== undefined;
+	const uniqueRoleIds = shouldUpdatePeriodRoles
+		? Array.from(new Set(periodRoleIds ?? []))
+		: [];
+
+	const existing = await prisma.period.findUnique({ where: { id } });
 
 	if (!existing) {
 		return { period: undefined };
@@ -97,14 +109,57 @@ export async function updateHandler(options: TUpdateOptions) {
 
 	const nextStart = start ?? existing.start;
 	const nextEnd = end ?? existing.end;
-	const nextVisibleStart = visibleStart ?? existing.visibleStart;
-	const nextVisibleEnd = visibleEnd ?? existing.visibleEnd;
+	const nextVisibleStart =
+		visibleStart === undefined ? existing.visibleStart : visibleStart;
+	const nextVisibleEnd =
+		visibleEnd === undefined ? existing.visibleEnd : visibleEnd;
 	const nextScheduleSignupStart =
-		scheduleSignupStart ?? existing.scheduleSignupStart;
-	const nextScheduleSignupEnd = scheduleSignupEnd ?? existing.scheduleSignupEnd;
+		scheduleSignupStart === undefined
+			? existing.scheduleSignupStart
+			: scheduleSignupStart;
+	const nextScheduleSignupEnd =
+		scheduleSignupEnd === undefined
+			? existing.scheduleSignupEnd
+			: scheduleSignupEnd;
 	const nextScheduleModifyStart =
-		scheduleModifyStart ?? existing.scheduleModifyStart;
-	const nextScheduleModifyEnd = scheduleModifyEnd ?? existing.scheduleModifyEnd;
+		scheduleModifyStart === undefined
+			? existing.scheduleModifyStart
+			: scheduleModifyStart;
+	const nextScheduleModifyEnd =
+		scheduleModifyEnd === undefined
+			? existing.scheduleModifyEnd
+			: scheduleModifyEnd;
+	const nextMin = min === undefined ? existing.min : min;
+	const nextMax = max === undefined ? existing.max : max;
+	let nextMinMaxUnit =
+		minMaxUnit === undefined ? existing.minMaxUnit : minMaxUnit;
+	const minProvided = min !== undefined;
+	const maxProvided = max !== undefined;
+
+	const hasNextMin = nextMin !== null && nextMin !== undefined;
+	const hasNextMax = nextMax !== null && nextMax !== undefined;
+
+	if ((hasNextMin || hasNextMax) && !nextMinMaxUnit) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Select a unit when specifying min or max",
+		});
+	}
+
+	if (
+		typeof nextMin === "number" &&
+		typeof nextMax === "number" &&
+		nextMin > nextMax
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Minimum requirement cannot exceed maximum",
+		});
+	}
+
+	if (!hasNextMin && !hasNextMax && (minProvided || maxProvided)) {
+		nextMinMaxUnit = null;
+	}
 
 	if (nextStart >= nextEnd) {
 		throw new TRPCError({
@@ -146,24 +201,32 @@ export async function updateHandler(options: TUpdateOptions) {
 		});
 	}
 
-	return await db.transaction(async (tx) => {
-		const updates: Partial<typeof periods.$inferInsert> = {
-			name,
-			start: nextStart,
-			end: nextEnd,
-			visibleStart: nextVisibleStart,
-			visibleEnd: nextVisibleEnd,
-			scheduleSignupStart: nextScheduleSignupStart,
-			scheduleSignupEnd: nextScheduleSignupEnd,
-			scheduleModifyStart: nextScheduleModifyStart,
-			scheduleModifyEnd: nextScheduleModifyEnd,
-		};
-
-		const [updated] = await tx
-			.update(periods)
-			.set(updates)
-			.where(eq(periods.id, id))
-			.returning();
+	return await prisma.$transaction(async (tx) => {
+		const updated = await tx.period.update({
+			where: { id },
+			data: {
+				...(name !== undefined && { name }),
+				start: nextStart,
+				end: nextEnd,
+				min: nextMin ?? null,
+				max: nextMax ?? null,
+				minMaxUnit: nextMinMaxUnit ?? null,
+				visibleStart: nextVisibleStart,
+				visibleEnd: nextVisibleEnd,
+				scheduleSignupStart: nextScheduleSignupStart,
+				scheduleSignupEnd: nextScheduleSignupEnd,
+				scheduleModifyStart: nextScheduleModifyStart,
+				scheduleModifyEnd: nextScheduleModifyEnd,
+				...(shouldUpdatePeriodRoles && {
+					roles: {
+						set: uniqueRoleIds.map((roleId) => ({ id: roleId })),
+					},
+				}),
+			},
+			include: {
+				roles: true,
+			},
+		});
 
 		if (!updated) {
 			throw new TRPCError({

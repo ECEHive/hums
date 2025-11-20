@@ -1,12 +1,4 @@
-import {
-	periodExceptions,
-	periods,
-	shiftOccurrences,
-	shiftSchedules,
-	shiftTypes,
-} from "@ecehive/drizzle";
 import { TRPCError } from "@trpc/server";
-import { eq, inArray } from "drizzle-orm";
 import type { Transaction } from "../types/transaction";
 import {
 	compareTimestamps,
@@ -32,22 +24,20 @@ export async function generateShiftScheduleShiftOccurrences(
 	shiftScheduleId: number,
 ) {
 	// Get the shift schedule with its shift type and period
-	const [schedule] = await tx
-		.select({
-			id: shiftSchedules.id,
-			dayOfWeek: shiftSchedules.dayOfWeek,
-			startTime: shiftSchedules.startTime,
-			endTime: shiftSchedules.endTime,
-			slot: shiftSchedules.slot,
-			shiftTypeId: shiftSchedules.shiftTypeId,
-			periodId: shiftTypes.periodId,
-			periodStart: periods.start,
-			periodEnd: periods.end,
-		})
-		.from(shiftSchedules)
-		.innerJoin(shiftTypes, eq(shiftSchedules.shiftTypeId, shiftTypes.id))
-		.innerJoin(periods, eq(shiftTypes.periodId, periods.id))
-		.where(eq(shiftSchedules.id, shiftScheduleId));
+	const schedule = await tx.shiftSchedule.findUnique({
+		where: { id: shiftScheduleId },
+		include: {
+			shiftType: {
+				include: {
+					period: {
+						include: {
+							periodExceptions: true,
+						},
+					},
+				},
+			},
+		},
+	});
 
 	if (!schedule) {
 		throw new TRPCError({
@@ -56,19 +46,14 @@ export async function generateShiftScheduleShiftOccurrences(
 		});
 	}
 
-	// Get period exceptions
-	const exceptions = await tx
-		.select({
-			start: periodExceptions.start,
-			end: periodExceptions.end,
-		})
-		.from(periodExceptions)
-		.where(eq(periodExceptions.periodId, schedule.periodId));
+	// Extract period data
+	const period = schedule.shiftType.period;
+	const exceptions = period.periodExceptions;
 
 	// Generate all expected occurrence timestamps for this schedule
 	let expectedTimestamps = generateOccurrenceTimestamps(
-		schedule.periodStart,
-		schedule.periodEnd,
+		period.start,
+		period.end,
 		schedule.dayOfWeek,
 		schedule.startTime,
 	);
@@ -77,10 +62,9 @@ export async function generateShiftScheduleShiftOccurrences(
 	expectedTimestamps = filterExceptionPeriods(expectedTimestamps, exceptions);
 
 	// Get existing occurrences
-	const existingOccurrences = await tx
-		.select()
-		.from(shiftOccurrences)
-		.where(eq(shiftOccurrences.shiftScheduleId, shiftScheduleId));
+	const existingOccurrences = await tx.shiftOccurrence.findMany({
+		where: { shiftScheduleId },
+	});
 
 	// Determine which occurrences to create and which to delete
 	const { timestampsToCreate, timestampsToDelete } = compareTimestamps(
@@ -90,7 +74,7 @@ export async function generateShiftScheduleShiftOccurrences(
 
 	// Also check for slot count changes - need to delete/create occurrences
 	// when the slot count has changed
-	const totalSlots = schedule.slot + 1; // slot is 0-indexed, so add 1
+	const totalSlots = schedule.slots;
 
 	// Find occurrences with invalid slot numbers (slot >= totalSlots)
 	const occurrencesWithInvalidSlots = existingOccurrences.filter(
@@ -111,7 +95,7 @@ export async function generateShiftScheduleShiftOccurrences(
 		if (maxSlot === undefined) continue;
 
 		// If max slot in DB is less than what we need, we need to create more
-		if (maxSlot < schedule.slot) {
+		if (maxSlot < schedule.slots - 1) {
 			const timestamp = new Date(tsKey);
 			// Only if this timestamp is still valid (not being deleted)
 			if (
@@ -140,9 +124,13 @@ export async function generateShiftScheduleShiftOccurrences(
 
 	// Delete obsolete occurrences
 	if (occurrenceIdsToDelete.length > 0) {
-		await tx
-			.delete(shiftOccurrences)
-			.where(inArray(shiftOccurrences.id, occurrenceIdsToDelete));
+		await tx.shiftOccurrence.deleteMany({
+			where: {
+				id: {
+					in: occurrenceIdsToDelete,
+				},
+			},
+		});
 	}
 
 	// Create new occurrences
@@ -175,16 +163,15 @@ export async function generateShiftScheduleShiftOccurrences(
 	}
 
 	if (occurrencesToInsert.length > 0) {
-		const result = await tx
-			.insert(shiftOccurrences)
-			.values(occurrencesToInsert)
-			.returning();
+		const result = await tx.shiftOccurrence.createMany({
+			data: occurrencesToInsert,
+		});
 
 		// Verify all occurrences were created
-		if (result.length !== occurrencesToInsert.length) {
+		if (result.count !== occurrencesToInsert.length) {
 			throw new TRPCError({
 				code: "INTERNAL_SERVER_ERROR",
-				message: `Failed to create all shift occurrences. Expected ${occurrencesToInsert.length}, created ${result.length}`,
+				message: `Failed to create all shift occurrences. Expected ${occurrencesToInsert.length}, created ${result.count}`,
 			});
 		}
 	}

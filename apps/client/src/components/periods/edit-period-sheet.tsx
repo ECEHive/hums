@@ -1,24 +1,29 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+// DateField removed in favor of DateRangeSelector
+import DateRangeSelector from "@/components/date-range-selector";
+import { normalizeRangeToDayBounds } from "@/components/periods/date-range-helpers";
 import {
-	Field,
+	type Role,
+	RoleMultiSelect,
+} from "@/components/roles/role-multiselect";
+import { Button } from "@/components/ui/button";
+import {
 	FieldDescription,
 	FieldError,
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Sheet,
 	SheetContent,
@@ -29,35 +34,72 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
+import { toUtcDateFromLocalInput } from "@/lib/timezone";
 
-const formSchema = z.object({
-	name: z
-		.string()
-		.min(1, "Name is required")
-		.min(2, "Name must be at least 2 characters")
-		.max(100, "Name must be at most 100 characters"),
-	start: z.date(),
-	end: z.date(),
-	visibleStart: z.date().nullable(),
-	visibleEnd: z.date().nullable(),
-	scheduleSignupStart: z.date().nullable(),
-	scheduleSignupEnd: z.date().nullable(),
-	scheduleModifyStart: z.date().nullable(),
-	scheduleModifyEnd: z.date().nullable(),
-});
+const unitSchema = z.enum(["count", "minutes", "hours"]);
+
+const formSchema = z
+	.object({
+		name: z
+			.string()
+			.min(1, "Name is required")
+			.min(2, "Name must be at least 2 characters")
+			.max(100, "Name must be at most 100 characters"),
+		start: z.date(),
+		end: z.date(),
+		min: z.number().int().min(0).nullable(),
+		max: z.number().int().min(0).nullable(),
+		minMaxUnit: unitSchema.nullable(),
+		visibleStart: z.date(),
+		visibleEnd: z.date(),
+		scheduleSignupStart: z.date(),
+		scheduleSignupEnd: z.date(),
+		scheduleModifyStart: z.date(),
+		scheduleModifyEnd: z.date(),
+		periodRoleIds: z.array(z.number().int().min(1)),
+	})
+	.superRefine((data, ctx) => {
+		const hasMin = data.min !== null && data.min !== undefined;
+		const hasMax = data.max !== null && data.max !== undefined;
+
+		if ((hasMin || hasMax) && !data.minMaxUnit) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Select a unit when specifying min or max",
+				path: ["minMaxUnit"],
+			});
+		}
+
+		if (
+			hasMin &&
+			hasMax &&
+			typeof data.min === "number" &&
+			typeof data.max === "number" &&
+			data.min > data.max
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Minimum requirement cannot exceed maximum",
+				path: ["min"],
+			});
+		}
+	});
 
 interface Period {
 	id: number;
 	name: string;
 	start: string;
 	end: string;
-	visibleStart: string | null;
-	visibleEnd: string | null;
-	scheduleSignupStart: string | null;
-	scheduleSignupEnd: string | null;
-	scheduleModifyStart: string | null;
-	scheduleModifyEnd: string | null;
+	visibleStart: string;
+	visibleEnd: string;
+	scheduleSignupStart: string;
+	scheduleSignupEnd: string;
+	scheduleModifyStart: string;
+	scheduleModifyEnd: string;
+	min: number | null;
+	max: number | null;
+	minMaxUnit: z.infer<typeof unitSchema> | null;
+	roles: Role[];
 }
 
 interface EditPeriodSheetProps {
@@ -75,6 +117,7 @@ export function EditPeriodSheet({
 }: EditPeriodSheetProps) {
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
+	const [selectedRoles, setSelectedRoles] = useState<Role[]>(period.roles);
 	const formId = useId();
 
 	const updatePeriodMutation = useMutation({
@@ -83,12 +126,16 @@ export function EditPeriodSheet({
 			name: string;
 			start: Date;
 			end: Date;
-			visibleStart: Date | null;
-			visibleEnd: Date | null;
-			scheduleSignupStart: Date | null;
-			scheduleSignupEnd: Date | null;
-			scheduleModifyStart: Date | null;
-			scheduleModifyEnd: Date | null;
+			min: number | null;
+			max: number | null;
+			minMaxUnit: z.infer<typeof unitSchema> | null;
+			visibleStart: Date;
+			visibleEnd: Date;
+			scheduleSignupStart: Date;
+			scheduleSignupEnd: Date;
+			scheduleModifyStart: Date;
+			scheduleModifyEnd: Date;
+			periodRoleIds: number[];
 		}) => {
 			return trpc.periods.update.mutate(input);
 		},
@@ -103,43 +150,68 @@ export function EditPeriodSheet({
 			name: period.name,
 			start: new Date(period.start) as Date | null,
 			end: new Date(period.end) as Date | null,
-			visibleStart: period.visibleStart
-				? new Date(period.visibleStart)
-				: (null as Date | null),
-			visibleEnd: period.visibleEnd
-				? new Date(period.visibleEnd)
-				: (null as Date | null),
-			scheduleSignupStart: period.scheduleSignupStart
-				? new Date(period.scheduleSignupStart)
-				: (null as Date | null),
-			scheduleSignupEnd: period.scheduleSignupEnd
-				? new Date(period.scheduleSignupEnd)
-				: (null as Date | null),
-			scheduleModifyStart: period.scheduleModifyStart
-				? new Date(period.scheduleModifyStart)
-				: (null as Date | null),
-			scheduleModifyEnd: period.scheduleModifyEnd
-				? new Date(period.scheduleModifyEnd)
-				: (null as Date | null),
+			min: period.min,
+			max: period.max,
+			minMaxUnit: period.minMaxUnit,
+			visibleStart: new Date(period.visibleStart) as Date | null,
+			visibleEnd: new Date(period.visibleEnd) as Date | null,
+			scheduleSignupStart: new Date(period.scheduleSignupStart) as Date | null,
+			scheduleSignupEnd: new Date(period.scheduleSignupEnd) as Date | null,
+			scheduleModifyStart: new Date(period.scheduleModifyStart) as Date | null,
+			scheduleModifyEnd: new Date(period.scheduleModifyEnd) as Date | null,
+			periodRoleIds: period.roles.map((role) => role.id),
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
-			if (!value.start || !value.end) return;
+			if (
+				!value.start ||
+				!value.end ||
+				!value.visibleStart ||
+				!value.visibleEnd ||
+				!value.scheduleSignupStart ||
+				!value.scheduleSignupEnd ||
+				!value.scheduleModifyStart ||
+				!value.scheduleModifyEnd
+			)
+				return;
+			const startUtc = toUtcDateFromLocalInput(value.start);
+			const endUtc = toUtcDateFromLocalInput(value.end);
+			const visibleStartUtc = toUtcDateFromLocalInput(value.visibleStart);
+			const visibleEndUtc = toUtcDateFromLocalInput(value.visibleEnd);
+			const signupStartUtc = toUtcDateFromLocalInput(value.scheduleSignupStart);
+			const signupEndUtc = toUtcDateFromLocalInput(value.scheduleSignupEnd);
+			const modifyStartUtc = toUtcDateFromLocalInput(value.scheduleModifyStart);
+			const modifyEndUtc = toUtcDateFromLocalInput(value.scheduleModifyEnd);
+			if (
+				!startUtc ||
+				!endUtc ||
+				!visibleStartUtc ||
+				!visibleEndUtc ||
+				!signupStartUtc ||
+				!signupEndUtc ||
+				!modifyStartUtc ||
+				!modifyEndUtc
+			)
+				return;
 
 			try {
 				await updatePeriodMutation.mutateAsync({
 					id: period.id,
 					name: value.name,
-					start: value.start,
-					end: value.end,
-					visibleStart: value.visibleStart,
-					visibleEnd: value.visibleEnd,
-					scheduleSignupStart: value.scheduleSignupStart,
-					scheduleSignupEnd: value.scheduleSignupEnd,
-					scheduleModifyStart: value.scheduleModifyStart,
-					scheduleModifyEnd: value.scheduleModifyEnd,
+					start: startUtc,
+					end: endUtc,
+					min: value.min,
+					max: value.max,
+					minMaxUnit: value.minMaxUnit,
+					visibleStart: visibleStartUtc,
+					visibleEnd: visibleEndUtc,
+					scheduleSignupStart: signupStartUtc,
+					scheduleSignupEnd: signupEndUtc,
+					scheduleModifyStart: modifyStartUtc,
+					scheduleModifyEnd: modifyEndUtc,
+					periodRoleIds: value.periodRoleIds,
 				});
 				handleSheetChange(false);
 			} catch (err) {
@@ -156,7 +228,8 @@ export function EditPeriodSheet({
 	useEffect(() => {
 		form.reset();
 		setServerError(null);
-	}, [period.id, form]);
+		setSelectedRoles(period.roles);
+	}, [period, form]);
 
 	const handleSheetChange = useCallback(
 		(nextOpen: boolean) => {
@@ -164,11 +237,11 @@ export function EditPeriodSheet({
 			if (!nextOpen) {
 				form.reset();
 				setServerError(null);
+				setSelectedRoles(period.roles);
 			}
 		},
-		[form, onOpenChange],
+		[form, onOpenChange, period.roles],
 	);
-
 	return (
 		<Sheet open={open} onOpenChange={handleSheetChange}>
 			{trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
@@ -186,18 +259,19 @@ export function EditPeriodSheet({
 						e.stopPropagation();
 						form.handleSubmit();
 					}}
-					className="space-y-6 py-4"
 					noValidate
 				>
-					<div className="grid flex-1 auto-rows-min gap-6 px-4">
+					<div className="space-y-6 px-4">
 						<form.Field
 							name="name"
 							children={(field) => {
 								const isInvalid =
 									field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
-									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>Name</FieldLabel>
+									<div className="space-y-2">
+										<FieldLabel htmlFor={field.name}>
+											Name <span className="text-destructive">*</span>
+										</FieldLabel>
 										<Input
 											id={field.name}
 											name={field.name}
@@ -211,57 +285,185 @@ export function EditPeriodSheet({
 										{isInvalid && (
 											<FieldError errors={field.state.meta.errors} />
 										)}
-									</Field>
+									</div>
 								);
 							}}
 						/>
 
-						<div className="grid gap-4 md:grid-cols-2">
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<h3 className="text-sm font-medium">
+									Shift Requirements
+									<span className="text-muted-foreground text-xs font-normal ml-1">
+										(optional)
+									</span>
+								</h3>
+								<FieldDescription>
+									Specify a recommended minimum or enforced maximum number of
+									shifts.
+								</FieldDescription>
+							</div>
+							<div className="grid gap-4 sm:grid-cols-3">
+								<form.Field
+									name="min"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return (
+											<div className="space-y-1">
+												<FieldLabel htmlFor={field.name}>Minimum</FieldLabel>
+												<Input
+													id={field.name}
+													type="number"
+													min={0}
+													step={1}
+													value={field.state.value ?? ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => {
+														const numericValue =
+															e.target.value === ""
+																? null
+																: Number(e.target.value);
+														field.handleChange(numericValue);
+													}}
+													placeholder="e.g. 4"
+												/>
+												{isInvalid && (
+													<FieldError errors={field.state.meta.errors} />
+												)}
+											</div>
+										);
+									}}
+								/>
+								<form.Field
+									name="max"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return (
+											<div className="space-y-1">
+												<FieldLabel htmlFor={field.name}>Maximum</FieldLabel>
+												<Input
+													id={field.name}
+													type="number"
+													min={0}
+													step={1}
+													value={field.state.value ?? ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => {
+														const numericValue =
+															e.target.value === ""
+																? null
+																: Number(e.target.value);
+														field.handleChange(numericValue);
+													}}
+													placeholder="e.g. 10"
+												/>
+												{isInvalid && (
+													<FieldError errors={field.state.meta.errors} />
+												)}
+											</div>
+										);
+									}}
+								/>
+								<form.Field
+									name="minMaxUnit"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return (
+											<div className="space-y-1">
+												<FieldLabel>Unit</FieldLabel>
+												<Select
+													value={field.state.value ?? ""}
+													onValueChange={(value) =>
+														field.handleChange(
+															value as z.infer<typeof unitSchema>,
+														)
+													}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="Unit" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="count">Shift count</SelectItem>
+														<SelectItem value="hours">Hours</SelectItem>
+														<SelectItem value="minutes">Minutes</SelectItem>
+													</SelectContent>
+												</Select>
+												{isInvalid && (
+													<FieldError errors={field.state.meta.errors} />
+												)}
+											</div>
+										);
+									}}
+								/>
+							</div>
+						</div>
+
+						<form.Field
+							name="periodRoleIds"
+							children={(field) => (
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<FieldLabel>Allowed Roles</FieldLabel>
+										<span className="text-xs text-muted-foreground">
+											Optional
+										</span>
+									</div>
+									<FieldDescription>
+										Limit period visibility and interactions to selected roles.
+										Leave blank to allow all users.
+									</FieldDescription>
+									<RoleMultiSelect
+										value={selectedRoles}
+										onChange={(roles) => {
+											setSelectedRoles(roles);
+											field.handleChange(roles.map((role) => role.id));
+										}}
+										placeholder="Search roles..."
+									/>
+								</div>
+							)}
+						/>
+
+						<div className="space-y-2">
+							<FieldLabel>
+								Period Dates <span className="text-destructive">*</span>
+							</FieldLabel>
+							<form.Field
+								name="start"
+								children={(startField) => {
+									const start = form.getFieldValue("start");
+									const end = form.getFieldValue("end");
+									return (
+										<form.Field
+											name="end"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														const [normalizedStart, normalizedEnd] =
+															normalizeRangeToDayBounds(s, e);
+														startField.handleChange(normalizedStart);
+														endField.handleChange(normalizedEnd);
+													}}
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
 							<form.Field
 								name="start"
 								children={(field) => {
 									const isInvalid =
 										field.state.meta.isTouched && !field.state.meta.isValid;
-									return (
-										<Field data-invalid={isInvalid}>
-											<FieldLabel>Start Date</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-															isInvalid && "border-destructive",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-											{isInvalid && (
-												<FieldError errors={field.state.meta.errors} />
-											)}
-										</Field>
-									);
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
 								}}
 							/>
-
 							<form.Field
 								name="end"
 								children={(field) => {
@@ -269,40 +471,7 @@ export function EditPeriodSheet({
 										field.state.meta.isTouched && !field.state.meta.isValid;
 									const startDate = form.getFieldValue("start");
 									return (
-										<Field data-invalid={isInvalid}>
-											<FieldLabel>End Date</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-															isInvalid && "border-destructive",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-														disabled={(date) =>
-															startDate ? date <= startDate : false
-														}
-													/>
-												</PopoverContent>
-											</Popover>
+										<>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
@@ -311,263 +480,185 @@ export function EditPeriodSheet({
 												field.state.value <= startDate && (
 													<FieldError
 														errors={[
-															{ message: "End date must be after start date" },
+															{
+																message: "End date must be after start date",
+															},
 														]}
 													/>
 												)}
-										</Field>
+										</>
 									);
 								}}
 							/>
 						</div>
 
-						<div className="space-y-4">
-							<h3 className="text-sm font-medium">Visibility Window</h3>
-							<FieldDescription>
-								Control when this period is visible to users.
-							</FieldDescription>
-							<div className="grid gap-4 md:grid-cols-2">
-								<form.Field
-									name="visibleStart"
-									children={(field) => (
-										<Field>
-											<FieldLabel>Visible Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
-									)}
-								/>
-								<form.Field
-									name="visibleEnd"
-									children={(field) => (
-										<Field>
-											<FieldLabel>Visible End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
-									)}
-								/>
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<FieldLabel>
+									Visibility Window <span className="text-destructive">*</span>
+								</FieldLabel>
+								<FieldDescription>
+									Control when this period is visible to users. Includes
+									specific start and end times.
+								</FieldDescription>
 							</div>
+							<form.Field
+								name="visibleStart"
+								children={(startField) => {
+									const start = form.getFieldValue("visibleStart");
+									const end = form.getFieldValue("visibleEnd");
+									return (
+										<form.Field
+											name="visibleEnd"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
+													}}
+													withTime
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
+							<form.Field
+								name="visibleStart"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
+							<form.Field
+								name="visibleEnd"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
 						</div>
 
-						<div className="space-y-4">
-							<h3 className="text-sm font-medium">Signup Window</h3>
-							<FieldDescription>
-								Control when users can sign up for shifts.
-							</FieldDescription>
-							<div className="grid gap-4 md:grid-cols-2">
-								<form.Field
-									name="scheduleSignupStart"
-									children={(field) => (
-										<Field>
-											<FieldLabel>Signup Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
-									)}
-								/>
-								<form.Field
-									name="scheduleSignupEnd"
-									children={(field) => (
-										<Field>
-											<FieldLabel>Signup End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
-									)}
-								/>
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<FieldLabel>
+									Signup Window <span className="text-destructive">*</span>
+								</FieldLabel>
+								<FieldDescription>
+									Control when users can sign up for shifts. Includes specific
+									start and end times.
+								</FieldDescription>
 							</div>
+							<form.Field
+								name="scheduleSignupStart"
+								children={(startField) => {
+									const start = form.getFieldValue("scheduleSignupStart");
+									const end = form.getFieldValue("scheduleSignupEnd");
+									return (
+										<form.Field
+											name="scheduleSignupEnd"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
+													}}
+													withTime
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
+							<form.Field
+								name="scheduleSignupStart"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
+							<form.Field
+								name="scheduleSignupEnd"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
 						</div>
 
-						<div className="space-y-4">
-							<h3 className="text-sm font-medium">Modification Window</h3>
-							<FieldDescription>
-								Control when users can modify their shift assignments.
-							</FieldDescription>
-							<div className="grid gap-4 md:grid-cols-2">
-								<form.Field
-									name="scheduleModifyStart"
-									children={(field) => (
-										<Field>
-											<FieldLabel>Modify Start</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
-									)}
-								/>
-								<form.Field
-									name="scheduleModifyEnd"
-									children={(field) => (
-										<Field>
-											<FieldLabel>Modify End</FieldLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<Button
-														type="button"
-														variant="outline"
-														className={cn(
-															"w-full justify-start text-left font-normal",
-															!field.state.value && "text-muted-foreground",
-														)}
-													>
-														<CalendarIcon className="mr-2 h-4 w-4" />
-														{field.state.value ? (
-															format(field.state.value, "PPP")
-														) : (
-															<span>Pick a date</span>
-														)}
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-auto p-0" align="start">
-													<Calendar
-														mode="single"
-														selected={field.state.value || undefined}
-														onSelect={(date) =>
-															field.handleChange(date || null)
-														}
-													/>
-												</PopoverContent>
-											</Popover>
-										</Field>
-									)}
-								/>
+						<div className="space-y-2">
+							<div className="space-y-1">
+								<FieldLabel>
+									Modification Window{" "}
+									<span className="text-destructive">*</span>
+								</FieldLabel>
+								<FieldDescription>
+									Control when users can modify their shift assignments.
+									Includes specific start and end times.
+								</FieldDescription>
 							</div>
+							<form.Field
+								name="scheduleModifyStart"
+								children={(startField) => {
+									const start = form.getFieldValue("scheduleModifyStart");
+									const end = form.getFieldValue("scheduleModifyEnd");
+									return (
+										<form.Field
+											name="scheduleModifyEnd"
+											children={(endField) => (
+												<DateRangeSelector
+													value={[start ?? undefined, end ?? undefined]}
+													onChange={([s, e]) => {
+														startField.handleChange(s ?? null);
+														endField.handleChange(e ?? null);
+													}}
+													withTime
+												/>
+											)}
+										/>
+									);
+								}}
+							/>
+							<form.Field
+								name="scheduleModifyStart"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
+							<form.Field
+								name="scheduleModifyEnd"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null;
+								}}
+							/>
 						</div>
+
+						{serverError && (
+							<p className="text-sm text-destructive">{serverError}</p>
+						)}
 					</div>
-
-					{serverError && (
-						<p className="text-sm text-destructive">{serverError}</p>
-					)}
 
 					<SheetFooter className="flex flex-row items-center justify-end gap-2">
 						<Button

@@ -1,0 +1,51 @@
+name: PR Version Check and Update
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+    branches:
+      - main
+
+jobs:
+  validate-and-check-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Validate PR title format
+        id: validate
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Check if PR title matches version format (v1.0.0, v1.2.3-beta, etc.)
+          if [[ ! "$PR_TITLE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\.]+)?$ ]]; then
+            echo "❌ PR title must be a valid version string (e.g., v1.0.0, v1.2.3-beta)"
+            exit 1
+          fi
+          
+          # Extract version without 'v' prefix
+          VERSION=${PR_TITLE#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Valid version format: $VERSION"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Verify package versions match PR title
+        run: pnpm dlx tsx scripts/set-package-versions.ts ${{ steps.validate.outputs.version }} --check

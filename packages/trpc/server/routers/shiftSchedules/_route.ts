@@ -1,28 +1,86 @@
-import { permissionProtectedProcedure, router } from "../../trpc";
+import {
+	permissionProtectedProcedure,
+	protectedProcedure,
+	router,
+} from "../../trpc";
 import { bulkCreateHandler, ZBulkCreateSchema } from "./bulkCreate.route";
+import { bulkDeleteHandler, ZBulkDeleteSchema } from "./bulkDelete.route";
 import { createHandler, ZCreateSchema } from "./create.route";
 import { deleteHandler, ZDeleteSchema } from "./delete.route";
+import {
+	forceRegisterHandler,
+	ZForceRegisterSchema,
+} from "./forceRegister.route";
+import {
+	forceUnregisterHandler,
+	ZForceUnregisterSchema,
+} from "./forceUnregister.route";
 import { getHandler, ZGetSchema } from "./get.route";
 import { listHandler, ZListSchema } from "./list.route";
+import {
+	listEligibleUsersHandler,
+	ZListEligibleUsersSchema,
+} from "./listEligibleUsers.route";
+import {
+	listForRegistrationHandler,
+	ZListForRegistrationSchema,
+} from "./listForRegistration.route";
+import {
+	listForUserManagementHandler,
+	ZListForUserManagementSchema,
+} from "./listForUserManagement.route";
+import {
+	onScheduleUpdateHandler,
+	ZOnScheduleUpdateSchema,
+} from "./onScheduleUpdate.route";
+import { registerHandler, ZRegisterSchema } from "./register.route";
+import { unregisterHandler, ZUnregisterSchema } from "./unregister.route";
 import { updateHandler, ZUpdateSchema } from "./update.route";
 
 export const shiftSchedulesRouter = router({
-	list: permissionProtectedProcedure("shiftSchedules.list")
+	list: permissionProtectedProcedure("shift_schedules.list")
 		.input(ZListSchema)
 		.query(listHandler),
-	get: permissionProtectedProcedure("shiftSchedules.get")
+	listEligibleUsers: permissionProtectedProcedure("shift_schedules.manipulate")
+		.input(ZListEligibleUsersSchema)
+		.query(listEligibleUsersHandler),
+	listForRegistration: protectedProcedure
+		.input(ZListForRegistrationSchema)
+		.query(listForRegistrationHandler),
+	listForUserManagement: permissionProtectedProcedure(
+		"shift_schedules.manipulate",
+	)
+		.input(ZListForUserManagementSchema)
+		.query(listForUserManagementHandler),
+	get: permissionProtectedProcedure("shift_schedules.get")
 		.input(ZGetSchema)
 		.query(getHandler),
-	create: permissionProtectedProcedure("shiftSchedules.create")
+	create: permissionProtectedProcedure("shift_schedules.create")
 		.input(ZCreateSchema)
 		.mutation(createHandler),
-	bulkCreate: permissionProtectedProcedure("shiftSchedules.create")
+	bulkCreate: permissionProtectedProcedure("shift_schedules.create")
 		.input(ZBulkCreateSchema)
 		.mutation(bulkCreateHandler),
-	update: permissionProtectedProcedure("shiftSchedules.update")
+	bulkDelete: permissionProtectedProcedure("shift_schedules.delete")
+		.input(ZBulkDeleteSchema)
+		.mutation(bulkDeleteHandler),
+	update: permissionProtectedProcedure("shift_schedules.update")
 		.input(ZUpdateSchema)
 		.mutation(updateHandler),
-	delete: permissionProtectedProcedure("shiftSchedules.delete")
+	delete: permissionProtectedProcedure("shift_schedules.delete")
 		.input(ZDeleteSchema)
 		.mutation(deleteHandler),
+	forceRegister: permissionProtectedProcedure("shift_schedules.manipulate")
+		.input(ZForceRegisterSchema)
+		.mutation(forceRegisterHandler),
+	forceUnregister: permissionProtectedProcedure("shift_schedules.manipulate")
+		.input(ZForceUnregisterSchema)
+		.mutation(forceUnregisterHandler),
+	register: protectedProcedure.input(ZRegisterSchema).mutation(registerHandler),
+	unregister: protectedProcedure
+		.input(ZUnregisterSchema)
+		.mutation(unregisterHandler),
+	onScheduleUpdate: protectedProcedure
+		.input(ZOnScheduleUpdateSchema)
+		.subscription(onScheduleUpdateHandler),
 });

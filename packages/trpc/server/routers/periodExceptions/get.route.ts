@@ -1,5 +1,5 @@
-import { db, periodExceptions } from "@ecehive/drizzle";
-import { eq } from "drizzle-orm";
+import { prisma } from "@ecehive/prisma";
+
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -17,10 +17,9 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	const [periodException] = await db
-		.select()
-		.from(periodExceptions)
-		.where(eq(periodExceptions.id, id));
+	const periodException = await prisma.periodException.findUnique({
+		where: { id },
+	});
 
 	return { periodException };
 }

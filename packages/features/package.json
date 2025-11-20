@@ -1,19 +1,22 @@
 {
 	"name": "@ecehive/features",
+	"version": "1.0.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
-		"test": "vitest run"
+		"test": "vitest run",
+		"tsc": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@ecehive/drizzle": "workspace:*",
 		"@ecehive/env": "workspace:*",
-		"@trpc/server": "^11.6.0",
-		"dayjs": "^1.11.18",
-		"drizzle-orm": "^0.44.5"
+		"@ecehive/ldap": "workspace:*",
+		"@ecehive/prisma": "workspace:*",
+		"@js-temporal/polyfill": "^0.4.4",
+		"@trpc/server": "11.5.1"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
+		"typescript": "^5.9.2",
 		"vitest": "^3.2.4"
 	}
 }

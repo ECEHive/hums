@@ -6,14 +6,28 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-
-// Import the generated route tree
+import * as Sentry from "@sentry/react";
+import { ErrorPage } from "./components/error-page";
 import { routeTree } from "./routeTree.gen";
+
+if ((import.meta.env.VITE_CLIENT_SENTRY_DSN ?? "").trim().length > 0) {
+	Sentry.init({
+		dsn: import.meta.env.VITE_CLIENT_SENTRY_DSN,
+		sendDefaultPii: true,
+		enableLogs: true,
+		release: __APP_VERSION__,
+	});
+}
 
 const router = createRouter({
 	routeTree,
 	defaultNotFoundComponent: NotFound,
+	defaultErrorComponent: ({ error }) => {
+		Sentry.captureException(error);
+		return <ErrorPage error={error} />;
+	},
 });
 
 // Register the router instance for type safety
@@ -39,6 +53,7 @@ if (!rootElement.innerHTML) {
 			<QueryClientProvider client={queryClient}>
 				<ThemeProvider defaultTheme="dark" storageKey="ui-theme">
 					<RouterProvider router={router} />
+					<Toaster />
 				</ThemeProvider>
 				<TanStackDevtools
 					plugins={[

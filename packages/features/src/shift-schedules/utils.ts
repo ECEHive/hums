@@ -1,13 +1,16 @@
-import dayjs from "dayjs";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import timezone from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
+import { Temporal } from "@js-temporal/polyfill";
+import {
+	instantFromDate,
+	plainDateFromDate,
+	plainDateToDate,
+	plainTimeFromString as toPlainTime,
+	zeroBasedToTemporalDayOfWeek,
+	zonedDateTimeFor,
+	zonedDateTimeToDate,
+} from "../timezone";
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
+const MINUTES_PER_DAY = 24 * 60;
+const MINUTES_PER_HOUR = 60;
 
 /**
  * Parse a time string in HH:MM:SS format.
@@ -36,23 +39,32 @@ export function parseTimeString(timeString: string): {
  * @param endDate - Optional end date to stop searching
  * @returns The date of the next occurrence, or null if not found before endDate
  */
+function getNextMatchingPlainDate(
+	startDate: Date,
+	targetDayOfWeek: number,
+	endDate?: Date,
+): Temporal.PlainDate | null {
+	const target = zeroBasedToTemporalDayOfWeek(targetDayOfWeek);
+	let current = plainDateFromDate(startDate);
+	const boundary = endDate ? plainDateFromDate(endDate) : null;
+
+	while (current.dayOfWeek !== target) {
+		if (boundary && Temporal.PlainDate.compare(current, boundary) > 0) {
+			return null;
+		}
+		current = current.add({ days: 1 });
+	}
+
+	return current;
+}
+
 export function findNextDayOfWeek(
 	startDate: Date,
 	targetDayOfWeek: number,
 	endDate?: Date,
 ): Date | null {
-	let current = dayjs(startDate).startOf("day");
-	const end = endDate ? dayjs(endDate).endOf("day") : null;
-
-	// Find the first occurrence of the target day of week
-	while (current.day() !== targetDayOfWeek) {
-		if (end && current.isAfter(end)) {
-			return null;
-		}
-		current = current.add(1, "day");
-	}
-
-	return current.toDate();
+	const next = getNextMatchingPlainDate(startDate, targetDayOfWeek, endDate);
+	return next ? plainDateToDate(next) : null;
 }
 
 /**
@@ -71,38 +83,31 @@ export function generateOccurrenceTimestamps(
 	startTime: string,
 ): Date[] {
 	const occurrences: Date[] = [];
+	const firstDate = getNextMatchingPlainDate(periodStart, dayOfWeek, periodEnd);
 
-	// Parse the start time (format: "HH:MM:SS")
-	const { hours, minutes, seconds } = parseTimeString(startTime);
-
-	// Start from the beginning of the period
-	let current = dayjs(periodStart).startOf("day");
-	const end = dayjs(periodEnd).endOf("day");
-
-	// Find the first occurrence of the target day of week
-	while (current.day() !== dayOfWeek && current.isBefore(end)) {
-		current = current.add(1, "day");
+	if (!firstDate) {
+		return occurrences;
 	}
 
-	// Generate occurrences on the target day of week
-	while (current.isBefore(end)) {
-		// Set the time for this occurrence
-		const occurrence = current
-			.hour(hours)
-			.minute(minutes)
-			.second(seconds)
-			.millisecond(0);
+	const startInstant = instantFromDate(periodStart);
+	const endInstant = instantFromDate(periodEnd);
+	const terminalDate = plainDateFromDate(periodEnd);
+	const startPlainTime = toPlainTime(startTime);
 
-		// Only add if it's within the period bounds
-		if (
-			occurrence.isSameOrAfter(periodStart) &&
-			occurrence.isBefore(periodEnd)
-		) {
-			occurrences.push(occurrence.toDate());
+	let cursor = firstDate;
+	while (Temporal.PlainDate.compare(cursor, terminalDate) <= 0) {
+		const zonedDateTime = zonedDateTimeFor(cursor, startPlainTime);
+		const occurrenceInstant = zonedDateTime.toInstant();
+		const isOnOrAfterStart =
+			Temporal.Instant.compare(occurrenceInstant, startInstant) >= 0;
+		const isBeforeEnd =
+			Temporal.Instant.compare(occurrenceInstant, endInstant) < 0;
+
+		if (isOnOrAfterStart && isBeforeEnd) {
+			occurrences.push(zonedDateTimeToDate(zonedDateTime));
 		}
 
-		// Move to next week
-		current = current.add(7, "day");
+		cursor = cursor.add({ days: 7 });
 	}
 
 	return occurrences;
@@ -163,20 +168,97 @@ export function filterExceptionPeriods(
 		return timestamps;
 	}
 
+	const exceptionWindows = exceptions.map((exception) => ({
+		start: instantFromDate(exception.start),
+		end: instantFromDate(exception.end),
+	}));
+
 	return timestamps.filter((timestamp) => {
-		const ts = dayjs(timestamp);
-
-		// Check if timestamp falls within any exception period
-		for (const exception of exceptions) {
-			const exceptionStart = dayjs(exception.start);
-			const exceptionEnd = dayjs(exception.end);
-
-			// If timestamp is within the exception period (inclusive), exclude it
-			if (ts.isSameOrAfter(exceptionStart) && ts.isSameOrBefore(exceptionEnd)) {
-				return false;
-			}
-		}
-
-		return true;
+		const tsInstant = instantFromDate(timestamp);
+		return !exceptionWindows.some((window) => {
+			const startsBeforeOrAt =
+				Temporal.Instant.compare(tsInstant, window.start) >= 0;
+			const endsAfterOrAt =
+				Temporal.Instant.compare(tsInstant, window.end) <= 0;
+			return startsBeforeOrAt && endsAfterOrAt;
+		});
 	});
+}
+
+export type RequirementUnit = "count" | "minutes" | "hours";
+
+export interface RequirementScheduleLite {
+	startTime: string;
+	endTime: string;
+}
+
+/**
+ * Calculate the duration of a shift schedule in minutes, handling overnight shifts.
+ */
+export function getShiftDurationMinutes(
+	startTime: string,
+	endTime: string,
+): number {
+	const start = parseTimeString(startTime);
+	const end = parseTimeString(endTime);
+
+	const startMinutes =
+		start.hours * MINUTES_PER_HOUR +
+		start.minutes +
+		(start.seconds ?? 0) / MINUTES_PER_HOUR;
+	let endMinutes =
+		end.hours * MINUTES_PER_HOUR +
+		end.minutes +
+		(end.seconds ?? 0) / MINUTES_PER_HOUR;
+
+	if (endMinutes <= startMinutes) {
+		endMinutes += MINUTES_PER_DAY;
+	}
+
+	return endMinutes - startMinutes;
+}
+
+export function calculateRequirementComparableValue(
+	schedules: RequirementScheduleLite[],
+	unit: RequirementUnit,
+): number {
+	if (unit === "count") {
+		return schedules.length;
+	}
+
+	return schedules.reduce(
+		(total, schedule) =>
+			total + getShiftDurationMinutes(schedule.startTime, schedule.endTime),
+		0,
+	);
+}
+
+export function convertRequirementThresholdToComparable(
+	value: number,
+	unit: RequirementUnit,
+): number {
+	if (unit === "count") {
+		return value;
+	}
+
+	if (unit === "minutes") {
+		return value;
+	}
+
+	return value * MINUTES_PER_HOUR;
+}
+
+export function convertComparableValueToUnit(
+	value: number,
+	unit: RequirementUnit,
+): number {
+	if (unit === "count") {
+		return value;
+	}
+
+	if (unit === "minutes") {
+		return value;
+	}
+
+	return value / MINUTES_PER_HOUR;
 }

@@ -1,6 +1,5 @@
 # Development
 
-.vscode/
 .idea/
 *.log
 *.tmp
@@ -8,6 +7,7 @@
 
 # Devcontainer
 
+# This is from the legacy devcontainer config
 .devcontainer/data/
 
 # Node
@@ -19,6 +19,7 @@ node_modules/
 # Builds
 
 dist/
+generated/
 
 # MacOS
 

@@ -1,6 +1,6 @@
-# Contributing to The Hive Shift Scheduler
+# Contributing to HUMS
 
-Thanks for your interest in contributing to **The Hive Shift Scheduler**, the shift scheduling system for The Hive Makerspace at Georgia Tech!
+Thanks for your interest in contributing to **The Hive User Management System**.
 We’re excited to have you help improve the project - whether you’re fixing bugs, improving documentation, or adding new features.
 
 ---
