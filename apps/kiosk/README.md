@@ -13,6 +13,7 @@ pnpm dev
 | Variable | Default | Description |
 | - | - | - |
 | `VITE_KIOSK_SENTRY_DSN` | `""` | Optional DSN if you wish to include Sentry. |
+| `TZ` | `"America/New_York"` | Primary timezone. |
 
 ### Development Variables
 

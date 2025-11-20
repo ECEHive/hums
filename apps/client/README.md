@@ -16,6 +16,7 @@ pnpm dev
 | - | - | - |
 | `VITE_CAS_PROXY_URL` | `""` | URL that the user will be redirected to for CAS authentication. | 
 | `VITE_CLIENT_SENTRY_DSN` | `""` | Optional DSN if you wish to include Sentry. |
+| `TZ` | `"America/New_York"` | Primary timezone. |
 
 ### Development Variables
 
