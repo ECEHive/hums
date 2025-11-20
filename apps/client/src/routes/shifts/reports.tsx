@@ -101,10 +101,23 @@ function Reports() {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		// Format current date/time as YYYY-MM-DD_HH-MM-SS for filenames
+		// Format current date/time in the local timezone as YYYY-MM-DD_HH-MM-SS±HHMM
 		const now = new Date();
 		const pad = (n: number) => String(n).padStart(2, "0");
-		const filename = `report-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.csv`;
+		const year = now.getFullYear();
+		const month = pad(now.getMonth() + 1);
+		const day = pad(now.getDate());
+		const hours = pad(now.getHours());
+		const minutes = pad(now.getMinutes());
+		const seconds = pad(now.getSeconds());
+		// timezone offset in minutes (getTimezoneOffset returns minutes behind UTC)
+		const offsetMin = -now.getTimezoneOffset();
+		const offsetSign = offsetMin >= 0 ? "+" : "-";
+		const absOffset = Math.abs(offsetMin);
+		const offsetHours = pad(Math.floor(absOffset / 60));
+		const offsetMinutes = pad(absOffset % 60);
+		const tz = `${offsetSign}${offsetHours}${offsetMinutes}`;
+		const filename = `report-${year}-${month}-${day}_${hours}-${minutes}-${seconds}${tz}.csv`;
 		a.download = filename;
 		document.body.appendChild(a);
 		a.click();
@@ -273,7 +286,7 @@ function Reports() {
 					</div>
 				</CardContent>
 			</Card>
-			<div className="flex justify-left">
+			<div className="flex justify-start">
 				<Button
 					variant="outline"
 					onClick={exportCsv}

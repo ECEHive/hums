@@ -23,7 +23,7 @@ export function generateColumns(): ColumnDef<UserReport>[] {
 		},
 		{
 			accessorKey: "periodScheduledTime",
-			header: "Scheduled Time For Period",
+			header: "Scheduled Time For Range",
 			cell: ({ row }) => {
 				return <span>{row.original.periodScheduledTime.toFixed(2)} hrs</span>;
 			},

@@ -79,36 +79,30 @@ export async function generateHandler(options: TGenerateOptions) {
 		},
 	};
 
-	// If startDate / endDate provided, filter by the related shiftOccurrence.timestamp
+	// If startDate / endDate provided, build a timestamp filter to apply to
+	// both the attendance.include.shiftOccurrence.timestamp and the
+	// occurrence.where.timestamp. We don't mutate the top-level where objects
+	// here; instead we'll compose include/where objects below.
+	let timestampFilter: Prisma.DateTimeFilter | undefined;
 	if (startDate || endDate) {
-		const timestampFilter: Prisma.DateTimeFilter = {};
+		const tf: Prisma.DateTimeFilter = {};
 
 		if (startDate) {
 			const sd = new Date(startDate);
 			if (!Number.isNaN(sd.getTime())) {
-				timestampFilter.gte = sd;
+				tf.gte = sd;
 			}
 		}
 
 		if (endDate) {
 			const ed = new Date(endDate);
 			if (!Number.isNaN(ed.getTime())) {
-				timestampFilter.lte = ed;
+				tf.lte = ed;
 			}
 		}
 
-		// Only attach the filter if at least one bound is valid
-		if (Object.keys(timestampFilter).length > 0) {
-			// avoid using `any` by casting to a minimal mutable shape
-			const whereMutable = whereForAttendance as unknown as {
-				shiftOccurrence?: { timestamp?: Prisma.DateTimeFilter };
-			};
-			whereMutable.shiftOccurrence = { timestamp: timestampFilter };
-			// Also attach the same timestamp filter to occurrences query so DB returns only relevant occurrences
-			const whereOccMutable = whereForOccurrence as unknown as {
-				timestamp?: Prisma.DateTimeFilter;
-			};
-			whereOccMutable.timestamp = timestampFilter;
+		if (Object.keys(tf).length > 0) {
+			timestampFilter = tf;
 		}
 	}
 
@@ -119,12 +113,21 @@ export async function generateHandler(options: TGenerateOptions) {
 
 	// Prepare include filters for relations (strip top-level user role filters)
 	const attendanceIncludeWhere: Prisma.ShiftAttendanceWhereInput | undefined =
-		whereForAttendance.shiftOccurrence
-			? { shiftOccurrence: whereForAttendance.shiftOccurrence }
-			: undefined;
+		(() => {
+			const base = whereForAttendance.shiftOccurrence
+				? { ...whereForAttendance.shiftOccurrence }
+				: {};
+			if (timestampFilter) {
+				(base as Record<string, unknown>).timestamp = timestampFilter;
+			}
+			return Object.keys(base).length > 0
+				? ({ shiftOccurrence: base } as Prisma.ShiftAttendanceWhereInput)
+				: undefined;
+		})();
 
 	const occurrenceIncludeWhere: Prisma.ShiftOccurrenceWhereInput = {
 		...whereForOccurrence,
+		...(timestampFilter ? { timestamp: timestampFilter } : {}),
 	} as Prisma.ShiftOccurrenceWhereInput;
 
 	type UserWithRelations = {
@@ -249,9 +252,6 @@ export async function generateHandler(options: TGenerateOptions) {
 					: 0,
 		});
 	}
-
-	// Add total count
-	userReports.total = userReports.reports.length;
 
 	return userReports;
 }
