@@ -216,7 +216,7 @@ export function ShiftScheduleTimelineView({
 			return trpc.shiftSchedules.list.query({
 				periodId,
 				dayOfWeek: selectedDay,
-				limit: 100,
+				limit: 1000,
 			});
 		},
 	});
