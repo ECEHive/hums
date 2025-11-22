@@ -14,8 +14,6 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	console.log("Fetching shift schedule with ID:", id);
-
 	const shiftSchedule = await prisma.shiftSchedule.findUnique({
 		where: { id },
 		include: {
