@@ -239,11 +239,33 @@ function groupSchedulesByDayAndTimeBlock(
 	return blocks;
 }
 
+function compareShiftSchedules(a: ShiftSchedule, b: ShiftSchedule) {
+	const nameCompare = a.shiftTypeName.localeCompare(b.shiftTypeName);
+	if (nameCompare !== 0) return nameCompare;
+
+	const locationCompare = (a.shiftTypeLocation ?? "").localeCompare(
+		b.shiftTypeLocation ?? "",
+	);
+	if (locationCompare !== 0) return locationCompare;
+
+	const dayCompare = a.dayOfWeek - b.dayOfWeek;
+	if (dayCompare !== 0) return dayCompare;
+
+	const timeCompare = a.startTime.localeCompare(b.startTime);
+	if (timeCompare !== 0) return timeCompare;
+
+	return a.id - b.id;
+}
+
 export function SchedulingTimeline({
 	schedules,
 	isLoading,
 	onBlockClick,
 }: SchedulingTimelineProps) {
+	const sortedSchedules = React.useMemo(
+		() => [...schedules].sort(compareShiftSchedules),
+		[schedules],
+	);
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center py-12">
@@ -257,14 +279,14 @@ export function SchedulingTimeline({
 	}
 
 	// Calculate optimal block size
-	const blockSize = calculateBlockSize(schedules);
+	const blockSize = calculateBlockSize(sortedSchedules);
 
 	// Group schedules by day and time block
-	const blocks = groupSchedulesByDayAndTimeBlock(schedules, blockSize);
+	const blocks = groupSchedulesByDayAndTimeBlock(sortedSchedules, blockSize);
 
 	// Determine which days actually have shift schedules
 	const daysWithSchedules = new Set(
-		schedules.map((schedule) => schedule.dayOfWeek),
+		sortedSchedules.map((schedule) => schedule.dayOfWeek),
 	);
 	const visibleDays = DAYS_OF_WEEK.filter((day) =>
 		daysWithSchedules.has(day.value),

@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: read
+      issues: write
     
     steps:
       - name: Checkout code
@@ -59,15 +60,20 @@ jobs:
             const prBody = `${{ github.event.pull_request.body }}`;
             const prNumber = ${{ github.event.pull_request.number }};
             const prUrl = '${{ github.event.pull_request.html_url }}';
-            
-            // Create the release body
-            let releaseBody = `## Release ${tag}\n\n`;
-            
-            if (prBody && prBody.trim() !== '') {
-              releaseBody += prBody;
-            } else {
-              releaseBody += `See PR #${prNumber} for details.`;
-            }
+            const shortSha = context.sha.substring(0, 7);
+            const summaryBody = prBody && prBody.trim() !== ''
+              ? prBody.trim()
+              : `See PR #${prNumber} for details.`;
+            const releaseBody = [
+              `## Release ${tag}`,
+              '',
+              `**Pull Request:** [#${prNumber}](${prUrl})`,
+              `**Commit:** ${shortSha}`,
+              '',
+              '### Summary',
+              '',
+              summaryBody
+            ].join('\n');
             
             try {
               // Create the release (this also creates the tag)

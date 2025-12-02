@@ -3,7 +3,7 @@ import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 export const ZListSchema = z.object({
-	limit: z.number().min(1).max(100).optional(),
+	limit: z.number().min(1).max(1000).optional(),
 	offset: z.number().min(0).optional(),
 	shiftTypeId: z.number().min(1).optional(),
 	periodId: z.number().min(1).optional(),
@@ -48,7 +48,12 @@ export async function listHandler(options: TListOptions) {
 					select: { users: true },
 				},
 			},
-			orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+			orderBy: [
+				{ shiftType: { name: "asc" } },
+				{ shiftType: { location: "asc" } },
+				{ dayOfWeek: "asc" },
+				{ startTime: "asc" },
+			],
 			skip: offset,
 			take: limit,
 		}),

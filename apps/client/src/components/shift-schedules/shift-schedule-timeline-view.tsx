@@ -41,6 +41,7 @@ interface ShiftTypeInfo {
 	id: number;
 	name: string;
 	color: string | null;
+	location: string | null;
 }
 
 interface TimelineItem {
@@ -145,9 +146,25 @@ function sortSchedulesWithTypes(
 		shiftType: ShiftTypeInfo;
 	}>;
 
-	return withTypes.sort((a, b) =>
-		a.shiftType.name.localeCompare(b.shiftType.name),
-	);
+	return withTypes.sort((a, b) => {
+		const nameCompare = a.shiftType.name.localeCompare(b.shiftType.name);
+		if (nameCompare !== 0) return nameCompare;
+
+		const locationA = a.shiftType.location ?? "";
+		const locationB = b.shiftType.location ?? "";
+		const locationCompare = locationA.localeCompare(locationB);
+		if (locationCompare !== 0) return locationCompare;
+
+		const dayCompare = a.schedule.dayOfWeek - b.schedule.dayOfWeek;
+		if (dayCompare !== 0) return dayCompare;
+
+		const timeCompare = a.schedule.startTime.localeCompare(
+			b.schedule.startTime,
+		);
+		if (timeCompare !== 0) return timeCompare;
+
+		return a.schedule.id - b.schedule.id;
+	});
 }
 
 /**
@@ -216,7 +233,7 @@ export function ShiftScheduleTimelineView({
 			return trpc.shiftSchedules.list.query({
 				periodId,
 				dayOfWeek: selectedDay,
-				limit: 100,
+				limit: 1000,
 			});
 		},
 	});
@@ -240,7 +257,7 @@ export function ShiftScheduleTimelineView({
 	const shiftTypesMap = new Map<number, ShiftTypeInfo>(
 		shiftTypes.map((st) => [
 			st.id,
-			{ id: st.id, name: st.name, color: st.color },
+			{ id: st.id, name: st.name, color: st.color, location: st.location },
 		]),
 	);
 

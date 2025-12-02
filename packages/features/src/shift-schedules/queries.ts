@@ -100,7 +100,12 @@ export async function getShiftSchedulesForListing(
 				select: { id: true, name: true },
 			},
 		},
-		orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+		orderBy: [
+			{ shiftType: { name: "asc" } },
+			{ shiftType: { location: "asc" } },
+			{ dayOfWeek: "asc" },
+			{ startTime: "asc" },
+		],
 	});
 }
 
