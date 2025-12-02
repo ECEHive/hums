@@ -48,7 +48,12 @@ export async function listHandler(options: TListOptions) {
 					select: { users: true },
 				},
 			},
-			orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+			orderBy: [
+				{ shiftType: { name: "asc" } },
+				{ shiftType: { location: "asc" } },
+				{ dayOfWeek: "asc" },
+				{ startTime: "asc" },
+			],
 			skip: offset,
 			take: limit,
 		}),
