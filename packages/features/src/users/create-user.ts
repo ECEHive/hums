@@ -7,15 +7,17 @@ export async function createUser(username: string) {
 		// Set basic defaults
 		let name = username;
 		let email = `${username}@gatech.edu`;
+		let cardNumber: string | undefined;
 
-		// Attempt to fetch user information from LDAP
+		// Attempt to fetch user information from the configured provider
 		try {
 			const userInfo = await fetchUserInfo(username);
 			name = userInfo.name;
 			email = userInfo.email;
+			cardNumber = userInfo.cardNumber ?? undefined;
 		} catch (error) {
-			// If LDAP fetch fails, proceed with defaults
-			console.error("LDAP fetch failed:", error);
+			// If fetch fails, proceed with defaults
+			console.error("User data fetch failed:", error);
 		}
 
 		const newUser = await prisma.user.create({
@@ -23,6 +25,7 @@ export async function createUser(username: string) {
 				name,
 				username,
 				email,
+				...(cardNumber ? { cardNumber } : {}),
 			},
 		});
 

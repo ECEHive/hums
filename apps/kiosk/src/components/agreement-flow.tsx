@@ -102,6 +102,7 @@ export function AgreementFlow({
 							<div className="flex-1 w-full rounded-md p-4 bg-neutral-200 overflow-y-auto min-h-0">
 								<div
 									className="prose text-black"
+									/* biome-ignore lint/security/noDangerouslySetInnerHtml: Agreement content is authored by trusted admins */
 									dangerouslySetInnerHTML={{ __html: currentAgreement.content }}
 								/>
 							</div>

@@ -9,8 +9,8 @@
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
-		"@ecehive/ldap": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
+		"@ecehive/user-data": "workspace:*",
 		"@js-temporal/polyfill": "^0.4.4",
 		"@trpc/server": "11.5.1"
 	},

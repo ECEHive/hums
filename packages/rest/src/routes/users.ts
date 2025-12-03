@@ -1,5 +1,6 @@
 import type { Role } from "@ecehive/prisma";
 import { Prisma, prisma } from "@ecehive/prisma";
+import { normalizeCardNumber } from "@ecehive/user-data";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
@@ -200,12 +201,20 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 		const { roles, ...userData } = body.data;
 
+		const normalizedCard = normalizeCardNumber(userData.cardNumber);
+		if (!normalizedCard) {
+			return reply.code(400).send({
+				error: "invalid_card_number",
+				message: "Card numbers must contain digits",
+			});
+		}
+
 		const updateData: Prisma.UserUpdateInput = {
 			name: userData.name,
 			email: userData.email,
 		};
-		if (userData.cardNumber !== undefined) {
-			updateData.cardNumber = userData.cardNumber;
+		if (normalizedCard !== undefined) {
+			updateData.cardNumber = normalizedCard;
 		}
 		if (userData.isSystemUser !== undefined) {
 			updateData.isSystemUser = userData.isSystemUser;
@@ -217,8 +226,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			email: userData.email,
 			isSystemUser: userData.isSystemUser ?? false,
 		};
-		if (userData.cardNumber !== undefined) {
-			createData.cardNumber = userData.cardNumber;
+		if (normalizedCard !== undefined) {
+			createData.cardNumber = normalizedCard;
 		}
 
 		const upserted = await prisma.user.upsert({

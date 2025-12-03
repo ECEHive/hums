@@ -1,66 +1,65 @@
-import { prisma } from "@ecehive/prisma";
+import { type Prisma, prisma } from "@ecehive/prisma";
+import { getUserDataProvider, normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
-import { createUser } from "./create-user";
 
 export async function findUserByCard(cardNumber: string) {
+	const provider = getUserDataProvider();
+	const normalized = normalizeCardNumber(cardNumber);
+	if (!normalized) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Invalid card number",
+		});
+	}
+
 	return await prisma.$transaction(async (tx) => {
-		// Find user by card id in the database
 		let user = await tx.user.findUnique({
-			where: { cardNumber },
+			where: {
+				cardNumber: normalized,
+			},
 		});
 
 		if (!user) {
-			// Query SUMS for the username of the card owner
-			const response = await fetch(
-				`https://sums.gatech.edu/SUMSAPI/rest/API/GetUserNameAndEmailByBuzzCardNumber?BuzzCardNumber=${cardNumber}`,
-				{
-					method: "GET",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				},
-			);
-
-			if (!response.ok) {
+			const profile = await provider.fetchByCardNumber(normalized);
+			if (!profile) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: `No user exists for the provided card`,
 				});
 			}
 
-			const data = (await response.json()) as { UserName?: string };
-			if (!data || !data.UserName) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: `No user exists for the provided card`,
-				});
-			}
-
-			// Get the username from the response
-			// Sample: 'Lemons, Andrew (alemons8)' => 'alemons8'
-			const username = /\(([^)]+)\)/.exec(data.UserName)?.[1];
-			if (!username) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: `No user exists for the provided card`,
-				});
-			}
-
-			// See if the user exists in our database
 			user = await tx.user.findUnique({
-				where: { username },
+				where: { username: profile.username },
 			});
 
 			if (!user) {
-				// Create the user as if they had logged in on the client (fetch LDAP info)
-				user = await createUser(username);
+				user = await tx.user.create({
+					data: {
+						username: profile.username,
+						name: profile.name,
+						email: profile.email,
+						...(profile.cardNumber ? { cardNumber: profile.cardNumber } : {}),
+					},
+				});
 			}
 
-			// Update (or set) the user's card number in our database
-			await tx.user.update({
-				where: { id: user.id },
-				data: { cardNumber },
-			});
+			const updateData: Prisma.UserUpdateInput = {};
+			if (!user.cardNumber || user.cardNumber !== normalized) {
+				updateData.cardNumber = normalized;
+			}
+			if (profile.name && profile.name !== user.name) {
+				updateData.name = profile.name;
+			}
+			if (profile.email && profile.email !== user.email) {
+				updateData.email = profile.email;
+			}
+
+			if (Object.keys(updateData).length > 0) {
+				user = await tx.user.update({
+					where: { id: user.id },
+					data: updateData,
+				});
+			}
 		}
 
 		return user;

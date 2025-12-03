@@ -1,6 +1,8 @@
 import { formatLog, getLogger } from "./logging";
 
 const log = getLogger("card-scanner");
+const CARD_NUMBER_LENGTH = 9;
+const IIN_LENGTH = 6;
 
 export interface CardScan {
 	id: string;
@@ -107,32 +109,38 @@ export async function connectSerial(
 
 		// Buffer partial incoming chunks until a carriage return is received.
 		// Supports two formats:
-		// - Traditional: "123456\r"  => "123456"
-		// - Long-form: "...=...=...=6017700001234560\r" => take last '=' segment and
-		//   return characters 10..15 (1-based) which yields "123456" in the example.
+		// - Traditional: "000788997\r"  => "000788997"
+		// - Long-form: "...=...=...=6017700001234560\r" => extract the 9 account
+		//   digits between the 6-digit IIN (601770) and trailing checksum (0).
 		const bufferParts: { buf: string } = { buf: "" };
+
+		const normalizeDigits = (raw: string): string | null => {
+			const digits = raw.replace(/\D/g, "");
+			if (!digits) return null;
+			if (digits.length >= CARD_NUMBER_LENGTH + IIN_LENGTH + 1) {
+				const accountPortion = digits.slice(IIN_LENGTH, -1);
+				if (accountPortion.length >= CARD_NUMBER_LENGTH) {
+					return accountPortion
+						.slice(-CARD_NUMBER_LENGTH)
+						.padStart(CARD_NUMBER_LENGTH, "0");
+				}
+			}
+			if (digits.length >= CARD_NUMBER_LENGTH) {
+				return digits.slice(-CARD_NUMBER_LENGTH);
+			}
+			return digits.padStart(CARD_NUMBER_LENGTH, "0");
+		};
 
 		const parseCardData = (raw: string): string | null => {
 			const s = raw.trim();
 			if (!s) return null;
-			// If contains '=', treat as long form
 			if (s.includes("=")) {
 				const parts = s.split("=");
 				const last = parts[parts.length - 1] ?? "";
-				// Extract characters 10..15 (1-based) => substring(9, 15)
-				if (last.length >= 15) {
-					const extracted = last.substring(9, 9 + 6);
-					const digits = extracted.replace(/\D/g, "");
-					return digits || null;
-				}
-				// Fallback: return continuous digits from last segment if it's shorter
-				const fallback = last.replace(/\D/g, "");
-				return fallback || null;
+				return normalizeDigits(last);
 			}
 
-			// Traditional: just return contiguous digits in the string
-			const digits = s.replace(/\D/g, "");
-			return digits || null;
+			return normalizeDigits(s);
 		};
 
 		(async () => {

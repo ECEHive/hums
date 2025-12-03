@@ -18,14 +18,18 @@ export async function updateSystemUsers() {
 	// Add or update system users in the database
 	for (const username of systemUsers) {
 		const userInfo = await fetchUserInfo(username);
+		const cardNumberData = userInfo.cardNumber
+			? { cardNumber: userInfo.cardNumber }
+			: {};
 		await prisma.user.upsert({
 			where: { email: userInfo.email },
-			update: { isSystemUser: true },
+			update: { isSystemUser: true, ...cardNumberData },
 			create: {
 				name: userInfo.name,
 				username: userInfo.username,
 				email: userInfo.email,
 				isSystemUser: true,
+				...cardNumberData,
 			},
 		});
 	}
