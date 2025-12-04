@@ -201,12 +201,15 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 		const { roles, ...userData } = body.data;
 
-		const normalizedCard = normalizeCardNumber(userData.cardNumber);
-		if (!normalizedCard) {
-			return reply.code(400).send({
-				error: "invalid_card_number",
-				message: "Card numbers must contain digits",
-			});
+		let normalizedCard: string | undefined;
+		if (userData.cardNumber !== null && userData.cardNumber !== undefined) {
+			normalizedCard = normalizeCardNumber(userData.cardNumber);
+			if (!normalizedCard) {
+				return reply.code(400).send({
+					error: "invalid_card_number",
+					message: "Card numbers must contain digits",
+				});
+			}
 		}
 
 		const updateData: Prisma.UserUpdateInput = {

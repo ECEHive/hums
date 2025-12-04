@@ -8,7 +8,7 @@ export async function fetchUserInfo(username: string) {
 	return {
 		name: profile?.name ?? username,
 		username: profile?.username ?? username,
-		email: profile?.email ?? fallbackEmail,
+		email: profile?.email || fallbackEmail,
 		cardNumber: profile?.cardNumber,
 	};
 }
