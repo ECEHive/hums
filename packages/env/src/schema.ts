@@ -26,7 +26,7 @@ const BaseEnvSchema = z.object({
 
 const LegacyProviderSchema = z
 	.object({
-		DATA_PROVIDER: z.literal("legacy"),
+		DATA_PROVIDER: z.literal("legacy").default("legacy"),
 	})
 	.and(
 		z.object({

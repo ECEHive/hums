@@ -22,8 +22,13 @@ export async function updateSystemUsers() {
 			? { cardNumber: userInfo.cardNumber }
 			: {};
 		await prisma.user.upsert({
-			where: { email: userInfo.email },
-			update: { isSystemUser: true, ...cardNumberData },
+			where: { username: userInfo.username },
+			update: {
+				isSystemUser: true,
+				name: userInfo.name,
+				email: userInfo.email,
+				...cardNumberData,
+			},
 			create: {
 				name: userInfo.name,
 				username: userInfo.username,

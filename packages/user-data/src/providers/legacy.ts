@@ -66,8 +66,11 @@ export class LegacyUserDataProvider implements UserDataProvider {
 		const normalized = normalizeCardNumber(cardNumber);
 		if (!normalized) return null;
 
+		// SUMS expects an integer card number without leading zeros
+		const sumsCardNumber = parseInt(normalized, 10);
+
 		const response = await fetch(
-			`${SUMS_ENDPOINT}?BuzzCardNumber=${normalized}`,
+			`${SUMS_ENDPOINT}?BuzzCardNumber=${sumsCardNumber}`,
 			{
 				method: "GET",
 				headers: {
