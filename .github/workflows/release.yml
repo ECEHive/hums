@@ -111,7 +111,7 @@ jobs:
             exit 0
           fi
 
-          CLEANED=$(printf "%s," $PR_NUMBERS)
+          CLEANED=$(printf "%s," "$PR_NUMBERS")
           CLEANED=${CLEANED%,}
 
           echo "numbers=$CLEANED" >> "$GITHUB_OUTPUT"
@@ -133,6 +133,9 @@ jobs:
             const tag = process.env.TAG;
             const prTitle = process.env.PR_TITLE || tag;
             const prNumber = Number(process.env.PR_NUMBER);
+            if (!prNumber || isNaN(prNumber)) {
+              throw new Error('PR_NUMBER is required and must be a valid number');
+            }
             const prUrl = process.env.PR_URL;
             const previousTag = process.env.PREVIOUS_TAG;
             const rangeStartSha = process.env.RANGE_START_SHA || '';
@@ -164,9 +167,9 @@ jobs:
 
             const toDate = (value) => value ? new Date(value) : null;
             prDetails.sort((a, b) => {
-              const left = toDate(a.merged_at) || toDate(a.updated_at) || toDate(a.created_at) || 0;
-              const right = toDate(b.merged_at) || toDate(b.updated_at) || toDate(b.created_at) || 0;
-              return left - right;
+              const left = toDate(a.merged_at) || toDate(a.updated_at) || toDate(a.created_at);
+              const right = toDate(b.merged_at) || toDate(b.updated_at) || toDate(b.created_at);
+              return (left?.getTime() || 0) - (right?.getTime() || 0);
             });
 
             const prLines = prDetails.map(pr => {
