@@ -40,9 +40,7 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 	async fetchByUsername(username: string): Promise<UserProfile | null> {
 		const trimmed = username.trim();
 		if (!trimmed) return null;
-		console.log("[user-data][buzzapi] Fetching user by username:", trimmed);
 		const result = await this.request(`gtPrimaryGTAccountUsername=${trimmed}`);
-		console.log("[user-data][buzzapi] Result:", result);
 		return result;
 	}
 
