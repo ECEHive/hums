@@ -14,3 +14,5 @@ if (!parsedEnvResult.success) {
 }
 
 export const env = parsedEnvResult.data;
+
+export type { TEnvSchema } from "./schema";

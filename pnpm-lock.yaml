@@ -385,12 +385,12 @@ importers:
       '@ecehive/env':
         specifier: workspace:*
         version: link:../env
-      '@ecehive/ldap':
-        specifier: workspace:*
-        version: link:../ldap
       '@ecehive/prisma':
         specifier: workspace:*
         version: link:../prisma
+      '@ecehive/user-data':
+        specifier: workspace:*
+        version: link:../user-data
       '@js-temporal/polyfill':
         specifier: ^0.4.4
         version: 0.4.4
@@ -463,6 +463,9 @@ importers:
       '@ecehive/prisma':
         specifier: workspace:*
         version: link:../prisma
+      '@ecehive/user-data':
+        specifier: workspace:*
+        version: link:../user-data
       fastify:
         specifier: ^5.6.0
         version: 5.6.1
@@ -525,6 +528,25 @@ importers:
       vite:
         specifier: ^7.1.7
         version: 7.2.1(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+
+  packages/user-data:
+    dependencies:
+      '@ecehive/env':
+        specifier: workspace:*
+        version: link:../env
+      '@ecehive/ldap':
+        specifier: workspace:*
+        version: link:../ldap
+    devDependencies:
+      '@ecehive/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^24.5.2
+        version: 24.10.1
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   packages/workers:
     dependencies:

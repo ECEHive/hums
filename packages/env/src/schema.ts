@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import z from "zod";
 
-export const ZEnvSchema = z.object({
+const BaseEnvSchema = z.object({
 	NODE_ENV: z
 		.enum(["development", "production", "test"])
 		.default("development"),
@@ -19,10 +19,37 @@ export const ZEnvSchema = z.object({
 		.string()
 		.default("")
 		.describe("Comma-separated list of usernames"),
-	LDAP_HOST: z.string().default("whitepages.gatech.edu"),
-	LDAP_BASE_DN: z.string().default("dc=whitepages,dc=gatech,dc=edu"),
-	LDAP_FALLBACK_EMAIL_DOMAIN: z.string().default("gatech.edu"),
+	DATA_PROVIDER: z.string().default("legacy"),
+	FALLBACK_EMAIL_DOMAIN: z.string().default("gatech.edu"),
 	TZ: z.string().default("America/New_York"),
 });
+
+const LegacyProviderSchema = z
+	.object({
+		DATA_PROVIDER: z.literal("legacy").default("legacy"),
+	})
+	.and(
+		z.object({
+			LDAP_HOST: z.string().default("whitepages.gatech.edu"),
+			LDAP_BASE_DN: z.string().default("dc=whitepages,dc=gatech,dc=edu"),
+		}),
+	);
+
+const BuzzApiProviderSchema = z
+	.object({
+		DATA_PROVIDER: z.literal("buzzapi"),
+	})
+	.and(
+		z.object({
+			BUZZAPI_BASE_URL: z.url(),
+			BUZZAPI_USER: z.string(),
+			BUZZAPI_PASSWORD: z.string(),
+		}),
+	);
+
+export const ZEnvSchema = z.intersection(
+	BaseEnvSchema,
+	z.union([LegacyProviderSchema, BuzzApiProviderSchema]),
+);
 
 export type TEnvSchema = z.infer<typeof ZEnvSchema>;

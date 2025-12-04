@@ -1,5 +1,5 @@
 {
-	"name": "@ecehive/rest",
+	"name": "@ecehive/user-data",
 	"version": "1.0.1",
 	"type": "module",
 	"main": "./src/index.ts",
@@ -7,15 +7,12 @@
 		"tsc": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@ecehive/features": "workspace:*",
-		"@ecehive/prisma": "workspace:*",
-		"@ecehive/user-data": "workspace:*",
-		"fastify": "^5.6.0",
-		"zod": "^3.23.8"
+		"@ecehive/env": "workspace:*",
+		"@ecehive/ldap": "workspace:*"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"@types/node": "^24.10.1",
+		"@types/node": "^24.5.2",
 		"typescript": "^5.9.2"
 	}
 }

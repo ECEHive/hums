@@ -47,14 +47,11 @@ services:
         condition: service_healthy
       prisma-migrate:
         condition: service_completed_successfully
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
       NODE_ENV: production
-      LDAP_HOST: ${LDAP_HOST}
-      LDAP_BASE_DN: ${LDAP_BASE_DN}
-      LDAP_FALLBACK_EMAIL_DOMAIN: ${LDAP_FALLBACK_EMAIL_DOMAIN}
-      SYSTEM_USERS: ${SYSTEM_USERS}
-      AUTH_CAS_SERVER: ${AUTH_CAS_SERVER}
     networks:
       - hums-network
 
