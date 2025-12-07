@@ -6,7 +6,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"check": "biome check --write",
-		"tsc": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ecehive/trpc": "workspace:*",

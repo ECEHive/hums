@@ -4,7 +4,7 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
-		"tsc": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ecehive/features": "workspace:*",

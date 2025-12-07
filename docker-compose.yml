@@ -52,6 +52,9 @@ services:
     environment:
       DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
       NODE_ENV: production
+      PORT: 44830
+    expose:
+      - "44830"
     networks:
       - hums-network
 

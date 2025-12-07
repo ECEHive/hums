@@ -4,7 +4,7 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
-		"tsc": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
@@ -12,7 +12,6 @@
 	},
 	"dependencies": {
 		"@types/node": "^24.5.2",
-		"dotenv": "^17.2.2",
 		"zod": "^4.1.9"
 	}
 }

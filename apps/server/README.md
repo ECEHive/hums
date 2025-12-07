@@ -7,13 +7,13 @@ Backend server for the Hive Shift Scheduler.
 When developing the server, use the `dev` script to run the server with hot-reloads on changes.
 
 ```sh
-pnpm dev
+bun dev
 ```
 
 Use the `start` script to run the server without hot-reloads.
 
 ```sh
-pnpm start
+bun start
 ```
 
 ## Environment Variables

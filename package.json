@@ -2,9 +2,13 @@
 	"name": "@ecehive/hums",
 	"version": "1.0.1",
 	"type": "module",
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
 	"scripts": {
 		"check": "biome check --write",
-		"tsc": "pnpm -r --stream run tsc",
+		"typecheck": "bun --filter './packages/*' --filter './apps/*' typecheck",
 		"set-version": "tsx scripts/set-package-versions.ts"
 	},
 	"devDependencies": {

@@ -18,14 +18,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install
       - name: Run checks
-        run: pnpm exec biome ci
+        run: bun check
 
   typecheck:
     name: Type Checks
@@ -33,18 +31,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install
       - name: Build Prisma
-        run: pnpm run --filter=@ecehive/prisma generate
+        run: bun run --filter=@ecehive/prisma generate
       - name: Run type checks
-        run: pnpm run tsc
+        run: bun run typecheck
 

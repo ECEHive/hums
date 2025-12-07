@@ -19,15 +19,13 @@ This project has a monorepo structure. The `apps/` directory contains applicatio
 
 ## Prerequisites
 
-- Node.js (v18+ recommended)
-- pnpm (workspace-aware package manager)
+- Bun (JS/TS runtime and package manager)
 - Docker (optional, useful for devcontainers)
 
-Check your versions:
+Check your version:
 
 ```sh
-node -v
-pnpm -v
+bun -v
 ```
 
 ## Setup
@@ -44,14 +42,14 @@ pnpm -v
 3. Install dependencies for the whole workspace:
 
 	```sh
-	pnpm install
+	bun install
 	```
 
 4. Generate database and apply migrations:
 
 	```sh
 	cd packages/prisma
-	pnpm generate && pnpm migrate
+	bun generate && bun migrate
 	```
 
 5. Create environment files for each app that needs them (examples are provided):
@@ -70,7 +68,7 @@ Refer to each app's README for required variables.
 To start server, client, and kiosk with hot-reload, run the following in the workspace root,
 
 ```sh
-pnpm run -r dev
+bun run -r dev
 ```
 
 You can then access the client at https://localhost:44831/.

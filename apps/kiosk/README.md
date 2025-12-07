@@ -5,7 +5,7 @@
 Run the client using the `dev` script. This will hot-reload on changes.
 
 ```sh
-pnpm dev
+bun dev
 ```
 
 ## Environment Variables
