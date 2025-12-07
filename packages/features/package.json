@@ -5,7 +5,7 @@
 	"main": "./src/index.ts",
 	"scripts": {
 		"test": "vitest run",
-		"tsc": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",

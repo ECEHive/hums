@@ -7,7 +7,7 @@
 		"dev": "bun --watch ./src/index.ts",
 		"build": "bun build --outdir ./dist --target bun ./src/index.ts",
 		"check": "biome check --write",
-		"tsc": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",

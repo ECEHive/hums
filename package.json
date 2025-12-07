@@ -8,7 +8,7 @@
 	],
 	"scripts": {
 		"check": "biome check --write",
-		"tsc": "bun --filter './packages/*' --filter './apps/*' tsc",
+		"typecheck": "bun --filter './packages/*' --filter './apps/*' typecheck",
 		"set-version": "tsx scripts/set-package-versions.ts"
 	},
 	"devDependencies": {
