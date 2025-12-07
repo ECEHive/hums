@@ -3,7 +3,9 @@ import { ZEnvSchema } from "./schema";
 const parsedEnvResult = ZEnvSchema.safeParse(process.env);
 
 if (!parsedEnvResult.success) {
-	throw new Error("Invalid environment variables");
+	throw new Error(
+		`Environment variable validation failed: ${parsedEnvResult.error.message}`,
+	);
 }
 
 export const env = parsedEnvResult.data;
