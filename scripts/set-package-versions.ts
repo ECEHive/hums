@@ -29,7 +29,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 
-const helpText = `Usage: pnpm set-version <version> [--check] [--dry-run] [--verbose]
+const helpText = `Usage: bun set-version <version> [--check] [--dry-run] [--verbose]
 
 Arguments:
   <version>   Version to apply (accepts optional leading 'v').
@@ -162,7 +162,7 @@ async function main(): Promise<void> {
 				);
 			}
 			console.error(
-				"\nRun 'pnpm set-version " +
+				"\nRun 'bun set-version " +
 					`${version}` +
 					"' to synchronize package versions.",
 			);

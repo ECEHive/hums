@@ -1,11 +1,4 @@
-import path from "node:path";
-import { config } from "dotenv";
 import { ZEnvSchema } from "./schema";
-
-config({
-	path: path.join(process.cwd(), ".env"),
-	debug: false,
-});
 
 const parsedEnvResult = ZEnvSchema.safeParse(process.env);
 

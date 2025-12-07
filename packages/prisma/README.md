@@ -7,7 +7,7 @@ Database schema.
 Before running the server, the database needs to be migrated.
 
 ```
-pnpm migrate
+bun migrate
 ```
 
 ## Reset
@@ -15,5 +15,5 @@ pnpm migrate
 If you need to completely reset your database and run all migrations,
 
 ```
-pnpm reset
+bun reset
 ```
