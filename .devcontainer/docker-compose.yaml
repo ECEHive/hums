@@ -1,11 +1,11 @@
 services:
-  node:
+  bun:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: hums-dev-node
+    container_name: hums-dev-bun
     volumes:
-      - ..:/home/node/workspace:cached
+      - ..:/home/bun/workspace
     depends_on:
       - postgres
     environment:

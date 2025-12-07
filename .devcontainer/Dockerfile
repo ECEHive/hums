@@ -1,18 +1,14 @@
 ARG VARIANT=latest
-FROM node:${VARIANT}
+FROM oven/bun:${VARIANT}
 
-# Install required packages
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
-        git \
-        ldap-utils \
+    git \
+    ldap-utils \
     && apt-get auto-remove -y \
     && apt-get clean -y \
-    && chsh -s $(which bash) node
+    && chsh -s $(which bash) bun \
+    && echo 'export PS1="\e[01;32m\u\e[m:\e[01;34m\w\e[m\$ "' >> /home/bun/.bashrc
 
-# Install PNPM
-RUN npm install -g pnpm
-
-# Setup user and workspace
-USER node
-WORKDIR /home/node/workspace
+USER bun
+WORKDIR /home/bun/workspace
