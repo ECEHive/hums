@@ -1,20 +1,30 @@
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { fetchUserInfo } from "./fetch-user-info";
+import { env } from "@ecehive/env";
 
-export async function createUser(username: string) {
+export type CreateUserOptions = {
+	name?: string | null;
+	email?: string | null;
+	cardNumber?: string | null;
+};
+
+export async function createUser(
+	username: string,
+	options?: CreateUserOptions,
+) {
 	try {
 		// Set basic defaults
-		let name = username;
-		let email = `${username}@gatech.edu`;
-		let cardNumber: string | undefined;
+		let name = options?.name ?? username;
+		let email = options?.email ?? `${username}@${env.FALLBACK_EMAIL_DOMAIN}`;
+		let cardNumber: string | undefined = options?.cardNumber ?? undefined;
 
 		// Attempt to fetch user information from the configured provider
 		try {
 			const userInfo = await fetchUserInfo(username);
-			name = userInfo.name;
-			email = userInfo.email;
-			cardNumber = userInfo.cardNumber ?? undefined;
+			name = userInfo.name ?? name;
+			email = userInfo.email ?? email;
+			cardNumber = userInfo.cardNumber ?? cardNumber ?? undefined;
 		} catch (error) {
 			// If fetch fails, proceed with defaults
 			console.error("User data fetch failed:", error);
