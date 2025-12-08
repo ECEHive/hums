@@ -14,7 +14,12 @@ const BaseEnvSchema = z.object({
 			const buffer = Buffer.from(val);
 			return new Uint8Array(buffer);
 		}),
+	AUTH_PROVIDER: z.enum(["CAS", "CAS_PROXIED"]).default("CAS_PROXIED"),
 	AUTH_CAS_SERVER: z.url(),
+	AUTH_CAS_LOGIN_URL: z.string().url().optional(),
+	AUTH_CAS_VALIDATE_URL: z.string().url().optional(),
+	AUTH_CAS_LOGOUT_URL: z.string().url().optional(),
+	AUTH_CAS_PROXY_URL: z.string().url().optional(),
 	SYSTEM_USERS: z
 		.string()
 		.default("")

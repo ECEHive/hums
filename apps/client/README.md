@@ -14,7 +14,9 @@ bun dev
 
 | Variable | Default | Description |
 | - | - | - |
-| `VITE_CAS_PROXY_URL` | `""` | URL that the user will be redirected to for CAS authentication. | 
+| `VITE_AUTH_PROVIDER` | `"CAS_PROXIED"` | Authentication provider (`CAS` for direct CAS or `CAS_PROXIED` for the proxy flow). |
+| `VITE_CAS_LOGIN_URL` | `""` | CAS login URL to use when `VITE_AUTH_PROVIDER=CAS` (e.g. `https://sso.gatech.edu/cas/login`). |
+| `VITE_CAS_PROXY_URL` | `""` | Proxy CAS URL used only when `VITE_AUTH_PROVIDER=CAS_PROXIED`. |
 | `VITE_CLIENT_SENTRY_DSN` | `""` | Optional DSN if you wish to include Sentry. |
 | `TZ` | `"America/New_York"` | Primary timezone. |
 

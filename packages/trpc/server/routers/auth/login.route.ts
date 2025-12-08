@@ -17,16 +17,34 @@ export type TLoginOptions = {
 export async function loginHandler(options: TLoginOptions) {
 	const { ticket, service } = options.input;
 
-	const username = await validateTicket(ticket, service);
+	if (!service) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Service is required to validate CAS tickets",
+		});
+	}
 
-	if (!username) {
+	const validationResult = await validateTicket(ticket, service);
+
+	if (!validationResult) {
 		throw new TRPCError({
 			code: "UNAUTHORIZED",
 			message: "Invalid ticket",
 		});
 	}
 
-	const user = await findOrCreateUser(username);
+	const derivedName = [
+		validationResult.attributes.givenName,
+		validationResult.attributes.sn,
+	]
+		.filter(Boolean)
+		.join(" ")
+		.trim();
+
+	const user = await findOrCreateUser(validationResult.username, {
+		name: derivedName.length ? derivedName : undefined,
+		email: validationResult.attributes.email,
+	});
 
 	const token = await generateToken(user.id);
 
