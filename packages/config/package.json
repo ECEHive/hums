@@ -3,7 +3,6 @@
 	"version": "1.0.1",
 	"type": "module",
 	"files": [
-		"biome/base.json",
 		"tsconfig/base.json",
 		"tsconfig/node.json",
 		"tsconfig/next-app.json",

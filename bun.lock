@@ -5,7 +5,6 @@
       "name": "@ecehive/hums",
       "devDependencies": {
         "@biomejs/biome": "2.3.8",
-        "@ecehive/config": "workspace:*",
       },
     },
     "apps/client": {

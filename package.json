@@ -12,7 +12,6 @@
 		"set-version": "bun scripts/set-package-versions.ts"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.3.8",
-		"@ecehive/config": "workspace:*"
+		"@biomejs/biome": "2.3.8"
 	}
 }
