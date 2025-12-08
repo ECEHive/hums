@@ -9,7 +9,6 @@ const BaseEnvSchema = z.object({
 	DATABASE_URL: z.url(),
 	AUTH_SECRET: z
 		.string()
-		.default(crypto.randomBytes(64).toString("utf8"))
 		.transform((val) => {
 			const buffer = Buffer.from(val);
 			return new Uint8Array(buffer);
