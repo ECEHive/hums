@@ -1,8 +1,8 @@
 {
 	"name": "hums",
 	"dockerComposeFile": "docker-compose.yaml",
-	"service": "node",
-	"workspaceFolder": "/home/node/workspace",
+	"service": "bun",
+	"workspaceFolder": "/home/bun/workspace",
 	"customizations": {
 		"vscode": {
 			"extensions": [

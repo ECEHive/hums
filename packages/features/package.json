@@ -1,22 +1,22 @@
 {
 	"name": "@ecehive/features",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
 		"test": "vitest run",
-		"tsc": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
-		"@ecehive/ldap": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
-		"@js-temporal/polyfill": "^0.4.4",
-		"@trpc/server": "11.5.1"
+		"@ecehive/user-data": "workspace:*",
+		"@js-temporal/polyfill": "^0.5.1",
+		"@trpc/server": "11.7.2"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"typescript": "^5.9.2",
-		"vitest": "^3.2.4"
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.15"
 	}
 }

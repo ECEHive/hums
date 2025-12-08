@@ -1,10 +1,10 @@
 {
 	"name": "@ecehive/ldap",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
-		"tsc": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",

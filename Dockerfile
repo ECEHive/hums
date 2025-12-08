@@ -1,159 +1,164 @@
 # =============================================================================
-# Base Stage - Common setup for all services
+# Base Stage - Bun runtime
 # =============================================================================
-FROM node:22-alpine AS base
-
-# Enable pnpm
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-
-# Install reusable packages
-RUN apk add --no-cache \
-    git
+FROM oven/bun:1 AS base
 
 WORKDIR /app
 
 # =============================================================================
-# Dependencies Stage - Install all dependencies with cache mounting
+# Install Dependencies Stage
 # =============================================================================
-FROM base AS deps
+FROM base AS install
 
-# Copy package manifests
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/server/package.json ./apps/server/
-COPY apps/client/package.json ./apps/client/
-COPY apps/kiosk/package.json ./apps/kiosk/
-COPY packages/auth/package.json ./packages/auth/
-COPY packages/config/package.json ./packages/config/
-COPY packages/env/package.json ./packages/env/
-COPY packages/features/package.json ./packages/features/
-COPY packages/ldap/package.json ./packages/ldap/
-COPY packages/prisma/package.json ./packages/prisma/
-COPY packages/trpc/package.json ./packages/trpc/
-COPY packages/workers/package.json ./packages/workers/
+# Copy manifests and workspaces (respects .dockerignore) so Bun can resolve workspace:* links
+COPY package.json bun.lock ./
+COPY apps ./apps
+COPY packages ./packages
 
-# Install PNPM dependencies with cache mount
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+# Install all dependencies
+RUN bun install --frozen-lockfile
 
 # =============================================================================
-# Build Stage - Build all applications
+# Install Dependencies Stage (production only)
 # =============================================================================
-FROM deps AS build
+FROM base AS install-prod
 
-ARG VITE_CAS_PROXY_URL
-ARG VITE_CLIENT_SENTRY_DSN
-ARG VITE_KIOSK_SENTRY_DSN
-ARG TZ
-ENV VITE_CAS_PROXY_URL=$VITE_CAS_PROXY_URL
-ENV VITE_CLIENT_SENTRY_DSN=$VITE_CLIENT_SENTRY_DSN
-ENV VITE_KIOSK_SENTRY_DSN=$VITE_KIOSK_SENTRY_DSN
-ENV TZ=$TZ
+# Copy manifests and workspaces (respects .dockerignore) so Bun can resolve workspace:* links
+COPY package.json bun.lock ./
+COPY apps ./apps
+COPY packages ./packages
 
-# Copy source code
-COPY . .
+# Install only production dependencies
+RUN bun install --frozen-lockfile --production
+
+# =============================================================================
+# Build Stage - Server only (avoid frontend env leakage)
+# =============================================================================
+FROM install AS build-server
+
+# OpenSSL needed for Prisma engines during build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set dummy DATABASE_URL for Prisma generation
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 
-# Generate Prisma client
-RUN pnpm --filter @ecehive/prisma exec prisma generate
+# Generate Prisma client from prisma workspace
+WORKDIR /app/packages/prisma
+RUN bun x prisma generate
+WORKDIR /app
 
-# Build all client apps
-RUN pnpm --filter @ecehive/client build
-RUN pnpm --filter @ecehive/kiosk build
-
-# =============================================================================
-# Server Production Dependencies
-# =============================================================================
-FROM build AS server-prod-deps
-
-# Deploy server with production dependencies only
-RUN pnpm deploy --filter=@ecehive/server --prod --legacy /prod/server
-
-# Copy Prisma files for migrations
-RUN mkdir -p /prod/server/prisma && \
-    cp -R packages/prisma/migrations /prod/server/prisma/ 2>/dev/null || true && \
-    cp packages/prisma/schema.prisma /prod/server/prisma/schema.prisma 2>/dev/null || true
+# Build server using Bun bundler
+WORKDIR /app/apps/server
+RUN bun run build
+WORKDIR /app
 
 # =============================================================================
-# Prisma Production Dependencies
+# Build Stage - Frontends only (explicit build args)
 # =============================================================================
-FROM build AS prisma-prod-deps
+FROM install AS build-web
 
-# Deploy prisma with production dependencies only
-RUN pnpm deploy --filter=@ecehive/prisma --prod --legacy /prod/prisma
+ARG VITE_AUTH_PROVIDER
+ARG VITE_CAS_LOGIN_URL
+ARG VITE_CAS_PROXY_URL
+ARG VITE_CLIENT_SENTRY_DSN
+ARG VITE_KIOSK_SENTRY_DSN
+ARG TZ
+ENV VITE_AUTH_PROVIDER=$VITE_AUTH_PROVIDER
+ENV VITE_CAS_LOGIN_URL=$VITE_CAS_LOGIN_URL
+ENV VITE_CAS_PROXY_URL=$VITE_CAS_PROXY_URL
+ENV VITE_CLIENT_SENTRY_DSN=$VITE_CLIENT_SENTRY_DSN
+ENV VITE_KIOSK_SENTRY_DSN=$VITE_KIOSK_SENTRY_DSN
+ENV TZ=${TZ:-America/New_York}
+
+# Build client and kiosk with Vite
+WORKDIR /app/apps/client
+RUN bun run build
+WORKDIR /app/apps/kiosk
+RUN bun run build
+WORKDIR /app
 
 # =============================================================================
 # Prisma Migration Runner (one-shot)
 # =============================================================================
-FROM base AS prisma-migrate
+FROM install-prod AS prisma-migrate
 
-# Copy production prisma artifacts
-COPY --from=prisma-prod-deps /prod/prisma /prod/prisma
+WORKDIR /app/packages/prisma
 
-WORKDIR /prod/prisma
+# OpenSSL needed for Prisma engines at runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user and fix ownership
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /prod/prisma
+# Create non-root user if missing (oven/bun already provides `bun` user)
+RUN id -u bun >/dev/null 2>&1 || useradd -m -u 1001 bun
+RUN chown -R bun:bun /app
 
-USER nodejs
+USER bun
 
-# Default command to run migrations (override at runtime as needed)
-CMD ["pnpm", "migrate"]
+# Default command to run migrations
+CMD ["bun", "x", "prisma", "migrate", "deploy"]
 
 # =============================================================================
 # Server Production Image
 # =============================================================================
-
 FROM base AS server
 
-# Install runtime-only packages needed by the server
-RUN apk add --no-cache openldap-clients
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ldap-utils \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy production dependencies and code
-COPY --from=server-prod-deps /prod/server /prod/server
+# Copy built server code
+COPY --from=build-server /app/apps/server/dist /app/apps/server/dist
 
-WORKDIR /prod/server
+# Copy Prisma files for runtime access
+COPY --from=build-server /app/packages/prisma /app/packages/prisma
+
+# Copy production dependency set
+COPY --from=install-prod /app/node_modules /app/node_modules
+COPY --from=install-prod /app/package.json /app/package.json
+COPY --from=install-prod /app/apps/server/package.json /app/apps/server/package.json
+COPY --from=install-prod /app/bun.lock /app/bun.lock
+
+WORKDIR /app
 
 # Set environment to production
 ENV NODE_ENV=production
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /prod/server
+# Create non-root user if missing (oven/bun already provides `bun` user)
+RUN id -u bun >/dev/null 2>&1 || useradd -m -u 1001 bun
+RUN chown -R bun:bun /app
 
-USER nodejs
+USER bun
 
-# Expose server port
-EXPOSE 80
+# Expose server port (default 44830)
+EXPOSE 44830
 
-# Health check
+# Health check against running server (uses /api root which returns 200)
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:80/api/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:44830/api || exit 1
 
-# Start the server
-CMD ["pnpm", "start"]
+# Start the server using the built index.js
+CMD ["bun", "/app/apps/server/dist/index.js"]
 
 # =============================================================================
-# NGINX Proxy with Client and Kiosk
+# NGINX Proxy with Client and Kiosk Static Files
 # =============================================================================
 FROM nginx:alpine AS nginx
 
-# Declare ARG to receive build argument
-# This is not used directly in this stage, but allows passing to the build stage
+ARG VITE_AUTH_PROVIDER
+ARG VITE_CAS_LOGIN_URL
 ARG VITE_CAS_PROXY_URL
 ARG VITE_CLIENT_SENTRY_DSN
 ARG VITE_KIOSK_SENTRY_DSN
 ARG TZ
 
-# Copy built static files for both apps
-COPY --from=build /app/apps/client/dist /usr/share/nginx/html/client
-COPY --from=build /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
+# Copy built static files
+COPY --from=build-web /app/apps/client/dist /usr/share/nginx/html/client
+COPY --from=build-web /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf

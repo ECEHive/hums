@@ -4,13 +4,7 @@
 		{
 			"label": "Install Dependencies",
 			"type": "shell",
-			"command": "pnpm install",
-			"problemMatcher": []
-		},
-		{
-			"label": "Check",
-			"type": "shell",
-			"command": "pnpm check",
+			"command": "bun install",
 			"problemMatcher": []
 		}
 	]

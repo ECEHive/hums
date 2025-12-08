@@ -31,7 +31,7 @@ Use one of the following patterns:
 Before committing, always run the checks:
 
 ```sh
-pnpm check
+bun check
 ```
 
 This ensures formatting, type checks, and tests all pass.
@@ -43,7 +43,7 @@ If your code doesn’t pass these checks, please fix any issues before submittin
 
 1. **Create your branch** from `dev`.
 2. **Make your changes** — try to keep commits focused and clear.
-3. **Run checks** with `pnpm check`.
+3. **Run checks** with `bun check`.
 4. **Push your branch** and open a pull request into `dev`.
 
 Your PR title should briefly describe the change.

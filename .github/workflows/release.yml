@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
       
       - name: Validate and extract version
         id: extract_version
@@ -49,52 +50,179 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "✅ Tag $TAG does not exist yet"
           fi
+
+      - name: Determine release window
+        id: release_window
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+        run: |
+          set -euo pipefail
+
+          CURRENT_SHA="${MERGE_SHA:-${GITHUB_SHA}}"
+
+          if git tag -l 'v*' | grep -q .; then
+            PREVIOUS_TAG=$(git describe --tags --abbrev=0 --match 'v*' HEAD 2>/dev/null || "")
+          else
+            PREVIOUS_TAG=""
+          fi
+
+          ROOT_SHA=$(git rev-list --max-parents=0 HEAD | tail -n 1)
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RANGE_START_REF="$PREVIOUS_TAG"
+            RANGE_START_SHA=$(git rev-list -n 1 "$PREVIOUS_TAG")
+          else
+            RANGE_START_REF="$ROOT_SHA"
+            RANGE_START_SHA="$ROOT_SHA"
+          fi
+
+          echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+          echo "range_start_ref=$RANGE_START_REF" >> "$GITHUB_OUTPUT"
+          echo "range_start_sha=$RANGE_START_SHA" >> "$GITHUB_OUTPUT"
+          echo "current_sha=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Collect merged PR numbers
+        id: collect_prs
+        env:
+          RANGE_START: ${{ steps.release_window.outputs.range_start_ref }}
+          CURRENT_SHA: ${{ steps.release_window.outputs.current_sha }}
+        run: |
+          set -euo pipefail
+
+          RANGE="${RANGE_START}..${CURRENT_SHA}"
+          COMMITS=$(git log --pretty=format:%s "$RANGE")
+
+          if [ -z "$COMMITS" ]; then
+            echo "numbers=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PR_CANDIDATES=$(printf "%s\n" "$COMMITS" | grep -oE '\(#([0-9]+)\)' || true)
+
+          if [ -z "$PR_CANDIDATES" ]; then
+            echo "numbers=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PR_NUMBERS=$(printf "%s\n" "$PR_CANDIDATES" | sed -E 's/[^0-9]//g' | awk 'NF' | sort -un)
+
+          if [ -z "$PR_NUMBERS" ]; then
+            echo "numbers=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CLEANED=$(printf "%s," "$PR_NUMBERS")
+          CLEANED=${CLEANED%,}
+
+          echo "numbers=$CLEANED" >> "$GITHUB_OUTPUT"
       
       - name: Create Release
         if: steps.check_tag.outputs.exists == 'false'
         uses: actions/github-script@v7
+        env:
+          TAG: ${{ steps.extract_version.outputs.tag }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PREVIOUS_TAG: ${{ steps.release_window.outputs.previous_tag }}
+          RANGE_START_SHA: ${{ steps.release_window.outputs.range_start_sha }}
+          CURRENT_SHA: ${{ steps.release_window.outputs.current_sha }}
+          PR_NUMBERS: ${{ steps.collect_prs.outputs.numbers }}
         with:
           script: |
-            const tag = '${{ steps.extract_version.outputs.tag }}';
-            const prTitle = '${{ github.event.pull_request.title }}';
-            const prBody = `${{ github.event.pull_request.body }}`;
-            const prNumber = ${{ github.event.pull_request.number }};
-            const prUrl = '${{ github.event.pull_request.html_url }}';
-            const shortSha = context.sha.substring(0, 7);
-            const summaryBody = prBody && prBody.trim() !== ''
-              ? prBody.trim()
-              : `See PR #${prNumber} for details.`;
-            const releaseBody = [
+            const tag = process.env.TAG;
+            const prTitle = process.env.PR_TITLE || tag;
+            const prNumber = Number(process.env.PR_NUMBER);
+            if (!prNumber || isNaN(prNumber)) {
+              throw new Error('PR_NUMBER is required and must be a valid number');
+            }
+            const prUrl = process.env.PR_URL;
+            const previousTag = process.env.PREVIOUS_TAG;
+            const rangeStartSha = process.env.RANGE_START_SHA || '';
+            const currentSha = process.env.CURRENT_SHA || context.sha;
+            const currentShortSha = currentSha.substring(0, 7);
+            const prNumbers = (process.env.PR_NUMBERS || '')
+              .split(',')
+              .map(n => n.trim())
+              .filter(Boolean)
+              .map(Number);
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const prDetails = [];
+
+            for (const number of prNumbers) {
+              try {
+                const { data } = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: number
+                });
+                prDetails.push(data);
+              } catch (error) {
+                core.warning(`Skipping #${number}: ${error.message}`);
+              }
+            }
+
+            const toDate = (value) => value ? new Date(value) : null;
+            prDetails.sort((a, b) => {
+              const left = toDate(a.merged_at) || toDate(a.updated_at) || toDate(a.created_at);
+              const right = toDate(b.merged_at) || toDate(b.updated_at) || toDate(b.created_at);
+              return (left?.getTime() || 0) - (right?.getTime() || 0);
+            });
+
+            const prLines = prDetails.map(pr => {
+              const author = pr.user?.login ? ` (@${pr.user.login})` : '';
+              return `- [#${pr.number}](${pr.html_url}) ${pr.title}${author}`;
+            });
+
+            const rangeStartLabel = previousTag || (rangeStartSha ? rangeStartSha.substring(0, 7) : 'initial');
+            const rangeLabel = `${rangeStartLabel}..${currentShortSha}`;
+
+            const sections = [
               `## Release ${tag}`,
               '',
-              `**Pull Request:** [#${prNumber}](${prUrl})`,
-              `**Commit:** ${shortSha}`,
+              `**Range:** ${rangeLabel}`,
+              `**Tag:** ${tag}`,
+              `**Target Commit:** ${currentSha}`,
               '',
-              '### Summary',
+              '### Included Pull Requests',
+              ''
+            ];
+
+            if (prLines.length) {
+              sections.push(...prLines);
+            } else {
+              sections.push('_No merged feature pull requests detected in this release window._');
+            }
+
+            sections.push(
               '',
-              summaryBody
-            ].join('\n');
-            
+              '---',
+              `Release PR: [#${prNumber}](${prUrl})`
+            );
+
+            const releaseBody = sections.join('\n');
+
             try {
-              // Create the release (this also creates the tag)
               const release = await github.rest.repos.createRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner,
+                repo,
                 tag_name: tag,
                 name: prTitle,
                 body: releaseBody,
                 draft: false,
                 prerelease: tag.includes('-'),
-                target_commitish: context.sha
+                target_commitish: currentSha
               });
-              
+
               console.log(`✅ Release created: ${release.data.html_url}`);
-              
-              // Comment on the PR
+
               await github.rest.issues.createComment({
                 issue_number: prNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner,
+                repo,
                 body: `🎉 Release [${tag}](${release.data.html_url}) has been created!`
               });
             } catch (error) {

@@ -1,21 +1,33 @@
+import { env } from "@ecehive/env";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { fetchUserInfo } from "./fetch-user-info";
 
-export async function createUser(username: string) {
+export type CreateUserOptions = {
+	name?: string | null;
+	email?: string | null;
+	cardNumber?: string | null;
+};
+
+export async function createUser(
+	username: string,
+	options?: CreateUserOptions,
+) {
 	try {
 		// Set basic defaults
-		let name = username;
-		let email = `${username}@gatech.edu`;
+		let name = options?.name ?? username;
+		let email = options?.email ?? `${username}@${env.FALLBACK_EMAIL_DOMAIN}`;
+		let cardNumber: string | undefined = options?.cardNumber ?? undefined;
 
-		// Attempt to fetch user information from LDAP
+		// Attempt to fetch user information from the configured provider
 		try {
 			const userInfo = await fetchUserInfo(username);
-			name = userInfo.name;
-			email = userInfo.email;
+			name = userInfo.name ?? name;
+			email = userInfo.email ?? email;
+			cardNumber = userInfo.cardNumber ?? cardNumber ?? undefined;
 		} catch (error) {
-			// If LDAP fetch fails, proceed with defaults
-			console.error("LDAP fetch failed:", error);
+			// If fetch fails, proceed with defaults
+			console.error("User data fetch failed:", error);
 		}
 
 		const newUser = await prisma.user.create({
@@ -23,6 +35,7 @@ export async function createUser(username: string) {
 				name,
 				username,
 				email,
+				...(cardNumber ? { cardNumber } : {}),
 			},
 		});
 

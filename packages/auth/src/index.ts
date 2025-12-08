@@ -4,21 +4,43 @@ import { jwtVerify, SignJWT } from "jose";
 
 const parser = new XMLParser();
 
+const getCasField = <T = unknown>(
+	obj: Record<string, unknown> | undefined,
+	key: string,
+): T | undefined => {
+	return (obj?.[`cas:${key}`] ?? obj?.[key]) as T | undefined;
+};
+
+export type CasAttributes = {
+	uid?: string;
+	email?: string;
+	givenName?: string;
+	sn?: string;
+};
+
+export type CasValidationResult = {
+	username: string;
+	attributes: CasAttributes;
+};
+
 /**
- * Validate a CAS ticket and return the user's username.
+ * Validate a CAS ticket and return user details.
  * @param ticket - The ticket provided by the user from the CAS server.
  * @param service - The service URL to provide to the CAS server when validating the ticket.
- * @returns The user's username or null if validation fails.
+ * @returns CAS user details or null if validation fails.
  */
-export async function validateTicket(ticket: string, service: string) {
+export async function validateTicket(
+	ticket: string,
+	service: string,
+): Promise<CasValidationResult | null> {
 	try {
 		const query = new URLSearchParams({
-			service: service,
-			ticket: ticket,
+			service,
+			ticket,
 		});
 
 		const response = await fetch(
-			`${env.AUTH_CAS_SERVER}/cas/serviceValidate?${query.toString()}`,
+			`${env.AUTH_CAS_VALIDATE_URL}?${query.toString()}`,
 		);
 
 		if (!response.ok) {
@@ -29,16 +51,36 @@ export async function validateTicket(ticket: string, service: string) {
 		const text = await response.text();
 		const result = parser.parse(text);
 
+		const serviceResponse = getCasField<Record<string, unknown>>(
+			result as Record<string, unknown>,
+			"serviceResponse",
+		);
+		const authenticationSuccess = getCasField<Record<string, unknown>>(
+			serviceResponse,
+			"authenticationSuccess",
+		);
+
 		const user =
-			result?.["cas:serviceResponse"]?.["cas:authenticationSuccess"]?.[
-				"cas:user"
-			];
+			getCasField<string>(authenticationSuccess, "user") ??
+			getCasField<string>(authenticationSuccess, "uid");
 
 		if (!user) {
 			return null;
 		}
 
-		return user as string;
+		const attributesRaw = getCasField<Record<string, unknown>>(
+			authenticationSuccess,
+			"attributes",
+		);
+
+		const attributes: CasAttributes = {
+			uid: getCasField<string>(attributesRaw, "uid"),
+			email: getCasField<string>(attributesRaw, "eduPersonPrincipalName"),
+			givenName: getCasField<string>(attributesRaw, "givenName"),
+			sn: getCasField<string>(attributesRaw, "sn"),
+		};
+
+		return { username: user, attributes };
 	} catch (error) {
 		console.error("Error validating CAS ticket:", error);
 		return null;

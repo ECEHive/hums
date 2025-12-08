@@ -16,22 +16,69 @@ import { Spinner } from "@/components/ui/spinner";
 
 export const Route = createFileRoute("/login")({ component: Login });
 
+type AuthProvider = "CAS" | "CAS_PROXIED";
+
+const resolveAuthProvider = (value?: string): AuthProvider => {
+	if (value === "CAS_PROXIED") return "CAS_PROXIED";
+	return "CAS";
+};
+
+const sanitizeRedirect = (target: string | null) => {
+	const fallback = "/app";
+	const trimmed = (target ?? "").trim();
+	if (!trimmed) return fallback;
+
+	// Only allow same-origin or relative redirects
+	if (trimmed.startsWith("/")) {
+		return trimmed;
+	}
+
+	if (typeof window !== "undefined") {
+		try {
+			const url = new URL(trimmed, window.location.origin);
+			if (url.origin === window.location.origin) {
+				return `${url.pathname}${url.search}${url.hash}`;
+			}
+		} catch (error) {
+			console.error("Invalid redirect provided", error);
+		}
+	}
+
+	return fallback;
+};
+
 function Login() {
 	const { setToken, status, token } = useAuth();
 	const router = useRouter();
+	const authProvider = resolveAuthProvider(import.meta.env.VITE_AUTH_PROVIDER);
 	const params = useMemo(() => {
 		if (typeof window === "undefined") return new URLSearchParams("");
 		return new URLSearchParams(window.location.search);
 	}, []);
 
 	const ticket = params.get("ticket") ?? "";
-	const service = params.get("service") ?? "";
-	const returnTo = params.get("returnTo") ?? "/app";
+	const serviceFromUrl = params.get("service") ?? "";
+	const redirectParam = params.get("redirect") ?? params.get("returnTo");
+	const redirectTo = useMemo(
+		() => sanitizeRedirect(redirectParam),
+		[redirectParam],
+	);
+
+	const service = useMemo(() => {
+		if (serviceFromUrl) return serviceFromUrl;
+		if (typeof window === "undefined") return "";
+		const current = new URL(window.location.href);
+		current.searchParams.delete("ticket");
+		current.searchParams.delete("service");
+		current.searchParams.delete("returnTo");
+		current.searchParams.set("redirect", redirectTo);
+		return current.toString();
+	}, [serviceFromUrl, redirectTo]);
 
 	// If we're already logged in, go to the app
 	useEffect(() => {
 		if (status === "authenticated") {
-			void router.navigate({ to: returnTo });
+			void router.navigate({ to: redirectTo });
 			return;
 		}
 
@@ -39,7 +86,7 @@ function Login() {
 		if (status === "unauthenticated" && token) {
 			setToken(null);
 		}
-	}, [status, router, returnTo, token, setToken]);
+	}, [status, router, redirectTo, token, setToken]);
 
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["login", ticket, service],
@@ -53,22 +100,36 @@ function Login() {
 	useEffect(() => {
 		if (data?.token) {
 			setToken(data.token);
-			void router.navigate({ to: returnTo });
+			void router.navigate({ to: redirectTo });
 		}
-	}, [data?.token, setToken, router, returnTo]);
+	}, [data?.token, setToken, router, redirectTo]);
 
 	// Start CAS login on demand
 	const startCasLogin = () => {
 		if (typeof window === "undefined") return;
-		const current = new URL(window.location.href);
+		if (!service) return;
 
-		// Remove old params we don't need to propagate
-		current.searchParams.delete("ticket");
-		current.searchParams.delete("service");
-		if (!current.searchParams.get("returnTo"))
-			current.searchParams.set("returnTo", returnTo);
-		const redirect = encodeURIComponent(current.toString());
-		const casUrl = `${import.meta.env.VITE_CAS_PROXY_URL}?redirect=${redirect}`;
+		const redirect = encodeURIComponent(service);
+		if (authProvider === "CAS") {
+			const loginUrl = import.meta.env.VITE_CAS_LOGIN_URL;
+			if (!loginUrl) {
+				console.error("VITE_CAS_LOGIN_URL must be configured for CAS login.");
+				return;
+			}
+			const casLoginUrl = new URL(loginUrl);
+			casLoginUrl.searchParams.set("service", service);
+			window.location.href = casLoginUrl.toString();
+			return;
+		}
+
+		const proxyUrl = import.meta.env.VITE_CAS_PROXY_URL;
+		if (!proxyUrl) {
+			console.error(
+				"VITE_CAS_PROXY_URL must be configured when using CAS_PROXIED auth.",
+			);
+			return;
+		}
+		const casUrl = `${proxyUrl}?redirect=${redirect}`;
 		window.location.href = casUrl;
 	};
 

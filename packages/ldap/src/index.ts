@@ -46,7 +46,7 @@ export async function searchLdap(
 			displayName: username,
 			givenName: username,
 			sn: null,
-			mail: `${username}@${env.LDAP_FALLBACK_EMAIL_DOMAIN}`,
+			mail: `${username}@${env.FALLBACK_EMAIL_DOMAIN}`,
 		};
 
 		return { entries: [fallbackEntry], metadata: {} };
