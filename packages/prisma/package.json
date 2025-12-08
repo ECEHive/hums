@@ -12,15 +12,13 @@
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
-		"@prisma/client": "^6.19.0",
-		"prisma": "^6.19.0",
-		"dotenv": "^17.2.2"
+		"@prisma/client": "^7.1.0",
+		"prisma": "^7.1.0"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"@types/node": "^24.5.2",
+		"@types/node": "^24.10.1",
 		"ts-node": "^10.9.2",
-		"tsx": "^4.20.5",
-		"typescript": "^5.9.2"
+		"typescript": "^5.9.3"
 	}
 }

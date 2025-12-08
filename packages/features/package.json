@@ -11,12 +11,12 @@
 		"@ecehive/env": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"@ecehive/user-data": "workspace:*",
-		"@js-temporal/polyfill": "^0.4.4",
-		"@trpc/server": "11.5.1"
+		"@js-temporal/polyfill": "^0.5.1",
+		"@trpc/server": "11.7.2"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"typescript": "^5.9.2",
-		"vitest": "^3.2.4"
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.15"
 	}
 }

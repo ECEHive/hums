@@ -9,11 +9,10 @@
 	"scripts": {
 		"check": "biome check --write",
 		"typecheck": "bun --filter './packages/*' --filter './apps/*' typecheck",
-		"set-version": "tsx scripts/set-package-versions.ts"
+		"set-version": "bun scripts/set-package-versions.ts"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
-		"@ecehive/config": "workspace:*",
-		"tsx": "^4.20.6"
+		"@biomejs/biome": "2.3.8",
+		"@ecehive/config": "workspace:*"
 	}
 }
