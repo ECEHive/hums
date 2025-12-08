@@ -2,7 +2,6 @@ import { env } from "@ecehive/env";
 import { Temporal } from "@js-temporal/polyfill";
 
 export const APP_TIME_ZONE = env.TZ;
-export const TEMPORAL_TIME_ZONE = Temporal.TimeZone.from(APP_TIME_ZONE);
 const MIDNIGHT = new Temporal.PlainTime(0, 0, 0);
 
 export function instantFromDate(date: Date): Temporal.Instant {
@@ -10,7 +9,7 @@ export function instantFromDate(date: Date): Temporal.Instant {
 }
 
 export function zonedDateTimeFromDate(date: Date): Temporal.ZonedDateTime {
-	return instantFromDate(date).toZonedDateTimeISO(TEMPORAL_TIME_ZONE);
+	return instantFromDate(date).toZonedDateTimeISO(APP_TIME_ZONE);
 }
 
 export function plainDateFromDate(date: Date): Temporal.PlainDate {
@@ -26,7 +25,7 @@ export function zonedDateTimeFor(
 	time: Temporal.PlainTime,
 ): Temporal.ZonedDateTime {
 	return Temporal.ZonedDateTime.from({
-		timeZone: TEMPORAL_TIME_ZONE,
+		timeZone: APP_TIME_ZONE,
 		year: date.year,
 		month: date.month,
 		day: date.day,

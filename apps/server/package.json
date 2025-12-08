@@ -16,12 +16,11 @@
 		"@ecehive/trpc": "workspace:*",
 		"@ecehive/workers": "workspace:*",
 		"@fastify/cors": "^11.1.0",
-		"@trpc/server": "11.5.1",
-		"fastify": "^5.6.0",
-		"tsx": "^4.20.6"
+		"@trpc/server": "11.7.2",
+		"fastify": "^5.6.2"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"typescript": "^5.9.2"
+		"typescript": "^5.9.3"
 	}
 }

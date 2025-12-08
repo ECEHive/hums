@@ -3,14 +3,13 @@
 	"version": "1.0.1",
 	"type": "module",
 	"files": [
-		"biome/base.json",
 		"tsconfig/base.json",
 		"tsconfig/node.json",
 		"tsconfig/next-app.json",
 		"tsconfig/react-lib.json"
 	],
 	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
-		"@types/node": "^24.5.2"
+		"@biomejs/biome": "2.3.8",
+		"@types/node": "^24.10.1"
 	}
 }
