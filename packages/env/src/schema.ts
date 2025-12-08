@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import z from "zod";
 
 const BaseEnvSchema = z.object({
@@ -7,13 +6,10 @@ const BaseEnvSchema = z.object({
 		.default("development"),
 	PORT: z.coerce.number().default(44830),
 	DATABASE_URL: z.url(),
-	AUTH_SECRET: z
-		.string()
-		.default(crypto.randomBytes(64).toString("utf8"))
-		.transform((val) => {
-			const buffer = Buffer.from(val);
-			return new Uint8Array(buffer);
-		}),
+	AUTH_SECRET: z.string().transform((val) => {
+		const buffer = Buffer.from(val);
+		return new Uint8Array(buffer);
+	}),
 	AUTH_PROVIDER: z.enum(["CAS", "CAS_PROXIED"]).default("CAS_PROXIED"),
 	AUTH_CAS_SERVER: z.url(),
 	AUTH_CAS_LOGIN_URL: z.string().url().optional(),
