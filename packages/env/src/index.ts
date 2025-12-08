@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 import { ZEnvSchema } from "./schema";
 
 const applyAuthDefaults = (rawEnv: z.infer<typeof ZEnvSchema>) => {

@@ -1,7 +1,7 @@
+import { env } from "@ecehive/env";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { fetchUserInfo } from "./fetch-user-info";
-import { env } from "@ecehive/env";
 
 export type CreateUserOptions = {
 	name?: string | null;

@@ -1,4 +1,4 @@
-import { createUser, type CreateUserOptions } from "./create-user";
+import { type CreateUserOptions, createUser } from "./create-user";
 import { findUser } from "./find-user";
 
 export async function findOrCreateUser(
