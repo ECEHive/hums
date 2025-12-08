@@ -1,6 +1,11 @@
-import { PrismaClient } from "../generated/prisma/client";
+import { env } from "@ecehive/env";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../generated/client";
 
-export const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+	connectionString: env.DATABASE_URL,
+});
+export const prisma = new PrismaClient({ adapter });
 
-export type * from "../generated/prisma/client";
-export { Prisma } from "../generated/prisma/client";
+export type * from "../generated/client";
+export { Prisma } from "../generated/client";

@@ -12,12 +12,15 @@
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
+		"@prisma/adapter-pg": "^7.1.0",
 		"@prisma/client": "^7.1.0",
+		"pg": "^8.16.3",
 		"prisma": "^7.1.0"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
 		"@types/node": "^24.10.1",
+		"@types/pg": "^8.15.6",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.9.3"
 	}
