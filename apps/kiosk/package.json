@@ -19,6 +19,7 @@
 		"@tanstack/react-query-devtools": "^5.91.1",
 		"@trpc/client": "11.7.2",
 		"@trpc/tanstack-react-query": "11.7.2",
+		"@vladmandic/human": "^3.3.1",
 		"@vitejs/plugin-basic-ssl": "^2.1.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",

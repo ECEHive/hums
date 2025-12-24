@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { FaceRecognitionPanel } from "@/components/face-recognition-panel";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
@@ -128,6 +129,8 @@ function App() {
 							/>
 						)}
 					</div>
+
+					<FaceRecognitionPanel />
 				</main>
 			</div>
 		</KioskContainer>
