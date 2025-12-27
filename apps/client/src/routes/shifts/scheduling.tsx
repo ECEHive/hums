@@ -82,6 +82,17 @@ function Scheduling() {
 			});
 		},
 		enabled: !!selectedPeriodId,
+		retry: (failureCount, error) => {
+			// Don't retry on 403 FORBIDDEN errors (visibility window)
+			if (error && typeof error === "object" && "data" in error) {
+				const trpcError = error as { data?: { httpStatus?: number } };
+				if (trpcError.data?.httpStatus === 403) {
+					return false;
+				}
+			}
+			// For other errors, retry up to 3 times (default behavior)
+			return failureCount < 3;
+		},
 	});
 
 	// Get time window status from server response
