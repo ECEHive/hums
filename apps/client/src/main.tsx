@@ -4,12 +4,12 @@ import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import { NotFound } from "@/components/not-found";
-import { ThemeProvider } from "@/components/theme-provider";
+import { NotFound } from "@/components/errors/not-found";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import * as Sentry from "@sentry/react";
-import { ErrorPage } from "./components/error-page";
+import { ErrorPage } from "./components/errors/error-page";
 import { routeTree } from "./routeTree.gen";
 
 if ((import.meta.env.VITE_CLIENT_SENTRY_DSN ?? "").trim().length > 0) {

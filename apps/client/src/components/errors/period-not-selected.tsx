@@ -11,7 +11,7 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import { checkPermissions } from "@/lib/permissions";
-import { CreatePeriodSheet } from "./periods/create-period-sheet";
+import { CreatePeriodSheet } from "../periods/create-period-sheet";
 
 export function PeriodNotSelected() {
 	const user = useCurrentUser();

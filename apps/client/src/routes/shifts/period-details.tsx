@@ -4,9 +4,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarIcon, CheckCircleIcon, InfoIcon, Pencil } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
-import { MissingPermissions } from "@/components/missing-permissions";
-import { PeriodNotSelected } from "@/components/period-not-selected";
-import { usePeriod } from "@/components/period-provider";
+import {
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+} from "@/components/layout";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { usePeriod } from "@/components/providers/period-provider";
 import { CreatePeriodSheet } from "@/components/periods/create-period-sheet";
 import { DeleteDialog } from "@/components/periods/delete-dialog";
 import { EditPeriodSheet } from "@/components/periods/edit-period-sheet";
@@ -59,14 +66,16 @@ function PeriodDetail() {
 
 	if (!periodData?.period) {
 		return (
-			<div className="container p-4 space-y-4">
-				<div className="flex items-center justify-between mb-6">
-					<h1 className="text-3xl font-bold">Period Not Found</h1>
-				</div>
-				<p className="text-muted-foreground">
-					The requested period could not be found.
-				</p>
-			</div>
+			<Page>
+				<PageHeader>
+					<PageTitle>Period Not Found</PageTitle>
+				</PageHeader>
+				<PageContent>
+					<p className="text-muted-foreground">
+						The requested period could not be found.
+					</p>
+				</PageContent>
+			</Page>
 		);
 	}
 
@@ -103,15 +112,15 @@ function PeriodDetail() {
 		: null;
 
 	return (
-		<div className="container p-4 space-y-6">
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+		<Page>
+			<PageHeader>
 				<div>
-					<h1 className="text-2xl font-bold">{period.name}</h1>
-					<p className="text-sm text-muted-foreground">
+					<PageTitle>{period.name}</PageTitle>
+					<p className="text-sm text-muted-foreground mt-1">
 						Review the selected period's schedule windows and requirements.
 					</p>
 				</div>
-				<div className="flex items-center gap-2">
+				<PageActions>
 					{canEdit && (
 						<Button variant="outline" onClick={() => setEditSheetOpen(true)}>
 							<Pencil className="h-4 w-4 mr-2" /> Edit
@@ -120,10 +129,10 @@ function PeriodDetail() {
 					{canDelete && (
 						<DeleteDialog periodId={period.id} periodName={period.name} />
 					)}
-				</div>
-			</div>
+				</PageActions>
+			</PageHeader>
 
-			<div className="grid gap-6">
+			<PageContent>
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
@@ -276,17 +285,17 @@ function PeriodDetail() {
 						)}
 					</CardContent>
 				</Card>
-			</div>
 
-			<CreatePeriodSheet
-				open={createSheetOpen}
-				onOpenChange={setCreateSheetOpen}
-			/>
-			<EditPeriodSheet
-				open={editSheetOpen}
-				onOpenChange={setEditSheetOpen}
-				period={editablePeriod}
-			/>
-		</div>
+				<CreatePeriodSheet
+					open={createSheetOpen}
+					onOpenChange={setCreateSheetOpen}
+				/>
+				<EditPeriodSheet
+					open={editSheetOpen}
+					onOpenChange={setEditSheetOpen}
+					period={editablePeriod}
+				/>
+			</PageContent>
+		</Page>
 	);
 }

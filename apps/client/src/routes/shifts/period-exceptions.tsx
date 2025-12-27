@@ -4,18 +4,32 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
-import { MissingPermissions } from "@/components/missing-permissions";
+import {
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableActions,
+	TableContainer,
+	TableSearchInput,
+	TableToolbar,
+} from "@/components/layout";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { generateColumns } from "@/components/period-exceptions/columns";
 import { CreatePeriodExceptionSheet } from "@/components/period-exceptions/create-period-exception-sheet";
-import { DataTable } from "@/components/period-exceptions/data-table";
-import { PeriodNotSelected } from "@/components/period-not-selected";
-import { usePeriod } from "@/components/period-provider";
-import { TablePagination } from "@/components/table-pagination";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { usePeriod } from "@/components/providers/period-provider";
+import {
+	DataTable,
+	PageSizeSelect,
+	SearchInput,
+	TablePaginationFooter,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useDebounce } from "@/lib/debounce";
+import { usePaginationInfo } from "@/hooks/use-pagination-info";
+import { useTableState } from "@/hooks/use-table-state";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
 export const permissions = ["period_exceptions.list"] as RequiredPermissions;
@@ -33,41 +47,46 @@ function PeriodExceptionsPage() {
 	const { period: periodId } = usePeriod();
 	const currentUser = useCurrentUser();
 	const [createOpen, setCreateOpen] = React.useState(false);
-	const [page, setPage] = React.useState(1);
-	const [search, setSearch] = React.useState("");
-	const debouncedSearch = useDebounce(search, 300);
-	const limit = 10;
+	const {
+		page,
+		setPage,
+		pageSize,
+		setPageSize,
+		offset,
+		search,
+		setSearch,
+		debouncedSearch,
+		resetToFirstPage,
+	} = useTableState();
 
 	React.useEffect(() => {
-		setPage(1);
-	}, [periodId]);
+		resetToFirstPage();
+	}, [periodId, resetToFirstPage]);
 
-	const hasPeriod = periodId !== null;
+	const queryParams = React.useMemo(() => {
+		return {
+			periodId: Number(periodId),
+			search:
+				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
+			offset,
+			limit: pageSize,
+		};
+	}, [periodId, debouncedSearch, offset, pageSize]);
 
 	const { data, isLoading } = useQuery({
-		queryKey: [
-			"periodExceptions",
-			{ periodId, page, search: debouncedSearch.trim() || undefined },
-		],
-		enabled: hasPeriod,
-		queryFn: async () => {
-			if (periodId === null) {
-				return { periodExceptions: [], total: 0 };
-			}
-
-			return trpc.periodExceptions.list.query({
-				periodId: Number(periodId),
-				limit,
-				offset: (page - 1) * limit,
-				search:
-					debouncedSearch.trim().length > 0
-						? debouncedSearch.trim()
-						: undefined,
-			});
-		},
+		queryKey: ["periodExceptions", queryParams],
+		enabled: periodId !== null,
+		queryFn: async () => trpc.periodExceptions.list.query(queryParams),
 	});
 
 	const canCreate = checkPermissions(currentUser, ["period_exceptions.create"]);
+
+	const { totalPages } = usePaginationInfo({
+		total: data?.total ?? 0,
+		pageSize,
+		offset,
+		currentCount: data?.periodExceptions?.length ?? 0,
+	});
 
 	if (periodId === null) {
 		return <PeriodNotSelected />;
@@ -81,59 +100,71 @@ function PeriodExceptionsPage() {
 		);
 	}
 
-	const rows = data?.periodExceptions ?? [];
-	const total = data?.total ?? 0;
-	const totalPages = Math.max(1, Math.ceil(total / limit));
-
 	return (
-		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">Period Exceptions</h1>
+		<Page>
+			<PageHeader>
+				<PageTitle>Period Exceptions</PageTitle>
+				{canCreate && (
+					<PageActions>
+						<Button onClick={() => setCreateOpen(true)}>
+							<Plus className="mr-2 h-4 w-4" />
+							New Exception
+						</Button>
+					</PageActions>
+				)}
+			</PageHeader>
 
-			<Card>
-				<CardHeader>
-					<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-						<Input
-							placeholder="Search by name..."
-							value={search}
-							onChange={(event) => {
-								setSearch(event.target.value);
-								setPage(1);
-							}}
-							className="w-full sm:w-64"
-						/>
-						{canCreate && (
-							<Button onClick={() => setCreateOpen(true)}>
-								<Plus className="mr-2 h-4 w-4" />
-								New Exception
-							</Button>
-						)}
-					</div>
-				</CardHeader>
-				<CardContent>
+			<PageContent>
+				<TableContainer>
+					<TableToolbar>
+						<TableSearchInput>
+							<SearchInput
+								placeholder="Search exceptions..."
+								value={search}
+								onChange={(value) => {
+									setSearch(value);
+									resetToFirstPage();
+								}}
+							/>
+						</TableSearchInput>
+						<TableActions>
+							<PageSizeSelect
+								pageSize={pageSize}
+								onPageSizeChange={(size) => {
+									setPageSize(size);
+									resetToFirstPage();
+								}}
+							/>
+						</TableActions>
+					</TableToolbar>
+
 					<DataTable
 						columns={generateColumns(currentUser)}
-						data={rows}
+						data={data?.periodExceptions ?? []}
 						isLoading={isLoading}
-						emptyMessage="No period exceptions found for this period."
+						emptyMessage="No period exceptions found"
+						emptyDescription="Try adjusting your search"
 					/>
-					{total > limit && (
-						<TablePagination
-							page={page}
-							totalPages={totalPages}
-							onPageChange={setPage}
-							className="mt-4"
-						/>
-					)}
-				</CardContent>
-			</Card>
 
-			{canCreate && (
-				<CreatePeriodExceptionSheet
-					periodId={Number(periodId)}
-					open={createOpen}
-					onOpenChange={setCreateOpen}
-				/>
-			)}
-		</div>
+					<TablePaginationFooter
+						page={page}
+						totalPages={totalPages}
+						onPageChange={setPage}
+						offset={offset}
+						currentCount={data?.periodExceptions?.length ?? 0}
+						total={data?.total ?? 0}
+						itemName="exceptions"
+					/>
+				</TableContainer>
+
+				{canCreate && (
+					<CreatePeriodExceptionSheet
+						periodId={Number(periodId)}
+						open={createOpen}
+						onOpenChange={setCreateOpen}
+					/>
+				)}
+			</PageContent>
+		</Page>
 	);
 }

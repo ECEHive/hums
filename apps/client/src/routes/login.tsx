@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import {
 	Card,

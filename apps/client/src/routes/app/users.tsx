@@ -1,25 +1,34 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDownIcon, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth";
-import { MissingPermissions } from "@/components/missing-permissions";
-import { TablePagination } from "@/components/table-pagination";
-import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableActions,
+	TableContainer,
+	TableSearchInput,
+	TableToolbar,
+} from "@/components/layout";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	DataTable,
+	PageSizeSelect,
+	SearchInput,
+	TablePaginationFooter,
+} from "@/components/shared";
+import { Button } from "@/components/ui/button";
 import type { Role } from "@/components/users/columns";
 import { generateColumns } from "@/components/users/columns";
 import { CreateDialog } from "@/components/users/create-dialog";
-import { DataTable } from "@/components/users/data-table";
 import { FilterDialog } from "@/components/users/filter-dialog";
-import { useDebounce } from "@/lib/debounce";
+import { usePaginationInfo } from "@/hooks/use-pagination-info";
+import { useTableState } from "@/hooks/use-table-state";
 
 export const Route = createFileRoute("/app/users")({
 	component: () =>
@@ -33,13 +42,18 @@ export const Route = createFileRoute("/app/users")({
 export const permissions = ["users.list"];
 
 function Users() {
-	const [page, setPage] = React.useState(1);
-	const [pageSize, setPageSize] = React.useState(10);
-	const [search, setSearch] = React.useState("");
+	const {
+		page,
+		setPage,
+		pageSize,
+		setPageSize,
+		offset,
+		search,
+		setSearch,
+		debouncedSearch,
+		resetToFirstPage,
+	} = useTableState();
 	const [filterRoles, setFilterRoles] = React.useState<Role[]>([]);
-	const debouncedSearch = useDebounce(search, 300);
-
-	const offset = (page - 1) * pageSize;
 
 	const queryParams = React.useMemo(() => {
 		return {
@@ -67,72 +81,77 @@ function Users() {
 	});
 
 	const columns = generateColumns(useAuth().user);
-	const total = data?.total || 0;
-	const totalPages = Math.ceil(total / pageSize) || 1;
+	const { totalPages } = usePaginationInfo({
+		total: data.total,
+		pageSize,
+		offset,
+		currentCount: data.users.length,
+	});
 
 	return (
-		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">Users</h1>
+		<Page>
+			<PageHeader>
+				<PageTitle>Users</PageTitle>
+				<PageActions>
+					<CreateDialog onUpdate={() => resetToFirstPage()} />
+				</PageActions>
+			</PageHeader>
 
-			<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-				<div className="flex items-center gap-2">
-					<FilterDialog
-						onFilterChange={(newFilterRoles) => {
-							setPage(1);
-							setFilterRoles(newFilterRoles);
-						}}
-						filterRoles={filterRoles}
-						trigger={
-							<Button variant="outline">
-								<Filter className="size-4" />
-							</Button>
-						}
+			<PageContent>
+				<TableContainer>
+					<TableToolbar>
+						<TableSearchInput>
+							<FilterDialog
+								onFilterChange={(newFilterRoles) => {
+									setFilterRoles(newFilterRoles);
+									resetToFirstPage();
+								}}
+								filterRoles={filterRoles}
+								trigger={
+									<Button variant="outline" size="icon">
+										<Filter className="size-4" />
+									</Button>
+								}
+							/>
+							<SearchInput
+								placeholder="Search users..."
+								value={search}
+								onChange={(value) => {
+									setSearch(value);
+									resetToFirstPage();
+								}}
+							/>
+						</TableSearchInput>
+						<TableActions>
+							<PageSizeSelect
+								pageSize={pageSize}
+								onPageSizeChange={(size) => {
+									setPageSize(size);
+									resetToFirstPage();
+								}}
+							/>
+						</TableActions>
+					</TableToolbar>
+
+					<DataTable
+						columns={columns}
+						data={data.users}
+						isLoading={isLoading}
+						emptyMessage="No users found"
+						emptyDescription="Try adjusting your search or filters"
 					/>
-					<Input
-						placeholder="Search users..."
-						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-							setPage(1);
-						}}
-						className="max-w-xs"
+
+					<TablePaginationFooter
+						page={page}
+						totalPages={totalPages}
+						onPageChange={setPage}
+						offset={offset}
+						currentCount={data.users.length}
+						total={data.total}
+						itemName="users"
 					/>
-				</div>
-				<div className="flex items-center gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline">
-								{pageSize} per page <ChevronDownIcon className="ml-2 size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							{[10, 25, 50, 100].map((size) => (
-								<DropdownMenuItem
-									key={size}
-									onClick={() => {
-										setPageSize(size);
-										setPage(1);
-									}}
-								>
-									{size} per page
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
-					<CreateDialog onUpdate={() => setPage(1)} />
-				</div>
-			</div>
-			<DataTable columns={columns} data={data.users} isLoading={isLoading} />
-			<div className="flex flex-col justify-between items-center gap-2">
-				<TablePagination
-					page={page}
-					totalPages={totalPages}
-					onPageChange={setPage}
-				/>
-				<p className="text-sm text-muted-foreground">
-					Showing {offset + 1} - {offset + data.users.length} of {total}
-				</p>
-			</div>
-		</div>
+				</TableContainer>
+			</PageContent>
+		</Page>
 	);
 }

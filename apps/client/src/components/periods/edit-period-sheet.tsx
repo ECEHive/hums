@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
 // DateField removed in favor of DateRangeSelector
-import DateRangeSelector from "@/components/date-range-selector";
+import DateRangeSelector from "@/components/shared/date-range-selector";
 import { normalizeRangeToDayBounds } from "@/components/periods/date-range-helpers";
 import {
 	type Role,

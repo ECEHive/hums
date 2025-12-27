@@ -2,9 +2,10 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import React from "react";
-import { PeriodNotSelected } from "@/components/period-not-selected";
-import { usePeriod } from "@/components/period-provider";
-import { RequireShiftAccess } from "@/components/require-shift-access";
+import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { usePeriod } from "@/components/providers/period-provider";
+import { RequireShiftAccess } from "@/components/guards/require-shift-access";
 import { SchedulingTimeline } from "@/components/shift-schedules/scheduling-timeline";
 import { ShiftDetailSheet } from "@/components/shift-schedules/shift-detail-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -192,159 +193,163 @@ function Scheduling() {
 	}
 
 	return (
-		<div className="container mx-auto p-4 space-y-4">
-			<h1 className="text-2xl font-bold">Shift Scheduling</h1>
+		<Page>
+			<PageHeader>
+				<PageTitle>Shift Scheduling</PageTitle>
+			</PageHeader>
 
-			{selectedPeriodId ? (
-				isWithinVisibilityWindow ? (
-					<>
-						{requirementProgress && requirementUnitLabel && (
-							<div className="rounded-md border border-border/70 bg-muted/20 p-3 text-xs sm:text-sm space-y-2">
-								<div className="flex items-center justify-between text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-									<span>Requirement progress</span>
-									<span>{requirementUnitLabel}</span>
-								</div>
-								<div className="space-y-1">
-									<div className="flex items-center justify-between font-medium">
-										<span>Current</span>
-										<span>
-											{currentDisplay ?? "0"}
-											{hasMinRequirement && minDisplay
-												? ` / ${minDisplay}`
-												: hasMaxRequirement && maxDisplay
-													? ` / ${maxDisplay}`
-													: ""}{" "}
-											{requirementUnitLabel}
-										</span>
+			<PageContent>
+				{selectedPeriodId ? (
+					isWithinVisibilityWindow ? (
+						<>
+							{requirementProgress && requirementUnitLabel && (
+								<div className="rounded-md border border-border/70 bg-muted/20 p-3 text-xs sm:text-sm space-y-2">
+									<div className="flex items-center justify-between text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+										<span>Requirement progress</span>
+										<span>{requirementUnitLabel}</span>
 									</div>
-									<Progress className="h-1.5" value={progressPercent} />
-								</div>
-								<div className="grid gap-2 sm:grid-cols-2 justify-between">
-									<div className="flex items-center gap-2 text-muted-foreground">
-										{hasMinRequirement && (
-											<>
-												<span>Min</span>
-												<span className="font-medium text-foreground">
-													{minDisplay
-														? `${minDisplay} ${requirementUnitLabel}`
-														: "–"}
-												</span>
-											</>
-										)}
+									<div className="space-y-1">
+										<div className="flex items-center justify-between font-medium">
+											<span>Current</span>
+											<span>
+												{currentDisplay ?? "0"}
+												{hasMinRequirement && minDisplay
+													? ` / ${minDisplay}`
+													: hasMaxRequirement && maxDisplay
+														? ` / ${maxDisplay}`
+														: ""}{" "}
+												{requirementUnitLabel}
+											</span>
+										</div>
+										<Progress className="h-1.5" value={progressPercent} />
 									</div>
-									<div className="flex items-center justify-end gap-2 text-muted-foreground">
-										{hasMaxRequirement && (
-											<>
-												<span>Max</span>
-												<span className="font-medium text-foreground">
-													{maxDisplay
-														? `${maxDisplay} ${requirementUnitLabel}`
-														: "–"}
-													{requirementProgress.hasReachedMax
-														? " (reached)"
-														: ""}
-												</span>
-											</>
-										)}
+									<div className="grid gap-2 sm:grid-cols-2 justify-between">
+										<div className="flex items-center gap-2 text-muted-foreground">
+											{hasMinRequirement && (
+												<>
+													<span>Min</span>
+													<span className="font-medium text-foreground">
+														{minDisplay
+															? `${minDisplay} ${requirementUnitLabel}`
+															: "–"}
+													</span>
+												</>
+											)}
+										</div>
+										<div className="flex items-center justify-end gap-2 text-muted-foreground">
+											{hasMaxRequirement && (
+												<>
+													<span>Max</span>
+													<span className="font-medium text-foreground">
+														{maxDisplay
+															? `${maxDisplay} ${requirementUnitLabel}`
+															: "–"}
+														{requirementProgress.hasReachedMax
+															? " (reached)"
+															: ""}
+													</span>
+												</>
+											)}
+										</div>
 									</div>
 								</div>
-							</div>
-						)}
-						{windowMessage && (
-							<Alert
-								variant={
-									windowMessage.type === "destructive"
-										? "destructive"
-										: "default"
-								}
-							>
-								<AlertTitle>{windowMessage.title}</AlertTitle>
-								<AlertDescription>{windowMessage.message}</AlertDescription>
-							</Alert>
-						)}
+							)}
+							{windowMessage && (
+								<Alert
+									variant={
+										windowMessage.type === "destructive"
+											? "destructive"
+											: "default"
+									}
+								>
+									<AlertTitle>{windowMessage.title}</AlertTitle>
+									<AlertDescription>{windowMessage.message}</AlertDescription>
+								</Alert>
+							)}
+							<Card className="max-w-full">
+								<CardHeader>
+									<CardTitle>Available Shifts</CardTitle>
+									{schedulesData?.period && (
+										<div className="text-sm text-muted-foreground mt-2 space-y-1">
+											{isWithinSignupWindow && (
+												<p className="text-green-600 dark:text-green-400">
+													✓ Registration is currently open
+												</p>
+											)}
+										</div>
+									)}
+								</CardHeader>
+								<CardContent>
+									{schedulesLoading ? (
+										<div className="flex items-center justify-center py-12">
+											<Spinner className="w-8 h-8" />
+										</div>
+									) : schedulesError ? (
+										<Alert variant="destructive">
+											<AlertTitle>Failed to load shifts</AlertTitle>
+											<AlertDescription>
+												{String(
+													schedulesErrorObj?.message ??
+														schedulesErrorObj ??
+														"An unknown error occurred while loading shifts",
+												)}
+											</AlertDescription>
+										</Alert>
+									) : (
+										<SchedulingTimeline
+											schedules={schedulesData?.schedules ?? []}
+											isLoading={schedulesLoading}
+											onBlockClick={handleBlockClick}
+										/>
+									)}
+								</CardContent>
+							</Card>
+						</>
+					) : (
 						<Card className="max-w-full">
 							<CardHeader>
-								<CardTitle>Available Shifts</CardTitle>
-								{schedulesData?.period && (
-									<div className="text-sm text-muted-foreground mt-2 space-y-1">
-										{isWithinSignupWindow && (
-											<p className="text-green-600 dark:text-green-400">
-												✓ Registration is currently open
-											</p>
-										)}
-									</div>
-								)}
+								<CardTitle>Period Not Visible</CardTitle>
 							</CardHeader>
 							<CardContent>
-								{schedulesLoading ? (
-									<div className="flex items-center justify-center py-12">
-										<Spinner className="w-8 h-8" />
-									</div>
-								) : schedulesError ? (
-									<Alert variant="destructive">
-										<AlertTitle>Failed to load shifts</AlertTitle>
-										<AlertDescription>
-											{String(
-												schedulesErrorObj?.message ??
-													schedulesErrorObj ??
-													"An unknown error occurred while loading shifts",
-											)}
-										</AlertDescription>
-									</Alert>
-								) : (
-									<SchedulingTimeline
-										schedules={schedulesData?.schedules ?? []}
-										isLoading={schedulesLoading}
-										onBlockClick={handleBlockClick}
-									/>
-								)}
+								<Alert>
+									<AlertTitle>Outside Visibility Window</AlertTitle>
+									<AlertDescription>
+										The selected period is not currently visible. Please check
+										back during the visibility window.
+									</AlertDescription>
+								</Alert>
 							</CardContent>
 						</Card>
-					</>
+					)
 				) : (
 					<Card className="max-w-full">
 						<CardHeader>
-							<CardTitle>Period Not Visible</CardTitle>
+							<CardTitle>Shift Scheduling</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<Alert>
-								<AlertTitle>Outside Visibility Window</AlertTitle>
-								<AlertDescription>
-									The selected period is not currently visible. Please check
-									back during the visibility window.
-								</AlertDescription>
-							</Alert>
+							<div className="flex items-center justify-center py-12">
+								<p className="text-muted-foreground">
+									Select a period to view available shifts
+								</p>
+							</div>
 						</CardContent>
 					</Card>
-				)
-			) : (
-				<Card className="max-w-full">
-					<CardHeader>
-						<CardTitle>Shift Scheduling</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center justify-center py-12">
-							<p className="text-muted-foreground">
-								Select a period to view available shifts
-							</p>
-						</div>
-					</CardContent>
-				</Card>
-			)}
+				)}
 
-			<ShiftDetailSheet
-				open={sheetOpen}
-				onOpenChange={setSheetOpen}
-				schedules={selectedBlockSchedules}
-				dayOfWeek={selectedBlock?.dayOfWeek ?? 0}
-				timeBlock={
-					selectedBlock?.timeBlock
-						? `${selectedBlock.timeBlock.split(":")[0]}:${selectedBlock.timeBlock.split(":")[1]}`
-						: "00:00"
-				}
-				periodId={selectedPeriodId ?? 0}
-				isWithinSignupWindow={isWithinSignupWindow}
-			/>
-		</div>
+				<ShiftDetailSheet
+					open={sheetOpen}
+					onOpenChange={setSheetOpen}
+					schedules={selectedBlockSchedules}
+					dayOfWeek={selectedBlock?.dayOfWeek ?? 0}
+					timeBlock={
+						selectedBlock?.timeBlock
+							? `${selectedBlock.timeBlock.split(":")[0]}:${selectedBlock.timeBlock.split(":")[1]}`
+							: "00:00"
+					}
+					periodId={selectedPeriodId ?? 0}
+					isWithinSignupWindow={isWithinSignupWindow}
+				/>
+			</PageContent>
+		</Page>
 	);
 }

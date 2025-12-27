@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { MissingPermissions } from "@/components/missing-permissions";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { Spinner } from "@/components/ui/spinner";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 

@@ -19,7 +19,7 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
-import { useTheme } from "@/components/theme-provider"; // Import useTheme from theme-provider
+import { useTheme } from "@/components/providers/theme-provider"; // Import useTheme from theme-provider
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -52,9 +52,9 @@ import { permissions as reportsPagePermissions } from "@/routes/shifts/reports";
 import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
 import { permissions as shiftSchedulesPagePermissions } from "@/routes/shifts/shift-schedules";
 import { permissions as shiftTypesPagePermissions } from "@/routes/shifts/shift-types";
-import { Logo } from "./logo";
-import { usePeriod } from "./period-provider";
-import { PeriodSelector } from "./periods/period-selector";
+import { Logo } from "@/components/shared/logo";
+import { usePeriod } from "@/components/providers/period-provider";
+import { PeriodSelector } from "@/components/periods/period-selector";
 
 // Sidebar menu items, grouped by section
 export const items = [

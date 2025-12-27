@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronsRightIcon, ClockIcon } from "lucide-react";
 import { RequirePermissions, useCurrentUser } from "@/auth";
-import { MissingPermissions } from "@/components/missing-permissions";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShiftAccess } from "@/hooks/use-shift-access";

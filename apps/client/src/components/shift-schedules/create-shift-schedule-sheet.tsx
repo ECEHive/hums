@@ -7,7 +7,7 @@ import {
 	type ShiftType,
 	ShiftTypeSelector,
 } from "@/components/shift-types/shift-type-selector";
-import { TimeInput } from "@/components/time-input";
+import { TimeInput } from "@/components/shared/time-input";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,

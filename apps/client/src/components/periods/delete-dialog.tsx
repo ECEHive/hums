@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { JSX } from "react/jsx-runtime";
-import { usePeriod } from "@/components/period-provider";
+import { usePeriod } from "@/components/providers/period-provider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,

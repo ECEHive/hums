@@ -8,7 +8,7 @@ import {
 	type ShiftType,
 	ShiftTypeMultiselect,
 } from "@/components/shift-types/shift-type-multiselect";
-import { TimeInput } from "@/components/time-input";
+import { TimeInput } from "@/components/shared/time-input";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,
