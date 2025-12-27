@@ -17,7 +17,8 @@ export type TListVisibleOptions = {
 /**
  * List periods that are currently visible based on their visibility window.
  * This endpoint is accessible to any authenticated user (no specific permission required).
- * Only returns periods where the current time is within the visibility window.
+ * Only returns periods where the current time is within the visibility window AND
+ * the period is currently active (between start and end dates).
  */
 export async function listVisibleHandler(options: TListVisibleOptions) {
 	const { limit = 10, offset = 0 } = options.input;
@@ -26,6 +27,8 @@ export async function listVisibleHandler(options: TListVisibleOptions) {
 	const filters: Prisma.PeriodWhereInput[] = [
 		{ visibleStart: { lte: now } },
 		{ visibleEnd: { gte: now } },
+		{ start: { lte: now } },
+		{ end: { gte: now } },
 	];
 
 	if (!options.ctx.user.isSystemUser) {
