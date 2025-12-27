@@ -1,23 +1,30 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDownIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { generateColumns } from "@/components/kiosks/columns";
 import { CreateDialog } from "@/components/kiosks/create-dialog";
-import { DataTable } from "@/components/kiosks/data-table";
-import { MissingPermissions } from "@/components/missing-permissions";
-import { TablePagination } from "@/components/table-pagination";
-import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { useDebounce } from "@/lib/debounce";
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableActions,
+	TableContainer,
+	TableSearchInput,
+	TableToolbar,
+} from "@/components/layout";
+import {
+	DataTable,
+	PageSizeSelect,
+	SearchInput,
+	TablePaginationFooter,
+} from "@/components/shared";
+import { usePaginationInfo } from "@/hooks/use-pagination-info";
+import { useTableState } from "@/hooks/use-table-state";
 
 export const Route = createFileRoute("/app/kiosks")({
 	component: () =>
@@ -31,12 +38,17 @@ export const Route = createFileRoute("/app/kiosks")({
 export const permissions = ["kiosks.list"];
 
 function Kiosks() {
-	const [page, setPage] = React.useState(1);
-	const [pageSize, setPageSize] = React.useState(10);
-	const [search, setSearch] = React.useState("");
-	const debouncedSearch = useDebounce(search, 300);
-
-	const offset = (page - 1) * pageSize;
+	const {
+		page,
+		setPage,
+		pageSize,
+		setPageSize,
+		offset,
+		search,
+		setSearch,
+		debouncedSearch,
+		resetToFirstPage,
+	} = useTableState();
 
 	const queryParams = React.useMemo(() => {
 		return {
@@ -56,58 +68,65 @@ function Kiosks() {
 	});
 
 	const columns = generateColumns();
-	const total = data?.count || 0;
-	const totalPages = Math.ceil(total / pageSize) || 1;
+	const { totalPages } = usePaginationInfo({
+		total: data.count,
+		pageSize,
+		offset,
+		currentCount: data.kiosks.length,
+	});
 
 	return (
-		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">Kiosks</h1>
+		<Page>
+			<PageHeader>
+				<PageTitle>Kiosks</PageTitle>
+				<PageActions>
+					<CreateDialog onUpdate={() => resetToFirstPage()} />
+				</PageActions>
+			</PageHeader>
 
-			<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-				<Input
-					placeholder="Search kiosks..."
-					value={search}
-					onChange={(e) => {
-						setSearch(e.target.value);
-						setPage(1);
-					}}
-					className="max-w-xs"
-				/>
-				<div className="flex items-center gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline">
-								{pageSize} per page <ChevronDownIcon className="ml-2 size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							{[10, 25, 50, 100].map((size) => (
-								<DropdownMenuItem
-									key={size}
-									onClick={() => {
-										setPageSize(size);
-										setPage(1);
-									}}
-								>
-									{size} per page
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
-					<CreateDialog onUpdate={() => setPage(1)} />
-				</div>
-			</div>
-			<DataTable columns={columns} data={data.kiosks} isLoading={isLoading} />
-			<div className="flex flex-col justify-between items-center gap-2">
-				<TablePagination
-					page={page}
-					totalPages={totalPages}
-					onPageChange={setPage}
-				/>
-				<p className="text-sm text-muted-foreground">
-					Showing {offset + 1} - {offset + data.kiosks.length} of {total}
-				</p>
-			</div>
-		</div>
+			<PageContent>
+				<TableContainer>
+					<TableToolbar>
+						<TableSearchInput>
+							<SearchInput
+								placeholder="Search kiosks..."
+								value={search}
+								onChange={(value) => {
+									setSearch(value);
+									resetToFirstPage();
+								}}
+							/>
+						</TableSearchInput>
+						<TableActions>
+							<PageSizeSelect
+								pageSize={pageSize}
+								onPageSizeChange={(size) => {
+									setPageSize(size);
+									resetToFirstPage();
+								}}
+							/>
+						</TableActions>
+					</TableToolbar>
+
+					<DataTable
+						columns={columns}
+						data={data.kiosks}
+						isLoading={isLoading}
+						emptyMessage="No kiosks found"
+						emptyDescription="Try adjusting your search"
+					/>
+
+					<TablePaginationFooter
+						page={page}
+						totalPages={totalPages}
+						onPageChange={setPage}
+						offset={offset}
+						currentCount={data.kiosks.length}
+						total={data.count}
+						itemName="kiosks"
+					/>
+				</TableContainer>
+			</PageContent>
+		</Page>
 	);
 }

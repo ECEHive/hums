@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { RequireAuth } from "@/auth/AuthProvider";
-import { ImpersonationBanner } from "@/components/impersonate-banner";
-import { PeriodProvider } from "@/components/period-provider";
-import { ShiftsSidebar } from "@/components/shifts-sidebar";
+import { ImpersonationBanner } from "@/components/banners/impersonate-banner";
+import { ShiftsSidebar } from "@/components/navigation/shifts-sidebar";
+import { PeriodProvider } from "@/components/providers/period-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/shifts")({

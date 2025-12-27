@@ -1,18 +1,28 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronDownIcon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { RequireShiftAccess } from "@/components/guards/require-shift-access";
+import {
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableContainer,
+} from "@/components/layout";
 import {
 	createColumns,
 	type ShiftOccurrenceRow,
 } from "@/components/my-shifts/columns";
-import { DataTable } from "@/components/my-shifts/data-table";
-import { PeriodNotSelected } from "@/components/period-not-selected";
-import { usePeriod } from "@/components/period-provider";
-import { RequireShiftAccess } from "@/components/require-shift-access";
-import { TablePagination } from "@/components/table-pagination";
+import { usePeriod } from "@/components/providers/period-provider";
+import {
+	DataTable,
+	PageSizeSelect,
+	TablePaginationFooter,
+} from "@/components/shared";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,12 +34,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
 	Sheet,
@@ -303,261 +307,251 @@ function MyShifts() {
 	}
 
 	return (
-		<>
-			<div className="container p-4 space-y-4">
-				<div className="flex justify-between items-center">
-					<h1 className="text-2xl font-bold">My Shifts</h1>
+		<Page>
+			<PageHeader>
+				<PageTitle>My Shifts</PageTitle>
+				<PageActions>
 					<Link to="/shifts/attendance">
 						<Button variant="outline">Shift History</Button>
 					</Link>
-				</div>
+				</PageActions>
+			</PageHeader>
 
-				<div className="flex justify-between sm:items-center sm:flex-row flex-col gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline">
-								{pageSize} per page <ChevronDownIcon className="ml-2 size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							{[10, 20, 50, 100].map((size) => (
-								<DropdownMenuItem
-									key={size}
-									onClick={() => {
-										setPageSize(size);
-										setPage(1);
-									}}
-								>
-									{size} per page
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-
-				{selectedPeriodId ? (
-					<>
-						<DataTable
-							columns={tableColumns}
-							data={occurrences}
-							isLoading={occurrencesLoading}
+			<PageContent>
+				<TableContainer>
+					<div className="flex items-center justify-between px-1 py-2">
+						<PageSizeSelect
+							pageSize={pageSize}
+							onPageSizeChange={(size) => {
+								setPageSize(size);
+								setPage(1);
+							}}
+							pageSizeOptions={[10, 20, 50, 100]}
 						/>
-						{total > 0 && (
-							<div className="flex flex-col justify-between items-center gap-2">
-								<TablePagination
+					</div>
+
+					{selectedPeriodId ? (
+						<>
+							<DataTable
+								columns={tableColumns}
+								data={occurrences}
+								isLoading={occurrencesLoading}
+							/>
+							{total > 0 && (
+								<TablePaginationFooter
 									page={page}
 									totalPages={totalPages}
 									onPageChange={setPage}
+									offset={offset}
+									currentCount={occurrences.length}
+									total={total}
+									itemName="shifts"
 								/>
-								<p className="text-sm text-muted-foreground">
-									Showing {offset + 1} - {offset + occurrences.length} of{" "}
-									{total}
-								</p>
-							</div>
-						)}
-					</>
-				) : (
-					<div className="flex items-center justify-center py-12 border rounded-md">
-						<p className="text-muted-foreground">
-							Select a period to view your shifts
-						</p>
-					</div>
-				)}
-			</div>
+							)}
+						</>
+					) : (
+						<div className="flex items-center justify-center py-12 border rounded-md">
+							<p className="text-muted-foreground">
+								Select a period to view your shifts
+							</p>
+						</div>
+					)}
+				</TableContainer>
 
-			<Dialog open={dropDialogOpen} onOpenChange={handleDropDialogOpenChange}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Drop this shift?</DialogTitle>
-						<DialogDescription>
-							Dropping removes you from this shift and marks your attendance as{" "}
-							<strong>dropped</strong>.
-						</DialogDescription>
-					</DialogHeader>
-					{dropTarget ? (
-						<div className="space-y-4">
-							<Alert>
-								<AlertTitle>{dropTarget.shiftTypeName}</AlertTitle>
-								<AlertDescription>
-									<p>{dropSummary}</p>
-								</AlertDescription>
-							</Alert>
+				<Dialog open={dropDialogOpen} onOpenChange={handleDropDialogOpenChange}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Drop this shift?</DialogTitle>
+							<DialogDescription>
+								Dropping removes you from this shift and marks your attendance
+								as <strong>dropped</strong>.
+							</DialogDescription>
+						</DialogHeader>
+						{dropTarget ? (
+							<div className="space-y-4">
+								<Alert>
+									<AlertTitle>{dropTarget.shiftTypeName}</AlertTitle>
+									<AlertDescription>
+										<p>{dropSummary}</p>
+									</AlertDescription>
+								</Alert>
+								<div className="space-y-2">
+									<Label htmlFor={dropNotesId}>Reason (optional)</Label>
+									<Textarea
+										id={dropNotesId}
+										value={dropNotes}
+										onChange={(event) => setDropNotes(event.target.value)}
+										placeholder="Let the coordinators know why you're dropping this shift."
+										maxLength={500}
+									/>
+									<p className="text-xs text-muted-foreground text-right">
+										{dropNotes.length}/500 characters
+									</p>
+								</div>
+								<p>This action cannot be undone.</p>
+							</div>
+						) : null}
+						<DialogFooter className="flex justify-end gap-2">
+							<Button
+								variant="outline"
+								onClick={closeDropDialog}
+								disabled={isDropping}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="destructive"
+								onClick={handleConfirmDrop}
+								disabled={isDropping}
+							>
+								{isDropping ? "Dropping…" : "Confirm Drop"}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+
+				<Sheet
+					open={isMakeupSheetOpen}
+					onOpenChange={handleMakeupSheetOpenChange}
+				>
+					<SheetContent className="w-full overflow-y-auto sm:max-w-lg md:max-w-lg lg:max-w-xl">
+						<SheetHeader>
+							<SheetTitle>Find a makeup shift</SheetTitle>
+							<SheetDescription>
+								Choose an open shift occurrence to cover for{" "}
+								{makeupTarget?.shiftTypeName}.
+							</SheetDescription>
+						</SheetHeader>
+
+						<div className="flex flex-col space-y-4 p-4">
+							{makeupTarget ? (
+								<div className="space-y-6">
+									<div className="space-y-1">
+										<p className="text-sm font-medium">Dropping</p>
+										<Alert>
+											<AlertTitle>{makeupTarget.shiftTypeName}</AlertTitle>
+											<AlertDescription>{makeupSummary}</AlertDescription>
+										</Alert>
+									</div>
+									<div className="flex items-center gap-2">
+										<Checkbox
+											id={restrictCheckboxId}
+											checked={restrictToSameType}
+											onCheckedChange={handleRestrictToggle}
+										/>
+										<Label htmlFor={restrictCheckboxId} className="text-sm">
+											Show only {makeupTarget.shiftTypeName} shifts
+										</Label>
+									</div>
+								</div>
+							) : null}
+
+							<div className="rounded-md border">
+								<div className="max-h-64 min-h-[16rem] overflow-y-auto overflow-x-auto">
+									{makeupOptionsLoading ? (
+										<div className="flex min-h-[16rem] items-center justify-center">
+											<Spinner className="size-6" />
+										</div>
+									) : makeupOccurrences.length === 0 ? (
+										<div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
+											No open shift occurrences match your filters.
+										</div>
+									) : (
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>Shift</TableHead>
+													<TableHead>Date</TableHead>
+													<TableHead>Time</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{makeupOccurrences.map((occ) => {
+													const isSelected =
+														selectedMakeupOccurrenceId === occ.id;
+													return (
+														<TableRow
+															key={occ.id}
+															data-state={isSelected ? "selected" : undefined}
+															className={cn(
+																"cursor-pointer",
+																isSelected && "bg-muted",
+															)}
+															onClick={() =>
+																setSelectedMakeupOccurrenceId(occ.id)
+															}
+														>
+															<TableCell>
+																<div className="font-medium">
+																	{occ.shiftTypeName}
+																</div>
+																<div className="text-xs text-muted-foreground">
+																	{occ.shiftTypeLocation}
+																</div>
+															</TableCell>
+															<TableCell>
+																{formatDateInAppTimezone(occ.timestamp, {
+																	formatString: "MMM D",
+																})}
+															</TableCell>
+															<TableCell>
+																{formatTimeRange(occ.startTime, occ.endTime, {
+																	referenceDate: occ.timestamp,
+																})}
+															</TableCell>
+														</TableRow>
+													);
+												})}
+											</TableBody>
+										</Table>
+									)}
+								</div>
+							</div>
+							{makeupTotalPages > 1 && (
+								<div className="mt-3 overflow-x-auto">
+									<TablePagination
+										className="justify-center"
+										page={makeupPage}
+										totalPages={makeupTotalPages}
+										onPageChange={setMakeupPage}
+									/>
+								</div>
+							)}
+
 							<div className="space-y-2">
-								<Label htmlFor={dropNotesId}>Reason (optional)</Label>
+								<Label htmlFor={dropMakeupNotesId}>Reason (optional)</Label>
 								<Textarea
-									id={dropNotesId}
-									value={dropNotes}
-									onChange={(event) => setDropNotes(event.target.value)}
-									placeholder="Let the coordinators know why you're dropping this shift."
+									id={dropMakeupNotesId}
+									value={dropMakeupNotes}
+									onChange={(event) => setDropMakeupNotes(event.target.value)}
+									placeholder="Let the coordinators know why you're dropping and selecting this makeup shift."
 									maxLength={500}
 								/>
 								<p className="text-xs text-muted-foreground text-right">
-									{dropNotes.length}/500 characters
+									{dropMakeupNotes.length}/500 characters
 								</p>
 							</div>
-							<p>This action cannot be undone.</p>
 						</div>
-					) : null}
-					<DialogFooter className="flex justify-end gap-2">
-						<Button
-							variant="outline"
-							onClick={closeDropDialog}
-							disabled={isDropping}
-						>
-							Cancel
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={handleConfirmDrop}
-							disabled={isDropping}
-						>
-							{isDropping ? "Dropping…" : "Confirm Drop"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 
-			<Sheet
-				open={isMakeupSheetOpen}
-				onOpenChange={handleMakeupSheetOpenChange}
-			>
-				<SheetContent className="w-full overflow-y-auto sm:max-w-lg md:max-w-lg lg:max-w-xl">
-					<SheetHeader>
-						<SheetTitle>Find a makeup shift</SheetTitle>
-						<SheetDescription>
-							Choose an open shift occurrence to cover for{" "}
-							{makeupTarget?.shiftTypeName}.
-						</SheetDescription>
-					</SheetHeader>
-
-					<div className="flex flex-col space-y-4 p-4">
-						{makeupTarget ? (
-							<div className="space-y-6">
-								<div className="space-y-1">
-									<p className="text-sm font-medium">Dropping</p>
-									<Alert>
-										<AlertTitle>{makeupTarget.shiftTypeName}</AlertTitle>
-										<AlertDescription>{makeupSummary}</AlertDescription>
-									</Alert>
-								</div>
-								<div className="flex items-center gap-2">
-									<Checkbox
-										id={restrictCheckboxId}
-										checked={restrictToSameType}
-										onCheckedChange={handleRestrictToggle}
-									/>
-									<Label htmlFor={restrictCheckboxId} className="text-sm">
-										Show only {makeupTarget.shiftTypeName} shifts
-									</Label>
-								</div>
-							</div>
-						) : null}
-
-						<div className="rounded-md border">
-							<div className="max-h-64 min-h-[16rem] overflow-y-auto overflow-x-auto">
-								{makeupOptionsLoading ? (
-									<div className="flex min-h-[16rem] items-center justify-center">
-										<Spinner className="size-6" />
-									</div>
-								) : makeupOccurrences.length === 0 ? (
-									<div className="flex min-h-[16rem] items-center justify-center text-sm text-muted-foreground">
-										No open shift occurrences match your filters.
-									</div>
-								) : (
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead>Shift</TableHead>
-												<TableHead>Date</TableHead>
-												<TableHead>Time</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{makeupOccurrences.map((occ) => {
-												const isSelected =
-													selectedMakeupOccurrenceId === occ.id;
-												return (
-													<TableRow
-														key={occ.id}
-														data-state={isSelected ? "selected" : undefined}
-														className={cn(
-															"cursor-pointer",
-															isSelected && "bg-muted",
-														)}
-														onClick={() =>
-															setSelectedMakeupOccurrenceId(occ.id)
-														}
-													>
-														<TableCell>
-															<div className="font-medium">
-																{occ.shiftTypeName}
-															</div>
-															<div className="text-xs text-muted-foreground">
-																{occ.shiftTypeLocation}
-															</div>
-														</TableCell>
-														<TableCell>
-															{formatDateInAppTimezone(occ.timestamp, {
-																formatString: "MMM D",
-															})}
-														</TableCell>
-														<TableCell>
-															{formatTimeRange(occ.startTime, occ.endTime, {
-																referenceDate: occ.timestamp,
-															})}
-														</TableCell>
-													</TableRow>
-												);
-											})}
-										</TableBody>
-									</Table>
-								)}
-							</div>
-						</div>
-						{makeupTotalPages > 1 && (
-							<div className="mt-3 overflow-x-auto">
-								<TablePagination
-									className="justify-center"
-									page={makeupPage}
-									totalPages={makeupTotalPages}
-									onPageChange={setMakeupPage}
-								/>
-							</div>
-						)}
-
-						<div className="space-y-2">
-							<Label htmlFor={dropMakeupNotesId}>Reason (optional)</Label>
-							<Textarea
-								id={dropMakeupNotesId}
-								value={dropMakeupNotes}
-								onChange={(event) => setDropMakeupNotes(event.target.value)}
-								placeholder="Let the coordinators know why you're dropping and selecting this makeup shift."
-								maxLength={500}
-							/>
-							<p className="text-xs text-muted-foreground text-right">
-								{dropMakeupNotes.length}/500 characters
-							</p>
-						</div>
-					</div>
-
-					<SheetFooter className="gap-2 sm:flex-row">
-						<Button
-							variant="outline"
-							onClick={closeMakeupSheet}
-							disabled={isSubmittingMakeup}
-						>
-							Cancel
-						</Button>
-						<Button
-							variant="default"
-							onClick={handleDropMakeupConfirm}
-							disabled={!canSubmitMakeup}
-						>
-							{isSubmittingMakeup ? "Scheduling…" : "Confirm Makeup"}
-						</Button>
-					</SheetFooter>
-				</SheetContent>
-			</Sheet>
-		</>
+						<SheetFooter className="gap-2 sm:flex-row">
+							<Button
+								variant="outline"
+								onClick={closeMakeupSheet}
+								disabled={isSubmittingMakeup}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="default"
+								onClick={handleDropMakeupConfirm}
+								disabled={!canSubmitMakeup}
+							>
+								{isSubmittingMakeup ? "Scheduling…" : "Confirm Makeup"}
+							</Button>
+						</SheetFooter>
+					</SheetContent>
+				</Sheet>
+			</PageContent>
+		</Page>
 	);
 }

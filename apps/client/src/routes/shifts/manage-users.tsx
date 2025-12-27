@@ -7,14 +7,21 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ShieldCheckIcon, UsersIcon } from "lucide-react";
+import { UsersIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
-import { MissingPermissions } from "@/components/missing-permissions";
-import { PeriodNotSelected } from "@/components/period-not-selected";
-import { usePeriod } from "@/components/period-provider";
-import { TablePagination } from "@/components/table-pagination";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	Page,
+	PageContent,
+	PageDescription,
+	PageHeader,
+	PageTitle,
+} from "@/components/layout";
+import { usePeriod } from "@/components/providers/period-provider";
+import { TablePagination } from "@/components/shared/table-pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,7 +76,7 @@ type AttendanceStatsSnapshot = {
 	attendanceCoveragePercent: number;
 };
 
-const EMPTY_ATTENDANCE_STATS: AttendanceStatsSnapshot = {
+const _EMPTY_ATTENDANCE_STATS: AttendanceStatsSnapshot = {
 	attended: 0,
 	missed: 0,
 	dropped: 0,
@@ -242,132 +249,133 @@ function ManageUserShiftsPage() {
 	}
 
 	return (
-		<div className="container space-y-4 p-4">
-			<div className="flex flex-wrap items-center justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-bold flex items-center gap-2">
-						<ShieldCheckIcon className="h-6 w-6" /> Manage User Shifts
-					</h1>
-					<p className="text-muted-foreground text-sm">
-						Assign and review staffing for this period
-					</p>
-				</div>
-			</div>
+		<Page>
+			<PageHeader>
+				<PageTitle>Manage User Shifts</PageTitle>
+				<PageDescription>
+					Assign and review staffing for this period
+				</PageDescription>
+			</PageHeader>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Select user</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="grid gap-4 md:grid-cols-2">
-						<div>
-							<p className="text-sm font-medium mb-2">Staffing user</p>
-							<PeriodUserSelector
-								periodId={selectedPeriodId}
-								value={selectedUser}
-								onChange={setSelectedUser}
-								placeholder="Search for a staffing user"
-							/>
-						</div>
-						<div>
-							<p className="text-sm font-medium mb-2">Period</p>
-							<div className="flex h-10 items-center rounded-md border px-3 text-sm">
-								{periodLabel}
+			<PageContent>
+				<Card>
+					<CardHeader>
+						<CardTitle>Select user</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="grid gap-4 md:grid-cols-2">
+							<div>
+								<p className="text-sm font-medium mb-2">Staffing user</p>
+								<PeriodUserSelector
+									periodId={selectedPeriodId}
+									value={selectedUser}
+									onChange={setSelectedUser}
+									placeholder="Search for a staffing user"
+								/>
+							</div>
+							<div>
+								<p className="text-sm font-medium mb-2">Period</p>
+								<div className="flex h-10 items-center rounded-md border px-3 text-sm">
+									{periodLabel}
+								</div>
 							</div>
 						</div>
-					</div>
-					{selectedUser ? (
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							<SummaryStat label="Assigned shifts" value={assignedCount} />
-							<SummaryStat label="Upcoming" value={upcomingCount} />
-							<SummaryStat label="Attendance records" value={attendanceCount} />
-						</div>
-					) : (
-						<p className="text-sm text-muted-foreground">
-							Choose a user above to view their staffing details.
-						</p>
-					)}
-				</CardContent>
-			</Card>
+						{selectedUser ? (
+							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+								<SummaryStat label="Assigned shifts" value={assignedCount} />
+								<SummaryStat label="Upcoming" value={upcomingCount} />
+								<SummaryStat
+									label="Attendance records"
+									value={attendanceCount}
+								/>
+							</div>
+						) : (
+							<p className="text-sm text-muted-foreground">
+								Choose a user above to view their staffing details.
+							</p>
+						)}
+					</CardContent>
+				</Card>
 
-			{selectedUser ? (
-				<>
-					{canManageAssignments ? (
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<UsersIcon className="h-5 w-5" /> Shift assignments
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<Tabs defaultValue="assign" className="space-y-4">
-									<TabsList>
-										<TabsTrigger value="assign">Find & assign</TabsTrigger>
-										<TabsTrigger value="current">
-											Current assignments
-										</TabsTrigger>
-									</TabsList>
-									<TabsContent value="assign" className="space-y-4">
-										<SchedulesSection
-											query={schedulesQuery}
-											assignMutation={assignMutation}
-											unassignMutation={unassignMutation}
-											activeUserId={selectedUser.id}
-										/>
-									</TabsContent>
-									<TabsContent value="current" className="space-y-4">
-										<AssignedSchedulesSection
-											query={schedulesQuery}
-											unassignMutation={unassignMutation}
-											activeUserId={selectedUser.id}
-										/>
-									</TabsContent>
-								</Tabs>
-							</CardContent>
-						</Card>
-					) : null}
-
-					<div className="grid gap-4 lg:grid-cols-2">
-						{canViewUpcoming ? (
+				{selectedUser ? (
+					<>
+						{canManageAssignments ? (
 							<Card>
 								<CardHeader>
-									<CardTitle>Upcoming shifts</CardTitle>
+									<CardTitle className="flex items-center gap-2">
+										<UsersIcon className="h-5 w-5" /> Shift assignments
+									</CardTitle>
 								</CardHeader>
 								<CardContent>
-									<UpcomingSection
-										query={upcomingQuery}
-										activeUserId={selectedUser.id}
-									/>
+									<Tabs defaultValue="assign" className="space-y-4">
+										<TabsList>
+											<TabsTrigger value="assign">Find & assign</TabsTrigger>
+											<TabsTrigger value="current">
+												Current assignments
+											</TabsTrigger>
+										</TabsList>
+										<TabsContent value="assign" className="space-y-4">
+											<SchedulesSection
+												query={schedulesQuery}
+												assignMutation={assignMutation}
+												unassignMutation={unassignMutation}
+												activeUserId={selectedUser.id}
+											/>
+										</TabsContent>
+										<TabsContent value="current" className="space-y-4">
+											<AssignedSchedulesSection
+												query={schedulesQuery}
+												unassignMutation={unassignMutation}
+												activeUserId={selectedUser.id}
+											/>
+										</TabsContent>
+									</Tabs>
 								</CardContent>
 							</Card>
 						) : null}
-						{canViewAttendance ? (
-							<Card>
-								<CardHeader>
-									<CardTitle>Attendance history</CardTitle>
-								</CardHeader>
-								<CardContent>
-									<AttendanceSection
-										query={attendanceQuery}
-										activeUserId={selectedUser.id}
-									/>
-								</CardContent>
-							</Card>
-						) : null}
-					</div>
 
-					{!canManageAssignments && !canViewUpcoming && !canViewAttendance ? (
-						<div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-							You do not have permission to view staffing data for this user.
+						<div className="grid gap-4 lg:grid-cols-2">
+							{canViewUpcoming ? (
+								<Card>
+									<CardHeader>
+										<CardTitle>Upcoming shifts</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<UpcomingSection
+											query={upcomingQuery}
+											activeUserId={selectedUser.id}
+										/>
+									</CardContent>
+								</Card>
+							) : null}
+							{canViewAttendance ? (
+								<Card>
+									<CardHeader>
+										<CardTitle>Attendance history</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<AttendanceSection
+											query={attendanceQuery}
+											activeUserId={selectedUser.id}
+										/>
+									</CardContent>
+								</Card>
+							) : null}
 						</div>
-					) : null}
-				</>
-			) : (
-				<div className="flex items-center justify-center rounded-md border border-dashed py-16 text-sm text-muted-foreground">
-					Select a user to load shift data
-				</div>
-			)}
-		</div>
+
+						{!canManageAssignments && !canViewUpcoming && !canViewAttendance ? (
+							<div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+								You do not have permission to view staffing data for this user.
+							</div>
+						) : null}
+					</>
+				) : (
+					<div className="flex items-center justify-center rounded-md border border-dashed py-16 text-sm text-muted-foreground">
+						Select a user to load shift data
+					</div>
+				)}
+			</PageContent>
+		</Page>
 	);
 }
 
@@ -904,7 +912,7 @@ function AttendanceSection({ query, activeUserId }: AttendanceSectionProps) {
 		setPage(1);
 	}, [activeUserId]);
 
-	const stats = query.data?.stats ?? EMPTY_ATTENDANCE_STATS;
+	const stats = query.data?.stats ?? _EMPTY_ATTENDANCE_STATS;
 	const records =
 		query.data?.attendances ?? ([] as AttendanceData["attendances"]);
 	const hasRecords = records.length > 0;

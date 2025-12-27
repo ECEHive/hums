@@ -4,6 +4,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Check, FileTextIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { RequireAuth } from "@/auth/AuthProvider";
+import {
+	Page,
+	PageContent,
+	PageDescription,
+	PageHeader,
+	PageTitle,
+} from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -94,132 +101,140 @@ function MyAgreements() {
 
 	if (isLoadingAll) {
 		return (
-			<div className="container p-4">
-				<div className="flex items-center justify-center h-64">
-					<Spinner />
-				</div>
-			</div>
+			<Page>
+				<PageHeader>
+					<PageTitle>My Agreements</PageTitle>
+					<PageDescription>
+						Review and accept required agreements
+					</PageDescription>
+				</PageHeader>
+				<PageContent>
+					<div className="flex items-center justify-center h-64">
+						<Spinner />
+					</div>
+				</PageContent>
+			</Page>
 		);
 	}
 
 	const agreements = allAgreements?.agreements || [];
 
 	return (
-		<div className="container p-4 space-y-4">
-			<div>
-				<h1 className="text-2xl font-bold">My Agreements</h1>
-				<p className="text-muted-foreground">
-					Review and accept required agreements
-				</p>
-			</div>
+		<Page>
+			<PageHeader>
+				<PageTitle>My Agreements</PageTitle>
+				<PageDescription>Review and accept required agreements</PageDescription>
+			</PageHeader>
 
-			{agreements.length === 0 ? (
-				<Empty>
-					<EmptyContent>
-						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<FileTextIcon />
-							</EmptyMedia>
-							<EmptyTitle>No agreements</EmptyTitle>
-							<EmptyDescription>
-								There are no agreements to review at this time.
-							</EmptyDescription>
-						</EmptyHeader>
-					</EmptyContent>
-				</Empty>
-			) : (
-				<div className="grid gap-4">
-					{agreements.map((agreement) => {
-						const hasAgreed = agreedIds.has(agreement.id);
-						return (
-							<Card key={agreement.id}>
-								<CardHeader>
-									<div className="flex items-start justify-between">
-										<div className="space-y-1">
-											<CardTitle className="text-lg">
-												{agreement.title}
-											</CardTitle>
-											<CardDescription>
-												{hasAgreed ? (
-													<span className="flex items-center gap-1 text-green-600">
-														<Check className="h-4 w-4" />
-														Agreed
-													</span>
-												) : (
-													<span className="text-destructive">
-														Action required
-													</span>
-												)}
-											</CardDescription>
+			<PageContent>
+				{agreements.length === 0 ? (
+					<Empty>
+						<EmptyContent>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<FileTextIcon />
+								</EmptyMedia>
+								<EmptyTitle>No agreements</EmptyTitle>
+								<EmptyDescription>
+									There are no agreements to review at this time.
+								</EmptyDescription>
+							</EmptyHeader>
+						</EmptyContent>
+					</Empty>
+				) : (
+					<div className="grid gap-4">
+						{agreements.map((agreement) => {
+							const hasAgreed = agreedIds.has(agreement.id);
+							return (
+								<Card key={agreement.id}>
+									<CardHeader>
+										<div className="flex items-start justify-between">
+											<div className="space-y-1">
+												<CardTitle className="text-lg">
+													{agreement.title}
+												</CardTitle>
+												<CardDescription>
+													{hasAgreed ? (
+														<span className="flex items-center gap-1 text-green-600">
+															<Check className="h-4 w-4" />
+															Agreed
+														</span>
+													) : (
+														<span className="text-destructive">
+															Action required
+														</span>
+													)}
+												</CardDescription>
+											</div>
+											{!hasAgreed && (
+												<Button onClick={() => handleOpenDialog(agreement)}>
+													Review & Accept
+												</Button>
+											)}
 										</div>
-										{!hasAgreed && (
-											<Button onClick={() => handleOpenDialog(agreement)}>
-												Review & Accept
-											</Button>
-										)}
-									</div>
-								</CardHeader>
-								<CardContent>
-									<p className="text-sm text-muted-foreground line-clamp-2">
-										{agreement.content}
-									</p>
-								</CardContent>
-							</Card>
-						);
-					})}
-				</div>
-			)}
+									</CardHeader>
+									<CardContent>
+										<p className="text-sm text-muted-foreground line-clamp-2">
+											{agreement.content}
+										</p>
+									</CardContent>
+								</Card>
+							);
+						})}
+					</div>
+				)}
 
-			{/* Agreement Dialog */}
-			<Dialog
-				open={!!selectedAgreement}
-				onOpenChange={(open) => {
-					if (!open) {
-						setSelectedAgreement(null);
-						setAgreed(false);
-					}
-				}}
-			>
-				<DialogContent className="sm:max-w-[600px]">
-					<DialogHeader>
-						<DialogTitle>{selectedAgreement?.title}</DialogTitle>
-						<DialogDescription>
-							Please review and accept this agreement
-						</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-4">
-						<div className="max-h-[400px] overflow-y-auto border rounded-md p-4 bg-muted/30">
-							<div className="whitespace-pre-wrap text-sm">
-								{selectedAgreement?.content}
+				{/* Agreement Dialog */}
+				<Dialog
+					open={!!selectedAgreement}
+					onOpenChange={(open) => {
+						if (!open) {
+							setSelectedAgreement(null);
+							setAgreed(false);
+						}
+					}}
+				>
+					<DialogContent className="sm:max-w-[600px]">
+						<DialogHeader>
+							<DialogTitle>{selectedAgreement?.title}</DialogTitle>
+							<DialogDescription>
+								Please review and accept this agreement
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-4">
+							<div className="max-h-[400px] overflow-y-auto border rounded-md p-4 bg-muted/30">
+								<div className="whitespace-pre-wrap text-sm">
+									{selectedAgreement?.content}
+								</div>
+							</div>
+							<div className="flex items-center space-x-2">
+								<Checkbox
+									id={checkboxId}
+									checked={agreed}
+									onCheckedChange={(e) => setAgreed(!!e)}
+								/>
+								<Label
+									htmlFor={checkboxId}
+									className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+								>
+									{selectedAgreement?.confirmationText || "I agree"}
+								</Label>
 							</div>
 						</div>
-						<div className="flex items-center space-x-2">
-							<Checkbox
-								id={checkboxId}
-								checked={agreed}
-								onCheckedChange={(e) => setAgreed(!!e)}
-							/>
-							<Label
-								htmlFor={checkboxId}
-								className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+						<DialogFooter>
+							<DialogClose asChild>
+								<Button variant="outline">Cancel</Button>
+							</DialogClose>
+							<Button
+								onClick={handleAgree}
+								disabled={!agreed || agreeMutation.isPending}
 							>
-								{selectedAgreement?.confirmationText || "I agree"}
-							</Label>
-						</div>
-					</div>
-					<DialogFooter>
-						<DialogClose asChild>
-							<Button variant="outline">Cancel</Button>
-						</DialogClose>
-						<Button
-							onClick={handleAgree}
-							disabled={!agreed || agreeMutation.isPending}
-						>
-							{agreeMutation.isPending ? <Spinner /> : "Accept"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</div>
+								{agreeMutation.isPending ? <Spinner /> : "Accept"}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			</PageContent>
+		</Page>
 	);
 }

@@ -3,11 +3,11 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useId, useState } from "react";
 import { z } from "zod";
-import { ColorPicker } from "@/components/color-picker";
 import {
 	type Role,
 	RoleMultiSelect,
 } from "@/components/roles/role-multiselect";
+import { ColorPicker } from "@/components/shared/color-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

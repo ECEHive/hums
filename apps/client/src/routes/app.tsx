@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { RequireAuth } from "@/auth/AuthProvider";
-import { AgreementsBanner } from "@/components/agreements-banner";
-import { AppSidebar } from "@/components/app-sidebar";
-import { ImpersonationBanner } from "@/components/impersonate-banner";
+import { AgreementsBanner } from "@/components/banners/agreements-banner";
+import { ImpersonationBanner } from "@/components/banners/impersonate-banner";
+import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/app")({

@@ -4,8 +4,15 @@ import {
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
-
 import {
 	Table,
 	TableBody,
@@ -19,12 +26,40 @@ interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
 	isLoading?: boolean;
+	emptyMessage?: string;
+	emptyDescription?: string;
+	emptyIcon?: React.ReactNode;
+	className?: string;
 }
 
+/**
+ * Standardized data table component
+ *
+ * Provides consistent:
+ * - Loading states with centered spinner
+ * - Empty states with customizable messages
+ * - Table styling and structure
+ * - Responsive behavior
+ *
+ * @example
+ * ```tsx
+ * <DataTable
+ *   columns={columns}
+ *   data={users}
+ *   isLoading={isLoading}
+ *   emptyMessage="No users found"
+ *   emptyDescription="Try adjusting your search or filters"
+ * />
+ * ```
+ */
 export function DataTable<TData, TValue>({
 	columns,
 	data,
 	isLoading = false,
+	emptyMessage = "No results",
+	emptyDescription,
+	emptyIcon,
+	className,
 }: DataTableProps<TData, TValue>) {
 	const table = useReactTable({
 		data,
@@ -34,7 +69,7 @@ export function DataTable<TData, TValue>({
 
 	return (
 		<div className="overflow-hidden rounded-md border relative">
-			<Table>
+			<Table className={className}>
 				<TableHeader className="bg-muted">
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
@@ -54,7 +89,7 @@ export function DataTable<TData, TValue>({
 				<TableBody>
 					{isLoading ? (
 						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 p-0 relative">
+							<TableCell colSpan={columns.length} className="h-32 p-0">
 								<div className="flex items-center justify-center h-full">
 									<Spinner className="size-8 text-primary" />
 								</div>
@@ -62,7 +97,10 @@ export function DataTable<TData, TValue>({
 						</TableRow>
 					) : table.getRowModel().rows?.length ? (
 						table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id}>
+							<TableRow
+								key={row.id}
+								data-state={row.getIsSelected() && "selected"}
+							>
 								{row.getVisibleCells().map((cell) => (
 									<TableCell key={cell.id}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -72,8 +110,24 @@ export function DataTable<TData, TValue>({
 						))
 					) : (
 						<TableRow>
-							<TableCell colSpan={columns.length} className="h-24 text-center">
-								No results
+							<TableCell colSpan={columns.length} className="h-32 p-0">
+								<div className="flex items-center justify-center h-full p-6">
+									<Empty className="border-0 p-0">
+										<EmptyHeader>
+											{emptyIcon && (
+												<EmptyMedia variant="icon">{emptyIcon}</EmptyMedia>
+											)}
+											<EmptyContent>
+												<EmptyTitle>{emptyMessage}</EmptyTitle>
+												{emptyDescription && (
+													<EmptyDescription>
+														{emptyDescription}
+													</EmptyDescription>
+												)}
+											</EmptyContent>
+										</EmptyHeader>
+									</Empty>
+								</div>
 							</TableCell>
 						</TableRow>
 					)}
