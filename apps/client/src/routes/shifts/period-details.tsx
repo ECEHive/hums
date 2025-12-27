@@ -4,6 +4,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarIcon, CheckCircleIcon, InfoIcon, Pencil } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -11,12 +13,10 @@ import {
 	PageHeader,
 	PageTitle,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
-import { PeriodNotSelected } from "@/components/errors/period-not-selected";
-import { usePeriod } from "@/components/providers/period-provider";
 import { CreatePeriodSheet } from "@/components/periods/create-period-sheet";
 import { DeleteDialog } from "@/components/periods/delete-dialog";
 import { EditPeriodSheet } from "@/components/periods/edit-period-sheet";
+import { usePeriod } from "@/components/providers/period-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";

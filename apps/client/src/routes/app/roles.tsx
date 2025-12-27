@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -14,7 +15,6 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { generateColumns } from "@/components/roles/columns";
 import { CreateDialog } from "@/components/roles/create-dialog";
 import {

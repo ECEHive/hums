@@ -4,11 +4,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import { z } from "zod";
+import { TimeInput } from "@/components/shared/time-input";
 import {
 	type ShiftType,
 	ShiftTypeMultiselect,
 } from "@/components/shift-types/shift-type-multiselect";
-import { TimeInput } from "@/components/shared/time-input";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,

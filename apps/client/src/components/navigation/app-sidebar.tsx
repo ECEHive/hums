@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
 import { useTheme } from "@/components/providers/theme-provider";
+import { Logo } from "@/components/shared/logo";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -52,7 +53,6 @@ import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as sessionsPagePermissions } from "@/routes/app/sessions";
 import { permissions as usersPagePermissions } from "@/routes/app/users";
 import { permissions as schedulingIndexPagePermissions } from "@/routes/shifts/scheduling";
-import { Logo } from "@/components/shared/logo";
 
 // Sidebar menu items, grouped by section
 type AppSidebarItem = {

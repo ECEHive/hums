@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CircleAlert, DownloadIcon, NotebookTextIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
-import DateRangeSelector from "@/components/shared/date-range-selector";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -13,10 +13,10 @@ import {
 	PageTitle,
 	TableContainer,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { usePeriod } from "@/components/providers/period-provider";
 import { generateColumns } from "@/components/reports/columns";
 import { DataTable } from "@/components/shared";
+import DateRangeSelector from "@/components/shared/date-range-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

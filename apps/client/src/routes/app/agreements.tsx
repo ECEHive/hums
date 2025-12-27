@@ -5,6 +5,7 @@ import React from "react";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
 import { generateColumns } from "@/components/agreements/columns";
 import { CreateDialog } from "@/components/agreements/create-dialog";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -16,7 +17,6 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	DataTable,
 	PageSizeSelect,

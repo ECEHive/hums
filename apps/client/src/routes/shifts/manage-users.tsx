@@ -11,6 +11,8 @@ import { UsersIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageContent,
@@ -18,8 +20,6 @@ import {
 	PageHeader,
 	PageTitle,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
-import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { usePeriod } from "@/components/providers/period-provider";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

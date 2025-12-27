@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import React from "react";
 import { toast } from "sonner";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { RequireShiftAccess } from "@/components/guards/require-shift-access";
 import {
 	Page,
 	PageActions,
@@ -15,9 +17,7 @@ import {
 	createColumns,
 	type ShiftOccurrenceRow,
 } from "@/components/my-shifts/columns";
-import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { usePeriod } from "@/components/providers/period-provider";
-import { RequireShiftAccess } from "@/components/guards/require-shift-access";
 import {
 	DataTable,
 	PageSizeSelect,

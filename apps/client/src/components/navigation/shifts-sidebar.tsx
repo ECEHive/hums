@@ -19,7 +19,10 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
+import { PeriodSelector } from "@/components/periods/period-selector";
+import { usePeriod } from "@/components/providers/period-provider";
 import { useTheme } from "@/components/providers/theme-provider"; // Import useTheme from theme-provider
+import { Logo } from "@/components/shared/logo";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -52,9 +55,6 @@ import { permissions as reportsPagePermissions } from "@/routes/shifts/reports";
 import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
 import { permissions as shiftSchedulesPagePermissions } from "@/routes/shifts/shift-schedules";
 import { permissions as shiftTypesPagePermissions } from "@/routes/shifts/shift-types";
-import { Logo } from "@/components/shared/logo";
-import { usePeriod } from "@/components/providers/period-provider";
-import { PeriodSelector } from "@/components/periods/period-selector";
 
 // Sidebar menu items, grouped by section
 export const items = [
@@ -146,7 +146,7 @@ export function ShiftsSidebar() {
 		if (checkPermissions(user, item.permissions)) {
 			return true;
 		}
-		if (item.allowWithShiftAccess) {
+		if ("allowWithShiftAccess" in item && item.allowWithShiftAccess) {
 			return canAccessShifts;
 		}
 		return false;

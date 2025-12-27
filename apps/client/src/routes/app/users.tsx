@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Filter } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -15,7 +16,6 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	DataTable,
 	PageSizeSelect,

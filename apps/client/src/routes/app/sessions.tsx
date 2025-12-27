@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ClockIcon, Filter, X } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageContent,
@@ -14,7 +15,6 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { columns } from "@/components/sessions/columns";
 import {
 	DataTable,

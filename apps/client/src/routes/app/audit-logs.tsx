@@ -14,6 +14,7 @@ import type {
 	AuditLogRow,
 } from "@/components/audit-logs/types";
 import { AuditLogUserSelector } from "@/components/audit-logs/user-selector";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -22,7 +23,6 @@ import {
 	PageTitle,
 	TableContainer,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	DataTable,
 	PageSizeSelect,

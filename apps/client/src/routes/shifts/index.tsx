@@ -6,10 +6,10 @@ import {
 	UserPlusIcon,
 } from "lucide-react";
 import { useCurrentUser } from "@/auth/AuthProvider";
-import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
-import { usePeriod } from "@/components/providers/period-provider";
 import { RequireShiftAccess } from "@/components/guards/require-shift-access";
+import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
+import { usePeriod } from "@/components/providers/period-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShiftAccess } from "@/hooks/use-shift-access";

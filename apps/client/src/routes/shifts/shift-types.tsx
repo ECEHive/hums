@@ -4,6 +4,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
+import { PeriodNotSelected } from "@/components/errors/period-not-selected";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -15,8 +17,6 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
-import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { usePeriod } from "@/components/providers/period-provider";
 import {
 	DataTable,

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import React from "react";
 import { RequirePermissions } from "@/auth";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { generateColumns } from "@/components/kiosks/columns";
 import { CreateDialog } from "@/components/kiosks/create-dialog";
 import {
@@ -16,7 +17,6 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	DataTable,
 	PageSizeSelect,

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
 import { createTokenColumns } from "@/components/api-tokens/columns";
 import type { ApiTokenRow } from "@/components/api-tokens/types";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
 	PageActions,
@@ -22,7 +23,6 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { DataTable, SearchInput } from "@/components/shared";
 import {
 	AlertDialog,

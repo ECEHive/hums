@@ -3,8 +3,8 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useState } from "react";
 import { z } from "zod";
-import { ShiftTypeSelector } from "@/components/shift-types/shift-type-selector";
 import { TimeInput } from "@/components/shared/time-input";
+import { ShiftTypeSelector } from "@/components/shift-types/shift-type-selector";
 import { Button } from "@/components/ui/button";
 import {
 	FieldDescription,
