@@ -10,16 +10,11 @@ import {
 	PageContent,
 	PageHeader,
 	PageTitle,
-	TableActions,
 	TableContainer,
 	TableToolbar,
 } from "@/components/layout";
 import { columns } from "@/components/my-sessions/columns";
-import {
-	DataTable,
-	PageSizeSelect,
-	TablePaginationFooter,
-} from "@/components/shared";
+import { DataTable, TablePaginationFooter } from "@/components/shared";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -213,16 +208,6 @@ function MySessionsPage() {
 						<TableContainer>
 							<TableToolbar>
 								<div />
-								<TableActions>
-									<PageSizeSelect
-										pageSize={pageSize}
-										onPageSizeChange={(size) => {
-											setPageSize(size);
-											resetToFirstPage();
-										}}
-										pageSizeOptions={[10, 20, 50, 100]}
-									/>
-								</TableActions>
 							</TableToolbar>
 
 							<DataTable
@@ -242,6 +227,12 @@ function MySessionsPage() {
 									currentCount={sessions.length}
 									total={sessionsData.total}
 									itemName="sessions"
+									pageSize={pageSize}
+									onPageSizeChange={(size) => {
+										setPageSize(size);
+										resetToFirstPage();
+									}}
+									pageSizeOptions={[10, 20, 50, 100]}
 								/>
 							)}
 						</TableContainer>

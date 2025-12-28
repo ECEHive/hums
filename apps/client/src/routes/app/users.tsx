@@ -11,14 +11,12 @@ import {
 	PageContent,
 	PageHeader,
 	PageTitle,
-	TableActions,
 	TableContainer,
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
 import {
 	DataTable,
-	PageSizeSelect,
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
@@ -122,15 +120,6 @@ function Users() {
 								}}
 							/>
 						</TableSearchInput>
-						<TableActions>
-							<PageSizeSelect
-								pageSize={pageSize}
-								onPageSizeChange={(size) => {
-									setPageSize(size);
-									resetToFirstPage();
-								}}
-							/>
-						</TableActions>
 					</TableToolbar>
 
 					<DataTable
@@ -149,6 +138,11 @@ function Users() {
 						currentCount={data.users.length}
 						total={data.total}
 						itemName="users"
+						pageSize={pageSize}
+						onPageSizeChange={(size) => {
+							setPageSize(size);
+							resetToFirstPage();
+						}}
 					/>
 				</TableContainer>
 			</PageContent>

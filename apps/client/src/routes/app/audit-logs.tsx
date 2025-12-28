@@ -23,11 +23,7 @@ import {
 	PageTitle,
 	TableContainer,
 } from "@/components/layout";
-import {
-	DataTable,
-	PageSizeSelect,
-	TablePaginationFooter,
-} from "@/components/shared";
+import { DataTable, TablePaginationFooter } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -325,17 +321,6 @@ function AuditLogsPage() {
 
 				{/* Audit Logs Table */}
 				<TableContainer>
-					<div className="flex items-center justify-between px-1 py-2">
-						<PageSizeSelect
-							pageSize={pageSize}
-							onPageSizeChange={(size) => {
-								setPageSize(size);
-								setPage(1);
-							}}
-							pageSizeOptions={PAGE_SIZE_OPTIONS}
-						/>
-					</div>
-
 					<DataTable
 						columns={columns}
 						data={logs}
@@ -354,6 +339,12 @@ function AuditLogsPage() {
 							currentCount={logs.length}
 							total={total}
 							itemName="audit logs"
+							pageSize={pageSize}
+							onPageSizeChange={(size) => {
+								setPageSize(size);
+								setPage(1);
+							}}
+							pageSizeOptions={PAGE_SIZE_OPTIONS}
 						/>
 					)}
 				</TableContainer>

@@ -12,7 +12,6 @@ import {
 	PageContent,
 	PageHeader,
 	PageTitle,
-	TableActions,
 	TableContainer,
 	TableSearchInput,
 	TableToolbar,
@@ -20,7 +19,6 @@ import {
 import { usePeriod } from "@/components/providers/period-provider";
 import {
 	DataTable,
-	PageSizeSelect,
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
@@ -123,15 +121,6 @@ function ShiftTypesPage() {
 								}}
 							/>
 						</TableSearchInput>
-						<TableActions>
-							<PageSizeSelect
-								pageSize={pageSize}
-								onPageSizeChange={(size) => {
-									setPageSize(size);
-									resetToFirstPage();
-								}}
-							/>
-						</TableActions>
 					</TableToolbar>
 
 					<DataTable
@@ -150,6 +139,11 @@ function ShiftTypesPage() {
 						currentCount={data?.shiftTypes?.length ?? 0}
 						total={data?.total ?? 0}
 						itemName="shift types"
+						pageSize={pageSize}
+						onPageSizeChange={(size) => {
+							setPageSize(size);
+							resetToFirstPage();
+						}}
 					/>
 				</TableContainer>
 

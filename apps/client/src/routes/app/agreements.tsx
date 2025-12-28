@@ -12,14 +12,12 @@ import {
 	PageContent,
 	PageHeader,
 	PageTitle,
-	TableActions,
 	TableContainer,
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
 import {
 	DataTable,
-	PageSizeSelect,
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
@@ -97,15 +95,6 @@ function Agreements() {
 								}}
 							/>
 						</TableSearchInput>
-						<TableActions>
-							<PageSizeSelect
-								pageSize={pageSize}
-								onPageSizeChange={(size) => {
-									setPageSize(size);
-									resetToFirstPage();
-								}}
-							/>
-						</TableActions>
 					</TableToolbar>
 
 					<DataTable
@@ -124,6 +113,11 @@ function Agreements() {
 						currentCount={data.agreements.length}
 						total={data.total}
 						itemName="agreements"
+						pageSize={pageSize}
+						onPageSizeChange={(size) => {
+							setPageSize(size);
+							resetToFirstPage();
+						}}
 					/>
 				</TableContainer>
 			</PageContent>
