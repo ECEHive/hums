@@ -1,12 +1,11 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronsRightIcon, ClockIcon } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { ClockIcon } from "lucide-react";
 import { RequirePermissions, useCurrentUser } from "@/auth";
+import { QuickLinksCard } from "@/components/app/quick-links-card";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useShiftAccess } from "@/hooks/use-shift-access";
 
 export const Route = createFileRoute("/app/")({
 	component: () =>
@@ -21,7 +20,6 @@ export const permissions = [];
 
 function AppIndexLayout() {
 	const user = useCurrentUser();
-	const { canAccessShifts } = useShiftAccess();
 
 	const { data: sessionStats } = useQuery({
 		queryKey: ["mySessionStats"],
@@ -68,34 +66,7 @@ function AppIndexLayout() {
 						</CardContent>
 					</Card>
 
-					<Card className="col-span-1">
-						<CardContent>
-							<div className="flex flex-col space-y-3">
-								{canAccessShifts && (
-									<Link to="/shifts/scheduling">
-										<Button
-											variant="outline"
-											className="w-full flex items-center justify-between"
-										>
-											<span>Schedule Shifts</span>
-											<ChevronsRightIcon />
-										</Button>
-									</Link>
-								)}
-								{canAccessShifts && (
-									<Link to="/shifts/my-shifts">
-										<Button
-											variant="outline"
-											className="w-full flex items-center justify-between"
-										>
-											<span>View My Shifts</span>
-											<ChevronsRightIcon />
-										</Button>
-									</Link>
-								)}
-							</div>
-						</CardContent>
-					</Card>
+					<QuickLinksCard />
 				</div>
 
 				{/* Session Stats */}
