@@ -45,6 +45,11 @@ export type TapNotificationState = {
 	isExiting: boolean;
 };
 
+export type OneTimeLoginState = {
+	code: string;
+	expiresAt: Date;
+};
+
 type TapWorkflowState = {
 	isProcessing: boolean;
 	pendingAgreement: PendingAgreementState | null;
@@ -52,6 +57,7 @@ type TapWorkflowState = {
 	tapOutActionSelection: TapOutActionSelectionState | null;
 	tapNotification: TapNotificationState;
 	errorDialog: ErrorDialogState;
+	oneTimeLogin: OneTimeLoginState | null;
 };
 
 type TapWorkflowAction =
@@ -68,7 +74,9 @@ type TapWorkflowAction =
 	| { type: "tap_notification_exit_start" }
 	| { type: "error_show"; payload: string }
 	| { type: "error_clear" }
-	| { type: "error_exit_start" };
+	| { type: "error_exit_start" }
+	| { type: "one_time_login_set"; payload: OneTimeLoginState }
+	| { type: "one_time_login_clear" };
 
 const INITIAL_STATE: TapWorkflowState = {
 	isProcessing: false,
@@ -83,6 +91,7 @@ const INITIAL_STATE: TapWorkflowState = {
 		message: "",
 		isExiting: false,
 	},
+	oneTimeLogin: null,
 };
 
 const tapWorkflowReducer = (
@@ -154,6 +163,10 @@ const tapWorkflowReducer = (
 					isExiting: false,
 				},
 			};
+		case "one_time_login_set":
+			return { ...state, oneTimeLogin: action.payload };
+		case "one_time_login_clear":
+			return { ...state, oneTimeLogin: null };
 		default:
 			return state;
 	}
@@ -176,6 +189,7 @@ export function useTapWorkflow() {
 		tapOutActionSelection,
 		tapNotification,
 		errorDialog,
+		oneTimeLogin,
 	} = state;
 
 	const currentTapEventRef = useRef<TapEvent | null>(null);
@@ -453,6 +467,35 @@ export function useTapWorkflow() {
 		dispatch({ type: "tap_out_action_clear" });
 	}, [dispatch]);
 
+	const handleLoginWithoutCard = useCallback(async () => {
+		dispatch({ type: "processing_start" });
+		try {
+			const result = await trpc.oneTimeLoginCodes.generate.mutate({});
+			dispatch({
+				type: "one_time_login_set",
+				payload: {
+					code: result.code,
+					expiresAt: result.expiresAt,
+				},
+			});
+		} catch (error) {
+			logger.error(
+				formatLog({
+					action: "handleLoginWithoutCard",
+					success: false,
+					error,
+				}),
+			);
+			showError("Failed to generate login code. Please try again.");
+		} finally {
+			dispatch({ type: "processing_end" });
+		}
+	}, [dispatch, showError]);
+
+	const handleLoginWithoutCardCancel = useCallback(() => {
+		dispatch({ type: "one_time_login_clear" });
+	}, [dispatch]);
+
 	useEffect(() => {
 		return () => {
 			clearTimer(tapEventTimeoutRef);
@@ -472,6 +515,7 @@ export function useTapWorkflow() {
 		tapOutActionSelection,
 		tapNotification,
 		errorDialog,
+		oneTimeLogin,
 		handleTap: handleTapInOut,
 		handleAgreementComplete,
 		handleAgreementCancel,
@@ -480,6 +524,8 @@ export function useTapWorkflow() {
 		handleSessionTypeCancel,
 		handleTapOutActionSelect,
 		handleTapOutActionCancel,
+		handleLoginWithoutCard,
+		handleLoginWithoutCardCancel,
 		resetAgreementTimeout,
 		showError,
 		dismissTapNotification,

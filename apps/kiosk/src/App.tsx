@@ -1,9 +1,11 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
+import { OneTimeLoginQR } from "@/components/one-time-login-qr";
 import { ReadyView } from "@/components/ready-view";
 import { SetupView } from "@/components/setup-view";
 import { useCardReader } from "@/hooks/use-card-reader";
@@ -73,6 +75,11 @@ function App() {
 
 	const logoUrl = new URL("./assets/logo_dark.svg", import.meta.url).href;
 
+	// Determine the client base URL for one-time login
+	// If VITE_CLIENT_URL is set, use that; otherwise use the current page's origin
+	const clientBaseUrl =
+		import.meta.env.VITE_CLIENT_URL || window.location.origin;
+
 	const isPreConnection =
 		!kioskStatus.isKiosk ||
 		connectionStatus === "disconnected" ||
@@ -80,57 +87,69 @@ function App() {
 		connectionStatus === "error";
 
 	return (
-		<KioskContainer>
-			<div className="h-full min-w-full overflow-hidden dark flex flex-col">
-				{isPreConnection && (
-					<KioskHeader
-						logoUrl={logoUrl}
-						connectionStatus={connectionStatus}
-						kioskStatus={kioskStatus}
-						isFullscreen={isFullscreen}
-						onToggleFullscreen={toggleFullscreen}
-					/>
-				)}
+		<ErrorBoundary>
+			<KioskContainer>
+				<div className="h-full min-w-full overflow-hidden dark flex flex-col">
+					{isPreConnection && (
+						<KioskHeader
+							logoUrl={logoUrl}
+							connectionStatus={connectionStatus}
+							kioskStatus={kioskStatus}
+							isFullscreen={isFullscreen}
+							onToggleFullscreen={toggleFullscreen}
+						/>
+					)}
 
-				<main className="min-w-full flex-1 overflow-hidden relative">
-					<FlowOverlays
-						errorDialog={tapWorkflow.errorDialog}
-						sessionTypeSelection={tapWorkflow.sessionTypeSelection}
-						tapOutActionSelection={tapWorkflow.tapOutActionSelection}
-						pendingAgreement={tapWorkflow.pendingAgreement}
-						tapNotification={tapWorkflow.tapNotification}
-						onSessionTypeSelect={tapWorkflow.handleSessionTypeSelect}
-						onSessionTypeCancel={tapWorkflow.handleSessionTypeCancel}
-						onTapOutActionSelect={tapWorkflow.handleTapOutActionSelect}
-						onTapOutActionCancel={tapWorkflow.handleTapOutActionCancel}
-						onAgreementComplete={tapWorkflow.handleAgreementComplete}
-						onAgreementCancel={tapWorkflow.handleAgreementCancel}
-						onAgreementError={tapWorkflow.handleAgreementError}
-						onAgreementProgress={tapWorkflow.resetAgreementTimeout}
-					/>
+					<main className="min-w-full flex-1 overflow-hidden relative">
+						<FlowOverlays
+							errorDialog={tapWorkflow.errorDialog}
+							sessionTypeSelection={tapWorkflow.sessionTypeSelection}
+							tapOutActionSelection={tapWorkflow.tapOutActionSelection}
+							pendingAgreement={tapWorkflow.pendingAgreement}
+							tapNotification={tapWorkflow.tapNotification}
+							onSessionTypeSelect={tapWorkflow.handleSessionTypeSelect}
+							onSessionTypeCancel={tapWorkflow.handleSessionTypeCancel}
+							onTapOutActionSelect={tapWorkflow.handleTapOutActionSelect}
+							onTapOutActionCancel={tapWorkflow.handleTapOutActionCancel}
+							onAgreementComplete={tapWorkflow.handleAgreementComplete}
+							onAgreementCancel={tapWorkflow.handleAgreementCancel}
+							onAgreementError={tapWorkflow.handleAgreementError}
+							onAgreementProgress={tapWorkflow.resetAgreementTimeout}
+						/>
 
-					<div className="min-w-full h-full flex items-center justify-center">
-						{connectionStatus !== "connected" ? (
-							<SetupView
-								connectionStatus={connectionStatus}
-								kioskStatus={kioskStatus}
-								errorMessage={tapWorkflow.errorDialog.message}
-								onConnect={() => {
-									void connect();
-								}}
-							/>
-						) : (
-							<ReadyView
-								logoUrl={logoUrl}
-								isFullscreen={isFullscreen}
-								isProcessing={tapWorkflow.isProcessing}
-								onToggleFullscreen={toggleFullscreen}
-							/>
-						)}
-					</div>
-				</main>
-			</div>
-		</KioskContainer>
+						<div className="min-w-full h-full flex items-center justify-center">
+							{connectionStatus !== "connected" ? (
+								<SetupView
+									connectionStatus={connectionStatus}
+									kioskStatus={kioskStatus}
+									errorMessage={tapWorkflow.errorDialog.message}
+									onConnect={() => {
+										void connect();
+									}}
+								/>
+							) : (
+								<ReadyView
+									logoUrl={logoUrl}
+									isFullscreen={isFullscreen}
+									isProcessing={tapWorkflow.isProcessing}
+									onToggleFullscreen={toggleFullscreen}
+								/>
+							)}
+						</div>
+					</main>
+
+					{connectionStatus === "connected" && (
+						<OneTimeLoginQR
+							code={tapWorkflow.oneTimeLogin?.code ?? null}
+							clientUrl={clientBaseUrl}
+							expiresAt={tapWorkflow.oneTimeLogin?.expiresAt ?? null}
+							onShow={tapWorkflow.handleLoginWithoutCard}
+							onHide={tapWorkflow.handleLoginWithoutCardCancel}
+						/>
+					)}
+				</div>
+			</KioskContainer>
+		</ErrorBoundary>
 	);
 }
 

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShiftsRouteImport } from './routes/shifts'
+import { Route as OtaSessionLoginRouteImport } from './routes/ota-session-login'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,6 +38,11 @@ import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
 const ShiftsRoute = ShiftsRouteImport.update({
   id: '/shifts',
   path: '/shifts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OtaSessionLoginRoute = OtaSessionLoginRouteImport.update({
+  id: '/ota-session-login',
+  path: '/ota-session-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/ota-session-login': typeof OtaSessionLoginRoute
   '/shifts': typeof ShiftsRouteWithChildren
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/ota-session-login': typeof OtaSessionLoginRoute
   '/shifts': typeof ShiftsRouteWithChildren
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/ota-session-login'
     | '/shifts'
     | '/app/agreements'
     | '/app/api-tokens'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/ota-session-login'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/ota-session-login'
     | '/shifts'
     | '/app/agreements'
     | '/app/api-tokens'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  OtaSessionLoginRoute: typeof OtaSessionLoginRoute
   ShiftsRoute: typeof ShiftsRouteWithChildren
 }
 
@@ -325,6 +338,13 @@ declare module '@tanstack/react-router' {
       path: '/shifts'
       fullPath: '/shifts'
       preLoaderRoute: typeof ShiftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ota-session-login': {
+      id: '/ota-session-login'
+      path: '/ota-session-login'
+      fullPath: '/ota-session-login'
+      preLoaderRoute: typeof OtaSessionLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -552,6 +572,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  OtaSessionLoginRoute: OtaSessionLoginRoute,
   ShiftsRoute: ShiftsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
