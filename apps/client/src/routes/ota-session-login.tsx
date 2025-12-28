@@ -66,9 +66,9 @@ function OneTimeLogin() {
 		onSuccess: (data) => {
 			setActionCompleted(true);
 			setHasStaffingPermission(data.hasStaffingPermission);
-			// Refresh session stats
+			// Redirect after showing success message
 			setTimeout(() => {
-				window.location.href = "/app";
+				router.navigate({ to: "/app" });
 			}, 3000);
 		},
 	});

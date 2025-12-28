@@ -75,17 +75,22 @@ export function OneTimeLoginQR({
 		return () => clearInterval(interval);
 	}, [expiresAt, isVisible, onHide]);
 
-	// Auto-close after 15 seconds
+	// Auto-close after 15 seconds OR when code expires (whichever comes first)
 	useEffect(() => {
-		if (!isVisible) return;
+		if (!isVisible || !expiresAt) return;
+
+		const now = Date.now();
+		const expiresAtMs = new Date(expiresAt).getTime();
+		const timeUntilExpiry = expiresAtMs - now;
+		const closeAfter = Math.min(AUTO_CLOSE_SECONDS * 1000, timeUntilExpiry);
 
 		const timeout = setTimeout(() => {
 			setIsVisible(false);
 			onHide();
-		}, AUTO_CLOSE_SECONDS * 1000);
+		}, closeAfter);
 
 		return () => clearTimeout(timeout);
-	}, [isVisible, onHide]);
+	}, [isVisible, expiresAt, onHide]);
 
 	// Show QR when code is generated
 	useEffect(() => {
