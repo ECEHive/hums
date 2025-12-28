@@ -10,7 +10,6 @@ import {
 	PageContent,
 	PageHeader,
 	PageTitle,
-	TableActions,
 	TableContainer,
 	TableSearchInput,
 	TableToolbar,
@@ -18,7 +17,6 @@ import {
 import { columns } from "@/components/sessions/columns";
 import {
 	DataTable,
-	PageSizeSelect,
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
@@ -253,16 +251,6 @@ function SessionsPage() {
 										</Button>
 									)}
 								</TableSearchInput>
-								<TableActions>
-									<PageSizeSelect
-										pageSize={pageSize}
-										onPageSizeChange={(size) => {
-											setPageSize(size);
-											resetToFirstPage();
-										}}
-										pageSizeOptions={[10, 20, 50, 100]}
-									/>
-								</TableActions>
 							</TableToolbar>
 
 							<DataTable
@@ -282,6 +270,12 @@ function SessionsPage() {
 									currentCount={sessions.length}
 									total={sessionsData.total}
 									itemName="sessions"
+									pageSize={pageSize}
+									onPageSizeChange={(size) => {
+										setPageSize(size);
+										resetToFirstPage();
+									}}
+									pageSizeOptions={[10, 20, 50, 100]}
 								/>
 							)}
 						</TableContainer>

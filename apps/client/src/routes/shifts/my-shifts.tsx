@@ -18,11 +18,7 @@ import {
 	type ShiftOccurrenceRow,
 } from "@/components/my-shifts/columns";
 import { usePeriod } from "@/components/providers/period-provider";
-import {
-	DataTable,
-	PageSizeSelect,
-	TablePaginationFooter,
-} from "@/components/shared";
+import { DataTable, TablePaginationFooter } from "@/components/shared";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -320,17 +316,6 @@ function MyShifts() {
 
 			<PageContent>
 				<TableContainer>
-					<div className="flex items-center justify-between px-1 py-2">
-						<PageSizeSelect
-							pageSize={pageSize}
-							onPageSizeChange={(size) => {
-								setPageSize(size);
-								setPage(1);
-							}}
-							pageSizeOptions={[10, 20, 50, 100]}
-						/>
-					</div>
-
 					{selectedPeriodId ? (
 						<>
 							<DataTable
@@ -347,6 +332,12 @@ function MyShifts() {
 									currentCount={occurrences.length}
 									total={total}
 									itemName="shifts"
+									pageSize={pageSize}
+									onPageSizeChange={(size) => {
+										setPageSize(size);
+										setPage(1);
+									}}
+									pageSizeOptions={[10, 20, 50, 100]}
 								/>
 							)}
 						</>

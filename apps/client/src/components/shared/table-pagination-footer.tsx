@@ -1,4 +1,5 @@
 import { TableFooter, TableInfo } from "@/components/layout";
+import { PageSizeSelect } from "@/components/shared/page-size-select";
 import { TablePagination } from "@/components/shared/table-pagination";
 
 interface TablePaginationFooterProps {
@@ -10,6 +11,9 @@ interface TablePaginationFooterProps {
 	total: number;
 	itemName?: string;
 	className?: string;
+	pageSize: number;
+	onPageSizeChange: (size: number) => void;
+	pageSizeOptions?: number[];
 }
 
 /**
@@ -25,6 +29,8 @@ interface TablePaginationFooterProps {
  *   currentCount={data.users.length}
  *   total={total}
  *   itemName="users"
+ *   pageSize={pageSize}
+ *   onPageSizeChange={setPageSize}
  * />
  * ```
  */
@@ -37,6 +43,9 @@ export function TablePaginationFooter({
 	total,
 	itemName = "items",
 	className,
+	pageSize,
+	onPageSizeChange,
+	pageSizeOptions,
 }: TablePaginationFooterProps) {
 	return (
 		<TableFooter className={className}>
@@ -49,7 +58,13 @@ export function TablePaginationFooter({
 				onPageChange={onPageChange}
 				className="flex-1 flex justify-center"
 			/>
-			<div className="flex-1" />
+			<div className="flex-1 flex justify-end">
+				<PageSizeSelect
+					pageSize={pageSize}
+					onPageSizeChange={onPageSizeChange}
+					pageSizeOptions={pageSizeOptions}
+				/>
+			</div>
 		</TableFooter>
 	);
 }

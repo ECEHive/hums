@@ -12,14 +12,12 @@ import {
 	PageContent,
 	PageHeader,
 	PageTitle,
-	TableActions,
 	TableContainer,
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
 import {
 	DataTable,
-	PageSizeSelect,
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
@@ -97,15 +95,6 @@ function Kiosks() {
 								}}
 							/>
 						</TableSearchInput>
-						<TableActions>
-							<PageSizeSelect
-								pageSize={pageSize}
-								onPageSizeChange={(size) => {
-									setPageSize(size);
-									resetToFirstPage();
-								}}
-							/>
-						</TableActions>
 					</TableToolbar>
 
 					<DataTable
@@ -124,6 +113,11 @@ function Kiosks() {
 						currentCount={data.kiosks.length}
 						total={data.count}
 						itemName="kiosks"
+						pageSize={pageSize}
+						onPageSizeChange={(size) => {
+							setPageSize(size);
+							resetToFirstPage();
+						}}
 					/>
 				</TableContainer>
 			</PageContent>

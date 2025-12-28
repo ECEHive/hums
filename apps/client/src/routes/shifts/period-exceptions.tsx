@@ -12,7 +12,6 @@ import {
 	PageContent,
 	PageHeader,
 	PageTitle,
-	TableActions,
 	TableContainer,
 	TableSearchInput,
 	TableToolbar,
@@ -22,7 +21,6 @@ import { CreatePeriodExceptionSheet } from "@/components/period-exceptions/creat
 import { usePeriod } from "@/components/providers/period-provider";
 import {
 	DataTable,
-	PageSizeSelect,
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
@@ -127,15 +125,6 @@ function PeriodExceptionsPage() {
 								}}
 							/>
 						</TableSearchInput>
-						<TableActions>
-							<PageSizeSelect
-								pageSize={pageSize}
-								onPageSizeChange={(size) => {
-									setPageSize(size);
-									resetToFirstPage();
-								}}
-							/>
-						</TableActions>
 					</TableToolbar>
 
 					<DataTable
@@ -154,6 +143,11 @@ function PeriodExceptionsPage() {
 						currentCount={data?.periodExceptions?.length ?? 0}
 						total={data?.total ?? 0}
 						itemName="exceptions"
+						pageSize={pageSize}
+						onPageSizeChange={(size) => {
+							setPageSize(size);
+							resetToFirstPage();
+						}}
 					/>
 				</TableContainer>
 

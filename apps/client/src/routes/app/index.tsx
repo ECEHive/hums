@@ -1,11 +1,25 @@
 import { trpc } from "@ecehive/trpc/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ClockIcon } from "lucide-react";
+import { ClockIcon, LogOut } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { RequirePermissions, useCurrentUser } from "@/auth";
 import { QuickLinksCard } from "@/components/app/quick-links-card";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 
 export const Route = createFileRoute("/app/")({
 	component: () =>
@@ -20,6 +34,8 @@ export const permissions = [];
 
 function AppIndexLayout() {
 	const user = useCurrentUser();
+	const queryClient = useQueryClient();
+	const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
 
 	const { data: sessionStats } = useQuery({
 		queryKey: ["mySessionStats"],
@@ -27,6 +43,29 @@ function AppIndexLayout() {
 			return trpc.sessions.myStats.query({});
 		},
 	});
+
+	const endSessionMutation = useMutation({
+		mutationFn: async () => {
+			return trpc.sessions.endMySession.mutate({});
+		},
+		onSuccess: () => {
+			toast.success("Session ended successfully");
+			queryClient.invalidateQueries({ queryKey: ["mySessionStats"] });
+			setShowEndSessionDialog(false);
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to end session");
+			setShowEndSessionDialog(false);
+		},
+	});
+
+	const handleEndSession = () => {
+		endSessionMutation.mutate();
+	};
+
+	const canEndSession =
+		sessionStats?.currentlyActive &&
+		sessionStats?.activeSessionType === "regular";
 
 	const initials = (user?.name || user?.email || "User")
 		.split(" ")
@@ -78,7 +117,7 @@ function AppIndexLayout() {
 							</CardTitle>
 							<ClockIcon className="h-4 w-4 text-muted-foreground" />
 						</CardHeader>
-						<CardContent>
+						<CardContent className="space-y-3">
 							<div className="text-2xl font-bold">
 								{!sessionStats?.currentlyActive ? (
 									<span className="text-muted-foreground">Inactive</span>
@@ -93,6 +132,18 @@ function AppIndexLayout() {
 									? "in the space"
 									: "not in the space"}
 							</p>
+
+							{canEndSession && (
+								<Button
+									onClick={() => setShowEndSessionDialog(true)}
+									size="sm"
+									variant="outline"
+									className="w-full"
+								>
+									<LogOut className="mr-2 h-3 w-3" />
+									End Session
+								</Button>
+							)}
 						</CardContent>
 					</Card>
 
@@ -140,6 +191,40 @@ function AppIndexLayout() {
 					</Card>
 				</div>
 			</div>
+
+			<AlertDialog
+				open={showEndSessionDialog}
+				onOpenChange={setShowEndSessionDialog}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>End Current Session?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to end your current session? This action
+							cannot be undone and your session will be terminated immediately.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={endSessionMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleEndSession}
+							disabled={endSessionMutation.isPending}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{endSessionMutation.isPending ? (
+								<>
+									<Spinner className="mr-2 h-3 w-3" />
+									Ending...
+								</>
+							) : (
+								"End Session"
+							)}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

@@ -3,6 +3,7 @@ import { apiTokensRouter } from "./routers/apiTokens/_route";
 import { auditLogsRouter } from "./routers/auditLogs/_route";
 import { authRouter } from "./routers/auth/_route";
 import { kiosksRouter } from "./routers/kiosks/_route";
+import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
 import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
@@ -32,6 +33,7 @@ export const appRouter = router({
 	shiftAttendances: shiftAttendancesRouter,
 	sessions: sessionsRouter,
 	kiosks: kiosksRouter,
+	oneTimeLoginCodes: oneTimeLoginCodesRouter,
 	reports: reportsRouter,
 });
 

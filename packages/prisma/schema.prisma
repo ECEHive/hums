@@ -366,3 +366,19 @@ model AuditLog {
   @@index([apiTokenId, createdAt])
   @@index([action, createdAt])
 }
+
+model OneTimeAccessCode {
+  id Int @id @default(autoincrement())
+
+  // fields
+  code      String   @unique
+  usedAt    DateTime?
+  expiresAt DateTime
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // indexes
+  @@index([code, expiresAt])
+}
