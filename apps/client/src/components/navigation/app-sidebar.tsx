@@ -151,15 +151,12 @@ export function AppSidebar() {
 	const { canAccessShifts } = useShiftAccess();
 
 	const canViewItem = (item: AppSidebarItem) => {
-		// For items that support shift access, check that instead of permissions
+		// If shift access is required, only check canAccessShifts
 		if (item.allowWithShiftAccess) {
 			return canAccessShifts;
 		}
 		// Otherwise, check regular permissions
-		if (checkPermissions(user, item.permissions)) {
-			return true;
-		}
-		return false;
+		return checkPermissions(user, item.permissions);
 	};
 
 	// Collect all visible items across all groups to find the best match
