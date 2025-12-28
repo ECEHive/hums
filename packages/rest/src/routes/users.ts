@@ -17,6 +17,17 @@ import {
 
 // ===== Validation Schemas =====
 
+// Reusable username validation schema
+const UsernameValidationSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(100)
+	.regex(
+		/^[a-zA-Z0-9_-]+$/,
+		"Username must contain only letters, numbers, hyphens, and underscores",
+	);
+
 const ListUsersQuerySchema = z.object({
 	search: z.string().trim().min(1).optional(),
 	role: z.string().trim().min(1).optional(),
@@ -33,15 +44,7 @@ const UsernameParamsSchema = z.object({
 });
 
 const CreateUserSchema = z.object({
-	username: z
-		.string()
-		.trim()
-		.min(1)
-		.max(100)
-		.regex(
-			/^[a-zA-Z0-9_-]+$/,
-			"Username must contain only letters, numbers, hyphens, and underscores",
-		),
+	username: UsernameValidationSchema,
 	name: z.string().trim().min(1).max(255),
 	email: z.string().email().max(255),
 	cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
@@ -59,7 +62,7 @@ const BulkCreateUsersSchema = z.object({
 	users: z
 		.array(
 			z.object({
-				username: z.string().trim().min(1).max(100),
+				username: UsernameValidationSchema,
 				name: z.string().trim().min(1).max(255),
 				email: z.string().email().max(255),
 				cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
@@ -74,7 +77,7 @@ const BulkUpsertUsersSchema = z.object({
 	users: z
 		.array(
 			z.object({
-				username: z.string().trim().min(1).max(100),
+				username: UsernameValidationSchema,
 				name: z.string().trim().min(1).max(255).optional(),
 				email: z.string().email().max(255).optional(),
 				cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
@@ -304,6 +307,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					(upsertData.update as Prisma.UserUpdateInput).email =
 						finalUserData.email;
 				}
+				// Only add cardNumber to update/create if it has a concrete value (null or string)
 				if (normalizedCard !== undefined) {
 					(upsertData.update as Prisma.UserUpdateInput).cardNumber =
 						normalizedCard;
@@ -406,7 +410,13 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			email: string;
 			cardNumber: string | null | undefined;
 			roleIds: number[];
-			originalData: unknown;
+			originalData: {
+				username: string;
+				name: string;
+				email: string;
+				cardNumber?: string | null;
+				roles?: string[];
+			};
 		};
 
 		const usersToCreate: UserCreateData[] = [];

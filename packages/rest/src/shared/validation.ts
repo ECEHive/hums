@@ -3,6 +3,8 @@ import type { z } from "zod";
 
 /**
  * Handles validation errors consistently across all endpoints
+ * @param reply - The Fastify reply object
+ * @param error - The Zod validation error containing details about what failed
  */
 export function validationError(reply: FastifyReply, error: z.ZodError) {
 	return reply.code(400).send({
@@ -17,6 +19,9 @@ export function validationError(reply: FastifyReply, error: z.ZodError) {
 
 /**
  * Standard error response for not found resources
+ * @param reply - The Fastify reply object
+ * @param resource - The type of resource that was not found (e.g., "User", "Role")
+ * @param identifier - Optional identifier of the resource (e.g., username, ID)
  */
 export function notFoundError(
 	reply: FastifyReply,
@@ -76,6 +81,8 @@ export function badRequestError(
 
 /**
  * Standard error response for internal server errors
+ * @param reply - The Fastify reply object
+ * @param message - Optional custom error message (defaults to generic message)
  */
 export function internalError(reply: FastifyReply, message?: string) {
 	return reply.code(500).send({

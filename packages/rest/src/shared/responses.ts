@@ -1,5 +1,6 @@
 /**
  * Standard success response for single resource operations
+ * @param data - The resource data to return to the client
  */
 export function successResponse<T>(data: T) {
 	return {
