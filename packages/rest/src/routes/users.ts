@@ -178,14 +178,39 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		const updated: SerializedUser[] = [];
 		const failed: Array<{ item: unknown; error: string }> = [];
 
+		// Batch query: Check which users exist
+		const usernames = parsed.data.users.map((u) => u.username);
+		const existingUsersMap = new Map(
+			(
+				await prisma.user.findMany({
+					where: { username: { in: usernames } },
+					select: { username: true, id: true },
+				})
+			).map((u) => [u.username, u]),
+		);
+
+		// Batch query: Fetch all unique roles at once
+		const allRoleNames = Array.from(
+			new Set(
+				parsed.data.users
+					.filter((u) => u.roles && u.roles.length > 0)
+					.flatMap((u) => u.roles || []),
+			),
+		);
+		const allRoles =
+			allRoleNames.length > 0
+				? await prisma.role.findMany({
+						where: { name: { in: allRoleNames } },
+						select: { id: true, name: true },
+					})
+				: [];
+		const roleMap = new Map(allRoles.map((r) => [r.name, r]));
+
 		for (const userData of parsed.data.users) {
 			try {
 				const { username, roles: roleNames, ...data } = userData;
 
-				// Check if user exists
-				const existing = await prisma.user.findUnique({
-					where: { username },
-				});
+				const existing = existingUsersMap.get(username);
 
 				const finalUserData = { ...data };
 
@@ -215,17 +240,27 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					}
 				}
 
-				// Validate roles
+				// Validate roles using pre-fetched data
 				let roles: Array<{ id: number; name: string }> | null = null;
 				if (roleNames) {
-					roles = await ensureRolesExist(roleNames);
-					if (roles === null) {
+					const roleIds: Array<{ id: number; name: string }> = [];
+					const missingRoles: string[] = [];
+					for (const roleName of roleNames) {
+						const role = roleMap.get(roleName);
+						if (role) {
+							roleIds.push(role);
+						} else {
+							missingRoles.push(roleName);
+						}
+					}
+					if (missingRoles.length > 0) {
 						failed.push({
 							item: userData,
-							error: "One or more roles not found",
+							error: `Roles not found: ${missingRoles.join(", ")}`,
 						});
 						continue;
 					}
+					roles = roleIds;
 				}
 
 				// Upsert user
@@ -323,76 +358,154 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		const created: SerializedUser[] = [];
 		const failed: Array<{ item: unknown; error: string }> = [];
 
+		// Batch query: Check all usernames at once
+		const usernames = parsed.data.users.map((u) => u.username);
+		const existingUsers = await prisma.user.findMany({
+			where: { username: { in: usernames } },
+			select: { username: true },
+		});
+		const existingUsernames = new Set(existingUsers.map((u) => u.username));
+
+		// Batch query: Fetch all unique roles at once
+		const allRoleNames = Array.from(
+			new Set(parsed.data.users.flatMap((u) => u.roles || [])),
+		);
+		const allRoles =
+			allRoleNames.length > 0
+				? await prisma.role.findMany({
+						where: { name: { in: allRoleNames } },
+						select: { id: true, name: true },
+					})
+				: [];
+		const roleMap = new Map(allRoles.map((r) => [r.name, r]));
+
+		// Validate and prepare data
+		type UserCreateData = {
+			username: string;
+			name: string;
+			email: string;
+			cardNumber: string | null | undefined;
+			roleIds: number[];
+			originalData: unknown;
+		};
+
+		const usersToCreate: UserCreateData[] = [];
+
 		for (const userData of parsed.data.users) {
-			try {
-				const { username, roles: roleNames, ...data } = userData;
+			const { username, roles: roleNames, ...data } = userData;
 
-				// Check if user already exists
-				const existing = await prisma.user.findUnique({
-					where: { username },
+			// Check if user already exists
+			if (existingUsernames.has(username)) {
+				failed.push({
+					item: userData,
+					error: `User '${username}' already exists`,
 				});
+				continue;
+			}
 
-				if (existing) {
-					failed.push({
-						item: userData,
-						error: `User '${username}' already exists`,
-					});
-					continue;
-				}
-
-				// Normalize card number
-				let normalizedCard: string | null | undefined;
-				if (data.cardNumber !== undefined) {
-					if (data.cardNumber === null) {
-						normalizedCard = null;
-					} else {
-						normalizedCard = normalizeCardNumber(data.cardNumber);
-						if (!normalizedCard) {
-							failed.push({
-								item: userData,
-								error: "Invalid card number format",
-							});
-							continue;
-						}
-					}
-				}
-
-				// Validate roles
-				let roles: Array<{ id: number; name: string }> | null = null;
-				if (roleNames && roleNames.length > 0) {
-					roles = await ensureRolesExist(roleNames);
-					if (roles === null) {
+			// Normalize card number
+			let normalizedCard: string | null | undefined;
+			if (data.cardNumber !== undefined) {
+				if (data.cardNumber === null) {
+					normalizedCard = null;
+				} else {
+					normalizedCard = normalizeCardNumber(data.cardNumber);
+					if (!normalizedCard) {
 						failed.push({
 							item: userData,
-							error: "One or more roles not found",
+							error: "Invalid card number format",
 						});
 						continue;
 					}
 				}
+			}
 
-				// Create user
-				const user = await prisma.user.create({
-					data: {
-						username,
-						name: data.name,
-						email: data.email,
-						cardNumber: normalizedCard,
-						isSystemUser: false,
-						roles: roles
-							? {
-									connect: roles.map((r) => ({ id: r.id })),
-								}
-							: undefined,
-					},
-					include: { roles: true },
-				});
+			// Validate roles using pre-fetched data
+			const roleIds: number[] = [];
+			if (roleNames && roleNames.length > 0) {
+				const missingRoles: string[] = [];
+				for (const roleName of roleNames) {
+					const role = roleMap.get(roleName);
+					if (role) {
+						roleIds.push(role.id);
+					} else {
+						missingRoles.push(roleName);
+					}
+				}
+				if (missingRoles.length > 0) {
+					failed.push({
+						item: userData,
+						error: `Roles not found: ${missingRoles.join(", ")}`,
+					});
+					continue;
+				}
+			}
 
-				created.push(serializeUser(user));
-			} catch (error) {
-				failed.push({
-					item: userData,
-					error: error instanceof Error ? error.message : "Unknown error",
-				});
+			usersToCreate.push({
+				username,
+				name: data.name,
+				email: data.email,
+				cardNumber: normalizedCard,
+				roleIds,
+				originalData: userData,
+			});
+		}
+
+		// Batch create users in a transaction
+		if (usersToCreate.length > 0) {
+			try {
+				const createdUsers = await prisma.$transaction(
+					usersToCreate.map((userData) =>
+						prisma.user.create({
+							data: {
+								username: userData.username,
+								name: userData.name,
+								email: userData.email,
+								cardNumber: userData.cardNumber,
+								isSystemUser: false,
+								roles:
+									userData.roleIds.length > 0
+										? {
+												connect: userData.roleIds.map((id) => ({ id })),
+											}
+										: undefined,
+							},
+							include: { roles: true },
+						}),
+					),
+				);
+
+				for (const user of createdUsers) {
+					created.push(serializeUser(user));
+				}
+			} catch {
+				// If transaction fails, fall back to individual creates
+				for (const userData of usersToCreate) {
+					try {
+						const user = await prisma.user.create({
+							data: {
+								username: userData.username,
+								name: userData.name,
+								email: userData.email,
+								cardNumber: userData.cardNumber,
+								isSystemUser: false,
+								roles:
+									userData.roleIds.length > 0
+										? {
+												connect: userData.roleIds.map((id) => ({ id })),
+											}
+										: undefined,
+							},
+							include: { roles: true },
+						});
+						created.push(serializeUser(user));
+					} catch (err) {
+						failed.push({
+							item: userData.originalData,
+							error: err instanceof Error ? err.message : "Unknown error",
+						});
+					}
+				}
 			}
 		}
 
@@ -414,72 +527,160 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		const updated: SerializedUser[] = [];
 		const failed: Array<{ item: unknown; error: string }> = [];
 
+		// Batch query: Fetch all users at once
+		const usernames = parsed.data.operations.map((op) => op.username);
+		const usersMap = new Map(
+			(
+				await prisma.user.findMany({
+					where: { username: { in: usernames } },
+					select: { id: true, username: true },
+				})
+			).map((u) => [u.username, u]),
+		);
+
+		// Batch query: Fetch all unique roles at once
+		const allRoleNames = Array.from(
+			new Set(parsed.data.operations.flatMap((op) => op.roles)),
+		);
+		const allRoles = await prisma.role.findMany({
+			where: { name: { in: allRoleNames } },
+			select: { id: true, name: true },
+		});
+		const roleMap = new Map(allRoles.map((r) => [r.name, r]));
+
+		// Validate and prepare operations
+		type RoleOperation = {
+			userId: number;
+			operation: "set" | "add" | "remove";
+			roleIds: number[];
+			username: string;
+			originalData: unknown;
+		};
+
+		const validOperations: RoleOperation[] = [];
+
 		for (const operation of parsed.data.operations) {
-			try {
-				const { username, operation: op, roles: roleNames } = operation;
+			const { username, operation: op, roles: roleNames } = operation;
 
-				// Find user
-				const user = await prisma.user.findUnique({
-					where: { username },
-					include: { roles: true },
-				});
-
-				if (!user) {
-					failed.push({
-						item: operation,
-						error: `User '${username}' not found`,
-					});
-					continue;
-				}
-
-				// Validate roles
-				const roles = await ensureRolesExist(roleNames);
-				if (roles === null) {
-					failed.push({
-						item: operation,
-						error: "One or more roles not found",
-					});
-					continue;
-				}
-
-				// Perform operation
-				let updateData: Prisma.UserUpdateInput;
-				switch (op) {
-					case "set":
-						updateData = {
-							roles: {
-								set: roles.map((r) => ({ id: r.id })),
-							},
-						};
-						break;
-					case "add":
-						updateData = {
-							roles: {
-								connect: roles.map((r) => ({ id: r.id })),
-							},
-						};
-						break;
-					case "remove":
-						updateData = {
-							roles: {
-								disconnect: roles.map((r) => ({ id: r.id })),
-							},
-						};
-						break;
-				}
-
-				const updatedUser = await prisma.user.update({
-					where: { id: user.id },
-					data: updateData,
-					include: { roles: true },
-				});
-
-				updated.push(serializeUser(updatedUser));
-			} catch (error) {
+			// Check if user exists
+			const user = usersMap.get(username);
+			if (!user) {
 				failed.push({
 					item: operation,
-					error: error instanceof Error ? error.message : "Unknown error",
+					error: `User '${username}' not found`,
 				});
+				continue;
+			}
+
+			// Validate roles using pre-fetched data
+			const roleIds: number[] = [];
+			const missingRoles: string[] = [];
+			for (const roleName of roleNames) {
+				const role = roleMap.get(roleName);
+				if (role) {
+					roleIds.push(role.id);
+				} else {
+					missingRoles.push(roleName);
+				}
+			}
+			if (missingRoles.length > 0) {
+				failed.push({
+					item: operation,
+					error: `Roles not found: ${missingRoles.join(", ")}`,
+				});
+				continue;
+			}
+
+			validOperations.push({
+				userId: user.id,
+				operation: op,
+				roleIds,
+				username,
+				originalData: operation,
+			});
+		}
+
+		// Perform updates in a transaction
+		if (validOperations.length > 0) {
+			try {
+				const updatedUsers = await prisma.$transaction(
+					validOperations.map((op) => {
+						let updateData: Prisma.UserUpdateInput;
+						switch (op.operation) {
+							case "set":
+								updateData = {
+									roles: {
+										set: op.roleIds.map((id) => ({ id })),
+									},
+								};
+								break;
+							case "add":
+								updateData = {
+									roles: {
+										connect: op.roleIds.map((id) => ({ id })),
+									},
+								};
+								break;
+							case "remove":
+								updateData = {
+									roles: {
+										disconnect: op.roleIds.map((id) => ({ id })),
+									},
+								};
+								break;
+						}
+						return prisma.user.update({
+							where: { id: op.userId },
+							data: updateData,
+							include: { roles: true },
+						});
+					}),
+				);
+
+				for (const user of updatedUsers) {
+					updated.push(serializeUser(user));
+				}
+			} catch {
+				// If transaction fails, fall back to individual updates
+				for (const op of validOperations) {
+					try {
+						let updateData: Prisma.UserUpdateInput;
+						switch (op.operation) {
+							case "set":
+								updateData = {
+									roles: {
+										set: op.roleIds.map((id) => ({ id })),
+									},
+								};
+								break;
+							case "add":
+								updateData = {
+									roles: {
+										connect: op.roleIds.map((id) => ({ id })),
+									},
+								};
+								break;
+							case "remove":
+								updateData = {
+									roles: {
+										disconnect: op.roleIds.map((id) => ({ id })),
+									},
+								};
+								break;
+						}
+						const updatedUser = await prisma.user.update({
+							where: { id: op.userId },
+							data: updateData,
+							include: { roles: true },
+						});
+						updated.push(serializeUser(updatedUser));
+					} catch (err) {
+						failed.push({
+							item: op.originalData,
+							error: err instanceof Error ? err.message : "Unknown error",
+						});
+					}
+				}
 			}
 		}
 
