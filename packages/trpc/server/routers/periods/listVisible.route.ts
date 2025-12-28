@@ -27,8 +27,6 @@ export async function listVisibleHandler(options: TListVisibleOptions) {
 	const filters: Prisma.PeriodWhereInput[] = [
 		{ visibleStart: { lte: now } },
 		{ visibleEnd: { gte: now } },
-		{ start: { lte: now } },
-		{ end: { gte: now } },
 	];
 
 	if (!options.ctx.user.isSystemUser) {
