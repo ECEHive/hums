@@ -479,7 +479,7 @@ export function useTapWorkflow() {
 				},
 			});
 		} catch (error) {
-			logger.error(
+			log.error(
 				formatLog({
 					action: "handleLoginWithoutCard",
 					success: false,

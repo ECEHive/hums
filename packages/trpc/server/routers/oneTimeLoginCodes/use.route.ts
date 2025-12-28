@@ -4,7 +4,7 @@ import z from "zod";
 import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZUseSchema = z.object({
-	code: z.string().length(16), // 8 bytes in hex = 16 characters
+	code: z.string().length(16).optional(), // Optional code - can end session without code
 	action: z.enum(["login", "logout"]),
 });
 
@@ -17,6 +17,7 @@ export type TUseOptions = {
 
 /**
  * Use a one-time login code to start or end a session
+ * Code is required for login, but optional for logout (users can end their own sessions)
  * Code can only be used once and must not be expired
  */
 export async function useHandler(options: TUseOptions) {
@@ -27,37 +28,46 @@ export async function useHandler(options: TUseOptions) {
 		async (tx) => {
 			const now = new Date();
 
-			// Find and validate the code with FOR UPDATE to prevent race conditions
-			const otaCode = await tx.oneTimeAccessCode.findUnique({
-				where: { code },
-			});
+			// Validate code if provided (required for login, optional for logout)
+			if (code) {
+				// Find and validate the code with FOR UPDATE to prevent race conditions
+				const otaCode = await tx.oneTimeAccessCode.findUnique({
+					where: { code },
+				});
 
-			if (!otaCode) {
+				if (!otaCode) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Invalid code",
+					});
+				}
+
+				if (otaCode.usedAt) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Code has already been used",
+					});
+				}
+
+				if (otaCode.expiresAt < now) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Code has expired",
+					});
+				}
+
+				// Mark the code as used immediately to prevent race conditions
+				await tx.oneTimeAccessCode.update({
+					where: { code },
+					data: { usedAt: now },
+				});
+			} else if (action === "login") {
+				// Code is required for login
 				throw new TRPCError({
 					code: "BAD_REQUEST",
-					message: "Invalid code",
+					message: "A code is required to start a session",
 				});
 			}
-
-			if (otaCode.usedAt) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Code has already been used",
-				});
-			}
-
-			if (otaCode.expiresAt < now) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Code has expired",
-				});
-			}
-
-			// Mark the code as used immediately to prevent race conditions
-			await tx.oneTimeAccessCode.update({
-				where: { code },
-				data: { usedAt: now },
-			});
 
 			// Get user's current session status
 			const currentSession = await tx.session.findFirst({

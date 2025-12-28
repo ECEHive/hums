@@ -1,7 +1,9 @@
 import { trpc } from "@ecehive/trpc/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ClockIcon } from "lucide-react";
+import { AlertCircle, ClockIcon, LogOut } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { RequireAuth } from "@/auth";
 import {
 	Page,
@@ -18,6 +20,18 @@ import {
 	PageSizeSelect,
 	TablePaginationFooter,
 } from "@/components/shared";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -25,6 +39,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
@@ -35,6 +50,8 @@ export const Route = createFileRoute("/app/my-sessions")({
 function MySessionsPage() {
 	const { page, setPage, pageSize, setPageSize, offset, resetToFirstPage } =
 		useTableState({ initialPageSize: 20 });
+	const queryClient = useQueryClient();
+	const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
 
 	const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
 		queryKey: ["mySessions", page, pageSize],
@@ -53,6 +70,29 @@ function MySessionsPage() {
 		},
 	});
 
+	const endSessionMutation = useMutation({
+		mutationFn: async () => {
+			return trpc.sessions.endMySession.mutate({});
+		},
+		onSuccess: () => {
+			toast.success("Session ended successfully");
+			queryClient.invalidateQueries({ queryKey: ["mySessionStats"] });
+			queryClient.invalidateQueries({ queryKey: ["mySessions"] });
+			setShowEndSessionDialog(false);
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to end session");
+			setShowEndSessionDialog(false);
+		},
+	});
+
+	const handleEndSession = () => {
+		endSessionMutation.mutate();
+	};
+
+	const canEndSession =
+		statsData?.currentlyActive && statsData?.activeSessionType === "regular";
+
 	const sessions = sessionsData?.sessions ?? [];
 	const { totalPages } = usePaginationInfo({
 		total: sessionsData?.total ?? 0,
@@ -68,8 +108,28 @@ function MySessionsPage() {
 			</PageHeader>
 
 			<PageContent>
+				{/* Active Session Alert */}
+				{canEndSession && (
+					<Alert className="mb-6">
+						<AlertCircle className="h-4 w-4" />
+						<AlertTitle>You have an active general session.</AlertTitle>
+						<AlertDescription className="flex items-center justify-between">
+							<span>You can end it here or at a kiosk.</span>
+							<Button
+								onClick={() => setShowEndSessionDialog(true)}
+								size="sm"
+								variant="destructive"
+								className="ml-4 flex-shrink-0"
+							>
+								<LogOut className="mr-2 h-3 w-3" />
+								End Session
+							</Button>
+						</AlertDescription>
+					</Alert>
+				)}
+
 				{/* Stats Cards */}
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+				<div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-4">
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-sm font-medium">
@@ -188,6 +248,40 @@ function MySessionsPage() {
 					</CardContent>
 				</Card>
 			</PageContent>
+
+			<AlertDialog
+				open={showEndSessionDialog}
+				onOpenChange={setShowEndSessionDialog}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>End Current Session?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to end your current session? This action
+							cannot be undone and your session will be terminated immediately.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={endSessionMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleEndSession}
+							disabled={endSessionMutation.isPending}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{endSessionMutation.isPending ? (
+								<>
+									<Spinner className="mr-2 h-3 w-3" />
+									Ending...
+								</>
+							) : (
+								"End Session"
+							)}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</Page>
 	);
 }

@@ -4,6 +4,7 @@ import {
 	protectedProcedure,
 	router,
 } from "../../trpc";
+import { endMySessionHandler, ZEndMySessionSchema } from "./endMySession.route";
 import { listHandler, ZListSchema } from "./list.route";
 import { listMyHandler, ZListMySchema } from "./listMy.route";
 import { myStatsHandler, ZMyStatsSchema } from "./myStats.route";
@@ -19,6 +20,9 @@ export const sessionsRouter = router({
 		.query(statsHandler),
 	listMy: protectedProcedure.input(ZListMySchema).query(listMyHandler),
 	myStats: protectedProcedure.input(ZMyStatsSchema).query(myStatsHandler),
+	endMySession: protectedProcedure
+		.input(ZEndMySessionSchema)
+		.mutation(endMySessionHandler),
 	tapInOut: kioskProtectedProcedure
 		.input(ZTapInOutSchema)
 		.mutation(tapInOutHandler),
