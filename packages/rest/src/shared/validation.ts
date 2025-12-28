@@ -34,6 +34,9 @@ export function notFoundError(
 
 /**
  * Standard error response for conflicts (e.g., duplicate resources)
+ * @param reply - The Fastify reply object
+ * @param message - The error message to display
+ * @param details - Optional additional details about the conflict
  */
 export function conflictError(
 	reply: FastifyReply,
@@ -52,6 +55,9 @@ export function conflictError(
 
 /**
  * Standard error response for bad requests
+ * @param reply - The Fastify reply object
+ * @param message - The error message to display
+ * @param details - Optional additional details about why the request is invalid
  */
 export function badRequestError(
 	reply: FastifyReply,

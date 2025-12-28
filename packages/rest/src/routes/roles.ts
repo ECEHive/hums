@@ -147,6 +147,26 @@ async function ensurePermissionsExist(
 	return permissions;
 }
 
+/**
+ * Helper function to validate permissions and return missing permission names
+ */
+async function validatePermissions(permissionNames: string[]): Promise<{
+	permissions: Array<{ id: number; name: string }> | null;
+	missing: string[];
+}> {
+	const permissions = await ensurePermissionsExist(permissionNames);
+	if (permissions === null) {
+		const existing = await prisma.permission.findMany({
+			where: { name: { in: permissionNames } },
+			select: { name: true },
+		});
+		const existingNames = existing.map((p) => p.name);
+		const missing = permissionNames.filter((n) => !existingNames.includes(n));
+		return { permissions: null, missing };
+	}
+	return { permissions, missing: [] };
+}
+
 // ===== Routes =====
 
 export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
@@ -162,50 +182,140 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 		const created: SerializedRole[] = [];
 		const failed: Array<{ item: unknown; error: string }> = [];
 
-		for (const roleData of parsed.data.roles) {
-			try {
-				// Check if exists
-				const existing = await prisma.role.findUnique({
-					where: { name: roleData.name },
-				});
+		const rolesData = parsed.data.roles;
 
-				if (existing) {
-					failed.push({
-						item: roleData,
-						error: `Role '${roleData.name}' already exists`,
-					});
-					continue;
-				}
-
-				// Validate permissions
-				const permissions = await ensurePermissionsExist(
-					roleData.permissions || [],
-				);
-				if (permissions === null) {
-					failed.push({
-						item: roleData,
-						error: "One or more permissions not found",
-					});
-					continue;
-				}
-
-				// Create role
-				const role = await prisma.role.create({
-					data: {
-						name: roleData.name,
-						permissions: {
-							connect: permissions.map((p) => ({ id: p.id })),
+		// Batch query: Check for existing roles
+		const roleNames = Array.from(new Set(rolesData.map((role) => role.name)));
+		const existingRoles = roleNames.length
+			? await prisma.role.findMany({
+					where: {
+						name: {
+							in: roleNames,
 						},
 					},
-					include: { permissions: true, users: true },
-				});
+					select: { name: true },
+				})
+			: [];
+		const existingRoleNames = new Set(existingRoles.map((r) => r.name));
 
-				created.push(serializeRole(role));
-			} catch (error) {
+		// Batch query: Collect all permission IDs referenced across all roles
+		const allPermissionIdsSet = new Set<string>();
+		for (const roleData of rolesData) {
+			for (const permission of roleData.permissions || []) {
+				allPermissionIdsSet.add(permission);
+			}
+		}
+
+		// Fetch all referenced permissions in a single query
+		const allPermissionIds = Array.from(allPermissionIdsSet);
+		const allPermissions = allPermissionIds.length
+			? await prisma.permission.findMany({
+					where: {
+						name: {
+							in: allPermissionIds,
+						},
+					},
+					select: { id: true, name: true },
+				})
+			: [];
+		const permissionByName = new Map(
+			allPermissions.map((permission) => [permission.name, permission]),
+		);
+
+		// Validate and prepare data
+		type RoleCreateData = {
+			name: string;
+			permissionIds: number[];
+			originalData: unknown;
+		};
+		const rolesToCreate: RoleCreateData[] = [];
+
+		for (const roleData of rolesData) {
+			// Check if role already exists using pre-fetched data
+			if (existingRoleNames.has(roleData.name)) {
 				failed.push({
 					item: roleData,
-					error: error instanceof Error ? error.message : "Unknown error",
+					error: `Role '${roleData.name}' already exists`,
 				});
+				continue;
+			}
+
+			// Validate permissions using pre-fetched permissions
+			const rolePermissionsInput = roleData.permissions || [];
+			const rolePermissionIds: number[] = [];
+			const missingPermissions: string[] = [];
+
+			for (const permissionName of rolePermissionsInput) {
+				const permission = permissionByName.get(permissionName);
+				if (!permission) {
+					missingPermissions.push(permissionName);
+				} else {
+					rolePermissionIds.push(permission.id);
+				}
+			}
+
+			if (missingPermissions.length > 0) {
+				failed.push({
+					item: roleData,
+					error: `Permissions not found: ${missingPermissions.join(", ")}`,
+				});
+				continue;
+			}
+
+			rolesToCreate.push({
+				name: roleData.name,
+				permissionIds: rolePermissionIds,
+				originalData: roleData,
+			});
+		}
+
+		// Batch create roles in a transaction
+		if (rolesToCreate.length > 0) {
+			try {
+				const createdRoles = await prisma.$transaction(
+					rolesToCreate.map((roleData) =>
+						prisma.role.create({
+							data: {
+								name: roleData.name,
+								permissions:
+									roleData.permissionIds.length > 0
+										? {
+												connect: roleData.permissionIds.map((id) => ({ id })),
+											}
+										: undefined,
+							},
+							include: { permissions: true, users: true },
+						}),
+					),
+				);
+
+				for (const role of createdRoles) {
+					created.push(serializeRole(role));
+				}
+			} catch {
+				// If transaction fails, fall back to individual creates
+				for (const roleData of rolesToCreate) {
+					try {
+						const role = await prisma.role.create({
+							data: {
+								name: roleData.name,
+								permissions:
+									roleData.permissionIds.length > 0
+										? {
+												connect: roleData.permissionIds.map((id) => ({ id })),
+											}
+										: undefined,
+							},
+							include: { permissions: true, users: true },
+						});
+						created.push(serializeRole(role));
+					} catch (error) {
+						failed.push({
+							item: roleData.originalData,
+							error: error instanceof Error ? error.message : "Unknown error",
+						});
+					}
+				}
 			}
 		}
 
@@ -227,53 +337,139 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 		const updated: SerializedRole[] = [];
 		const failed: Array<{ item: unknown; error: string }> = [];
 
-		for (const roleData of parsed.data.roles) {
-			try {
-				const existing = await prisma.role.findUnique({
-					where: { name: roleData.name },
-				});
+		const rolesData = parsed.data.roles;
 
-				if (!existing) {
+		// Batch query: Fetch all roles to update
+		const roleNames = Array.from(new Set(rolesData.map((r) => r.name)));
+		const existingRoles = roleNames.length
+			? await prisma.role.findMany({
+					where: {
+						name: {
+							in: roleNames,
+						},
+					},
+					select: { id: true, name: true },
+				})
+			: [];
+		const roleByName = new Map(existingRoles.map((r) => [r.name, r]));
+
+		// Batch query: Collect all permission names referenced
+		const allPermissionNames = Array.from(
+			new Set(
+				rolesData
+					.filter((r) => r.permissions && r.permissions.length > 0)
+					.flatMap((r) => r.permissions || []),
+			),
+		);
+		const allPermissions = allPermissionNames.length
+			? await prisma.permission.findMany({
+					where: {
+						name: {
+							in: allPermissionNames,
+						},
+					},
+					select: { id: true, name: true },
+				})
+			: [];
+		const permissionByName = new Map(allPermissions.map((p) => [p.name, p]));
+
+		// Validate and prepare updates
+		type RoleUpdateData = {
+			roleId: number;
+			permissionIds: number[] | null;
+			originalData: unknown;
+		};
+		const rolesToUpdate: RoleUpdateData[] = [];
+
+		for (const roleData of rolesData) {
+			const existing = roleByName.get(roleData.name);
+
+			if (!existing) {
+				failed.push({
+					item: roleData,
+					error: `Role '${roleData.name}' not found`,
+				});
+				continue;
+			}
+
+			// Validate permissions if provided
+			let permissionIds: number[] | null = null;
+			if (roleData.permissions) {
+				const rolePermissionIds: number[] = [];
+				const missingPermissions: string[] = [];
+
+				for (const permissionName of roleData.permissions) {
+					const permission = permissionByName.get(permissionName);
+					if (!permission) {
+						missingPermissions.push(permissionName);
+					} else {
+						rolePermissionIds.push(permission.id);
+					}
+				}
+
+				if (missingPermissions.length > 0) {
 					failed.push({
 						item: roleData,
-						error: `Role '${roleData.name}' not found`,
+						error: `Permissions not found: ${missingPermissions.join(", ")}`,
 					});
 					continue;
 				}
 
-				// Validate permissions if provided
-				let permissions: { id: number; name: string }[] | null = null;
-				if (roleData.permissions) {
-					permissions = await ensurePermissionsExist(roleData.permissions);
-					if (permissions === null) {
-						failed.push({
-							item: roleData,
-							error: "One or more permissions not found",
+				permissionIds = rolePermissionIds;
+			}
+
+			rolesToUpdate.push({
+				roleId: existing.id,
+				permissionIds,
+				originalData: roleData,
+			});
+		}
+
+		// Perform updates in a transaction
+		if (rolesToUpdate.length > 0) {
+			try {
+				const updatedRoles = await prisma.$transaction(
+					rolesToUpdate.map((roleData) => {
+						const updateData: Prisma.RoleUpdateInput = {};
+						if (roleData.permissionIds !== null) {
+							updateData.permissions = {
+								set: roleData.permissionIds.map((id) => ({ id })),
+							};
+						}
+						return prisma.role.update({
+							where: { id: roleData.roleId },
+							data: updateData,
+							include: { permissions: true, users: true },
 						});
-						continue;
+					}),
+				);
+
+				for (const role of updatedRoles) {
+					updated.push(serializeRole(role));
+				}
+			} catch {
+				// If transaction fails, fall back to individual updates
+				for (const roleData of rolesToUpdate) {
+					try {
+						const updateData: Prisma.RoleUpdateInput = {};
+						if (roleData.permissionIds !== null) {
+							updateData.permissions = {
+								set: roleData.permissionIds.map((id) => ({ id })),
+							};
+						}
+						const role = await prisma.role.update({
+							where: { id: roleData.roleId },
+							data: updateData,
+							include: { permissions: true, users: true },
+						});
+						updated.push(serializeRole(role));
+					} catch (error) {
+						failed.push({
+							item: roleData.originalData,
+							error: error instanceof Error ? error.message : "Unknown error",
+						});
 					}
 				}
-
-				// Update role
-				const updateData: Prisma.RoleUpdateInput = {};
-				if (permissions !== null) {
-					updateData.permissions = {
-						set: permissions.map((p) => ({ id: p.id })),
-					};
-				}
-
-				const role = await prisma.role.update({
-					where: { id: existing.id },
-					data: updateData,
-					include: { permissions: true, users: true },
-				});
-
-				updated.push(serializeRole(role));
-			} catch (error) {
-				failed.push({
-					item: roleData,
-					error: error instanceof Error ? error.message : "Unknown error",
-				});
 			}
 		}
 
@@ -363,14 +559,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 		}
 
 		// Validate permissions
-		const permissions = await ensurePermissionsExist(permissionNames);
+		const { permissions, missing } = await validatePermissions(permissionNames);
 		if (permissions === null) {
-			const existing = await prisma.permission.findMany({
-				where: { name: { in: permissionNames } },
-				select: { name: true },
-			});
-			const existingNames = existing.map((p) => p.name);
-			const missing = permissionNames.filter((n) => !existingNames.includes(n));
 			return badRequestError(
 				reply,
 				`Permissions not found: ${missing.join(", ")}`,
@@ -433,21 +623,14 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 		// Validate permissions if provided
 		let permissions: { id: number; name: string }[] | null = null;
 		if (permissionNames) {
-			permissions = await ensurePermissionsExist(permissionNames);
-			if (permissions === null) {
-				const existing = await prisma.permission.findMany({
-					where: { name: { in: permissionNames } },
-					select: { name: true },
-				});
-				const existingNames = existing.map((p) => p.name);
-				const missing = permissionNames.filter(
-					(n) => !existingNames.includes(n),
-				);
+			const validation = await validatePermissions(permissionNames);
+			if (validation.permissions === null) {
 				return badRequestError(
 					reply,
-					`Permissions not found: ${missing.join(", ")}`,
+					`Permissions not found: ${validation.missing.join(", ")}`,
 				);
 			}
+			permissions = validation.permissions;
 		}
 
 		// Update role

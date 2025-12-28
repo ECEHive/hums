@@ -18,6 +18,9 @@ export function sanitizeMetadata(value: unknown): Prisma.JsonValue {
 
 /**
  * Logs a REST API action to the audit log
+ * @param request - The Fastify request object containing audit context
+ * @param action - The action identifier (e.g., "rest.users.create")
+ * @param data - Additional metadata to log with the action
  */
 export async function logRestAction(
 	request: FastifyRequest,

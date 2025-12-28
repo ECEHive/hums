@@ -39,13 +39,12 @@ const CreateUserSchema = z.object({
 		.min(1)
 		.max(100)
 		.regex(
-			/^[a-zA-Z0-9_.-]+$/,
-			"Username must contain only letters, numbers, dots, hyphens, and underscores",
+			/^[a-zA-Z0-9_-]+$/,
+			"Username must contain only letters, numbers, hyphens, and underscores",
 		),
 	name: z.string().trim().min(1).max(255),
 	email: z.string().email().max(255),
 	cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
-	isSystemUser: z.boolean().optional().default(false),
 	roles: z.array(z.string().trim().min(1)).optional().default([]),
 });
 
@@ -113,7 +112,6 @@ type SerializedUser = {
 	name: string;
 	email: string;
 	cardNumber: string | null;
-	isSystemUser: boolean;
 	roles?: string[];
 	createdAt: Date;
 	updatedAt: Date;
@@ -131,7 +129,6 @@ function serializeUser(
 		name: user.name,
 		email: user.email,
 		cardNumber: user.cardNumber,
-		isSystemUser: user.isSystemUser,
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt,
 	};
@@ -160,6 +157,26 @@ async function ensureRolesExist(
 	}
 
 	return roles;
+}
+
+/**
+ * Helper function to validate roles and return missing role names
+ */
+async function validateRoles(roleNames: string[]): Promise<{
+	roles: Array<{ id: number; name: string }> | null;
+	missing: string[];
+}> {
+	const roles = await ensureRolesExist(roleNames);
+	if (roles === null) {
+		const existing = await prisma.role.findMany({
+			where: { name: { in: roleNames } },
+			select: { name: true },
+		});
+		const existingNames = existing.map((r) => r.name);
+		const missing = roleNames.filter((n) => !existingNames.includes(n));
+		return { roles: null, missing };
+	}
+	return { roles, missing: [] };
 }
 
 // ===== Routes =====
@@ -229,14 +246,17 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					if (finalUserData.cardNumber === null) {
 						normalizedCard = null;
 					} else {
-						normalizedCard = normalizeCardNumber(finalUserData.cardNumber);
-						if (!normalizedCard) {
+						const normalizedResult = normalizeCardNumber(
+							finalUserData.cardNumber,
+						);
+						if (normalizedResult === null || normalizedResult === undefined) {
 							failed.push({
 								item: userData,
 								error: "Invalid card number format",
 							});
 							continue;
 						}
+						normalizedCard = normalizedResult;
 					}
 				}
 
@@ -409,14 +429,15 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				if (data.cardNumber === null) {
 					normalizedCard = null;
 				} else {
-					normalizedCard = normalizeCardNumber(data.cardNumber);
-					if (!normalizedCard) {
+					const normalizedResult = normalizeCardNumber(data.cardNumber);
+					if (normalizedResult === null || normalizedResult === undefined) {
 						failed.push({
 							item: userData,
 							error: "Invalid card number format",
 						});
 						continue;
 					}
+					normalizedCard = normalizedResult;
 				}
 			}
 
@@ -462,7 +483,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 								name: userData.name,
 								email: userData.email,
 								cardNumber: userData.cardNumber,
-								isSystemUser: false,
 								roles:
 									userData.roleIds.length > 0
 										? {
@@ -488,7 +508,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 								name: userData.name,
 								email: userData.email,
 								cardNumber: userData.cardNumber,
-								isSystemUser: false,
 								roles:
 									userData.roleIds.length > 0
 										? {
@@ -628,6 +647,13 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 									},
 								};
 								break;
+							default: {
+								// This should be unreachable if validation and typing are correct,
+								// but guards against unexpected values at runtime.
+								throw new Error(
+									`Unsupported role operation: ${String(op.operation)}`,
+								);
+							}
 						}
 						return prisma.user.update({
 							where: { id: op.userId },
@@ -667,6 +693,13 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 									},
 								};
 								break;
+							default: {
+								// This should be unreachable if validation and typing are correct,
+								// but guards against unexpected values at runtime.
+								throw new Error(
+									`Unsupported role operation: ${String(op.operation)}`,
+								);
+							}
 						}
 						const updatedUser = await prisma.user.update({
 							where: { id: op.userId },
@@ -732,7 +765,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		const [users, total] = await Promise.all([
 			prisma.user.findMany({
 				where,
-				orderBy: { username: "asc" },
+				orderBy: { updatedAt: "desc" },
 				skip,
 				take,
 				include: { roles: true },
@@ -798,16 +831,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		}
 
 		// Validate roles
-		const roles = await ensureRolesExist(roleNames || []);
+		const { roles, missing } = await validateRoles(roleNames || []);
 		if (roles === null) {
-			const existing = await prisma.role.findMany({
-				where: { name: { in: roleNames || [] } },
-				select: { name: true },
-			});
-			const existingNames = existing.map((r) => r.name);
-			const missing = (roleNames || []).filter(
-				(n) => !existingNames.includes(n),
-			);
 			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
@@ -818,7 +843,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				name: userData.name,
 				email: userData.email,
 				cardNumber: normalizedCard,
-				isSystemUser: false,
 				roles: {
 					connect: roles.map((r) => ({ id: r.id })),
 				},
@@ -874,16 +898,14 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		// Validate roles if provided
 		let roles: Array<{ id: number; name: string }> | null = null;
 		if (roleNames) {
-			roles = await ensureRolesExist(roleNames);
-			if (roles === null) {
-				const existing = await prisma.role.findMany({
-					where: { name: { in: roleNames } },
-					select: { name: true },
-				});
-				const existingNames = existing.map((r) => r.name);
-				const missing = roleNames.filter((n) => !existingNames.includes(n));
-				return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
+			const validation = await validateRoles(roleNames);
+			if (validation.roles === null) {
+				return badRequestError(
+					reply,
+					`Roles not found: ${validation.missing.join(", ")}`,
+				);
 			}
+			roles = validation.roles;
 		}
 
 		// Update user
@@ -935,14 +957,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return notFoundError(reply, "User", params.data.username);
 		}
 
-		const roles = await ensureRolesExist(body.data.roles);
+		const { roles, missing } = await validateRoles(body.data.roles);
 		if (roles === null) {
-			const existing = await prisma.role.findMany({
-				where: { name: { in: body.data.roles } },
-				select: { name: true },
-			});
-			const existingNames = existing.map((r) => r.name);
-			const missing = body.data.roles.filter((n) => !existingNames.includes(n));
 			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
@@ -986,14 +1002,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return notFoundError(reply, "User", params.data.username);
 		}
 
-		const roles = await ensureRolesExist(body.data.roles);
+		const { roles, missing } = await validateRoles(body.data.roles);
 		if (roles === null) {
-			const existing = await prisma.role.findMany({
-				where: { name: { in: body.data.roles } },
-				select: { name: true },
-			});
-			const existingNames = existing.map((r) => r.name);
-			const missing = body.data.roles.filter((n) => !existingNames.includes(n));
 			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
@@ -1037,14 +1047,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return notFoundError(reply, "User", params.data.username);
 		}
 
-		const roles = await ensureRolesExist(body.data.roles);
+		const { roles, missing } = await validateRoles(body.data.roles);
 		if (roles === null) {
-			const existing = await prisma.role.findMany({
-				where: { name: { in: body.data.roles } },
-				select: { name: true },
-			});
-			const existingNames = existing.map((r) => r.name);
-			const missing = body.data.roles.filter((n) => !existingNames.includes(n));
 			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
