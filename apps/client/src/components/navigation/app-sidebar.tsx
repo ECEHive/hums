@@ -52,7 +52,6 @@ import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as sessionsPagePermissions } from "@/routes/app/sessions";
 import { permissions as usersPagePermissions } from "@/routes/app/users";
-import { permissions as schedulingIndexPagePermissions } from "@/routes/shifts/scheduling";
 
 // Sidebar menu items, grouped by section
 type AppSidebarItem = {
@@ -88,7 +87,7 @@ export const items: AppSidebarGroup[] = [
 				title: "Shifts",
 				url: "/shifts",
 				icon: CalendarIcon,
-				permissions: schedulingIndexPagePermissions,
+				permissions: [],
 				allowWithShiftAccess: true,
 				hasChildren: true,
 			},
@@ -152,13 +151,12 @@ export function AppSidebar() {
 	const { canAccessShifts } = useShiftAccess();
 
 	const canViewItem = (item: AppSidebarItem) => {
-		if (checkPermissions(user, item.permissions)) {
-			return true;
-		}
+		// If shift access is required, only check canAccessShifts
 		if (item.allowWithShiftAccess) {
 			return canAccessShifts;
 		}
-		return false;
+		// Otherwise, check regular permissions
+		return checkPermissions(user, item.permissions);
 	};
 
 	// Collect all visible items across all groups to find the best match

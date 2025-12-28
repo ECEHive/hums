@@ -23,6 +23,7 @@ import {
 	PageSizeSelect,
 	TablePaginationFooter,
 } from "@/components/shared";
+import { TablePagination } from "@/components/shared/table-pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

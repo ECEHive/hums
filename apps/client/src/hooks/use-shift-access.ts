@@ -11,6 +11,10 @@ const SHIFT_PERMISSION_NAMES = [
 	"shift_schedules.delete",
 	"shift_occurrences.list",
 	"shift_occurrences.get",
+	"periods.list",
+	"periods.create",
+	"periods.update",
+	"periods.delete",
 ];
 
 export function useShiftAccess() {

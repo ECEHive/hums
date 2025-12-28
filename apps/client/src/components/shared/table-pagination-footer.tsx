@@ -40,14 +40,16 @@ export function TablePaginationFooter({
 }: TablePaginationFooterProps) {
 	return (
 		<TableFooter className={className}>
-			<TableInfo>
+			<TableInfo className="flex-1">
 				Showing {offset + 1} - {offset + currentCount} of {total} {itemName}
 			</TableInfo>
 			<TablePagination
 				page={page}
 				totalPages={totalPages}
 				onPageChange={onPageChange}
+				className="flex-1 flex justify-center"
 			/>
+			<div className="flex-1" />
 		</TableFooter>
 	);
 }
