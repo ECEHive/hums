@@ -3,12 +3,16 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
 import {
+	bulkResponse,
+	listResponse,
+	successResponse,
+} from "../shared/responses";
+import {
 	badRequestError,
 	conflictError,
 	notFoundError,
 	validationError,
 } from "../shared/validation";
-import { bulkResponse, listResponse, successResponse } from "../shared/responses";
 
 // ===== Validation Schemas =====
 
@@ -436,7 +440,9 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 					select: { name: true },
 				});
 				const existingNames = existing.map((p) => p.name);
-				const missing = permissionNames.filter((n) => !existingNames.includes(n));
+				const missing = permissionNames.filter(
+					(n) => !existingNames.includes(n),
+				);
 				return badRequestError(
 					reply,
 					`Permissions not found: ${missing.join(", ")}`,

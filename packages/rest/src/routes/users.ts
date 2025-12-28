@@ -4,12 +4,16 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
 import {
+	bulkResponse,
+	listResponse,
+	successResponse,
+} from "../shared/responses";
+import {
 	badRequestError,
 	conflictError,
 	notFoundError,
 	validationError,
 } from "../shared/validation";
-import { bulkResponse, listResponse, successResponse } from "../shared/responses";
 
 // ===== Validation Schemas =====
 
@@ -28,23 +32,22 @@ const UsernameParamsSchema = z.object({
 	username: z.string().trim().min(1),
 });
 
-const CreateUserSchema = z
-	.object({
-		username: z
-			.string()
-			.trim()
-			.min(1)
-			.max(100)
-			.regex(
-				/^[a-zA-Z0-9_.-]+$/,
-				"Username must contain only letters, numbers, dots, hyphens, and underscores",
-			),
-		name: z.string().trim().min(1).max(255),
-		email: z.string().email().max(255),
-		cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
-		isSystemUser: z.boolean().optional().default(false),
-		roles: z.array(z.string().trim().min(1)).optional().default([]),
-	});
+const CreateUserSchema = z.object({
+	username: z
+		.string()
+		.trim()
+		.min(1)
+		.max(100)
+		.regex(
+			/^[a-zA-Z0-9_.-]+$/,
+			"Username must contain only letters, numbers, dots, hyphens, and underscores",
+		),
+	name: z.string().trim().min(1).max(255),
+	email: z.string().email().max(255),
+	cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
+	isSystemUser: z.boolean().optional().default(false),
+	roles: z.array(z.string().trim().min(1)).optional().default([]),
+});
 
 const UpdateUserSchema = z.object({
 	name: z.string().trim().min(1).max(255).optional(),
@@ -184,7 +187,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					where: { username },
 				});
 
-			const finalUserData = { ...data };
+				const finalUserData = { ...data };
 
 				// Validate required fields for creation
 				if (!existing && (!finalUserData.name || !finalUserData.email)) {
@@ -196,7 +199,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				}
 
 				// Normalize card number
-				let normalizedCard: string | null | undefined = undefined;
+				let normalizedCard: string | null | undefined;
 				if (finalUserData.cardNumber !== undefined) {
 					if (finalUserData.cardNumber === null) {
 						normalizedCard = null;
@@ -233,20 +236,22 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 						username,
 						name: finalUserData.name as string,
 						email: finalUserData.email as string,
-						isSystemUser: finalUserData.isSystemUser || false,
 					},
 					include: { roles: true },
 				};
 
 				// Add update fields only if they exist
 				if (finalUserData.name) {
-					(upsertData.update as Prisma.UserUpdateInput).name = finalUserData.name;
+					(upsertData.update as Prisma.UserUpdateInput).name =
+						finalUserData.name;
 				}
 				if (finalUserData.email) {
-					(upsertData.update as Prisma.UserUpdateInput).email = finalUserData.email;
+					(upsertData.update as Prisma.UserUpdateInput).email =
+						finalUserData.email;
 				}
 				if (normalizedCard !== undefined) {
-					(upsertData.update as Prisma.UserUpdateInput).cardNumber = normalizedCard;
+					(upsertData.update as Prisma.UserUpdateInput).cardNumber =
+						normalizedCard;
 					upsertData.create.cardNumber = normalizedCard;
 				}
 
@@ -336,7 +341,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				}
 
 				// Normalize card number
-				let normalizedCard: string | null | undefined = undefined;
+				let normalizedCard: string | null | undefined;
 				if (data.cardNumber !== undefined) {
 					if (data.cardNumber === null) {
 						normalizedCard = null;
@@ -587,10 +592,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		if (userData.cardNumber !== null && userData.cardNumber !== undefined) {
 			normalizedCard = normalizeCardNumber(userData.cardNumber) || null;
 			if (!normalizedCard) {
-				return badRequestError(
-					reply,
-					"Invalid card number format",
-				);
+				return badRequestError(reply, "Invalid card number format");
 			}
 		}
 
@@ -602,11 +604,10 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				select: { name: true },
 			});
 			const existingNames = existing.map((r) => r.name);
-			const missing = (roleNames || []).filter((n) => !existingNames.includes(n));
-			return badRequestError(
-				reply,
-				`Roles not found: ${missing.join(", ")}`,
+			const missing = (roleNames || []).filter(
+				(n) => !existingNames.includes(n),
 			);
+			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
 		// Create user
@@ -657,17 +658,14 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		const { roles: roleNames, cardNumber, ...userData } = body.data;
 
 		// Normalize card number if provided
-		let normalizedCard: string | null | undefined = undefined;
+		let normalizedCard: string | null | undefined;
 		if (cardNumber !== undefined) {
 			if (cardNumber === null) {
 				normalizedCard = null;
 			} else {
 				normalizedCard = normalizeCardNumber(cardNumber);
 				if (!normalizedCard) {
-					return badRequestError(
-						reply,
-						"Invalid card number format",
-					);
+					return badRequestError(reply, "Invalid card number format");
 				}
 			}
 		}
@@ -683,10 +681,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				});
 				const existingNames = existing.map((r) => r.name);
 				const missing = roleNames.filter((n) => !existingNames.includes(n));
-				return badRequestError(
-					reply,
-					`Roles not found: ${missing.join(", ")}`,
-				);
+				return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 			}
 		}
 
@@ -747,10 +742,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			});
 			const existingNames = existing.map((r) => r.name);
 			const missing = body.data.roles.filter((n) => !existingNames.includes(n));
-			return badRequestError(
-				reply,
-				`Roles not found: ${missing.join(", ")}`,
-			);
+			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
 		const updated = await prisma.user.update({
@@ -801,10 +793,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			});
 			const existingNames = existing.map((r) => r.name);
 			const missing = body.data.roles.filter((n) => !existingNames.includes(n));
-			return badRequestError(
-				reply,
-				`Roles not found: ${missing.join(", ")}`,
-			);
+			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
 		const updated = await prisma.user.update({
@@ -855,10 +844,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			});
 			const existingNames = existing.map((r) => r.name);
 			const missing = body.data.roles.filter((n) => !existingNames.includes(n));
-			return badRequestError(
-				reply,
-				`Roles not found: ${missing.join(", ")}`,
-			);
+			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
 		const updated = await prisma.user.update({

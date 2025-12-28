@@ -1,5 +1,5 @@
-import type { FastifyRequest } from "fastify";
 import type { Prisma } from "@ecehive/prisma";
+import type { FastifyRequest } from "fastify";
 
 /**
  * Sanitizes metadata to be JSON-serializable for audit logs
