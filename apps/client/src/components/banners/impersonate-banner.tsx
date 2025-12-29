@@ -42,12 +42,12 @@ export function ImpersonationBanner() {
 	}
 
 	return (
-		<Alert className="rounded-none border-x-0 border-t-0 border-b border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+		<Alert className="mb-4 md:mb-6">
 			<HatGlassesIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
 			<AlertTitle className="text-yellow-800 dark:text-yellow-400">
 				Impersonation Mode Active
 			</AlertTitle>
-			<AlertDescription className="flex items-center justify-between text-yellow-700 dark:text-yellow-500">
+			<AlertDescription className="flex items-center justify-between flex-col sm:flex-row text-yellow-700 dark:text-yellow-500">
 				<span>
 					You are currently impersonating user:{" "}
 					<strong>{user.name || user.username}</strong>

@@ -1,9 +1,8 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { RequireAuth } from "@/auth/AuthProvider";
+import { createFileRoute } from "@tanstack/react-router";
 import { AgreementsBanner } from "@/components/banners/agreements-banner";
 import { ImpersonationBanner } from "@/components/banners/impersonate-banner";
+import { AppShell } from "@/components/layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/app")({
 	component: AppLayout,
@@ -11,18 +10,14 @@ export const Route = createFileRoute("/app")({
 
 function AppLayout() {
 	return (
-		<RequireAuth>
-			<SidebarProvider>
-				<AppSidebar />
-				<div className="flex flex-col w-full overflow-hidden">
+		<AppShell
+			sidebar={<AppSidebar />}
+			banners={
+				<>
 					<ImpersonationBanner />
 					<AgreementsBanner />
-					<div className="flex flex-row p-4 w-full border-b border-border">
-						<SidebarTrigger />
-					</div>
-					<Outlet />
-				</div>
-			</SidebarProvider>
-		</RequireAuth>
+				</>
+			}
+		/>
 	);
 }

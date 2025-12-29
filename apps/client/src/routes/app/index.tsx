@@ -75,7 +75,7 @@ function AppIndexLayout() {
 		.toUpperCase();
 
 	return (
-		<div className="min-h-svh w-full p-6">
+		<div className="min-h-svh w-full p-4 md:p-6 pt-0 md:pt-0">
 			<div className="mx-auto max-w-6xl space-y-6">
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 					<Card className="lg:col-span-2">
