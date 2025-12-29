@@ -43,7 +43,6 @@ export function AppShell({ sidebar, banners, wrapper }: AppShellProps) {
 			<SidebarProvider>
 				{sidebar}
 				<SidebarInset>
-					{banners}
 					<header className="flex h-16 shrink-0 items-center gap-2 px-4">
 						<SidebarTrigger className="-ml-1" />
 						<Separator
@@ -52,6 +51,7 @@ export function AppShell({ sidebar, banners, wrapper }: AppShellProps) {
 						/>
 						<DynamicBreadcrumbs />
 					</header>
+					{banners && <div className="px-4 md:px-6">{banners}</div>}
 					<Outlet />
 				</SidebarInset>
 			</SidebarProvider>

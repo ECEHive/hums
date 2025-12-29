@@ -29,10 +29,10 @@ export function AgreementsBanner() {
 	const count = agreementStatus.missingAgreementIds.length;
 
 	return (
-		<Alert variant="destructive" className="rounded-none border-x-0 border-t-0">
+		<Alert variant="destructive" className="mb-4 md:mb-6">
 			<AlertCircle className="h-4 w-4" />
 			<AlertTitle>Action Required</AlertTitle>
-			<AlertDescription className="flex items-center justify-between">
+			<AlertDescription className="flex items-center justify-between flex-col sm:flex-row">
 				<span>
 					You must agree to {count} agreement{count !== 1 ? "s" : ""} before you
 					can tap in.
