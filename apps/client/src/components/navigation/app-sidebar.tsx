@@ -42,6 +42,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
@@ -149,6 +150,7 @@ export function AppSidebar() {
 	const location = useLocation();
 	const pathname = location?.pathname ?? "/";
 	const { canAccessShifts } = useShiftAccess();
+	const { handleClick: handleLogoClick } = useGlitchEgg();
 
 	const canViewItem = (item: AppSidebarItem) => {
 		// If shift access is required, only check canAccessShifts
@@ -186,7 +188,7 @@ export function AppSidebar() {
 
 	return (
 		<Sidebar variant="floating">
-			<SidebarHeader>
+			<SidebarHeader onClick={handleLogoClick}>
 				<Logo className="h-8 p-1" />
 			</SidebarHeader>
 			<SidebarContent>

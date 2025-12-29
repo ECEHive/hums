@@ -43,6 +43,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as attendancePagePermissions } from "@/routes/shifts/attendance";
@@ -139,6 +140,7 @@ export function ShiftsSidebar() {
 	const { logout } = useAuth();
 	const { setTheme } = useTheme();
 	const location = useLocation();
+	const { handleClick: handleLogoClick } = useGlitchEgg();
 	const pathname = location?.pathname ?? "/";
 	const { canAccessShifts } = useShiftAccess();
 
@@ -181,7 +183,7 @@ export function ShiftsSidebar() {
 
 	return (
 		<Sidebar variant="floating">
-			<SidebarHeader>
+			<SidebarHeader onClick={handleLogoClick}>
 				<Logo className="h-8 p-1" />
 			</SidebarHeader>
 			<SidebarContent>
