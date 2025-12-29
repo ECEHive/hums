@@ -180,7 +180,7 @@ export function ShiftsSidebar() {
 	const { period, setPeriod } = usePeriod();
 
 	return (
-		<Sidebar>
+		<Sidebar variant="floating">
 			<SidebarHeader>
 				<Logo className="h-8 p-1" />
 			</SidebarHeader>

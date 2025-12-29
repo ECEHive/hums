@@ -4,7 +4,12 @@ import { ImpersonationBanner } from "@/components/banners/impersonate-banner";
 import { DynamicBreadcrumbs } from "@/components/navigation/dynamic-breadcrumbs";
 import { ShiftsSidebar } from "@/components/navigation/shifts-sidebar";
 import { PeriodProvider } from "@/components/providers/period-provider";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import {
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/shifts")({
 	component: AppLayout,
@@ -16,14 +21,18 @@ function AppLayout() {
 			<PeriodProvider>
 				<SidebarProvider>
 					<ShiftsSidebar />
-					<div className="flex flex-col w-full overflow-hidden">
+					<SidebarInset>
 						<ImpersonationBanner />
-						<div className="flex flex-row items-center gap-2 p-4 w-full border-b border-border">
-							<SidebarTrigger />
+						<header className="flex h-16 shrink-0 items-center gap-2 px-4">
+							<SidebarTrigger className="-ml-1" />
+							<Separator
+								orientation="vertical"
+								className="mr-2 data-[orientation=vertical]:h-4"
+							/>
 							<DynamicBreadcrumbs />
-						</div>
+						</header>
 						<Outlet />
-					</div>
+					</SidebarInset>
 				</SidebarProvider>
 			</PeriodProvider>
 		</RequireAuth>
