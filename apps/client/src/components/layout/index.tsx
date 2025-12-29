@@ -1,3 +1,4 @@
+export { AppShell } from "./app-shell";
 export {
 	Page,
 	PageActions,
