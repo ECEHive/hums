@@ -96,15 +96,22 @@ export const ConfigRegistry = {
 				if (field.step !== undefined && field.step > 0) {
 					const step = field.step;
 					const min = field.min ?? 0;
-					schema = schema.refine((val) => {
-						const offset = val - min;
-						// Round to nearest step and check if close to original value
-						// This handles floating point precision issues better than modulo
-						const rounded = Math.round(offset / step) * step;
-						return Math.abs(rounded - offset) < Number.EPSILON * 10;
-					}, {
-                        message: `${field.label} must be a multiple of ${field.step}`,
-                    });
+					schema = schema.refine(
+						(val) => {
+							const offset = val - min;
+							// Round to nearest step and check if close to original value
+							// This handles floating point precision issues better than modulo
+							const rounded = Math.round(offset / step) * step;
+							// Use a tolerance that scales with the magnitude of the values to
+							// avoid incorrect results for very large or very small numbers.
+							const scale = Math.max(1, Math.abs(offset), Math.abs(step));
+							const tolerance = Number.EPSILON * scale * 10;
+							return Math.abs(rounded - offset) <= tolerance;
+						},
+						{
+							message: `${field.label} must be a multiple of ${field.step}`,
+						},
+					);
 				}
 
 				return schema;
