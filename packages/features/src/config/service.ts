@@ -151,11 +151,9 @@ export const ConfigService = {
 			),
 		);
 
-		// Update cache
-		for (const [key, value] of Object.entries(values)) {
-			cache.set(key, value);
-		}
-		cacheTimestamp = Date.now();
+		// Clear cache to avoid serving stale data for other keys in multi-process scenarios
+		cache.clear();
+		cacheTimestamp = 0;
 	},
 
 	/**

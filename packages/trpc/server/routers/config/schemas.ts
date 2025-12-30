@@ -17,14 +17,21 @@ export const ZGetValueSchema = z.object({
  */
 export const ZSetValueSchema = z.object({
 	key: z.string(),
-	value: z.unknown(),
+	value: z.unknown().refine((v) => v !== null && v !== undefined, {
+		message: "Value cannot be null or undefined",
+	}),
 });
 
 /**
  * Set multiple configuration values
  */
 export const ZSetManySchema = z.object({
-	values: z.record(z.string(), z.unknown()),
+	values: z.record(
+		z.string(),
+		z.unknown().refine((v) => v !== null && v !== undefined, {
+			message: "Value cannot be null or undefined",
+		}),
+	),
 });
 
 /**
