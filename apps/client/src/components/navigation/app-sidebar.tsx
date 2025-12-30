@@ -13,6 +13,7 @@ import {
 	LaptopMinimalCheckIcon,
 	MoonIcon,
 	ScrollTextIcon,
+	SettingsIcon,
 	ShieldIcon,
 	SunIcon,
 	SunMoonIcon,
@@ -48,6 +49,7 @@ import { checkPermissions } from "@/lib/permissions";
 import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
 import { permissions as apiTokensPagePermissions } from "@/routes/app/api-tokens";
 import { permissions as auditLogsPagePermissions } from "@/routes/app/audit-logs";
+import { permissions as configurationPagePermissions } from "@/routes/app/configuration";
 import { permissions as appIndexPagePermissions } from "@/routes/app/index";
 import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
@@ -138,6 +140,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app/sessions",
 				icon: FileClockIcon,
 				permissions: sessionsPagePermissions,
+			},
+			{
+				title: "Configuration",
+				url: "/app/configuration",
+				icon: SettingsIcon,
+				permissions: configurationPagePermissions,
 			},
 		],
 	},
