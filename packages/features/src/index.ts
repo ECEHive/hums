@@ -2,6 +2,7 @@ export * from "./api-tokens";
 export * from "./assignments/generators";
 export * from "./audit-logs/list-audit-logs";
 export * from "./audit-logs/logger";
+export * from "./config";
 export * from "./db/locking";
 export * from "./periods/access";
 export * from "./periods/generate";
