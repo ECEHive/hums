@@ -5,8 +5,7 @@ import type { TPermissionProtectedProcedureContext } from "../../trpc";
 export const ZCreateSchema = z.object({
 	username: z.string().min(1).max(100),
 	name: z.string().min(1).max(100),
-	email: z.string().email(),
-	isSystemUser: z.boolean().optional().default(false),
+	email: z.email(),
 	roleIds: z.array(z.number().min(1)).optional(),
 });
 
@@ -18,14 +17,15 @@ export type TCreateOptions = {
 };
 
 export async function createHandler(options: TCreateOptions) {
-	const { username, name, email, isSystemUser, roleIds } = options.input;
+	const { username, name, email, roleIds } = options.input;
 
 	const newUser = await prisma.user.create({
 		data: {
 			username,
 			name,
 			email,
-			isSystemUser,
+			// isSystemUser is always false for user-created accounts
+			isSystemUser: false,
 			...(roleIds && roleIds.length > 0
 				? {
 						roles: {
