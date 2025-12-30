@@ -382,3 +382,18 @@ model OneTimeAccessCode {
   // indexes
   @@index([code, expiresAt])
 }
+
+model ConfigValue {
+  id Int @id @default(autoincrement())
+
+  // fields
+  key   String @unique
+  value Json
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // indexes
+  @@index([key])
+}
