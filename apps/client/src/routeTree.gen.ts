@@ -31,6 +31,7 @@ import { Route as AppRolesRouteImport } from './routes/app/roles'
 import { Route as AppMySessionsRouteImport } from './routes/app/my-sessions'
 import { Route as AppMyAgreementsRouteImport } from './routes/app/my-agreements'
 import { Route as AppKiosksRouteImport } from './routes/app/kiosks'
+import { Route as AppConfigurationRouteImport } from './routes/app/configuration'
 import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
 import { Route as AppApiTokensRouteImport } from './routes/app/api-tokens'
 import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
@@ -145,6 +146,11 @@ const AppKiosksRoute = AppKiosksRouteImport.update({
   path: '/kiosks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConfigurationRoute = AppConfigurationRouteImport.update({
+  id: '/configuration',
+  path: '/configuration',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAuditLogsRoute = AppAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/configuration': typeof AppConfigurationRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/configuration': typeof AppConfigurationRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/configuration': typeof AppConfigurationRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
+    | '/app/configuration'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
+    | '/app/configuration'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
+    | '/app/configuration'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -487,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKiosksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/configuration': {
+      id: '/app/configuration'
+      path: '/configuration'
+      fullPath: '/app/configuration'
+      preLoaderRoute: typeof AppConfigurationRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/audit-logs': {
       id: '/app/audit-logs'
       path: '/audit-logs'
@@ -515,6 +534,7 @@ interface AppRouteChildren {
   AppAgreementsRoute: typeof AppAgreementsRoute
   AppApiTokensRoute: typeof AppApiTokensRoute
   AppAuditLogsRoute: typeof AppAuditLogsRoute
+  AppConfigurationRoute: typeof AppConfigurationRoute
   AppKiosksRoute: typeof AppKiosksRoute
   AppMyAgreementsRoute: typeof AppMyAgreementsRoute
   AppMySessionsRoute: typeof AppMySessionsRoute
@@ -528,6 +548,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgreementsRoute: AppAgreementsRoute,
   AppApiTokensRoute: AppApiTokensRoute,
   AppAuditLogsRoute: AppAuditLogsRoute,
+  AppConfigurationRoute: AppConfigurationRoute,
   AppKiosksRoute: AppKiosksRoute,
   AppMyAgreementsRoute: AppMyAgreementsRoute,
   AppMySessionsRoute: AppMySessionsRoute,
