@@ -6,4 +6,5 @@ export function start() {
 	updateShiftAttendanceJob.start();
 	endOldSessionsJob.start();
 	cleanupExpiredCodesJob.start();
+	console.log("✓ Background workers started");
 }
