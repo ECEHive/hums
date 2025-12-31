@@ -8,6 +8,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@ecehive/email": "workspace:*",
 		"@ecehive/env": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"@ecehive/user-data": "workspace:*",

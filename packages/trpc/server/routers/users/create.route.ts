@@ -1,11 +1,11 @@
-import { prisma } from "@ecehive/prisma";
+import { createUser } from "@ecehive/features";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 export const ZCreateSchema = z.object({
 	username: z.string().min(1).max(100),
-	name: z.string().min(1).max(100),
-	email: z.email(),
+	name: z.string().max(100).optional(),
+	email: z.union([z.email("Invalid email address"), z.literal("")]).optional(),
 	roleIds: z.array(z.number().min(1)).optional(),
 });
 
@@ -19,26 +19,12 @@ export type TCreateOptions = {
 export async function createHandler(options: TCreateOptions) {
 	const { username, name, email, roleIds } = options.input;
 
-	const newUser = await prisma.user.create({
-		data: {
-			username,
-			name,
-			email,
-			// isSystemUser is always false for user-created accounts
-			isSystemUser: false,
-			...(roleIds && roleIds.length > 0
-				? {
-						roles: {
-							connect: roleIds.map((id) => ({ id })),
-						},
-					}
-				: {}),
-		},
-		include: {
-			roles: {
-				orderBy: { name: "asc" },
-			},
-		},
+	const newUser = await createUser({
+		username,
+		name: name || undefined,
+		email: email || undefined,
+		roleIds,
+		isSystemUser: false,
 	});
 
 	return { user: newUser };
