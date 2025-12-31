@@ -1,5 +1,5 @@
 {
-	"extends": "@ecehive/config/tsconfig/base.json",
+	"extends": "@ecehive/config/tsconfig/node.json",
 	"compilerOptions": {
 		"declaration": false,
 		"declarationMap": false

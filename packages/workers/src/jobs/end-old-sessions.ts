@@ -1,3 +1,4 @@
+import { queueEmail } from "@ecehive/email";
 import { ConfigService } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
@@ -5,31 +6,32 @@ import { CronJob } from "cron";
 /**
  * Ends all active sessions (endedAt == null) that started more than the configured timeout ago.
  * Separate timeouts for regular and staffing sessions.
+ * Sends email notifications if configured.
  * Runs every 5 minutes.
  */
 export async function endOldSessions(): Promise<void> {
 	try {
 		const now = new Date();
 
-        // Get configuration values in a single batched request
-		const configValues = await ConfigService.getMany([
+		// Get configuration values
+		const regularEnabled = await ConfigService.get(
 			"session.timeout.regular.enabled",
+		);
+		const regularHours = await ConfigService.get(
 			"session.timeout.regular.hours",
+		);
+		const staffingEnabled = await ConfigService.get(
 			"session.timeout.staffing.enabled",
+		);
+		const staffingHours = await ConfigService.get(
 			"session.timeout.staffing.hours",
-		]);
-		const regularEnabled = configValues[
-			"session.timeout.regular.enabled"
-		] as boolean;
-		const regularHours = configValues[
-			"session.timeout.regular.hours"
-		] as number;
-		const staffingEnabled = configValues[
-			"session.timeout.staffing.enabled"
-		] as boolean;
-		const staffingHours = configValues[
-			"session.timeout.staffing.hours"
-		] as number;
+		);
+		const regularEmailEnabled = await ConfigService.get(
+			"email.sessions.autologout.regular.enabled",
+		);
+		const staffingEmailEnabled = await ConfigService.get(
+			"email.sessions.autologout.staffing.enabled",
+		);
 
 		let totalEnded = 0;
 
@@ -45,7 +47,14 @@ export async function endOldSessions(): Promise<void> {
 					startedAt: { lt: regularCutoff },
 					sessionType: "regular",
 				},
-				select: { id: true },
+				include: {
+					user: {
+						select: {
+							name: true,
+							email: true,
+						},
+					},
+				},
 			});
 
 			if (regularSessions.length > 0) {
@@ -58,6 +67,30 @@ export async function endOldSessions(): Promise<void> {
 				console.info(
 					`Ended ${ids.length} regular session(s) older than ${regularHours} hours.`,
 				);
+
+				// Queue email notifications if enabled
+				if (regularEmailEnabled) {
+					for (const session of regularSessions) {
+						try {
+							await queueEmail({
+								to: session.user.email,
+								template: "session-auto-logout",
+								data: {
+									userName: session.user.name,
+									sessionType: "regular",
+									startedAt: session.startedAt,
+									endedAt: now,
+									timeoutHours: regularHours,
+								},
+							});
+						} catch (error) {
+							console.error(
+								`Failed to queue email for user ${session.userId}:`,
+								error,
+							);
+						}
+					}
+				}
 			}
 		}
 
@@ -73,7 +106,14 @@ export async function endOldSessions(): Promise<void> {
 					startedAt: { lt: staffingCutoff },
 					sessionType: "staffing",
 				},
-				select: { id: true },
+				include: {
+					user: {
+						select: {
+							name: true,
+							email: true,
+						},
+					},
+				},
 			});
 
 			if (staffingSessions.length > 0) {
@@ -86,6 +126,30 @@ export async function endOldSessions(): Promise<void> {
 				console.info(
 					`Ended ${ids.length} staffing session(s) older than ${staffingHours} hours.`,
 				);
+
+				// Queue email notifications if enabled
+				if (staffingEmailEnabled) {
+					for (const session of staffingSessions) {
+						try {
+							await queueEmail({
+								to: session.user.email,
+								template: "session-auto-logout",
+								data: {
+									userName: session.user.name,
+									sessionType: "staffing",
+									startedAt: session.startedAt,
+									endedAt: now,
+									timeoutHours: staffingHours,
+								},
+							});
+						} catch (error) {
+							console.error(
+								`Failed to queue email for user ${session.userId}:`,
+								error,
+							);
+						}
+					}
+				}
 			}
 		}
 
@@ -98,4 +162,4 @@ export async function endOldSessions(): Promise<void> {
 	}
 }
 
-export const endOldSessionsJob = new CronJob("*/5 * * * *", endOldSessions);
+export const endOldSessionsJob = new CronJob("*/1 * * * *", endOldSessions);

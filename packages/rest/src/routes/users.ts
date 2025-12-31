@@ -1,3 +1,4 @@
+import { createUser } from "@ecehive/features";
 import { Prisma, prisma } from "@ecehive/prisma";
 import { normalizeCardNumber } from "@ecehive/user-data";
 import type { FastifyPluginAsync } from "fastify";
@@ -45,8 +46,8 @@ const UsernameParamsSchema = z.object({
 
 const CreateUserSchema = z.object({
 	username: UsernameValidationSchema,
-	name: z.string().trim().min(1).max(255),
-	email: z.string().email().max(255),
+	name: z.string().trim().max(255).optional(),
+	email: z.email().max(255).optional(),
 	cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
 	roles: z.array(z.string().trim().min(1)).optional().default([]),
 });
@@ -54,7 +55,7 @@ const CreateUserSchema = z.object({
 const UpdateUserSchema = z.object({
 	name: z.string().trim().min(1).max(255).optional(),
 	email: z.string().email().max(255).optional(),
-	cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
+	cardNumber: z.string().trim().min(1).max(50).optional(),
 	roles: z.array(z.string().trim().min(1)).optional(),
 });
 
@@ -63,9 +64,9 @@ const BulkCreateUsersSchema = z.object({
 		.array(
 			z.object({
 				username: UsernameValidationSchema,
-				name: z.string().trim().min(1).max(255),
-				email: z.string().email().max(255),
-				cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
+				name: z.string().trim().max(255).optional(),
+				email: z.email().max(255).optional(),
+				cardNumber: z.string().trim().min(1).max(50).optional(),
 				roles: z.array(z.string().trim().min(1)).optional().default([]),
 			}),
 		)
@@ -234,15 +235,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 				const finalUserData = { ...data };
 
-				// Validate required fields for creation
-				if (!existing && (!finalUserData.name || !finalUserData.email)) {
-					failed.push({
-						item: userData,
-						error: "Name and email are required for new users",
-					});
-					continue;
-				}
-
 				// Normalize card number
 				let normalizedCard: string | null | undefined;
 				if (finalUserData.cardNumber !== undefined) {
@@ -406,14 +398,14 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		// Validate and prepare data
 		type UserCreateData = {
 			username: string;
-			name: string;
-			email: string;
+			name?: string;
+			email?: string;
 			cardNumber: string | null | undefined;
 			roleIds: number[];
 			originalData: {
 				username: string;
-				name: string;
-				email: string;
+				name?: string;
+				email?: string;
 				cardNumber?: string | null;
 				roles?: string[];
 			};
@@ -482,25 +474,17 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			});
 		}
 
-		// Batch create users in a transaction
+		// Batch create users
 		if (usersToCreate.length > 0) {
 			try {
-				const createdUsers = await prisma.$transaction(
+				const createdUsers = await Promise.all(
 					usersToCreate.map((userData) =>
-						prisma.user.create({
-							data: {
-								username: userData.username,
-								name: userData.name,
-								email: userData.email,
-								cardNumber: userData.cardNumber,
-								roles:
-									userData.roleIds.length > 0
-										? {
-												connect: userData.roleIds.map((id) => ({ id })),
-											}
-										: undefined,
-							},
-							include: { roles: true },
+						createUser({
+							username: userData.username,
+							name: userData.name || undefined,
+							email: userData.email || undefined,
+							cardNumber: userData.cardNumber ?? undefined,
+							roleIds: userData.roleIds,
 						}),
 					),
 				);
@@ -512,21 +496,14 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				// If transaction fails, fall back to individual creates
 				for (const userData of usersToCreate) {
 					try {
-						const user = await prisma.user.create({
-							data: {
-								username: userData.username,
-								name: userData.name,
-								email: userData.email,
-								cardNumber: userData.cardNumber,
-								roles:
-									userData.roleIds.length > 0
-										? {
-												connect: userData.roleIds.map((id) => ({ id })),
-											}
-										: undefined,
-							},
-							include: { roles: true },
+						const user = await createUser({
+							username: userData.username,
+							name: userData.name,
+							email: userData.email,
+							cardNumber: userData.cardNumber ?? undefined,
+							roleIds: userData.roleIds,
 						});
+
 						created.push(serializeUser(user));
 					} catch (err) {
 						failed.push({
@@ -846,18 +823,13 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return badRequestError(reply, `Roles not found: ${missing.join(", ")}`);
 		}
 
-		// Create user
-		const user = await prisma.user.create({
-			data: {
-				username,
-				name: userData.name,
-				email: userData.email,
-				cardNumber: normalizedCard,
-				roles: {
-					connect: roles.map((r) => ({ id: r.id })),
-				},
-			},
-			include: { roles: true },
+		// Use unified createUser function
+		const user = await createUser({
+			username,
+			name: userData.name || undefined,
+			email: userData.email || undefined,
+			cardNumber: normalizedCard,
+			roleIds: roles.map((r) => r.id),
 		});
 
 		await logRestAction(request, "rest.users.create", {

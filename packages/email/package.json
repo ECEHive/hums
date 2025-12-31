@@ -1,5 +1,5 @@
 {
-	"name": "@ecehive/workers",
+	"name": "@ecehive/email",
 	"version": "1.1.0",
 	"type": "module",
 	"main": "./src/index.ts",
@@ -7,16 +7,19 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@date-fns/tz": "^1.4.1",
-		"@ecehive/email": "workspace:*",
+		"@aws-sdk/client-ses": "^3.713.0",
 		"@ecehive/env": "workspace:*",
-		"@ecehive/features": "workspace:*",
-		"@ecehive/prisma": "workspace:*",
-		"cron": "^4.3.4"
+		"nodemailer": "^6.9.16",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
+		"@types/bun": "^1.3.5",
 		"@types/node": "^24.10.0",
+		"@types/nodemailer": "^6.4.17",
+		"@types/react": "^18.3.18",
+		"@types/react-dom": "^18.3.5",
 		"typescript": "^5.9.2"
 	}
 }

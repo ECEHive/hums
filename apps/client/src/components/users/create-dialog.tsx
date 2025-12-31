@@ -23,8 +23,8 @@ import { checkPermissions } from "@/lib/permissions";
 
 const formSchema = z.object({
 	username: z.string().min(1, "Username is required").max(100),
-	name: z.string().min(1, "Name is required").max(100),
-	email: z.email("Email must be valid"),
+	name: z.string().max(100),
+	email: z.union([z.email("Invalid email address"), z.literal("")]).optional(),
 });
 
 type CreateDialogProps = {
@@ -38,7 +38,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const formId = useId();
 
 	const createUserMutation = useMutation({
-		mutationFn: (input: { username: string; name: string; email: string }) =>
+		mutationFn: (input: { username: string; name?: string; email?: string }) =>
 			trpc.users.create.mutate(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -56,7 +56,11 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await createUserMutation.mutateAsync(value);
+				await createUserMutation.mutateAsync({
+					username: value.username,
+					name: value.name || undefined,
+					email: value.email || undefined,
+				});
 				setOpen(false);
 				onUpdate?.();
 			} catch (err) {
@@ -92,7 +96,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 				<DialogHeader>
 					<DialogTitle>Create User</DialogTitle>
 					<DialogDescription>
-						Fill in the details to create a new user.
+						Enter a username. Name and email will be discovered if left blank.
 					</DialogDescription>
 				</DialogHeader>
 				<form
@@ -134,7 +138,10 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								field.state.meta.isTouched && !field.state.meta.isValid;
 							return (
 								<Field data-invalid={isInvalid}>
-									<FieldLabel htmlFor={field.name}>Name</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										Name{" "}
+										<span className="text-muted-foreground">(optional)</span>
+									</FieldLabel>
 									<Input
 										id={field.name}
 										name={field.name}
@@ -157,14 +164,17 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								field.state.meta.isTouched && !field.state.meta.isValid;
 							return (
 								<Field data-invalid={isInvalid}>
-									<FieldLabel htmlFor={field.name}>Email</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										Email{" "}
+										<span className="text-muted-foreground">(optional)</span>
+									</FieldLabel>
 									<Input
 										id={field.name}
 										name={field.name}
 										value={field.state.value}
 										onBlur={field.handleBlur}
 										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder="user@example.com"
+										placeholder="Enter email address"
 										autoComplete="email"
 									/>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}

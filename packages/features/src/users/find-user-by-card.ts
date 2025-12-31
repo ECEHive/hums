@@ -1,6 +1,7 @@
 import { type Prisma, prisma } from "@ecehive/prisma";
 import { getUserDataProvider, normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
+import { createUser } from "./create-user";
 
 export async function findUserByCard(cardNumber: string) {
 	const provider = getUserDataProvider();
@@ -33,32 +34,32 @@ export async function findUserByCard(cardNumber: string) {
 			});
 
 			if (!user) {
-				user = await tx.user.create({
-					data: {
-						username: profile.username,
-						name: profile.name,
-						email: profile.email,
-						...(profile.cardNumber ? { cardNumber: profile.cardNumber } : {}),
-					},
+				// Use unified createUser function for new users
+				user = await createUser({
+					username: profile.username,
+					name: profile.name,
+					email: profile.email,
+					cardNumber: profile.cardNumber,
 				});
-			}
+			} else {
+				// Update existing user if needed
+				const updateData: Prisma.UserUpdateInput = {};
+				if (!user.cardNumber || user.cardNumber !== normalized) {
+					updateData.cardNumber = normalized;
+				}
+				if (profile.name && profile.name !== user.name) {
+					updateData.name = profile.name;
+				}
+				if (profile.email && profile.email !== user.email) {
+					updateData.email = profile.email;
+				}
 
-			const updateData: Prisma.UserUpdateInput = {};
-			if (!user.cardNumber || user.cardNumber !== normalized) {
-				updateData.cardNumber = normalized;
-			}
-			if (profile.name && profile.name !== user.name) {
-				updateData.name = profile.name;
-			}
-			if (profile.email && profile.email !== user.email) {
-				updateData.email = profile.email;
-			}
-
-			if (Object.keys(updateData).length > 0) {
-				user = await tx.user.update({
-					where: { id: user.id },
-					data: updateData,
-				});
+				if (Object.keys(updateData).length > 0) {
+					user = await tx.user.update({
+						where: { id: user.id },
+						data: updateData,
+					});
+				}
 			}
 		}
 
