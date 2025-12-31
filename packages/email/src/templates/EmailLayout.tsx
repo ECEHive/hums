@@ -5,15 +5,9 @@ interface EmailLayoutProps {
 	title: string;
 	preheader: string;
 	children: ReactNode;
-	supportEmail?: string;
 }
 
-export function EmailLayout({
-	title,
-	preheader,
-	children,
-	supportEmail,
-}: EmailLayoutProps) {
+export function EmailLayout({ title, preheader, children }: EmailLayoutProps) {
 	const currentYear = new Date().getFullYear();
 
 	// Load logos dynamically from client assets
@@ -436,26 +430,14 @@ export function EmailLayout({
 								<p
 									style={{ margin: "8px 0", fontSize: "12px", lineHeight: 1.5 }}
 								>
-									This is an automated notification. Please do not reply to this
-									email.
+									<strong style={{ fontWeight: 600 }}>
+										The Hive Makerspace
+									</strong>
+									<br />
+									School of Electrical and Computer Engineering
+									<br />
+									Georgia Institute of Technology
 								</p>
-								{supportEmail && (
-									<p
-										style={{
-											margin: "8px 0",
-											fontSize: "12px",
-											lineHeight: 1.5,
-										}}
-									>
-										Questions? Contact{" "}
-										<a
-											href={`mailto:${supportEmail}`}
-											style={{ textDecoration: "underline" }}
-										>
-											{supportEmail}
-										</a>
-									</p>
-								)}
 								<p
 									style={{ margin: "8px 0", fontSize: "12px", lineHeight: 1.5 }}
 								>

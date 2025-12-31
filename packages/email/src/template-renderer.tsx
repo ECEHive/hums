@@ -9,6 +9,7 @@ import {
 	type WelcomeEmailProps,
 	WelcomeEmailSubject,
 } from "./templates/WelcomeEmail";
+import { htmlToPlainText } from "./text-generator";
 
 // Re-export template props for external use
 export type { SessionAutoLogoutEmailProps, WelcomeEmailProps };
@@ -25,6 +26,7 @@ export type RenderEmailOptions =
 
 export interface RenderedEmail {
 	html: string;
+	text: string;
 	subject: string;
 }
 
@@ -59,7 +61,10 @@ export async function renderEmail(
 		// Add DOCTYPE declaration
 		html = `<!DOCTYPE html>${html}`;
 
-		return { html, subject };
+		// Generate plain-text version
+		const text = htmlToPlainText(html);
+
+		return { html, text, subject };
 	} catch (error) {
 		console.error(
 			`Failed to render email template "${options.template}":`,

@@ -8,4 +8,5 @@ export type {
 export { renderEmail } from "./template-renderer";
 export type { SessionAutoLogoutEmailProps } from "./templates/SessionAutoLogoutEmail";
 export type { WelcomeEmailProps } from "./templates/WelcomeEmail";
+export { htmlToPlainText } from "./text-generator";
 export type { EmailProvider, SendEmailParams } from "./types";

@@ -23,6 +23,9 @@ class EmailQueue {
 	private maxAttempts = 3;
 	private nextId = 1;
 	private processingTimeout: ReturnType<typeof setTimeout> | null = null;
+	// Rate limiting: maximum 3 emails per second
+	private readonly emailsPerSecond = 3;
+	private readonly delayBetweenEmails = 1000 / this.emailsPerSecond; // ~333ms between emails
 
 	/**
 	 * Add an email to the in-memory queue
@@ -106,12 +109,20 @@ class EmailQueue {
 					to: email.to,
 					subject: rendered.subject,
 					html: rendered.html,
+					text: rendered.text,
 				});
 
 				// Remove from queue on success
 				this.queue.shift();
 				processed++;
 				console.log(`   ✓ Sent ${email.template} to ${email.to} (${email.id})`);
+
+				// Rate limiting: wait before sending next email
+				if (this.queue.length > 0) {
+					await new Promise((resolve) =>
+						setTimeout(resolve, this.delayBetweenEmails),
+					);
+				}
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);

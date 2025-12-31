@@ -31,14 +31,14 @@ export function WelcomeEmail({ userName }: WelcomeEmailProps) {
 				space, and access your session history online anytime.
 			</p>
 
-			<div style={{ textAlign: "center", margin: "24px 0" }}>
-				<a href={websiteUrl} className="button" aria-label="Access HUMS Portal">
-					Access HUMS
-				</a>
-			</div>
+			<p>
+				You can access HUMS and manage your account here:{" "}
+				<a href={websiteUrl}>{websiteUrl}</a>
+			</p>
 
 			<p style={{ marginTop: "20px" }}>
-				Questions? Visit The Hive front desk or reach out to us!
+				Questions? Visit The Hive front desk or email us at{" "}
+				<a href="mailto:hive@ece.gatech.edu">hive@ece.gatech.edu</a>
 			</p>
 
 			<p style={{ marginTop: "16px", marginBottom: 0 }}>

@@ -13,7 +13,7 @@ export function getSessionAutoLogoutSubject(
 ): string {
 	const sessionTypeDisplay =
 		sessionType === "staffing" ? "Staffing" : "Regular";
-	return `Your ${sessionTypeDisplay} Session Has Ended`;
+	return `Your Hive ${sessionTypeDisplay} Session Automatically Ended`;
 }
 
 export function SessionAutoLogoutEmail({
@@ -27,7 +27,7 @@ export function SessionAutoLogoutEmail({
 
 	return (
 		<EmailLayout
-			title={`Your ${sessionTypeDisplay} Session Has Ended`}
+			title={`Your ${sessionTypeDisplay} Session Automatically Ended`}
 			preheader={`Your ${sessionTypeLower} session was automatically ended after ${timeoutHours} hours.`}
 		>
 			<p>
@@ -39,9 +39,21 @@ export function SessionAutoLogoutEmail({
 				<strong>{timeoutHours} hours</strong> of inactivity.
 			</p>
 
+			{sessionType === "staffing" && (
+				<div className="warning-box">
+					<p>
+						<strong>Staffing Notice</strong>
+					</p>
+					<p>
+						Please remember to log out properly when shifts end to maintain
+						accurate attendance records.
+					</p>
+				</div>
+			)}
+
 			<div className="warning-box">
 				<p>
-					<strong>⚠️ Important: Always Tap Out</strong>
+					<strong>Always Tap Out!</strong>
 				</p>
 				<p style={{ marginTop: "8px" }}>
 					Please remember to tap out with your Buzzcard when leaving The Hive.
@@ -50,30 +62,18 @@ export function SessionAutoLogoutEmail({
 				</p>
 			</div>
 
-			<div className="info-box">
-				<p>
-					<strong>🔄 Still in The Hive?</strong>
-				</p>
-				<p style={{ marginTop: "8px" }}>
-					If you're still working in the space, you can safely ignore this
-					email. Simply tap in again to continue your session.
-				</p>
-			</div>
+			<p>
+				Still in the space? You can safely ignore this email. Simply tap-in
+				again to continue your session.
+			</p>
 
-			{sessionType === "staffing" && (
-				<div className="warning-box">
-					<p>
-						<strong>Staff Notice:</strong> Please log out properly when shifts
-						end to maintain accurate attendance records. Failure to do so may
-						result in investigations regarding shift compliance.
-					</p>
-				</div>
-			)}
-
-			<p style={{ marginTop: "20px" }}>Questions? Feel free to reach out!</p>
+			<p style={{ marginTop: "20px" }}>
+				Questions? Visit The Hive front desk or email us at{" "}
+				<a href="mailto:hive@ece.gatech.edu">hive@ece.gatech.edu</a>
+			</p>
 
 			<p style={{ marginTop: "16px", marginBottom: 0 }}>
-				<strong>The HUMS Team</strong>
+				<strong>The Hive Team</strong>
 			</p>
 		</EmailLayout>
 	);
