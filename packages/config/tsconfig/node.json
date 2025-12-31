@@ -6,6 +6,7 @@
 		"types": ["@types/node"],
 		"lib": ["DOM"],
 		"module": "ESNext",
-		"moduleResolution": "Bundler"
+		"moduleResolution": "Bundler",
+		"jsx": "react-jsx"
 	}
 }

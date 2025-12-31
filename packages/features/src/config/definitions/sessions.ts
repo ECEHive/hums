@@ -1,11 +1,11 @@
 import { ConfigRegistry } from "../registry";
-import type { ConfigDefinition } from "../types";
+import { defineConfig, type ExtractConfigType } from "../types";
 
 /**
  * Session Configuration
  * Defines configuration options for user sessions
  */
-export const sessionConfig: ConfigDefinition = {
+export const sessionConfig = defineConfig({
 	groups: [
 		{
 			id: "session-timeout",
@@ -59,7 +59,9 @@ export const sessionConfig: ConfigDefinition = {
 			],
 		},
 	],
-};
+} as const);
+
+export type SessionConfigType = ExtractConfigType<typeof sessionConfig>;
 
 // Register the configuration
 ConfigRegistry.register("sessions", sessionConfig);

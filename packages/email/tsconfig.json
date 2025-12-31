@@ -1,0 +1,3 @@
+{
+	"extends": "@ecehive/config/tsconfig/node.json"
+}

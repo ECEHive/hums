@@ -23,6 +23,10 @@ const BaseEnvSchema = z.object({
 	DATA_PROVIDER: z.string().default("legacy"),
 	FALLBACK_EMAIL_DOMAIN: z.string().default("gatech.edu"),
 	TZ: z.string().default("America/New_York"),
+	EMAIL_PROVIDER: z.enum(["SES", "SMTP", "NONE"]).default("NONE"),
+	EMAIL_FROM_ADDRESS: z.email().optional(),
+	EMAIL_FROM_NAME: z.string().default("HUMS"),
+	CLIENT_BASE_URL: z.url(),
 });
 
 const LegacyProviderSchema = z
@@ -48,9 +52,46 @@ const BuzzApiProviderSchema = z
 		}),
 	);
 
+const SESEmailProviderSchema = z
+	.object({
+		EMAIL_PROVIDER: z.literal("SES"),
+	})
+	.and(
+		z.object({
+			EMAIL_SES_REGION: z.string().default("us-east-1"),
+			EMAIL_SES_ACCESS_KEY_ID: z.string().optional(),
+			EMAIL_SES_SECRET_ACCESS_KEY: z.string().optional(),
+		}),
+	);
+
+const SMTPEmailProviderSchema = z
+	.object({
+		EMAIL_PROVIDER: z.literal("SMTP"),
+	})
+	.and(
+		z.object({
+			EMAIL_SMTP_HOST: z.string(),
+			EMAIL_SMTP_PORT: z.coerce.number().default(587),
+			EMAIL_SMTP_SECURE: z.coerce.boolean().default(false),
+			EMAIL_SMTP_USER: z.string().optional(),
+			EMAIL_SMTP_PASSWORD: z.string().optional(),
+		}),
+	);
+
+const NoneEmailProviderSchema = z.object({
+	EMAIL_PROVIDER: z.literal("NONE"),
+});
+
 export const ZEnvSchema = z.intersection(
 	BaseEnvSchema,
-	z.union([LegacyProviderSchema, BuzzApiProviderSchema]),
+	z.intersection(
+		z.union([LegacyProviderSchema, BuzzApiProviderSchema]),
+		z.union([
+			SESEmailProviderSchema,
+			SMTPEmailProviderSchema,
+			NoneEmailProviderSchema,
+		]),
+	),
 );
 
 export type TEnvSchema = z.infer<typeof ZEnvSchema>;
