@@ -46,7 +46,7 @@ const DAYS_OF_WEEK = [
 ];
 
 const TIME_COLUMN_WIDTH = "clamp(68px, 18vw, 120px)";
-const DAY_COLUMN_WIDTH = "clamp(120px, 15vw, 170px)";
+const DAY_COLUMN_WIDTH = "clamp(110px, 14vw, 160px)";
 const TIME_HEADER_LABEL = isUserInAppTimezone
 	? "Time"
 	: `Time (${getAppTimezoneAbbreviation()})`;
@@ -311,137 +311,196 @@ export function SchedulingTimeline({
 	const gridTemplateColumns = `${TIME_COLUMN_WIDTH} repeat(${visibleDays.length}, ${DAY_COLUMN_WIDTH})`;
 
 	return (
-		<div className="overflow-x-auto w-full pb-4">
-			<div className="min-w-max">
-				<div
-					className="inline-grid auto-rows-min gap-2"
-					style={{ gridTemplateColumns }}
-				>
-					<div className="sticky left-0 z-30 text-xs sm:text-sm font-medium text-muted-foreground py-2 pr-4 bg-card/50 backdrop-blur-md">
-						{TIME_HEADER_LABEL}
-					</div>
-					{visibleDays.map((day) => (
+		<div className="relative w-full">
+			{/* Container with max height and shadow indicators */}
+			<div className="relative rounded-lg border bg-card overflow-hidden shadow-sm">
+				{/* Main scrollable container */}
+				<div className="overflow-auto max-h-[calc(100vh-20rem)] sm:max-h-[calc(100vh-24rem)] min-h-[400px] sm:min-h-[500px] scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+					<div className="min-w-max">
+						{/* Grid container */}
 						<div
-							key={`header-${day.value}`}
-							className="text-center text-sm font-medium py-2"
+							className="grid auto-rows-min gap-2 p-3"
+							style={{ gridTemplateColumns }}
 						>
-							<div className="hidden sm:block">{day.label}</div>
-							<div className="sm:hidden">{day.short}</div>
-						</div>
-					))}
-
-					{timeBlockStarts.map((blockStart) => {
-						const timeLabel = formatTimeBlock(blockStart, blockSize);
-						const compactStart = formatCompactTime(blockStart);
-						const compactEnd = formatCompactTime(blockStart + blockSize);
-
-						return (
-							<React.Fragment key={blockStart}>
-								<div className="flex items-center sm:items-stretch text-muted-foreground font-medium py-2 pr-4 min-h-[60px] sticky left-0 z-20 bg-card/50 backdrop-blur-md">
-									<span className="hidden sm:inline">{timeLabel}</span>
-									<span className="flex flex-col sm:hidden leading-tight">
-										<span className="text-sm font-semibold">
-											{compactStart}
-										</span>
-										<span className="text-[10px] text-muted-foreground/80">
-											{compactEnd}
-										</span>
-									</span>
+							{/* Sticky header row - time label */}
+							<div className="sticky top-0 left-0 z-50 bg-card py-2 pr-4 border-b-2 border-primary/20">
+								<div className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+									{TIME_HEADER_LABEL}
 								</div>
+							</div>
 
-								{visibleDays.map((day) => {
-									const key = `${day.value}-${blockStart}`;
-									const blockData = blocks.get(key);
+							{/* Sticky header row - day headers */}
+							{visibleDays.map((day) => (
+								<div
+									key={`header-${day.value}`}
+									className="sticky top-0 z-40 bg-card py-2 border-b-2 border-primary/20"
+								>
+									<div className="text-center font-semibold text-foreground">
+										<div className="hidden sm:block text-sm">{day.label}</div>
+										<div className="sm:hidden text-xs">{day.short}</div>
+									</div>
+								</div>
+							))}
 
-									if (!blockData) {
-										return (
-											<div
-												key={key}
-												className="border border-dashed border-muted rounded-md p-2 min-h-[60px]"
-											/>
-										);
-									}
+							{/* Time blocks and shift cells */}
+							{timeBlockStarts.map((blockStart) => {
+								const timeLabel = formatTimeBlock(blockStart, blockSize);
+								const compactStart = formatCompactTime(blockStart);
+								const compactEnd = formatCompactTime(blockStart + blockSize);
 
-									const hasAvailable = blockData.available > 0;
+								return (
+									<React.Fragment key={blockStart}>
+										{/* Sticky time label */}
+										<div className="sticky left-0 z-30 bg-card/95 backdrop-blur-sm py-2 pr-4 min-h-[60px] flex items-center border-r border-border/50">
+											<div className="text-muted-foreground font-medium text-xs sm:text-sm">
+												<span className="hidden sm:inline">{timeLabel}</span>
+												<span className="flex flex-col sm:hidden leading-tight">
+													<span className="font-semibold">{compactStart}</span>
+													<span className="text-[10px] text-muted-foreground/80">
+														{compactEnd}
+													</span>
+												</span>
+											</div>
+										</div>
 
-									return (
-										<HoverCard key={key}>
-											<HoverCardTrigger asChild>
-												<Button
-													variant={
-														blockData.hasUserRegistered ? "default" : "outline"
-													}
-													className={cn(
-														"w-full h-auto min-h-[60px] flex flex-col items-center justify-center gap-1 p-2",
-														!blockData.hasUserRegistered &&
-															hasAvailable &&
-															"border-green-500 hover:border-green-600",
-														!blockData.hasUserRegistered &&
-															!hasAvailable &&
-															"opacity-50",
-													)}
-													onClick={() =>
-														onBlockClick(
-															day.value,
-															formatTimeFromMinutes(blockStart),
-														)
-													}
-												>
+										{/* Shift cells for each day */}
+										{visibleDays.map((day) => {
+											const key = `${day.value}-${blockStart}`;
+											const blockData = blocks.get(key);
+
+											if (!blockData) {
+												return (
 													<div
-														className={cn(
-															"text-lg font-bold",
-															blockData.hasUserRegistered
-																? "text-primary-foreground"
-																: hasAvailable
-																	? "text-green-600 dark:text-green-400"
-																	: "text-muted-foreground",
-														)}
-													>
-														{blockData.available}
-													</div>
-													{!blockData.hasUserRegistered && (
-														<div
+														key={key}
+														className="border border-dashed border-muted/50 rounded-md p-2 min-h-[60px]"
+													/>
+												);
+											}
+
+											const hasAvailable = blockData.available > 0;
+											const isFull = blockData.available === 0;
+											const isRegistered = blockData.hasUserRegistered;
+
+											// Determine background and border colors
+											let bgClass = "bg-muted/30";
+											let borderClass = "border-muted";
+											let textClass = "text-muted-foreground";
+											let hoverClass = "hover:bg-muted/50";
+
+											if (isRegistered) {
+												bgClass = "bg-primary";
+												borderClass = "border-primary";
+												textClass = "text-primary-foreground";
+												hoverClass = "hover:bg-primary/90";
+											} else if (hasAvailable) {
+												bgClass = "bg-green-50 dark:bg-green-950";
+												borderClass = "border-green-500 dark:border-green-600";
+												textClass = "text-green-700 dark:text-green-300";
+												hoverClass =
+													"hover:bg-green-100 dark:hover:bg-green-900 hover:border-green-600 dark:hover:border-green-500";
+											} else if (isFull) {
+												bgClass = "bg-muted/50";
+												borderClass = "border-muted";
+												textClass = "text-muted-foreground";
+												hoverClass = "hover:bg-muted/60";
+											}
+
+											return (
+												<HoverCard key={key}>
+													<HoverCardTrigger asChild>
+														<Button
+															variant="outline"
 															className={cn(
-																"text-xs",
-																blockData.hasUserRegistered &&
-																	"text-primary-foreground/80",
+																"w-full h-auto min-h-[60px] flex flex-row items-center justify-between gap-2 px-2 sm:px-3 py-2 transition-all active:scale-95",
+																bgClass,
+																borderClass,
+																hoverClass,
+																isFull && !isRegistered && "opacity-60",
 															)}
+															onClick={() =>
+																onBlockClick(
+																	day.value,
+																	formatTimeFromMinutes(blockStart),
+																)
+															}
 														>
-															{blockData.available > 0 ? "Available" : "Full"}
-														</div>
-													)}
-													{blockData.hasUserRegistered && (
-														<div className="text-xs">✓ Registered</div>
-													)}
-												</Button>
-											</HoverCardTrigger>
-											<HoverCardContent>
-												<div className="space-y-2">
-													<div className="font-medium mb-1">
-														{formatDayBlock(day.value)}{" "}
-														{formatTimeBlock(blockStart, blockSize)}
-													</div>
-													{blockData.schedules.map((schedule) => (
-														<div
-															key={schedule.id}
-															className="flex flex-row justify-between items-center gap-4"
-														>
-															<div>
-																{schedule.availableSlots} / {schedule.slots}
+															{/* Left side: number and status */}
+															<div className="flex items-center gap-1.5 sm:gap-2">
+																<div
+																	className={cn(
+																		"text-xl sm:text-2xl font-bold tabular-nums",
+																		textClass,
+																	)}
+																>
+																	{blockData.available}
+																</div>
+																<div
+																	className={cn(
+																		"text-[10px] sm:text-xs font-medium",
+																		textClass,
+																	)}
+																>
+																	{isRegistered
+																		? "Reg."
+																		: hasAvailable
+																			? "Open"
+																			: "Full"}
+																</div>
 															</div>
-															<div className="grow">
-																{schedule.shiftTypeName}
+
+															{/* Right side: registered checkmark */}
+															{isRegistered && (
+																<div
+																	className={cn(
+																		"text-base sm:text-lg font-bold",
+																		textClass,
+																	)}
+																>
+																	✓
+																</div>
+															)}
+														</Button>
+													</HoverCardTrigger>
+													<HoverCardContent className="w-80">
+														<div className="space-y-2">
+															<div className="font-medium mb-2 text-sm">
+																{formatDayBlock(day.value)} —{" "}
+																{formatTimeBlock(blockStart, blockSize)}
 															</div>
+															{blockData.schedules.map((schedule) => (
+																<div
+																	key={schedule.id}
+																	className="flex items-center justify-between gap-4 text-sm"
+																>
+																	<div className="flex items-center gap-2 flex-1">
+																		{schedule.shiftTypeColor && (
+																			<div
+																				className="w-3 h-3 rounded-full border"
+																				style={{
+																					backgroundColor:
+																						schedule.shiftTypeColor,
+																				}}
+																			/>
+																		)}
+																		<span className="font-medium">
+																			{schedule.shiftTypeName}
+																		</span>
+																	</div>
+																	<div className="text-muted-foreground tabular-nums">
+																		{schedule.availableSlots} / {schedule.slots}
+																	</div>
+																</div>
+															))}
 														</div>
-													))}
-												</div>
-											</HoverCardContent>
-										</HoverCard>
-									);
-								})}
-							</React.Fragment>
-						);
-					})}
+													</HoverCardContent>
+												</HoverCard>
+											);
+										})}
+									</React.Fragment>
+								);
+							})}
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
