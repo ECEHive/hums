@@ -182,7 +182,7 @@ export function ShiftsSidebar() {
 	const { period, setPeriod } = usePeriod();
 
 	return (
-		<Sidebar variant="floating">
+		<Sidebar variant="floating" data-sidebar-id="shifts">
 			<SidebarHeader onClick={handleLogoClick}>
 				<Logo className="h-8 p-1" />
 			</SidebarHeader>

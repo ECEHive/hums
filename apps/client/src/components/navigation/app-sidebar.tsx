@@ -195,7 +195,7 @@ export function AppSidebar() {
 	};
 
 	return (
-		<Sidebar variant="floating">
+		<Sidebar variant="floating" data-sidebar-id="app">
 			<SidebarHeader onClick={handleLogoClick}>
 				<Logo className="h-8 p-1" />
 			</SidebarHeader>

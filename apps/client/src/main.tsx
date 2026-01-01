@@ -69,7 +69,7 @@ queryClient.getQueryCache().config = {
 		// Handle UNAUTHORIZED errors globally for queries
 		if (error && typeof error === "object") {
 			let isUnauthorized = false;
-			
+
 			// Check both error.name and error.data.code for UNAUTHORIZED
 			if ("name" in error && error.name === "UNAUTHORIZED") {
 				isUnauthorized = true;
@@ -80,11 +80,14 @@ queryClient.getQueryCache().config = {
 					isUnauthorized = true;
 				}
 			}
-			
+
 			if (isUnauthorized) {
 				// Only redirect if not on login or ota-session-login pages
 				const pathname = window.location.pathname;
-				if (!pathname.startsWith("/login") && pathname !== "/ota-session-login") {
+				if (
+					!pathname.startsWith("/login") &&
+					pathname !== "/ota-session-login"
+				) {
 					// Clear the auth token
 					localStorage.removeItem("auth_token");
 					// Redirect to login with current path as redirect
@@ -103,7 +106,7 @@ queryClient.getMutationCache().config = {
 		// Handle UNAUTHORIZED errors globally for mutations
 		if (error && typeof error === "object") {
 			let isUnauthorized = false;
-			
+
 			// Check both error.name and error.data.code for UNAUTHORIZED
 			if ("name" in error && error.name === "UNAUTHORIZED") {
 				isUnauthorized = true;
@@ -114,11 +117,14 @@ queryClient.getMutationCache().config = {
 					isUnauthorized = true;
 				}
 			}
-			
+
 			if (isUnauthorized) {
 				// Only redirect if not on login or ota-session-login pages
 				const pathname = window.location.pathname;
-				if (!pathname.startsWith("/login") && pathname !== "/ota-session-login") {
+				if (
+					!pathname.startsWith("/login") &&
+					pathname !== "/ota-session-login"
+				) {
 					// Clear the auth token
 					localStorage.removeItem("auth_token");
 					// Redirect to login with current path as redirect
