@@ -22,8 +22,7 @@ export function summarizeMetadata(metadata: unknown) {
 	try {
 		const text = JSON.stringify(metadata);
 		return text.length > 120 ? `${text.slice(0, 117)}…` : text;
-	} catch (error) {
-		console.error("Failed to stringify metadata", error);
+	} catch {
 		return "Unable to show metadata";
 	}
 }

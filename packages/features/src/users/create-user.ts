@@ -1,9 +1,12 @@
 import { queueEmail } from "@ecehive/email";
 import { env } from "@ecehive/env";
+import { getLogger } from "@ecehive/logger";
 import { type Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { ConfigService } from "../config";
 import { fetchUserInfo } from "./fetch-user-info";
+
+const logger = getLogger("features:users");
 
 export type CreateUserData = {
 	username: string;
@@ -42,7 +45,10 @@ export async function createUser(data: CreateUserData) {
 			cardNumber = userInfo.cardNumber ?? cardNumber ?? undefined;
 		} catch (error) {
 			// If fetch fails, proceed with defaults
-			console.error(`User data fetch failed for ${username}:`, error);
+			logger.warn("User data fetch failed, using defaults", {
+				username,
+				error: error instanceof Error ? error.message : String(error),
+			});
 		}
 
 		// Build the Prisma create data
@@ -69,10 +75,9 @@ export async function createUser(data: CreateUserData) {
 		});
 
 		if (!newUser) {
-			console.error(
-				"Database insert did not return a user object for username:",
+			logger.error("Database insert failed for user", {
 				username,
-			);
+			});
 			throw new TRPCError({
 				code: "INTERNAL_SERVER_ERROR",
 				message: "Failed to create user",
@@ -95,19 +100,22 @@ export async function createUser(data: CreateUserData) {
 						email: newUser.email,
 					},
 				});
-				console.log(`Welcome email queued for user ${newUser.username}`);
+				logger.info("Welcome email queued", { username: newUser.username });
 			}
 		} catch (error) {
 			// Don't fail user creation if email queuing fails
-			console.error(
-				`Failed to queue welcome email for user ${newUser.username}:`,
-				error,
-			);
+			logger.warn("Failed to queue welcome email", {
+				username: newUser.username,
+				error: error instanceof Error ? error.message : String(error),
+			});
 		}
 
 		return newUser;
 	} catch (error) {
-		console.error("User creation failed for username:", data.username, error);
+		logger.error("User creation failed", {
+			username: data.username,
+			error: error instanceof Error ? error.message : String(error),
+		});
 		throw new TRPCError({
 			code: "INTERNAL_SERVER_ERROR",
 			message: "Failed to create user",

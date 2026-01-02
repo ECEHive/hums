@@ -10,6 +10,7 @@
 	"dependencies": {
 		"@ecehive/email": "workspace:*",
 		"@ecehive/env": "workspace:*",
+		"@ecehive/logger": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"@ecehive/user-data": "workspace:*",
 		"@js-temporal/polyfill": "^0.5.1",

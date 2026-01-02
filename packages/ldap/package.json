@@ -12,6 +12,7 @@
 		"typescript": "^5.9.2"
 	},
 	"dependencies": {
-		"@ecehive/env": "workspace:*"
+		"@ecehive/env": "workspace:*",
+		"@ecehive/logger": "workspace:*"
 	}
 }

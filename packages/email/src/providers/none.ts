@@ -1,4 +1,7 @@
+import { getLogger } from "@ecehive/logger";
 import type { EmailProvider, SendEmailParams } from "../types";
+
+const logger = getLogger("email:provider:none");
 
 /**
  * None Email Provider
@@ -15,14 +18,12 @@ export class NoneEmailProvider implements EmailProvider {
 			? `${params.from.name} <${params.from.address}>`
 			: "default sender";
 
-		console.log("📧 [NONE Provider] Email would be sent:");
-		console.log(`   From: ${from}`);
-		console.log(`   To: ${recipients}`);
-		console.log(`   Subject: ${params.subject}`);
-		console.log(`   HTML Length: ${params.html.length} characters`);
-		if (params.text) {
-			console.log(`   Text Length: ${params.text.length} characters`);
-		}
-		console.log("   Status: Not sent (NONE provider active)");
+		logger.info("Email simulated (none provider)", {
+			from,
+			to: recipients,
+			subject: params.subject,
+			htmlLength: params.html.length,
+			textLength: params.text?.length,
+		});
 	}
 }

@@ -1,7 +1,9 @@
 import { env } from "@ecehive/env";
+import { getLogger } from "@ecehive/logger";
 import { XMLParser } from "fast-xml-parser";
 import { jwtVerify, SignJWT } from "jose";
 
+const logger = getLogger("auth");
 const parser = new XMLParser();
 
 const getCasField = <T = unknown>(
@@ -82,7 +84,9 @@ export async function validateTicket(
 
 		return { username: user, attributes };
 	} catch (error) {
-		console.error("Error validating CAS ticket:", error);
+		logger.error("CAS ticket validation failed", {
+			error: error instanceof Error ? error.message : String(error),
+		});
 		return null;
 	}
 }
@@ -114,7 +118,9 @@ export async function generateToken(
 
 		return jwt as string;
 	} catch (error) {
-		console.error("Error generating token:", error);
+		logger.error("Token generation failed", {
+			error: error instanceof Error ? error.message : String(error),
+		});
 		return null;
 	}
 }
@@ -150,7 +156,9 @@ export async function validateToken(
 
 		return validated;
 	} catch (error) {
-		console.error("Error validating token:", error);
+		logger.warn("Token validation failed", {
+			error: error instanceof Error ? error.message : String(error),
+		});
 		return null;
 	}
 }

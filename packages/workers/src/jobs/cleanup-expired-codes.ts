@@ -1,5 +1,8 @@
+import { getLogger } from "@ecehive/logger";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
+
+const logger = getLogger("workers:cleanup-codes");
 
 /**
  * Deletes all expired or old used one-time login codes.
@@ -26,10 +29,12 @@ export async function cleanupExpiredCodes(): Promise<void> {
 		});
 
 		if (result.count > 0) {
-			console.info(`Deleted ${result.count} expired one-time login code(s).`);
+			logger.info("Cleaned up expired codes", { count: result.count });
 		}
 	} catch (err) {
-		console.error("cleanupExpiredCodes error:", err);
+		logger.error("Failed to cleanup expired codes", {
+			error: err instanceof Error ? err.message : String(err),
+		});
 		throw err;
 	}
 }
