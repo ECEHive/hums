@@ -120,6 +120,7 @@
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
+        "@ecehive/logger": "workspace:*",
         "@ecehive/rest": "workspace:*",
         "@ecehive/trpc": "workspace:*",
         "@ecehive/workers": "workspace:*",
@@ -137,6 +138,7 @@
       "version": "1.1.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
+        "@ecehive/logger": "workspace:*",
         "fast-xml-parser": "^5.2.5",
         "jose": "^6.1.0",
       },
@@ -159,6 +161,7 @@
       "dependencies": {
         "@aws-sdk/client-ses": "^3.713.0",
         "@ecehive/env": "workspace:*",
+        "@ecehive/logger": "workspace:*",
         "nodemailer": "^6.9.16",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
@@ -191,6 +194,7 @@
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
+        "@ecehive/logger": "workspace:*",
         "@ecehive/prisma": "workspace:*",
         "@ecehive/user-data": "workspace:*",
         "@js-temporal/polyfill": "^0.5.1",
@@ -207,11 +211,22 @@
       "version": "1.1.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
+        "@ecehive/logger": "workspace:*",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
         "@types/node": "^24.5.2",
         "typescript": "^5.9.2",
+      },
+    },
+    "packages/logger": {
+      "name": "@ecehive/logger",
+      "version": "1.1.0",
+      "dependencies": {
+        "tslog": "^4.9.3",
+      },
+      "devDependencies": {
+        "typescript": "^5.6.3",
       },
     },
     "packages/prisma": {
@@ -256,6 +271,7 @@
         "@ecehive/auth": "workspace:*",
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
+        "@ecehive/logger": "workspace:*",
         "@ecehive/prisma": "workspace:*",
         "@trpc/client": "11.7.2",
         "@trpc/server": "11.7.2",
@@ -276,6 +292,7 @@
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
+        "@ecehive/logger": "workspace:*",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -291,6 +308,7 @@
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
+        "@ecehive/logger": "workspace:*",
         "@ecehive/prisma": "workspace:*",
         "cron": "^4.3.4",
       },
@@ -465,6 +483,8 @@
     "@ecehive/kiosk": ["@ecehive/kiosk@workspace:apps/kiosk"],
 
     "@ecehive/ldap": ["@ecehive/ldap@workspace:packages/ldap"],
+
+    "@ecehive/logger": ["@ecehive/logger@workspace:packages/logger"],
 
     "@ecehive/prisma": ["@ecehive/prisma@workspace:packages/prisma"],
 

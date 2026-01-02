@@ -8,7 +8,8 @@
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
-		"@ecehive/ldap": "workspace:*"
+		"@ecehive/ldap": "workspace:*",
+		"@ecehive/logger": "workspace:*"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",

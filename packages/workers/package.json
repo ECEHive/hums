@@ -11,6 +11,7 @@
 		"@ecehive/email": "workspace:*",
 		"@ecehive/env": "workspace:*",
 		"@ecehive/features": "workspace:*",
+		"@ecehive/logger": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"cron": "^4.3.4"
 	},

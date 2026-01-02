@@ -1,3 +1,4 @@
+import { getLogger } from "@ecehive/logger";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
 	getSessionAutoLogoutSubject,
@@ -10,6 +11,8 @@ import {
 	WelcomeEmailSubject,
 } from "./templates/WelcomeEmail";
 import { htmlToPlainText } from "./text-generator";
+
+const logger = getLogger("email:renderer");
 
 // Re-export template props for external use
 export type { SessionAutoLogoutEmailProps, WelcomeEmailProps };
@@ -66,10 +69,10 @@ export async function renderEmail(
 
 		return { html, text, subject };
 	} catch (error) {
-		console.error(
-			`Failed to render email template "${options.template}":`,
-			error,
-		);
+		logger.error("Failed to render email template", {
+			template: options.template,
+			error: error instanceof Error ? error.message : String(error),
+		});
 		throw new Error(`Email template rendering failed: ${error}`);
 	}
 }

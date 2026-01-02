@@ -1,5 +1,8 @@
+import { getLogger } from "@ecehive/logger";
 import { getEmailProvider } from "./providers";
 import { type RenderEmailOptions, renderEmail } from "./template-renderer";
+
+const logger = getLogger("email:queue");
 
 /**
  * Queued email metadata that extends the base template options
@@ -71,7 +74,9 @@ class EmailQueue {
 		this.processingTimeout = setTimeout(() => {
 			this.processingTimeout = null;
 			this.process().catch((error) => {
-				console.error("❌ Email queue processing error:", error);
+				logger.error("Email queue processing failed", {
+					error: error instanceof Error ? error.message : String(error),
+				});
 			});
 		}, 0);
 	}
@@ -90,7 +95,7 @@ class EmailQueue {
 		}
 
 		this.processing = true;
-		console.log(`📧 Processing ${this.queue.length} emails in queue...`);
+		logger.debug("Processing email queue", { count: this.queue.length });
 
 		const provider = getEmailProvider();
 		let processed = 0;
@@ -115,7 +120,11 @@ class EmailQueue {
 				// Remove from queue on success
 				this.queue.shift();
 				processed++;
-				console.log(`   ✓ Sent ${email.template} to ${email.to} (${email.id})`);
+				logger.info("Email sent", {
+					template: email.template,
+					recipient: email.to,
+					id: email.id,
+				});
 
 				// Rate limiting: wait before sending next email
 				if (this.queue.length > 0) {
@@ -134,22 +143,31 @@ class EmailQueue {
 					// Remove after max attempts
 					this.queue.shift();
 					failed++;
-					console.error(
-						`   ✗ Failed ${email.template} to ${email.to} after ${email.attempts} attempts: ${errorMessage}`,
-					);
+					logger.error("Email failed after max attempts", {
+						template: email.template,
+						recipient: email.to,
+						attempts: email.attempts,
+						error: errorMessage,
+					});
 				} else {
 					// Move to end of queue for retry
 					this.queue.shift();
 					this.queue.push(email);
-					console.error(
-						`   ⚠️  Retry ${email.template} to ${email.to} (attempt ${email.attempts}/${this.maxAttempts}): ${errorMessage}`,
-					);
+					logger.warn("Email send failed, will retry", {
+						template: email.template,
+						recipient: email.to,
+						attempt: email.attempts,
+						maxAttempts: this.maxAttempts,
+						error: errorMessage,
+					});
 				}
 			}
 		}
 
 		this.processing = false;
-		console.log(`📊 Email batch complete: ${processed} sent, ${failed} failed`);
+		if (processed > 0 || failed > 0) {
+			logger.info("Email batch complete", { processed, failed });
+		}
 	}
 
 	/**
@@ -168,7 +186,7 @@ class EmailQueue {
 	 */
 	clear(): void {
 		this.queue = [];
-		console.log("🗑️  Email queue cleared");
+		logger.info("Email queue cleared");
 	}
 }
 

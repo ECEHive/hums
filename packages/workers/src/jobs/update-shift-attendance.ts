@@ -3,9 +3,12 @@ import {
 	computeOccurrenceStart,
 	isArrivalLate,
 } from "@ecehive/features";
+import { getLogger } from "@ecehive/logger";
 import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
+
+const logger = getLogger("workers:shift-attendance");
 
 interface ActiveSession {
 	userId: number;
@@ -74,7 +77,9 @@ async function updateShiftAttendance(): Promise<void> {
 			]);
 		}
 	} catch (err) {
-		console.error("updateShiftAttendance error:", err);
+		logger.error("Failed to update shift attendance", {
+			error: err instanceof Error ? err.message : String(err),
+		});
 		throw err; // Re-throw to allow monitoring/alerting
 	}
 }

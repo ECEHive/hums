@@ -1,23 +1,29 @@
 import { env } from "@ecehive/env";
 import { updateSystemUsers } from "@ecehive/features";
+import { getLogger } from "@ecehive/logger";
 import * as workers from "@ecehive/workers";
 import { server } from "./fastify";
 
+const logger = getLogger("server:startup");
+
 Promise.resolve()
-	.then(() => updateSystemUsers())
 	.then(() => {
-		console.log("System users updated");
+		logger.info("Starting server initialization");
+		return updateSystemUsers();
+	})
+	.then(() => {
+		logger.info("System users synchronized");
 	})
 	.catch((err) => {
-		console.error("Error updating system users:", err);
+		logger.fatal("Failed to update system users", { error: err.message });
 		process.exit(1);
 	})
 	.then(() => workers.start())
 	.then(() => {
-		console.log("Workers started");
+		logger.info("Background workers started");
 	})
 	.catch((err) => {
-		console.error("Error starting workers:", err);
+		logger.fatal("Failed to start background workers", { error: err.message });
 		process.exit(1);
 	})
 	.then(() =>
@@ -27,9 +33,9 @@ Promise.resolve()
 		}),
 	)
 	.then(() => {
-		console.log(`Server listening at http://localhost:${env.PORT}`);
+		logger.info("Server ready", { port: env.PORT, host: "0.0.0.0" });
 	})
 	.catch((err) => {
-		console.error("Error starting server:", err);
+		logger.fatal("Failed to start server", { error: err.message });
 		process.exit(1);
 	});

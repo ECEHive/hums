@@ -1,7 +1,10 @@
 import { queueEmail } from "@ecehive/email";
 import { ConfigService } from "@ecehive/features";
+import { getLogger } from "@ecehive/logger";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
+
+const logger = getLogger("workers:end-sessions");
 
 /**
  * Ends all active sessions (endedAt == null) that started more than the configured timeout ago.
@@ -64,9 +67,10 @@ export async function endOldSessions(): Promise<void> {
 					data: { endedAt: now },
 				});
 				totalEnded += ids.length;
-				console.info(
-					`Ended ${ids.length} regular session(s) older than ${regularHours} hours.`,
-				);
+				logger.info("Ended regular sessions due to timeout", {
+					count: ids.length,
+					timeoutHours: regularHours,
+				});
 
 				// Queue email notifications if enabled
 				if (regularEmailEnabled) {
@@ -84,10 +88,11 @@ export async function endOldSessions(): Promise<void> {
 								},
 							});
 						} catch (error) {
-							console.error(
-								`Failed to queue email for user ${session.userId}:`,
-								error,
-							);
+							logger.warn("Failed to queue logout notification email", {
+								userId: session.userId,
+								sessionType: "regular",
+								error: error instanceof Error ? error.message : String(error),
+							});
 						}
 					}
 				}
@@ -123,9 +128,10 @@ export async function endOldSessions(): Promise<void> {
 					data: { endedAt: now },
 				});
 				totalEnded += ids.length;
-				console.info(
-					`Ended ${ids.length} staffing session(s) older than ${staffingHours} hours.`,
-				);
+				logger.info("Ended staffing sessions due to timeout", {
+					count: ids.length,
+					timeoutHours: staffingHours,
+				});
 
 				// Queue email notifications if enabled
 				if (staffingEmailEnabled) {
@@ -143,10 +149,11 @@ export async function endOldSessions(): Promise<void> {
 								},
 							});
 						} catch (error) {
-							console.error(
-								`Failed to queue email for user ${session.userId}:`,
-								error,
-							);
+							logger.warn("Failed to queue logout notification email", {
+								userId: session.userId,
+								sessionType: "staffing",
+								error: error instanceof Error ? error.message : String(error),
+							});
 						}
 					}
 				}
@@ -154,10 +161,14 @@ export async function endOldSessions(): Promise<void> {
 		}
 
 		if (totalEnded > 0) {
-			console.info(`Total sessions ended: ${totalEnded}`);
+			logger.info("Session timeout processing complete", {
+				totalEnded,
+			});
 		}
 	} catch (err) {
-		console.error("endOldSessions error:", err);
+		logger.error("Failed to end old sessions", {
+			error: err instanceof Error ? err.message : String(err),
+		});
 		throw err;
 	}
 }

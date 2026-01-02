@@ -1,12 +1,13 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ClockIcon, Filter, X } from "lucide-react";
-import React from "react";
-import { RequirePermissions } from "@/auth";
+import { ClockIcon, Filter, UserCog, X } from "lucide-react";
+import React, { useState } from "react";
+import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
+	PageActions,
 	PageContent,
 	PageHeader,
 	PageTitle,
@@ -14,7 +15,8 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { columns } from "@/components/sessions/columns";
+import { AdminSessionManagementDialog } from "@/components/sessions/admin-session-management-dialog";
+import { generateColumns } from "@/components/sessions/columns";
 import {
 	DataTable,
 	SearchInput,
@@ -38,6 +40,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/sessions")({
 	component: () =>
@@ -51,6 +54,7 @@ export const Route = createFileRoute("/app/sessions")({
 export const permissions = ["sessions.list"];
 
 function SessionsPage() {
+	const { user } = useAuth();
 	const {
 		page,
 		setPage,
@@ -65,6 +69,9 @@ function SessionsPage() {
 	const [filterSessionType, setFilterSessionType] = React.useState<
 		"regular" | "staffing" | null
 	>(null);
+	const [manageDialogOpen, setManageDialogOpen] = useState(false);
+
+	const canManageSessions = user && checkPermissions(user, ["sessions.manage"]);
 
 	const queryParams = React.useMemo(() => {
 		const params: {
@@ -110,10 +117,20 @@ function SessionsPage() {
 		currentCount: sessions.length,
 	});
 
+	const columns = generateColumns(user);
+
 	return (
 		<Page>
 			<PageHeader>
 				<PageTitle>Sessions</PageTitle>
+				{canManageSessions && (
+					<PageActions>
+						<Button onClick={() => setManageDialogOpen(true)}>
+							<UserCog className="mr-2 h-4 w-4" />
+							Manage User Session
+						</Button>
+					</PageActions>
+				)}
 			</PageHeader>
 
 			<PageContent>
@@ -282,6 +299,11 @@ function SessionsPage() {
 					</CardContent>
 				</Card>
 			</PageContent>
+
+			<AdminSessionManagementDialog
+				open={manageDialogOpen}
+				onOpenChange={setManageDialogOpen}
+			/>
 		</Page>
 	);
 }

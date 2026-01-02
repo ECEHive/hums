@@ -1,5 +1,9 @@
 /// <reference types="bun-types" />
 
+import { getLogger } from "@ecehive/logger";
+
+const logger = getLogger("email:text-generator");
+
 /**
  * Convert HTML email to plain text using Bun's HTMLRewriter
  * Extracts text content while preserving structure and formatting
@@ -51,7 +55,9 @@ export function htmlToPlainText(html: string): string {
 		const transformed = rewriter.transform(html);
 		result = transformed;
 	} catch (error) {
-		console.error("Failed to parse HTML to plain text:", error);
+		logger.warn("Failed to parse HTML to plain text, using fallback", {
+			error: error instanceof Error ? error.message : String(error),
+		});
 		// Fallback: just strip all HTML tags
 		return html
 			.replace(/<[^>]*>/g, "")

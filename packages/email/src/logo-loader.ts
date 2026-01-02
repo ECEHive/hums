@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getLogger } from "@ecehive/logger";
+
+const logger = getLogger("email:logo-loader");
 
 interface EmailLogos {
 	light: string;
@@ -47,7 +50,9 @@ export function getEmailLogos(): EmailLogos {
 
 		return cachedLogos;
 	} catch (error) {
-		console.error("Failed to load email logos:", error);
+		logger.error("Failed to load email logos", {
+			error: error instanceof Error ? error.message : String(error),
+		});
 		return {
 			light: "",
 			dark: "",

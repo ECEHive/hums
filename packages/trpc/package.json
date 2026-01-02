@@ -19,6 +19,7 @@
 		"@ecehive/auth": "workspace:*",
 		"@ecehive/env": "workspace:*",
 		"@ecehive/features": "workspace:*",
+		"@ecehive/logger": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"@trpc/client": "11.7.2",
 		"@trpc/server": "11.7.2",

@@ -4,6 +4,14 @@ import {
 	protectedProcedure,
 	router,
 } from "../../trpc";
+import {
+	adminEndSessionHandler,
+	ZAdminEndSessionSchema,
+} from "./adminEndSession.route";
+import {
+	adminManageSessionHandler,
+	ZAdminManageSessionSchema,
+} from "./adminManageSession.route";
 import { endMySessionHandler, ZEndMySessionSchema } from "./endMySession.route";
 import { listHandler, ZListSchema } from "./list.route";
 import { listMyHandler, ZListMySchema } from "./listMy.route";
@@ -26,4 +34,10 @@ export const sessionsRouter = router({
 	tapInOut: kioskProtectedProcedure
 		.input(ZTapInOutSchema)
 		.mutation(tapInOutHandler),
+	adminManageSession: permissionProtectedProcedure("sessions.manage")
+		.input(ZAdminManageSessionSchema)
+		.mutation(adminManageSessionHandler),
+	adminEndSession: permissionProtectedProcedure("sessions.manage")
+		.input(ZAdminEndSessionSchema)
+		.mutation(adminEndSessionHandler),
 });

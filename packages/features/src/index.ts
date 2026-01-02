@@ -6,6 +6,7 @@ export * from "./config";
 export * from "./db/locking";
 export * from "./periods/access";
 export * from "./periods/generate";
+export * from "./sessions";
 export * from "./shift-schedules/events";
 export * from "./shift-schedules/generate";
 export * from "./shift-schedules/queries";

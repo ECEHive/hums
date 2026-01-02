@@ -1,5 +1,8 @@
 import cp from "node:child_process";
 import { env } from "@ecehive/env";
+import { getLogger } from "@ecehive/logger";
+
+const logger = getLogger("ldap");
 
 /**
  * Searches an LDAP server and returns parsed results.
@@ -28,7 +31,10 @@ export async function searchLdap(
 	} catch (err) {
 		// Log the error but do not throw. Return a fallback response that uses the
 		// username parsed from the filter (if available) so callers can continue.
-		console.error("[ldap] search error:", err);
+		logger.warn("LDAP search failed, using fallback", {
+			error: err instanceof Error ? err.message : String(err),
+			filter,
+		});
 
 		// Try to extract username from common filters like "(uid=username)" or "uid=username"
 		let username = "unknown";

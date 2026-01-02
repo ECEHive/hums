@@ -1,3 +1,4 @@
+import { endSession, getCurrentSession } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -24,13 +25,7 @@ export async function endMySessionHandler(options: TEndMySessionOptions) {
 			const now = new Date();
 
 			// Get user's current session status
-			const currentSession = await tx.session.findFirst({
-				where: {
-					userId,
-					endedAt: null,
-				},
-				orderBy: { startedAt: "desc" },
-			});
+			const currentSession = await getCurrentSession(tx, userId);
 
 			// Cannot end session if not in one
 			if (!currentSession) {
@@ -49,11 +44,8 @@ export async function endMySessionHandler(options: TEndMySessionOptions) {
 				});
 			}
 
-			// End the current session
-			const session = await tx.session.update({
-				where: { id: currentSession.id },
-				data: { endedAt: now },
-			});
+			// End the current session using shared utility
+			const session = await endSession(tx, currentSession.id, now);
 
 			return {
 				session,
