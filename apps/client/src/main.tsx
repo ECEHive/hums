@@ -38,6 +38,37 @@ declare module "@tanstack/react-router" {
 	}
 }
 
+// Shared error handler for UNAUTHORIZED errors
+const handleUnauthorizedError = (error: unknown) => {
+	if (error && typeof error === "object") {
+		let isUnauthorized = false;
+
+		// Check both error.name and error.data.code for UNAUTHORIZED
+		if ("name" in error && error.name === "UNAUTHORIZED") {
+			isUnauthorized = true;
+		}
+		if ("data" in error) {
+			const dataError = error as { data?: { code?: string } };
+			if (dataError.data?.code === "UNAUTHORIZED") {
+				isUnauthorized = true;
+			}
+		}
+
+		if (isUnauthorized) {
+			// Only redirect if not on login or ota-session-login pages
+			const pathname = window.location.pathname;
+			if (!pathname.startsWith("/login") && pathname !== "/ota-session-login") {
+				// Clear the auth token
+				localStorage.removeItem("auth_token");
+				// Redirect to login with current path as redirect
+				const currentPath = window.location.pathname + window.location.search;
+				const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+				window.location.href = loginUrl;
+			}
+		}
+	}
+};
+
 // React Query
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -65,76 +96,12 @@ const queryClient = new QueryClient({
 // Global error handler for React Query
 queryClient.getQueryCache().config = {
 	...queryClient.getQueryCache().config,
-	onError: (error) => {
-		// Handle UNAUTHORIZED errors globally for queries
-		if (error && typeof error === "object") {
-			let isUnauthorized = false;
-
-			// Check both error.name and error.data.code for UNAUTHORIZED
-			if ("name" in error && error.name === "UNAUTHORIZED") {
-				isUnauthorized = true;
-			}
-			if ("data" in error) {
-				const dataError = error as { data?: { code?: string } };
-				if (dataError.data?.code === "UNAUTHORIZED") {
-					isUnauthorized = true;
-				}
-			}
-
-			if (isUnauthorized) {
-				// Only redirect if not on login or ota-session-login pages
-				const pathname = window.location.pathname;
-				if (
-					!pathname.startsWith("/login") &&
-					pathname !== "/ota-session-login"
-				) {
-					// Clear the auth token
-					localStorage.removeItem("auth_token");
-					// Redirect to login with current path as redirect
-					const currentPath = window.location.pathname + window.location.search;
-					const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
-					window.location.href = loginUrl;
-				}
-			}
-		}
-	},
+	onError: handleUnauthorizedError,
 };
 
 queryClient.getMutationCache().config = {
 	...queryClient.getMutationCache().config,
-	onError: (error) => {
-		// Handle UNAUTHORIZED errors globally for mutations
-		if (error && typeof error === "object") {
-			let isUnauthorized = false;
-
-			// Check both error.name and error.data.code for UNAUTHORIZED
-			if ("name" in error && error.name === "UNAUTHORIZED") {
-				isUnauthorized = true;
-			}
-			if ("data" in error) {
-				const dataError = error as { data?: { code?: string } };
-				if (dataError.data?.code === "UNAUTHORIZED") {
-					isUnauthorized = true;
-				}
-			}
-
-			if (isUnauthorized) {
-				// Only redirect if not on login or ota-session-login pages
-				const pathname = window.location.pathname;
-				if (
-					!pathname.startsWith("/login") &&
-					pathname !== "/ota-session-login"
-				) {
-					// Clear the auth token
-					localStorage.removeItem("auth_token");
-					// Redirect to login with current path as redirect
-					const currentPath = window.location.pathname + window.location.search;
-					const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
-					window.location.href = loginUrl;
-				}
-			}
-		}
-	},
+	onError: handleUnauthorizedError,
 };
 
 // Render root

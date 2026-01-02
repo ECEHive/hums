@@ -1,10 +1,10 @@
+import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
 import {
 	computeOccurrenceEnd,
 	computeOccurrenceStart,
 	isArrivalLate,
 	isDepartureEarly,
-} from "@ecehive/features";
-import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
+} from "../time-utils";
 
 const PROTECTED_ATTENDANCE_STATUSES: ShiftAttendanceStatus[] = [
 	"dropped",
