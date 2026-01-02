@@ -18,6 +18,11 @@ export async function getHandler(options: TGetOptions) {
 		include: {
 			roles: {
 				orderBy: { name: "asc" },
+				include: {
+					permissions: {
+						orderBy: { name: "asc" },
+					},
+				},
 			},
 		},
 	});

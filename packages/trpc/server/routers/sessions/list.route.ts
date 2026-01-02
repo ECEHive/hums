@@ -59,7 +59,12 @@ export async function listHandler(options: TListOptions) {
 	const [sessions, total] = await Promise.all([
 		prisma.session.findMany({
 			where,
-			orderBy: { startedAt: "desc" },
+			// Sort ongoing sessions (endedAt is null) first by startedAt desc
+			// Then ended sessions by endedAt desc
+			orderBy: [
+				{ endedAt: { sort: "desc", nulls: "first" } },
+				{ startedAt: "desc" },
+			],
 			skip: offset,
 			take: limit,
 			include: {
