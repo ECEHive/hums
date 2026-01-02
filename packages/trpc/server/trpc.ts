@@ -1,4 +1,5 @@
 import { createAuditLogger } from "@ecehive/features";
+import { getLogger } from "@ecehive/logger";
 import type { Prisma } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import {
@@ -9,6 +10,8 @@ import {
 import superjson from "superjson";
 import type { Context } from "./context";
 import { getClientIp } from "./utils/getClientIp";
+
+const logger = getLogger("trpc");
 
 const t = initTRPC.context<Context>().create({
 	transformer: superjson,
@@ -68,6 +71,9 @@ export const protectedProcedure = t.procedure
 		});
 
 		if (!user) {
+			logger.error("User not found for authenticated session", {
+				userId: opts.ctx.userId,
+			});
 			throw new TRPCError({
 				code: "INTERNAL_SERVER_ERROR",
 				message: "User not found",

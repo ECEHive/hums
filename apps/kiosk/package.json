@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/kiosk",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -26,6 +26,7 @@
 		"dayjs": "^1.11.19",
 		"lucide-react": "^0.556.0",
 		"motion": "^12.23.25",
+		"qrcode": "^1.5.4",
 		"react": "^19.2.1",
 		"react-dom": "^19.2.1",
 		"tailwind-merge": "^3.4.0",
@@ -37,6 +38,7 @@
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.17",
 		"@types/node": "^24.10.1",
+		"@types/qrcode": "^1.5.6",
 		"@types/react": "^19.2.7",
 		"@types/react-dom": "^19.2.3",
 		"@types/w3c-web-serial": "^1.0.8",

@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/workers",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -8,8 +8,10 @@
 	},
 	"dependencies": {
 		"@date-fns/tz": "^1.4.1",
+		"@ecehive/email": "workspace:*",
 		"@ecehive/env": "workspace:*",
 		"@ecehive/features": "workspace:*",
+		"@ecehive/logger": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"cron": "^4.3.4"
 	},

@@ -100,7 +100,7 @@ export function PeriodSelector({
 				value={selectedPeriodId?.toString() ?? ""}
 				onValueChange={(value) => onPeriodChange(Number.parseInt(value, 10))}
 			>
-				<SelectTrigger className="w-full">
+				<SelectTrigger className="w-full overflow-hidden text-ellipsis">
 					<SelectValue placeholder="Select a period" />
 				</SelectTrigger>
 				<SelectContent>

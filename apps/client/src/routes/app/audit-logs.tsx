@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { AuditLogApiTokenSelector } from "@/components/audit-logs/api-token-selector";
 import { createAuditLogColumns } from "@/components/audit-logs/columns";
-import { AuditLogsDataTable } from "@/components/audit-logs/data-table";
 import { AuditLogDetailsSheet } from "@/components/audit-logs/details-sheet";
 import type {
 	AuditLogFilterApiToken,
@@ -15,9 +14,24 @@ import type {
 	AuditLogRow,
 } from "@/components/audit-logs/types";
 import { AuditLogUserSelector } from "@/components/audit-logs/user-selector";
-import { MissingPermissions } from "@/components/missing-permissions";
-import { TablePagination } from "@/components/table-pagination";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableContainer,
+} from "@/components/layout";
+import { DataTable, TablePaginationFooter } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -55,7 +69,7 @@ const createDefaultFilters = (): FilterState => ({
 });
 
 const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
+const _MAX_PAGE_SIZE = 100;
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 type AuditLogsListResponse = Awaited<
@@ -143,12 +157,6 @@ function AuditLogsPage() {
 	const totalPages = Math.max(data?.totalPages ?? 1, 1);
 	const resolvedPage = Math.min(data?.page ?? page, totalPages);
 	const resolvedPageSize = data?.pageSize ?? pageSize;
-	const pageDisplayStart =
-		total === 0 || logs.length === 0
-			? 0
-			: (resolvedPage - 1) * resolvedPageSize + 1;
-	const pageDisplayEnd =
-		total === 0 || logs.length === 0 ? 0 : pageDisplayStart + logs.length - 1;
 
 	useEffect(() => {
 		if (!data) return;
@@ -167,16 +175,6 @@ function AuditLogsPage() {
 		},
 		[totalPages],
 	);
-
-	const handlePageSizeSelect = useCallback((value: string) => {
-		const parsed = Number(value);
-		const clamped = Math.min(
-			Math.max(Number.isFinite(parsed) ? parsed : DEFAULT_PAGE_SIZE, 1),
-			MAX_PAGE_SIZE,
-		);
-		setPageSize((prev) => (prev === clamped ? prev : clamped));
-		setPage(1);
-	}, []);
 
 	const handleActorChange = (actor: AuditLogFilterUser | null) => {
 		let changed = false;
@@ -228,136 +226,138 @@ function AuditLogsPage() {
 	};
 
 	return (
-		<div className="container space-y-4 p-4">
-			<div className="flex items-center justify-between gap-3">
-				<h1 className="text-2xl font-bold">Audit Logs</h1>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => refetch()}
-					disabled={isFetching}
-				>
-					{isFetching ? (
-						<Loader2Icon className="mr-2 size-4 animate-spin" />
-					) : (
-						<RefreshCcwIcon className="mr-2 size-4" />
-					)}
-					Refresh
-				</Button>
-			</div>
-
-			<section className="rounded-lg border bg-card p-4 shadow-sm">
-				<div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-					<FilterIcon className="size-4" /> Filters
-				</div>
-				<div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-					<FilterField label="Action">
-						<Input
-							placeholder="users.create"
-							value={actionInput}
-							onChange={(event) => setActionInput(event.target.value)}
-						/>
-					</FilterField>
-					{canFilterUsers ? (
-						<>
-							<FilterField label="Actor">
-								<AuditLogUserSelector
-									placeholder="Search by name"
-									value={filters.actor}
-									onChange={handleActorChange}
-								/>
-							</FilterField>
-							<FilterField label="Impersonated by">
-								<AuditLogUserSelector
-									placeholder="Search impersonators"
-									value={filters.impersonatedBy}
-									onChange={handleImpersonatedByChange}
-								/>
-							</FilterField>
-						</>
-					) : null}
-					{canFilterApiTokens ? (
-						<FilterField label="API token">
-							<AuditLogApiTokenSelector
-								placeholder="Search API tokens"
-								value={filters.apiToken}
-								onChange={handleApiTokenChange}
-							/>
-						</FilterField>
-					) : null}
-					<FilterField label="Source">
-						<Select
-							value={filters.source || undefined}
-							onValueChange={(value) =>
-								handleSourceChange(value as FilterState["source"])
-							}
-						>
-							<SelectTrigger className="w-full justify-between">
-								<SelectValue placeholder="All sources" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="trpc">TRPC</SelectItem>
-								<SelectItem value="rest">REST</SelectItem>
-							</SelectContent>
-						</Select>
-					</FilterField>
-				</div>
-				<div className="mt-4 flex flex-wrap gap-2">
-					<Button type="button" variant="outline" onClick={handleReset}>
-						Reset
+		<Page>
+			<PageHeader>
+				<PageTitle>Audit Logs</PageTitle>
+				<PageActions>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => refetch()}
+						disabled={isFetching}
+					>
+						{isFetching ? (
+							<Loader2Icon className="mr-2 size-4 animate-spin" />
+						) : (
+							<RefreshCcwIcon className="mr-2 size-4" />
+						)}
+						Refresh
 					</Button>
-				</div>
-			</section>
+				</PageActions>
+			</PageHeader>
 
-			<AuditLogsDataTable
-				columns={columns}
-				data={logs}
-				isLoading={isLoading || isFetching}
-				onRowClick={handleSelectLog}
-			/>
+			<PageContent>
+				{/* Filters Card */}
+				<Card>
+					<CardHeader>
+						<div className="flex items-center gap-2">
+							<FilterIcon className="size-4" />
+							<CardTitle>Filters</CardTitle>
+						</div>
+						<CardDescription>
+							Filter audit logs by action, actor, token, and source
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+							<FilterField label="Action">
+								<Input
+									placeholder="users.create"
+									value={actionInput}
+									onChange={(event) => setActionInput(event.target.value)}
+								/>
+							</FilterField>
+							{canFilterUsers ? (
+								<>
+									<FilterField label="Actor">
+										<AuditLogUserSelector
+											placeholder="Search by name"
+											value={filters.actor}
+											onChange={handleActorChange}
+										/>
+									</FilterField>
+									<FilterField label="Impersonated by">
+										<AuditLogUserSelector
+											placeholder="Search impersonators"
+											value={filters.impersonatedBy}
+											onChange={handleImpersonatedByChange}
+										/>
+									</FilterField>
+								</>
+							) : null}
+							{canFilterApiTokens ? (
+								<FilterField label="API token">
+									<AuditLogApiTokenSelector
+										placeholder="Search API tokens"
+										value={filters.apiToken}
+										onChange={handleApiTokenChange}
+									/>
+								</FilterField>
+							) : null}
+							<FilterField label="Source">
+								<Select
+									value={filters.source || undefined}
+									onValueChange={(value) =>
+										handleSourceChange(value as FilterState["source"])
+									}
+								>
+									<SelectTrigger className="w-full justify-between">
+										<SelectValue placeholder="All sources" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="trpc">TRPC</SelectItem>
+										<SelectItem value="rest">REST</SelectItem>
+									</SelectContent>
+								</Select>
+							</FilterField>
+						</div>
+						<div className="mt-4">
+							<Button type="button" variant="outline" onClick={handleReset}>
+								Reset
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
 
-			<div className="space-y-3 rounded-lg border bg-card p-4">
-				<div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-					<span>
-						{total === 0
-							? "No audit logs found"
-							: `Showing ${pageDisplayStart}-${pageDisplayEnd} of ${total} audit log${total === 1 ? "" : "s"}`}
-					</span>
-					<div className="flex items-center gap-2 text-sm text-foreground">
-						<span className="text-muted-foreground">Rows per page</span>
-						<Select
-							value={String(pageSize)}
-							onValueChange={handlePageSizeSelect}
-						>
-							<SelectTrigger className="w-[90px] justify-between">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{PAGE_SIZE_OPTIONS.map((size) => (
-									<SelectItem key={size} value={String(size)}>
-										{size}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-				</div>
-				<TablePagination
-					page={resolvedPage}
-					totalPages={totalPages}
-					onPageChange={handlePageChange}
-					className="justify-center"
+				{/* Audit Logs Table */}
+				<TableContainer>
+					<DataTable
+						columns={columns}
+						data={logs}
+						isLoading={isLoading || isFetching}
+						emptyMessage="No audit logs found"
+						emptyDescription="Try adjusting your filters"
+						onRowClick={handleSelectLog}
+					/>
+
+					{total > 0 && (
+						<TablePaginationFooter
+							page={resolvedPage}
+							totalPages={totalPages}
+							onPageChange={handlePageChange}
+							offset={(resolvedPage - 1) * resolvedPageSize}
+							currentCount={logs.length}
+							total={total}
+							itemName="audit logs"
+							pageSize={pageSize}
+							onPageSizeChange={(size) => {
+								setPageSize(size);
+								setPage(1);
+							}}
+							pageSizeOptions={PAGE_SIZE_OPTIONS}
+						/>
+					)}
+				</TableContainer>
+
+				<AuditLogDetailsSheet
+					log={selectedLog}
+					open={Boolean(selectedLog)}
+					onOpenChange={(open) => {
+						if (!open) setSelectedLog(null);
+					}}
 				/>
-			</div>
-
-			<AuditLogDetailsSheet
-				log={selectedLog}
-				open={Boolean(selectedLog)}
-				onOpenChange={(open) => {
-					if (!open) setSelectedLog(null);
-				}}
-			/>
-		</div>
+			</PageContent>
+		</Page>
 	);
 }
 

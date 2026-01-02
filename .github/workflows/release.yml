@@ -111,8 +111,7 @@ jobs:
             exit 0
           fi
 
-          CLEANED=$(printf "%s," "$PR_NUMBERS")
-          CLEANED=${CLEANED%,}
+          CLEANED=$(printf "%s\n" "$PR_NUMBERS" | tr '\n' ',' | sed 's/,$//')
 
           echo "numbers=$CLEANED" >> "$GITHUB_OUTPUT"
       

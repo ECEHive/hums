@@ -25,12 +25,7 @@ export const apiRoute: FastifyPluginAsync = async (fastify) => {
 		trpcOptions: {
 			router: appRouter,
 			createContext,
-			onError(opts: { path?: string; error: Error }) {
-				console.error(
-					`Error in tRPC handler on path '${opts.path}':`,
-					opts.error,
-				);
-			},
+			onError() {},
 		},
 	});
 

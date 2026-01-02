@@ -1,13 +1,27 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDownIcon, ClockIcon, Filter, X } from "lucide-react";
-import React from "react";
-import { RequirePermissions } from "@/auth";
-import { MissingPermissions } from "@/components/missing-permissions";
-import { columns } from "@/components/sessions/columns";
-import { DataTable } from "@/components/sessions/data-table";
-import { TablePagination } from "@/components/table-pagination";
+import { ClockIcon, Filter, UserCog, X } from "lucide-react";
+import React, { useState } from "react";
+import { RequirePermissions, useAuth } from "@/auth";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableContainer,
+	TableSearchInput,
+	TableToolbar,
+} from "@/components/layout";
+import { AdminSessionManagementDialog } from "@/components/sessions/admin-session-management-dialog";
+import { generateColumns } from "@/components/sessions/columns";
+import {
+	DataTable,
+	SearchInput,
+	TablePaginationFooter,
+} from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +37,10 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useDebounce } from "@/lib/debounce";
+import { usePaginationInfo } from "@/hooks/use-pagination-info";
+import { useTableState } from "@/hooks/use-table-state";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/sessions")({
 	component: () =>
@@ -39,16 +54,24 @@ export const Route = createFileRoute("/app/sessions")({
 export const permissions = ["sessions.list"];
 
 function SessionsPage() {
-	const [page, setPage] = React.useState(1);
-	const [pageSize, setPageSize] = React.useState(20);
-	const [search, setSearch] = React.useState("");
+	const { user } = useAuth();
+	const {
+		page,
+		setPage,
+		pageSize,
+		setPageSize,
+		offset,
+		search,
+		setSearch,
+		debouncedSearch,
+		resetToFirstPage,
+	} = useTableState({ initialPageSize: 20 });
 	const [filterSessionType, setFilterSessionType] = React.useState<
 		"regular" | "staffing" | null
 	>(null);
-	const debouncedSearch = useDebounce(search, 300);
+	const [manageDialogOpen, setManageDialogOpen] = useState(false);
 
-	const limit = pageSize;
-	const offset = (page - 1) * limit;
+	const canManageSessions = user && checkPermissions(user, ["sessions.manage"]);
 
 	const queryParams = React.useMemo(() => {
 		const params: {
@@ -57,7 +80,7 @@ function SessionsPage() {
 			filterSessionType?: "regular" | "staffing";
 			filterUser?: string;
 		} = {
-			limit,
+			limit: pageSize,
 			offset,
 		};
 
@@ -70,12 +93,7 @@ function SessionsPage() {
 		}
 
 		return params;
-	}, [limit, offset, filterSessionType, debouncedSearch]);
-
-	// Reset to first page when the debounced search or filters change
-	React.useEffect(() => {
-		setPage(1);
-	}, [debouncedSearch, filterSessionType, pageSize]);
+	}, [pageSize, offset, filterSessionType, debouncedSearch]);
 
 	const { data: sessionsData, isLoading } = useQuery({
 		queryKey: ["sessions", queryParams],
@@ -92,195 +110,200 @@ function SessionsPage() {
 	});
 
 	const sessions = sessionsData?.sessions ?? [];
-	const total = sessionsData?.total ?? 0;
-	const totalPages = Math.ceil(total / pageSize) || 1;
+	const { totalPages } = usePaginationInfo({
+		total: sessionsData?.total ?? 0,
+		pageSize,
+		offset,
+		currentCount: sessions.length,
+	});
+
+	const columns = generateColumns(user);
 
 	return (
-		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">Sessions</h1>
+		<Page>
+			<PageHeader>
+				<PageTitle>Sessions</PageTitle>
+				{canManageSessions && (
+					<PageActions>
+						<Button onClick={() => setManageDialogOpen(true)}>
+							<UserCog className="mr-2 h-4 w-4" />
+							Manage User Session
+						</Button>
+					</PageActions>
+				)}
+			</PageHeader>
 
-			{/* Stats Cards */}
-			<div className="grid gap-4 md:grid-cols-3">
+			<PageContent>
+				{/* Stats Cards */}
+				<div className="grid gap-4 md:grid-cols-3">
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Total Active Sessions
+							</CardTitle>
+							<ClockIcon className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							{isStatsLoading ? (
+								<Spinner />
+							) : (
+								<div className="text-2xl font-bold">
+									{statsData?.totalActive ?? 0}
+								</div>
+							)}
+							<p className="text-xs text-muted-foreground">currently active</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Active Regular Sessions
+							</CardTitle>
+							<ClockIcon className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							{isStatsLoading ? (
+								<Spinner />
+							) : (
+								<div className="text-2xl font-bold">
+									{statsData?.activeRegular ?? 0}
+								</div>
+							)}
+							<p className="text-xs text-muted-foreground">regular sessions</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Active Staffing Sessions
+							</CardTitle>
+							<ClockIcon className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							{isStatsLoading ? (
+								<Spinner />
+							) : (
+								<div className="text-2xl font-bold">
+									{statsData?.activeStaffing ?? 0}
+								</div>
+							)}
+							<p className="text-xs text-muted-foreground">staffing sessions</p>
+						</CardContent>
+					</Card>
+				</div>
+
+				{/* Sessions Table */}
 				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Total Active Sessions
-						</CardTitle>
-						<ClockIcon className="h-4 w-4 text-muted-foreground" />
+					<CardHeader>
+						<CardTitle>All Sessions</CardTitle>
+						<CardDescription>View and filter all user sessions</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{isStatsLoading ? (
-							<Spinner />
-						) : (
-							<div className="text-2xl font-bold">
-								{statsData?.totalActive ?? 0}
-							</div>
-						)}
-						<p className="text-xs text-muted-foreground">currently active</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Active Regular Sessions
-						</CardTitle>
-						<ClockIcon className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						{isStatsLoading ? (
-							<Spinner />
-						) : (
-							<div className="text-2xl font-bold">
-								{statsData?.activeRegular ?? 0}
-							</div>
-						)}
-						<p className="text-xs text-muted-foreground">regular sessions</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Active Staffing Sessions
-						</CardTitle>
-						<ClockIcon className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						{isStatsLoading ? (
-							<Spinner />
-						) : (
-							<div className="text-2xl font-bold">
-								{statsData?.activeStaffing ?? 0}
-							</div>
-						)}
-						<p className="text-xs text-muted-foreground">staffing sessions</p>
-					</CardContent>
-				</Card>
-			</div>
-
-			{/* Sessions Table */}
-			<Card>
-				<CardHeader>
-					<div className="flex flex-col gap-4">
-						<div className="flex justify-between items-center">
-							<div>
-								<CardTitle>All Sessions</CardTitle>
-								<CardDescription>
-									View and filter all user sessions
-								</CardDescription>
-							</div>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline">
-										{pageSize} per page{" "}
-										<ChevronDownIcon className="ml-2 size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									{[10, 20, 50, 100].map((size) => (
-										<DropdownMenuItem
-											key={size}
-											onClick={() => {
-												setPageSize(size);
-												setPage(1);
-											}}
-										>
-											{size} per page
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
-
-						{/* Filters */}
-						<div className="flex flex-col sm:flex-row gap-2">
-							<Input
-								placeholder="Search by user name, username, or email..."
-								value={search}
-								onChange={(e) => {
-									setSearch(e.target.value);
-								}}
-								className="max-w-md"
-							/>
-							<div className="flex gap-2 flex-wrap">
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button variant="outline" className="gap-2">
-											<Filter className="size-4" />
-											Session Type
-											{filterSessionType && (
-												<Badge variant="secondary" className="ml-1">
-													{filterSessionType === "staffing"
-														? "Staffing"
-														: "Regular"}
-												</Badge>
-											)}
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="start">
-										<DropdownMenuItem
-											onClick={() => {
-												setFilterSessionType(null);
-												setPage(1);
-											}}
-										>
-											All Types
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => {
-												setFilterSessionType("regular");
-												setPage(1);
-											}}
-										>
-											Regular
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => {
-												setFilterSessionType("staffing");
-												setPage(1);
-											}}
-										>
-											Staffing
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-
-								{(search || filterSessionType) && (
-									<Button
-										variant="ghost"
-										onClick={() => {
-											setSearch("");
-											setFilterSessionType(null);
-											setPage(1);
+						<TableContainer>
+							<TableToolbar>
+								<TableSearchInput>
+									<SearchInput
+										placeholder="Search by user name, username, or email..."
+										value={search}
+										onChange={(value) => {
+											setSearch(value);
+											resetToFirstPage();
 										}}
-										className="gap-2"
-									>
-										<X className="size-4" />
-										Clear Filters
-									</Button>
-								)}
-							</div>
-						</div>
-					</div>
-				</CardHeader>
-				<CardContent>
-					<DataTable columns={columns} data={sessions} isLoading={isLoading} />
-					{total > 0 && (
-						<div className="flex flex-col justify-between items-center gap-2 mt-4">
-							<TablePagination
-								page={page}
-								totalPages={totalPages}
-								onPageChange={setPage}
+									/>
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button variant="outline" className="gap-2">
+												<Filter className="size-4" />
+												Session Type
+												{filterSessionType && (
+													<Badge variant="secondary" className="ml-1">
+														{filterSessionType === "staffing"
+															? "Staffing"
+															: "Regular"}
+													</Badge>
+												)}
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="start">
+											<DropdownMenuItem
+												onClick={() => {
+													setFilterSessionType(null);
+													resetToFirstPage();
+												}}
+											>
+												All Types
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() => {
+													setFilterSessionType("regular");
+													resetToFirstPage();
+												}}
+											>
+												Regular
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() => {
+													setFilterSessionType("staffing");
+													resetToFirstPage();
+												}}
+											>
+												Staffing
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
+									{(search || filterSessionType) && (
+										<Button
+											variant="ghost"
+											onClick={() => {
+												setSearch("");
+												setFilterSessionType(null);
+												resetToFirstPage();
+											}}
+											className="gap-2"
+										>
+											<X className="size-4" />
+											Clear Filters
+										</Button>
+									)}
+								</TableSearchInput>
+							</TableToolbar>
+
+							<DataTable
+								columns={columns}
+								data={sessions}
+								isLoading={isLoading}
+								emptyMessage="No sessions found"
+								emptyDescription="Try adjusting your search or filters"
 							/>
-							<p className="text-sm text-muted-foreground">
-								Showing {offset + 1} -{" "}
-								{Math.min(offset + sessions.length, total)} of {total}
-							</p>
-						</div>
-					)}
-				</CardContent>
-			</Card>
-		</div>
+
+							{sessionsData && sessionsData.total > 0 && (
+								<TablePaginationFooter
+									page={page}
+									totalPages={totalPages}
+									onPageChange={setPage}
+									offset={offset}
+									currentCount={sessions.length}
+									total={sessionsData.total}
+									itemName="sessions"
+									pageSize={pageSize}
+									onPageSizeChange={(size) => {
+										setPageSize(size);
+										resetToFirstPage();
+									}}
+									pageSizeOptions={[10, 20, 50, 100]}
+								/>
+							)}
+						</TableContainer>
+					</CardContent>
+				</Card>
+			</PageContent>
+
+			<AdminSessionManagementDialog
+				open={manageDialogOpen}
+				onOpenChange={setManageDialogOpen}
+			/>
+		</Page>
 	);
 }

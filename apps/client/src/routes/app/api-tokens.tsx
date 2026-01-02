@@ -11,9 +11,19 @@ import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
 import { createTokenColumns } from "@/components/api-tokens/columns";
-import { DataTable } from "@/components/api-tokens/data-table";
 import type { ApiTokenRow } from "@/components/api-tokens/types";
-import { MissingPermissions } from "@/components/missing-permissions";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableContainer,
+	TableSearchInput,
+	TableToolbar,
+} from "@/components/layout";
+import { DataTable, SearchInput } from "@/components/shared";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -119,17 +129,10 @@ function ApiTokensPage() {
 	);
 
 	return (
-		<div className="container space-y-4 p-4">
-			<h1 className="text-2xl font-bold">API Tokens</h1>
-
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-				<Input
-					placeholder="Search tokens..."
-					value={search}
-					onChange={(event) => setSearch(event.target.value)}
-					className="max-w-md"
-				/>
-				<div className="flex gap-2">
+		<Page>
+			<PageHeader>
+				<PageTitle>API Tokens</PageTitle>
+				<PageActions>
 					<Button
 						variant="outline"
 						onClick={() => refetch()}
@@ -146,16 +149,36 @@ function ApiTokensPage() {
 						disabled={!canCreate}
 						onTokenCreated={(payload) => setTokenToShow(payload)}
 					/>
-				</div>
-			</div>
+				</PageActions>
+			</PageHeader>
 
-			<DataTable columns={columns} data={tokens} isLoading={isLoading} />
+			<PageContent>
+				<TableContainer>
+					<TableToolbar>
+						<TableSearchInput>
+							<SearchInput
+								placeholder="Search tokens..."
+								value={search}
+								onChange={(value) => setSearch(value)}
+							/>
+						</TableSearchInput>
+					</TableToolbar>
 
-			<TokenRevealDialog
-				token={tokenToShow}
-				onClose={() => setTokenToShow(null)}
-			/>
-		</div>
+					<DataTable
+						columns={columns}
+						data={tokens}
+						isLoading={isLoading}
+						emptyMessage="No API tokens found"
+						emptyDescription="Create a token to get started"
+					/>
+				</TableContainer>
+
+				<TokenRevealDialog
+					token={tokenToShow}
+					onClose={() => setTokenToShow(null)}
+				/>
+			</PageContent>
+		</Page>
 	);
 }
 

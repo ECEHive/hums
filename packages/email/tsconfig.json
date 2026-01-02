@@ -1,0 +1,6 @@
+{
+	"extends": "@ecehive/config/tsconfig/node.json",
+	"compilerOptions": {
+		"types": ["@types/node"]
+	}
+}

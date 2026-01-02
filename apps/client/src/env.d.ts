@@ -1,5 +1,3 @@
-declare const __APP_VERSION__: string;
-
 declare global {
 	interface ImportMetaEnv {
 		readonly TZ: string;
@@ -11,6 +9,8 @@ declare global {
 	interface ImportMeta {
 		readonly env: ImportMetaEnv;
 	}
+
+	const __APP_VERSION__: string;
 }
 
 export {};

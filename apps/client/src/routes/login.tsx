@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -137,7 +137,7 @@ function Login() {
 		<div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
 			<div className="flex w-full max-w-sm flex-col gap-6">
 				<div className="flex items-center gap-2 self-center font-medium">
-					<Logo className="h-16" />
+					<Logo className="h-8" />
 				</div>
 				<div className="flex flex-col gap-6">
 					<Card>

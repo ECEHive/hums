@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/trpc",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"type": "module",
 	"exports": {
 		"./client": "./client/index.ts",
@@ -19,10 +19,12 @@
 		"@ecehive/auth": "workspace:*",
 		"@ecehive/env": "workspace:*",
 		"@ecehive/features": "workspace:*",
+		"@ecehive/logger": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
 		"@trpc/client": "11.7.2",
 		"@trpc/server": "11.7.2",
 		"fastify": "^5.6.2",
+		"nanoid": "^5.1.6",
 		"superjson": "^2.2.6",
 		"zod": "^4.1.13"
 	}

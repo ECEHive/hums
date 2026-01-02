@@ -1,5 +1,6 @@
 import { env } from "@ecehive/env";
 import { prisma } from "@ecehive/prisma";
+import { createUser } from "./create-user";
 import { fetchUserInfo } from "./fetch-user-info";
 
 /**
@@ -21,22 +22,33 @@ export async function updateSystemUsers() {
 		const cardNumberData = userInfo.cardNumber
 			? { cardNumber: userInfo.cardNumber }
 			: {};
-		await prisma.user.upsert({
+
+		// Check if user exists
+		const existingUser = await prisma.user.findUnique({
 			where: { username: userInfo.username },
-			update: {
-				isSystemUser: true,
-				name: userInfo.name,
-				email: userInfo.email,
-				...cardNumberData,
-			},
-			create: {
-				name: userInfo.name,
-				username: userInfo.username,
-				email: userInfo.email,
-				isSystemUser: true,
-				...cardNumberData,
-			},
 		});
+
+		if (existingUser) {
+			// Update existing user
+			await prisma.user.update({
+				where: { username: userInfo.username },
+				data: {
+					isSystemUser: true,
+					name: userInfo.name,
+					email: userInfo.email,
+					...cardNumberData,
+				},
+			});
+		} else {
+			// Create new system user using unified function
+			await createUser({
+				username: userInfo.username,
+				name: userInfo.name,
+				email: userInfo.email,
+				cardNumber: userInfo.cardNumber,
+				isSystemUser: true,
+			});
+		}
 	}
 
 	// Remove system user flag from any users that are no longer system users

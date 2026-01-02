@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShiftsRouteImport } from './routes/shifts'
+import { Route as OtaSessionLoginRouteImport } from './routes/ota-session-login'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -30,6 +31,7 @@ import { Route as AppRolesRouteImport } from './routes/app/roles'
 import { Route as AppMySessionsRouteImport } from './routes/app/my-sessions'
 import { Route as AppMyAgreementsRouteImport } from './routes/app/my-agreements'
 import { Route as AppKiosksRouteImport } from './routes/app/kiosks'
+import { Route as AppConfigurationRouteImport } from './routes/app/configuration'
 import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
 import { Route as AppApiTokensRouteImport } from './routes/app/api-tokens'
 import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
@@ -37,6 +39,11 @@ import { Route as AppAgreementsRouteImport } from './routes/app/agreements'
 const ShiftsRoute = ShiftsRouteImport.update({
   id: '/shifts',
   path: '/shifts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OtaSessionLoginRoute = OtaSessionLoginRouteImport.update({
+  id: '/ota-session-login',
+  path: '/ota-session-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -139,6 +146,11 @@ const AppKiosksRoute = AppKiosksRouteImport.update({
   path: '/kiosks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConfigurationRoute = AppConfigurationRouteImport.update({
+  id: '/configuration',
+  path: '/configuration',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAuditLogsRoute = AppAuditLogsRouteImport.update({
   id: '/audit-logs',
   path: '/audit-logs',
@@ -159,10 +171,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/ota-session-login': typeof OtaSessionLoginRoute
   '/shifts': typeof ShiftsRouteWithChildren
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/configuration': typeof AppConfigurationRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -184,9 +198,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/configuration': typeof AppConfigurationRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -210,10 +226,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/ota-session-login': typeof OtaSessionLoginRoute
   '/shifts': typeof ShiftsRouteWithChildren
   '/app/agreements': typeof AppAgreementsRoute
   '/app/api-tokens': typeof AppApiTokensRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
+  '/app/configuration': typeof AppConfigurationRoute
   '/app/kiosks': typeof AppKiosksRoute
   '/app/my-agreements': typeof AppMyAgreementsRoute
   '/app/my-sessions': typeof AppMySessionsRoute
@@ -238,10 +256,12 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/ota-session-login'
     | '/shifts'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
+    | '/app/configuration'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -263,9 +283,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/ota-session-login'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
+    | '/app/configuration'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -288,10 +310,12 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/ota-session-login'
     | '/shifts'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
+    | '/app/configuration'
     | '/app/kiosks'
     | '/app/my-agreements'
     | '/app/my-sessions'
@@ -315,6 +339,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  OtaSessionLoginRoute: typeof OtaSessionLoginRoute
   ShiftsRoute: typeof ShiftsRouteWithChildren
 }
 
@@ -325,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/shifts'
       fullPath: '/shifts'
       preLoaderRoute: typeof ShiftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ota-session-login': {
+      id: '/ota-session-login'
+      path: '/ota-session-login'
+      fullPath: '/ota-session-login'
+      preLoaderRoute: typeof OtaSessionLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -467,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKiosksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/configuration': {
+      id: '/app/configuration'
+      path: '/configuration'
+      fullPath: '/app/configuration'
+      preLoaderRoute: typeof AppConfigurationRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/audit-logs': {
       id: '/app/audit-logs'
       path: '/audit-logs'
@@ -495,6 +534,7 @@ interface AppRouteChildren {
   AppAgreementsRoute: typeof AppAgreementsRoute
   AppApiTokensRoute: typeof AppApiTokensRoute
   AppAuditLogsRoute: typeof AppAuditLogsRoute
+  AppConfigurationRoute: typeof AppConfigurationRoute
   AppKiosksRoute: typeof AppKiosksRoute
   AppMyAgreementsRoute: typeof AppMyAgreementsRoute
   AppMySessionsRoute: typeof AppMySessionsRoute
@@ -508,6 +548,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgreementsRoute: AppAgreementsRoute,
   AppApiTokensRoute: AppApiTokensRoute,
   AppAuditLogsRoute: AppAuditLogsRoute,
+  AppConfigurationRoute: AppConfigurationRoute,
   AppKiosksRoute: AppKiosksRoute,
   AppMyAgreementsRoute: AppMyAgreementsRoute,
   AppMySessionsRoute: AppMySessionsRoute,
@@ -552,6 +593,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  OtaSessionLoginRoute: OtaSessionLoginRoute,
   ShiftsRoute: ShiftsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

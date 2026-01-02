@@ -1,23 +1,28 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDownIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
-import { MissingPermissions } from "@/components/missing-permissions";
+import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	Page,
+	PageActions,
+	PageContent,
+	PageHeader,
+	PageTitle,
+	TableContainer,
+	TableSearchInput,
+	TableToolbar,
+} from "@/components/layout";
 import { generateColumns } from "@/components/roles/columns";
 import { CreateDialog } from "@/components/roles/create-dialog";
-import { DataTable } from "@/components/roles/data-table";
-import { TablePagination } from "@/components/table-pagination";
-import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { useDebounce } from "@/lib/debounce";
+	DataTable,
+	SearchInput,
+	TablePaginationFooter,
+} from "@/components/shared";
+import { usePaginationInfo } from "@/hooks/use-pagination-info";
+import { useTableState } from "@/hooks/use-table-state";
 
 export const Route = createFileRoute("/app/roles")({
 	component: () =>
@@ -31,12 +36,17 @@ export const Route = createFileRoute("/app/roles")({
 export const permissions = ["roles.list"];
 
 function Roles() {
-	const [page, setPage] = React.useState(1);
-	const [pageSize, setPageSize] = React.useState(10);
-	const [search, setSearch] = React.useState("");
-	const debouncedSearch = useDebounce(search, 300);
-
-	const offset = (page - 1) * pageSize;
+	const {
+		page,
+		setPage,
+		pageSize,
+		setPageSize,
+		offset,
+		search,
+		setSearch,
+		debouncedSearch,
+		resetToFirstPage,
+	} = useTableState();
 
 	const queryParams = React.useMemo(() => {
 		return {
@@ -56,58 +66,61 @@ function Roles() {
 	});
 
 	const columns = generateColumns(useAuth().user);
-	const total = data?.total || 0;
-	const totalPages = Math.ceil(total / pageSize) || 1;
+	const { totalPages } = usePaginationInfo({
+		total: data.total,
+		pageSize,
+		offset,
+		currentCount: data.roles.length,
+	});
 
 	return (
-		<div className="container p-4 space-y-4">
-			<h1 className="text-2xl font-bold">Roles</h1>
-
-			<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
-				<Input
-					placeholder="Search roles..."
-					value={search}
-					onChange={(e) => {
-						setSearch(e.target.value);
-						setPage(1);
-					}}
-					className="max-w-xs"
-				/>
-				<div className="flex items-center gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline">
-								{pageSize} per page <ChevronDownIcon className="ml-2 size-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							{[10, 25, 50, 100].map((size) => (
-								<DropdownMenuItem
-									key={size}
-									onClick={() => {
-										setPageSize(size);
-										setPage(1);
-									}}
-								>
-									{size} per page
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
+		<Page>
+			<PageHeader>
+				<PageTitle>Roles</PageTitle>
+				<PageActions>
 					<CreateDialog />
-				</div>
-			</div>
-			<DataTable columns={columns} data={data.roles} isLoading={isLoading} />
-			<div className="flex flex-col justify-between items-center gap-2">
-				<TablePagination
-					page={page}
-					totalPages={totalPages}
-					onPageChange={setPage}
-				/>
-				<p className="text-sm text-muted-foreground">
-					Showing {offset + 1} - {offset + data.roles.length} of {total}
-				</p>
-			</div>
-		</div>
+				</PageActions>
+			</PageHeader>
+
+			<PageContent>
+				<TableContainer>
+					<TableToolbar>
+						<TableSearchInput>
+							<SearchInput
+								placeholder="Search roles..."
+								value={search}
+								onChange={(value) => {
+									setSearch(value);
+									resetToFirstPage();
+								}}
+							/>
+						</TableSearchInput>
+					</TableToolbar>
+
+					<DataTable
+						columns={columns}
+						data={data.roles}
+						isLoading={isLoading}
+						emptyMessage="No roles found"
+						emptyDescription="Try adjusting your search"
+					/>
+
+					<TablePaginationFooter
+						page={page}
+						totalPages={totalPages}
+						onPageChange={setPage}
+						offset={offset}
+						currentCount={data.roles.length}
+						total={data.total}
+						itemName="roles"
+						pageSize={pageSize}
+						onPageSizeChange={(size) => {
+							setPageSize(size);
+							resetToFirstPage();
+						}}
+					/>
+				</TableContainer>
+			</PageContent>
+		</Page>
 	);
 }

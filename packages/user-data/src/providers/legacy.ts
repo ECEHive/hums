@@ -1,6 +1,9 @@
 import { searchLdap } from "@ecehive/ldap";
+import { getLogger } from "@ecehive/logger";
 import { normalizeCardNumber } from "../card-number";
 import type { UserDataProvider, UserProfile } from "../types";
+
+const logger = getLogger("user-data:legacy");
 
 const SUMS_ENDPOINT =
 	"https://sums.gatech.edu/SUMSAPI/rest/API/GetUserNameAndEmailByBuzzCardNumber";
@@ -52,7 +55,10 @@ export class LegacyUserDataProvider implements UserDataProvider {
 				}
 			}
 		} catch (error) {
-			console.error("[user-data][legacy] LDAP lookup failed", error);
+			logger.warn("LDAP lookup failed for user", {
+				username: trimmed,
+				error: error instanceof Error ? error.message : String(error),
+			});
 		}
 
 		return {

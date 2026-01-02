@@ -36,6 +36,14 @@ export async function impersonateHandler({
 		});
 	}
 
+	// Prevent impersonation of system users
+	if (targetUser.isSystemUser) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Cannot impersonate system users",
+		});
+	}
+
 	// Generate a token for the target user
 	const token = await generateToken(input.userId, {
 		impersonatedById: ctx.user.id ?? undefined,
