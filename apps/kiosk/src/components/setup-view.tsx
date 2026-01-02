@@ -53,7 +53,6 @@ export function SetupView({
 	}
 
 	const isConnecting = connectionStatus === "connecting";
-	const isConnected = connectionStatus === "connected";
 	const hasError = Boolean(errorMessage);
 	const cardBorder = isConnecting
 		? "border-primary"
@@ -70,12 +69,6 @@ export function SetupView({
 		: hasError
 			? errorMessage
 			: "Connect a USB card reader to this device, then press Start to enable tap-in/tap-out functionality.";
-	const indicatorColor =
-		isConnecting || isConnected
-			? "hsl(var(--primary))"
-			: hasError
-				? "hsl(var(--destructive))"
-				: "hsl(var(--muted))";
 
 	// Show card reader connection UI with redesigned interface
 	return (
@@ -180,34 +173,6 @@ export function SetupView({
 										</>
 									)}
 								</Button>
-							</div>
-
-							{/* Connection status indicators */}
-							<div className="flex gap-2 items-center">
-								<div className="flex items-center gap-2">
-									<motion.span
-										className="rounded-full"
-										style={{ width: "0.75rem", height: "0.75rem" }}
-										animate={{
-											backgroundColor: indicatorColor,
-											scale: isConnecting ? [1, 0.9, 1] : 1,
-										}}
-										transition={{
-											duration: isConnecting ? 1 : 0.3,
-											repeat: isConnecting ? Infinity : 0,
-											ease: "easeInOut",
-										}}
-									/>
-									<span className="text-sm text-muted-foreground">
-										{isConnecting
-											? "Connecting"
-											: isConnected
-												? "Connected"
-												: hasError
-													? "Error"
-													: "Disconnected"}
-									</span>
-								</div>
 							</div>
 						</div>
 					</KioskCard>
