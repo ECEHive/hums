@@ -87,7 +87,7 @@ export function SchedulerGrid({
 												type="button"
 												onClick={() => onSelectBlock(day.value, blockStart)}
 												className={cn(
-													"w-full h-14 rounded-lg border-2 transition-all flex items-center justify-center gap-2 px-2 hover:scale-[1.02] active:scale-[0.98]",
+													"w-full h-12 rounded-lg border-2 transition-all flex items-center justify-center gap-2 px-2 hover:scale-[1.02] active:scale-[0.98]",
 													isSelected && "ring-2 ring-offset-2 ring-primary",
 													isRegistered
 														? "border-primary bg-primary text-primary-foreground"
