@@ -115,6 +115,11 @@ export function ShiftCard({
 									<Info className="h-3 w-3" /> Time conflict
 								</p>
 							)}
+							{!schedule.meetsBalancingRequirement && (
+								<p className="flex items-center gap-1">
+									<Info className="h-3 w-3" /> Shifts not balanced
+								</p>
+							)}
 							{schedule.blockedByMaxRequirement && (
 								<p className="flex items-center gap-1">
 									<Info className="h-3 w-3" /> Max limit reached
