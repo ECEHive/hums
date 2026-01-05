@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthProvider";
 import type { ConnectionState } from "./connection-status";
 import {
@@ -67,16 +68,89 @@ export function useScheduleSubscription({
 	const { user } = useAuth();
 	const currentUserId = user?.id;
 
-	const [connectionState, setConnectionState] =
-		useState<ConnectionState>("connecting");
+	// Track WebSocket connection state
+	const [wsState, setWsState] = useState<ConnectionState>("connecting");
+	// Track browser online/offline state
+	const [isOnline, setIsOnline] = useState(
+		typeof navigator !== "undefined" ? navigator.onLine : true,
+	);
 	const [reconnectTrigger, setReconnectTrigger] = useState(0);
+
+	// Track if we've had an initial successful connection (for toast notifications)
+	const hasHadSuccessfulConnectionRef = useRef(false);
+	// Track the previous effective connection state for detecting transitions
+	const prevConnectionStateRef = useRef<ConnectionState>("connecting");
 
 	// Keep refs to avoid recreating the subscription when these change
 	const currentUserIdRef = useRef(currentUserId);
 	currentUserIdRef.current = currentUserId;
 
+	// The effective connection state considers both WebSocket and network status
+	const connectionState: ConnectionState = !isOnline ? "disconnected" : wsState;
+
+	// Handle online/offline events
+	useEffect(() => {
+		const handleOnline = () => {
+			setIsOnline(true);
+			// Auto-reconnect when coming back online
+			// Note: We don't invalidate queries here to avoid triggering refetches
+			// that could cause UI disruptions. The subscription will receive any
+			// missed updates via the server's event stream.
+			if (periodId && enabled) {
+				setReconnectTrigger((prev) => prev + 1);
+			}
+		};
+
+		const handleOffline = () => {
+			setIsOnline(false);
+		};
+
+		window.addEventListener("online", handleOnline);
+		window.addEventListener("offline", handleOffline);
+
+		return () => {
+			window.removeEventListener("online", handleOnline);
+			window.removeEventListener("offline", handleOffline);
+		};
+	}, [periodId, enabled]);
+
+	// Show toast notifications on connection state changes (but not on initial connection)
+	useEffect(() => {
+		const prevState = prevConnectionStateRef.current;
+		const currentState = connectionState;
+
+		// Update the ref for next comparison
+		prevConnectionStateRef.current = currentState;
+
+		// Track successful connections
+		if (currentState === "connected") {
+			const hadPreviousConnection = hasHadSuccessfulConnectionRef.current;
+			hasHadSuccessfulConnectionRef.current = true;
+
+			// Only show reconnected toast if we had a previous connection and were disconnected
+			if (hadPreviousConnection && prevState === "disconnected") {
+				toast.success("Connection restored", {
+					description: "You're now receiving live updates again.",
+					duration: 3000,
+				});
+			}
+		}
+
+		// Show disconnected toast only if we had a previous successful connection
+		if (
+			currentState === "disconnected" &&
+			prevState === "connected" &&
+			hasHadSuccessfulConnectionRef.current
+		) {
+			toast.error("Connection lost", {
+				description: "Live updates are paused. Check your network connection.",
+				duration: 5000,
+			});
+		}
+	}, [connectionState]);
+
 	const reconnect = useCallback(() => {
-		setConnectionState("connecting");
+		setWsState("connecting");
 		setReconnectTrigger((prev) => prev + 1);
 		// Also invalidate to get fresh data on reconnect
 		if (periodId) {
@@ -88,11 +162,11 @@ export function useScheduleSubscription({
 
 	useEffect(() => {
 		if (!periodId || !enabled) {
-			setConnectionState("disconnected");
+			setWsState("disconnected");
 			return;
 		}
 
-		setConnectionState("connecting");
+		setWsState("connecting");
 		const queryKey = getSchedulesQueryKey(periodId);
 
 		// Track if we've received any data (indicates successful connection)
@@ -104,13 +178,13 @@ export function useScheduleSubscription({
 				onStarted: () => {
 					// Connection established
 					hasConnected = true;
-					setConnectionState("connected");
+					setWsState("connected");
 				},
 				onData: (data) => {
 					// If we get data, we're definitely connected
 					if (!hasConnected) {
 						hasConnected = true;
-						setConnectionState("connected");
+						setWsState("connected");
 					}
 
 					// Type assertion for the event data from tRPC tracked()
@@ -148,20 +222,21 @@ export function useScheduleSubscription({
 				},
 				onError: (err) => {
 					console.error("Schedule subscription error:", err);
-					setConnectionState("disconnected");
-					// On error, fall back to invalidation to ensure data consistency
-					queryClient.invalidateQueries({ queryKey });
+					setWsState("disconnected");
+					// Note: We don't invalidate queries on error to avoid triggering
+					// refetches that could disrupt the UI (like closing open dialogs).
+					// The user can manually reconnect if needed, which will refresh data.
 				},
 				onComplete: () => {
 					// Subscription ended (server closed it or clean disconnect)
-					setConnectionState("disconnected");
+					setWsState("disconnected");
 				},
 			},
 		);
 
 		return () => {
 			unsubscribe.unsubscribe();
-			setConnectionState("disconnected");
+			setWsState("disconnected");
 		};
 	}, [periodId, enabled, queryClient, reconnectTrigger]);
 

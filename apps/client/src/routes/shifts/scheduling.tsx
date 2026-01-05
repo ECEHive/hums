@@ -228,6 +228,12 @@ function Scheduling() {
 			});
 		},
 		enabled: !!selectedPeriodId,
+		// Disable automatic refetch on reconnect since we handle this via subscriptions
+		// This prevents the query from refetching (and potentially resetting UI state)
+		// when the browser fires the 'online' event
+		refetchOnReconnect: false,
+		// Keep data fresh for a reasonable time since we get real-time updates via subscription
+		staleTime: 1000 * 60 * 5, // 5 minutes
 		retry: (failureCount, error) => {
 			if (error && typeof error === "object" && "data" in error) {
 				const trpcError = error as { data?: { httpStatus?: number } };

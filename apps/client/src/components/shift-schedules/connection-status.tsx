@@ -80,12 +80,7 @@ export function ConnectionStatus({
 						Disconnected
 					</span>
 					{onReconnect && (
-						<Button
-							variant="ghost"
-							size="sm"
-							className="h-5 px-1.5 text-xs"
-							onClick={onReconnect}
-						>
+						<Button variant="ghost" size="sm" onClick={onReconnect}>
 							<RefreshCw className="h-3 w-3 mr-1" />
 							Reconnect
 						</Button>
