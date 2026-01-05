@@ -16,6 +16,8 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import type { ConnectionState } from "./connection-status";
+import { ConnectionStatus } from "./connection-status";
 import {
 	DesktopShiftSidebar,
 	DesktopShiftSidebarEmpty,
@@ -39,6 +41,8 @@ interface FullPageSchedulerProps {
 	periodId: number;
 	isWithinSignupWindow: boolean;
 	requirementProgress: RequirementProgress | null;
+	connectionState: ConnectionState;
+	onReconnect: () => void;
 }
 
 // Legend Component
@@ -73,6 +77,8 @@ export function FullPageScheduler({
 	periodId,
 	isWithinSignupWindow,
 	requirementProgress,
+	connectionState,
+	onReconnect,
 }: FullPageSchedulerProps) {
 	const [selectedBlock, setSelectedBlock] = useState<{
 		dayOfWeek: number;
@@ -206,6 +212,12 @@ export function FullPageScheduler({
 								</div>
 
 								<div className="flex items-center gap-2">
+									{/* Connection status */}
+									<ConnectionStatus
+										state={connectionState}
+										onReconnect={onReconnect}
+									/>
+
 									{/* Filter button */}
 									<DropdownMenu open={filterOpen} onOpenChange={setFilterOpen}>
 										<DropdownMenuTrigger asChild>

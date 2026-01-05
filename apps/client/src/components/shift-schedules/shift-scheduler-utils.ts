@@ -18,6 +18,10 @@ export interface ShiftSchedule {
 	hasTimeOverlap: boolean;
 	blockedByMaxRequirement?: boolean;
 	users: { id: number; name: string }[];
+	// Balancing configuration from shift type
+	isBalancedAcrossPeriod: boolean;
+	isBalancedAcrossDay: boolean;
+	isBalancedAcrossOverlap: boolean;
 }
 
 export interface RequirementProgress {
