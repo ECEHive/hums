@@ -22,6 +22,8 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
       
       - name: Validate and extract version
         id: extract_version
@@ -144,7 +146,8 @@ jobs:
               .split(',')
               .map(n => n.trim())
               .filter(Boolean)
-              .map(Number);
+              .map(Number)
+              .filter(n => n !== prNumber); // Exclude the release PR itself
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
