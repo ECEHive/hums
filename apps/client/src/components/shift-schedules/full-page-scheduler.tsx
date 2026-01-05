@@ -54,6 +54,10 @@ function SchedulerLegend() {
 				<span>Available</span>
 			</div>
 			<div className="flex items-center gap-1.5">
+				<div className="w-3 h-3 rounded bg-amber-500/60" />
+				<span>Unavailable</span>
+			</div>
+			<div className="flex items-center gap-1.5">
 				<div className="w-3 h-3 rounded bg-muted" />
 				<span>Full</span>
 			</div>
@@ -105,7 +109,7 @@ export function FullPageScheduler({
 			if (shiftTypeFilter.size > 0 && !shiftTypeFilter.has(s.shiftTypeId)) {
 				return false;
 			}
-			if (showOnlyAvailable && s.availableSlots === 0) return false;
+			if (showOnlyAvailable && !s.canRegister) return false;
 			if (showOnlyRegistered && !s.isRegistered) return false;
 			return true;
 		});

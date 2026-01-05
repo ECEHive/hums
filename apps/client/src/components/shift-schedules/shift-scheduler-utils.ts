@@ -138,7 +138,8 @@ export function groupSchedulesByDayAndTimeBlock(
 			if (!blockData) continue;
 
 			blockData.total += schedule.slots;
-			blockData.available += schedule.availableSlots;
+			// Only count slots as available if the user can actually register for this schedule
+			blockData.available += schedule.canRegister ? schedule.availableSlots : 0;
 			if (schedule.isRegistered) {
 				blockData.hasUserRegistered = true;
 			}
