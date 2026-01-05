@@ -18,6 +18,10 @@ export interface ShiftSchedule {
 	hasTimeOverlap: boolean;
 	blockedByMaxRequirement?: boolean;
 	users: { id: number; name: string }[];
+	// Balancing configuration from shift type
+	isBalancedAcrossPeriod: boolean;
+	isBalancedAcrossDay: boolean;
+	isBalancedAcrossOverlap: boolean;
 }
 
 export interface RequirementProgress {
@@ -138,7 +142,8 @@ export function groupSchedulesByDayAndTimeBlock(
 			if (!blockData) continue;
 
 			blockData.total += schedule.slots;
-			blockData.available += schedule.availableSlots;
+			// Only count slots as available if the user can actually register for this schedule
+			blockData.available += schedule.canRegister ? schedule.availableSlots : 0;
 			if (schedule.isRegistered) {
 				blockData.hasUserRegistered = true;
 			}

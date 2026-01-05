@@ -1,5 +1,5 @@
 import { trpc } from "@ecehive/trpc/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertCircle,
@@ -22,7 +22,12 @@ import {
 	PageTitle,
 } from "@/components/layout";
 import { usePeriod } from "@/components/providers/period-provider";
+
 import { FullPageScheduler } from "@/components/shift-schedules/full-page-scheduler";
+import {
+	getSchedulesQueryKey,
+	useScheduleSubscription,
+} from "@/components/shift-schedules/use-schedule-subscription";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -198,32 +203,15 @@ function RegisteredShiftsCard({
 }
 
 function Scheduling() {
-	const queryClient = useQueryClient();
 	const { period: selectedPeriodId } = usePeriod();
 	const [schedulerOpen, setSchedulerOpen] = React.useState(false);
 
-	// Subscribe to real-time shift schedule updates
-	React.useEffect(() => {
-		if (!selectedPeriodId) return;
-
-		const unsubscribe = trpc.shiftSchedules.onScheduleUpdate.subscribe(
-			{ periodId: selectedPeriodId },
-			{
-				onData: () => {
-					queryClient.invalidateQueries({
-						queryKey: ["schedulesForRegistration", selectedPeriodId],
-					});
-				},
-				onError: (err) => {
-					console.error("Subscription error:", err);
-				},
-			},
-		);
-
-		return () => {
-			unsubscribe.unsubscribe();
-		};
-	}, [selectedPeriodId, queryClient]);
+	// Subscribe to real-time shift schedule updates with delta-based updates
+	// This applies incremental changes instead of refetching all data
+	const { connectionState, reconnect } = useScheduleSubscription({
+		periodId: selectedPeriodId,
+		enabled: !!selectedPeriodId,
+	});
 
 	// Fetch schedules for the selected period
 	const {
@@ -232,7 +220,7 @@ function Scheduling() {
 		isError: schedulesError,
 		error: schedulesErrorObj,
 	} = useQuery({
-		queryKey: ["schedulesForRegistration", selectedPeriodId],
+		queryKey: getSchedulesQueryKey(selectedPeriodId ?? 0),
 		queryFn: async () => {
 			if (!selectedPeriodId) return null;
 			return trpc.shiftSchedules.listForRegistration.query({
@@ -240,6 +228,12 @@ function Scheduling() {
 			});
 		},
 		enabled: !!selectedPeriodId,
+		// Disable automatic refetch on reconnect since we handle this via subscriptions
+		// This prevents the query from refetching (and potentially resetting UI state)
+		// when the browser fires the 'online' event
+		refetchOnReconnect: false,
+		// Keep data fresh for a reasonable time since we get real-time updates via subscription
+		staleTime: 1000 * 60 * 5, // 5 minutes
 		retry: (failureCount, error) => {
 			if (error && typeof error === "object" && "data" in error) {
 				const trpcError = error as { data?: { httpStatus?: number } };
@@ -344,14 +338,14 @@ function Scheduling() {
 		<Page>
 			<PageHeader>
 				<PageTitle>Scheduling</PageTitle>
-				{isWithinSignupWindow && (
-					<PageActions>
+				<PageActions>
+					{isWithinSignupWindow && (
 						<Button onClick={() => setSchedulerOpen(true)} size="default">
 							<CalendarPlus className="h-4 w-4 mr-2" />
 							Open Scheduler
 						</Button>
-					</PageActions>
-				)}
+					)}
+				</PageActions>
 			</PageHeader>
 
 			<PageContent>
@@ -498,6 +492,8 @@ function Scheduling() {
 						periodId={selectedPeriodId ?? 0}
 						isWithinSignupWindow={isWithinSignupWindow}
 						requirementProgress={schedulesData?.requirementProgress ?? null}
+						connectionState={connectionState}
+						onReconnect={reconnect}
 					/>
 				)}
 			</PageContent>

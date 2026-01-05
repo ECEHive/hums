@@ -16,6 +16,8 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import type { ConnectionState } from "./connection-status";
+import { ConnectionStatus } from "./connection-status";
 import {
 	DesktopShiftSidebar,
 	DesktopShiftSidebarEmpty,
@@ -39,6 +41,8 @@ interface FullPageSchedulerProps {
 	periodId: number;
 	isWithinSignupWindow: boolean;
 	requirementProgress: RequirementProgress | null;
+	connectionState: ConnectionState;
+	onReconnect: () => void;
 }
 
 // Legend Component
@@ -52,6 +56,10 @@ function SchedulerLegend() {
 			<div className="flex items-center gap-1.5">
 				<div className="w-3 h-3 rounded bg-green-500/60" />
 				<span>Available</span>
+			</div>
+			<div className="flex items-center gap-1.5">
+				<div className="w-3 h-3 rounded bg-amber-500/60" />
+				<span>Unavailable</span>
 			</div>
 			<div className="flex items-center gap-1.5">
 				<div className="w-3 h-3 rounded bg-muted" />
@@ -69,6 +77,8 @@ export function FullPageScheduler({
 	periodId,
 	isWithinSignupWindow,
 	requirementProgress,
+	connectionState,
+	onReconnect,
 }: FullPageSchedulerProps) {
 	const [selectedBlock, setSelectedBlock] = useState<{
 		dayOfWeek: number;
@@ -105,7 +115,7 @@ export function FullPageScheduler({
 			if (shiftTypeFilter.size > 0 && !shiftTypeFilter.has(s.shiftTypeId)) {
 				return false;
 			}
-			if (showOnlyAvailable && s.availableSlots === 0) return false;
+			if (showOnlyAvailable && !s.canRegister) return false;
 			if (showOnlyRegistered && !s.isRegistered) return false;
 			return true;
 		});
@@ -202,6 +212,12 @@ export function FullPageScheduler({
 								</div>
 
 								<div className="flex items-center gap-2">
+									{/* Connection status */}
+									<ConnectionStatus
+										state={connectionState}
+										onReconnect={onReconnect}
+									/>
+
 									{/* Filter button */}
 									<DropdownMenu open={filterOpen} onOpenChange={setFilterOpen}>
 										<DropdownMenuTrigger asChild>
