@@ -180,20 +180,14 @@ jobs:
             const rangeLabel = `${rangeStartLabel}..${currentShortSha}`;
 
             const sections = [
-              `## Release ${tag}`,
-              '',
-              `**Range:** ${rangeLabel}`,
-              `**Tag:** ${tag}`,
-              `**Target Commit:** ${currentSha}`,
-              '',
-              '### Included Pull Requests',
+              '## Changes',
               ''
             ];
 
             if (prLines.length) {
               sections.push(...prLines);
             } else {
-              sections.push('_No merged feature pull requests detected in this release window._');
+              sections.push('_No changes were detected in this release window._');
             }
 
             sections.push(
