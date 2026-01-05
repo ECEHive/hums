@@ -127,19 +127,24 @@ export function useScheduleSubscription({
 						return;
 					}
 
-					// Apply delta directly to the cache
-					queryClient.setQueryData<SchedulesData | null>(
-						queryKey,
-						(currentData) => {
-							if (!currentData) {
-								// No cached data, nothing to update
-								// This shouldn't normally happen if the query was fetched
-								return currentData;
-							}
+					// Cancel any in-progress queries to prevent race conditions
+					// This ensures the delta update won't be overwritten by stale data
+					// Using void to fire-and-forget the async operation
+					void queryClient.cancelQueries({ queryKey }).then(() => {
+						// Apply delta directly to the cache after cancellation
+						queryClient.setQueryData<SchedulesData | null>(
+							queryKey,
+							(currentData) => {
+								if (!currentData) {
+									// No cached data, nothing to update
+									// This shouldn't normally happen if the query was fetched
+									return currentData;
+								}
 
-							return applyScheduleDelta(currentData, event, userId);
-						},
-					);
+								return applyScheduleDelta(currentData, event, userId);
+							},
+						);
+					});
 				},
 				onError: (err) => {
 					console.error("Schedule subscription error:", err);

@@ -362,6 +362,7 @@ export function applyScheduleDelta(
 	// 1. The updated schedule's canRegister/canUnregister may change
 	// 2. Other schedules' hasTimeOverlap may change (if user registered/unregistered)
 	// 3. Other schedules' canRegister may change due to max requirement
+	// 4. Other schedules' canRegister may change due to max requirement or balancing requirements
 	const recalculatedSchedules = newSchedules.map((s) =>
 		recalculateScheduleComputedFields(
 			s,

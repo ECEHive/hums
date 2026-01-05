@@ -110,12 +110,7 @@ export function SchedulerGrid({
 														<span className="text-xs">open</span>
 													</>
 												) : (
-													<>
-														<span className="text-lg font-bold tabular-nums">
-															{blockData.available}
-														</span>
-														<span className="text-xs">available</span>
-													</>
+													<span className="text-xs">unavailable</span>
 												)}
 											</button>
 										</td>
