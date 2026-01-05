@@ -76,27 +76,42 @@ export function SchedulerGrid({
 										selectedBlock?.dayOfWeek === day.value &&
 										selectedBlock?.timeBlock === blockStart;
 
+									// Check if all schedules are truly full (no available slots)
+									const isTrulyFull = blockData.schedules.every(
+										(s) => s.availableSlots === 0,
+									);
+
 									return (
 										<td key={key} className="p-1">
 											<button
 												type="button"
 												onClick={() => onSelectBlock(day.value, blockStart)}
 												className={cn(
-													"w-full h-14 rounded-lg border-2 transition-all flex items-center justify-center gap-2 px-2 hover:scale-[1.02] active:scale-[0.98]",
+													"w-full h-12 rounded-lg border-2 transition-all flex items-center justify-center gap-2 px-2 hover:scale-[1.02] active:scale-[0.98]",
 													isSelected && "ring-2 ring-offset-2 ring-primary",
 													isRegistered
 														? "border-primary bg-primary text-primary-foreground"
 														: hasAvailable
 															? "border-green-500/50 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 hover:border-green-500"
-															: "border-muted bg-muted/30 text-muted-foreground",
+															: isTrulyFull
+																? "border-muted bg-muted/40 text-muted-foreground"
+																: "border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400",
 												)}
 											>
-												<span className="text-lg font-bold tabular-nums">
-													{blockData.available}
-												</span>
-												<span className="text-xs">
-													{isRegistered ? "✓" : hasAvailable ? "open" : "full"}
-												</span>
+												{isRegistered ? (
+													<span className="text-lg font-bold">✓</span>
+												) : isTrulyFull ? (
+													<span className="text-xs">full</span>
+												) : hasAvailable ? (
+													<>
+														<span className="text-lg font-bold tabular-nums">
+															{blockData.available}
+														</span>
+														<span className="text-xs">open</span>
+													</>
+												) : (
+													<span className="text-xs">unavailable</span>
+												)}
 											</button>
 										</td>
 									);

@@ -235,6 +235,10 @@ export async function listForRegistrationHandler(
 			meetsBalancingRequirement: meetsBalancing,
 			hasTimeOverlap: hasOverlap,
 			blockedByMaxRequirement,
+			// Balancing config for client-side recalculation
+			isBalancedAcrossPeriod: schedule.shiftType.isBalancedAcrossPeriod,
+			isBalancedAcrossDay: schedule.shiftType.isBalancedAcrossDay,
+			isBalancedAcrossOverlap: schedule.shiftType.isBalancedAcrossOverlap,
 		};
 	});
 

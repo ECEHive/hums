@@ -3,6 +3,7 @@ import {
 	getShiftScheduleForRegistration,
 	getUserWithRoles,
 	lockShiftSchedule,
+	type ShiftScheduleUser,
 	shiftScheduleEvents,
 	unassignUserFromScheduleOccurrences,
 } from "@ecehive/features";
@@ -36,7 +37,15 @@ export async function forceUnregisterHandler(options: TForceUnregisterOptions) {
 	}
 
 	const actorRoleIds = new Set(actor.roles.map((role) => role.id));
+
+	// Store data needed for event emission after transaction
 	let emittedPeriodId = 0;
+	let deltaData: {
+		user: ShiftScheduleUser;
+		availableSlots: number;
+		totalSlots: number;
+		users: ShiftScheduleUser[];
+	} | null = null;
 
 	await prisma.$transaction(async (tx) => {
 		const isLocked = await lockShiftSchedule(tx, shiftScheduleId);
@@ -97,23 +106,42 @@ export async function forceUnregisterHandler(options: TForceUnregisterOptions) {
 
 		await unassignUserFromScheduleOccurrences(tx, shiftScheduleId, userId);
 
-		await tx.shiftSchedule.update({
+		// Update and get the updated schedule data
+		const updatedSchedule = await tx.shiftSchedule.update({
 			where: { id: shiftScheduleId },
 			data: {
 				users: {
 					disconnect: { id: userId },
 				},
 			},
+			select: {
+				slots: true,
+				users: {
+					select: { id: true, name: true },
+				},
+			},
 		});
+
+		// Prepare delta data for event emission
+		deltaData = {
+			user: { id: targetUser.id, name: targetUser.name },
+			availableSlots: updatedSchedule.slots - updatedSchedule.users.length,
+			totalSlots: updatedSchedule.slots,
+			users: updatedSchedule.users,
+		};
 	});
 
-	shiftScheduleEvents.emitUpdate({
-		type: "unregister",
-		shiftScheduleId,
-		userId,
-		periodId: emittedPeriodId,
-		timestamp: new Date(),
-	});
+	// Emit event for real-time updates (after transaction commits)
+	if (deltaData) {
+		shiftScheduleEvents.emitUpdate({
+			type: "unregister",
+			shiftScheduleId,
+			userId,
+			periodId: emittedPeriodId,
+			timestamp: new Date(),
+			delta: deltaData,
+		});
+	}
 
 	return { success: true };
 }

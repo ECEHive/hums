@@ -1,0 +1,92 @@
+name: Release Version Bump
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+    branches:
+      - main
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Validate PR title format
+        id: validate
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Check if PR title matches version format (v1.0.0, v1.2.3-beta, etc.)
+          if [[ ! "$PR_TITLE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\.]+)?$ ]]; then
+            echo "❌ PR title must be a valid version string (e.g., v1.0.0, v1.2.3-beta)"
+            exit 1
+          fi
+          
+          # Extract version without 'v' prefix
+          VERSION=${PR_TITLE#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Valid version format: $VERSION"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Update package versions
+        id: update_versions
+        run: |
+          echo "Updating package versions to ${{ steps.validate.outputs.version }}"
+          
+          # Check if versions already match
+          if bun scripts/set-package-versions.ts ${{ steps.validate.outputs.version }} --check; then
+            echo "versions_updated=false" >> $GITHUB_OUTPUT
+            echo "✅ Package versions already match ${{ steps.validate.outputs.version }}"
+          else
+            # Update versions
+            bun scripts/set-package-versions.ts ${{ steps.validate.outputs.version }}
+            bun install
+            echo "versions_updated=true" >> $GITHUB_OUTPUT
+            echo "✅ Package versions updated to ${{ steps.validate.outputs.version }}"
+          fi
+
+      - name: Commit and push version updates
+        if: steps.update_versions.outputs.versions_updated == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Bump versions to ${{ steps.validate.outputs.tag }}"
+            git push origin ${{ github.head_ref }}
+            echo "✅ Version updates committed and pushed to PR branch"
+          fi
+
+      - name: Comment on PR
+        if: steps.update_versions.outputs.versions_updated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.validate.outputs.tag }}';
+            const prNumber = context.issue.number;
+            
+            await github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `Package versions have been automatically updated to **${version}**`
+            });

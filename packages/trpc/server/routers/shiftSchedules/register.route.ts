@@ -9,6 +9,7 @@ import {
 	getUserRegisteredSchedules,
 	getUserWithRoles,
 	lockShiftSchedule,
+	type ShiftScheduleUser,
 	shiftScheduleEvents,
 	validateBalancingRequirement,
 	validateNoTimeOverlap,
@@ -33,7 +34,15 @@ export type TRegisterOptions = {
 export async function registerHandler(options: TRegisterOptions) {
 	const { shiftScheduleId } = options.input;
 	const userId = options.ctx.user.id;
-	let emittedPeriodId: number = 0;
+
+	// Store data needed for event emission after transaction
+	let emittedPeriodId = 0;
+	let deltaData: {
+		user: ShiftScheduleUser;
+		availableSlots: number;
+		totalSlots: number;
+		users: ShiftScheduleUser[];
+	} | null = null;
 
 	await prisma.$transaction(async (tx) => {
 		const isLocked = await lockShiftSchedule(tx, shiftScheduleId);
@@ -215,28 +224,45 @@ export async function registerHandler(options: TRegisterOptions) {
 			}
 		}
 
-		// Connect user to shift schedule
-		await tx.shiftSchedule.update({
+		// Connect user to shift schedule and get updated data
+		const updatedSchedule = await tx.shiftSchedule.update({
 			where: { id: shiftScheduleId },
 			data: {
 				users: {
 					connect: { id: userId },
 				},
 			},
+			select: {
+				slots: true,
+				users: {
+					select: { id: true, name: true },
+				},
+			},
 		});
+
+		// Prepare delta data for event emission
+		deltaData = {
+			user: { id: user.id, name: user.name },
+			availableSlots: updatedSchedule.slots - updatedSchedule.users.length,
+			totalSlots: updatedSchedule.slots,
+			users: updatedSchedule.users,
+		};
 
 		// Assign user to all occurrences
 		await assignUserToScheduleOccurrences(tx, shiftScheduleId, userId);
 	});
 
 	// Emit event for real-time updates (after transaction commits)
-	shiftScheduleEvents.emitUpdate({
-		type: "register",
-		shiftScheduleId,
-		userId,
-		periodId: emittedPeriodId,
-		timestamp: new Date(),
-	});
+	if (deltaData) {
+		shiftScheduleEvents.emitUpdate({
+			type: "register",
+			shiftScheduleId,
+			userId,
+			periodId: emittedPeriodId,
+			timestamp: new Date(),
+			delta: deltaData,
+		});
+	}
 
 	return { success: true };
 }
