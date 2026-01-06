@@ -1,3 +1,4 @@
+import { getActiveSuspension } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -102,6 +103,16 @@ export async function useHandler(options: TUseOptions) {
 					throw new TRPCError({
 						code: "CONFLICT",
 						message: "You are already in a session",
+					});
+				}
+
+				// Check if user is suspended - they cannot start a new session
+				const activeSuspension = await getActiveSuspension(tx, userId, now);
+				if (activeSuspension) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message:
+							"Your access has been suspended. You cannot start a session at this time.",
 					});
 				}
 

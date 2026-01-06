@@ -71,6 +71,8 @@ model User {
   // One-to-many
   sessions    Session[]
   attendances ShiftAttendance[]
+  suspensions Suspension[]
+  createdSuspensions Suspension[] @relation("SuspensionCreatedBy")
   
   // Many-to-many (explicit)
   userAgreements UserAgreement[]
@@ -396,4 +398,30 @@ model ConfigValue {
 
   // indexes
   @@index([key])
+}
+
+model Suspension {
+  id Int @id @default(autoincrement())
+
+  // fields
+  userId        Int
+  startDate     DateTime
+  endDate       DateTime
+  internalNotes String?  @db.Text  // Not shared with user
+  externalNotes String?  @db.Text  // Shared with user
+  createdById   Int?
+  emailSentAt   DateTime?          // Track when suspension notice was sent
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("SuspensionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // indexes
+  @@index([userId])
+  @@index([startDate, endDate])
+  @@index([emailSentAt, startDate])
 }

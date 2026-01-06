@@ -15,6 +15,7 @@ import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
 import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
 import { shiftTypesRouter } from "./routers/shiftTypes/_route";
+import { suspensionsRouter } from "./routers/suspensions/_route";
 import { usersRouter } from "./routers/users/_route";
 import { router } from "./trpc";
 
@@ -34,6 +35,7 @@ export const appRouter = router({
 	shiftOccurrences: shiftOccurrencesRouter,
 	shiftAttendances: shiftAttendancesRouter,
 	sessions: sessionsRouter,
+	suspensions: suspensionsRouter,
 	kiosks: kiosksRouter,
 	oneTimeLoginCodes: oneTimeLoginCodesRouter,
 	reports: reportsRouter,
