@@ -13,6 +13,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useConfig } from "@/hooks/useConfig";
 
 export const Route = createFileRoute("/login")({ component: Login });
 
@@ -50,7 +51,8 @@ const sanitizeRedirect = (target: string | null) => {
 function Login() {
 	const { setToken, status, token } = useAuth();
 	const router = useRouter();
-	const authProvider = resolveAuthProvider(import.meta.env.VITE_AUTH_PROVIDER);
+	const { data: config, isLoading: configLoading } = useConfig();
+	const authProvider = resolveAuthProvider(config?.authProvider);
 	const params = useMemo(() => {
 		if (typeof window === "undefined") return new URLSearchParams("");
 		return new URLSearchParams(window.location.search);
@@ -108,29 +110,37 @@ function Login() {
 	const startCasLogin = () => {
 		if (typeof window === "undefined") return;
 		if (!service) return;
+		if (!config) return;
 
-		const redirect = encodeURIComponent(service);
-		if (authProvider === "CAS") {
-			const loginUrl = import.meta.env.VITE_CAS_LOGIN_URL;
-			if (!loginUrl) {
-				console.error("VITE_CAS_LOGIN_URL must be configured for CAS login.");
-				return;
+		switch (authProvider) {
+			case "CAS_PROXIED": {
+				const proxyUrl = config.casProxyUrl;
+				if (!proxyUrl) {
+					console.error(
+						"casProxyUrl must be configured for CAS_PROXIED login.",
+					);
+					return;
+				}
+				const casProxyLoginUrl = new URL(proxyUrl);
+				casProxyLoginUrl.searchParams.set("service", service);
+				window.location.href = casProxyLoginUrl.toString();
+				break;
 			}
-			const casLoginUrl = new URL(loginUrl);
-			casLoginUrl.searchParams.set("service", service);
-			window.location.href = casLoginUrl.toString();
-			return;
+			case "CAS": {
+				const loginUrl = config.casLoginUrl;
+				if (!loginUrl) {
+					console.error("casLoginUrl must be configured for CAS login.");
+					return;
+				}
+				const casLoginUrl = new URL(loginUrl);
+				casLoginUrl.searchParams.set("service", service);
+				window.location.href = casLoginUrl.toString();
+				break;
+			}
+			default:
+				console.error("Unsupported auth provider:", authProvider);
+				return;
 		}
-
-		const proxyUrl = import.meta.env.VITE_CAS_PROXY_URL;
-		if (!proxyUrl) {
-			console.error(
-				"VITE_CAS_PROXY_URL must be configured when using CAS_PROXIED auth.",
-			);
-			return;
-		}
-		const casUrl = `${proxyUrl}?redirect=${redirect}`;
-		window.location.href = casUrl;
 	};
 
 	return (
@@ -148,7 +158,12 @@ function Login() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							{ticket && service ? (
+							{configLoading ? (
+								<div className="flex flex-row items-center justify-center gap-2 text-muted-foreground">
+									<Spinner />
+									<div>Loading…</div>
+								</div>
+							) : ticket && service ? (
 								<div>
 									{isLoading && (
 										<div className="flex flex-row items-center justify-center gap-2 text-muted-foreground">

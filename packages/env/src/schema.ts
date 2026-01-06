@@ -27,6 +27,9 @@ const BaseEnvSchema = z.object({
 	EMAIL_FROM_ADDRESS: z.email().optional(),
 	EMAIL_FROM_NAME: z.string().default("HUMS"),
 	CLIENT_BASE_URL: z.url(),
+	// Sentry DSNs for client applications (exposed via /api/config)
+	CLIENT_SENTRY_DSN: z.string().optional(),
+	KIOSK_SENTRY_DSN: z.string().optional(),
 });
 
 const LegacyProviderSchema = z

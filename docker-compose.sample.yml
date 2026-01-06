@@ -19,10 +19,11 @@ services:
       retries: 5
 
   # Prisma migration runner (one-shot)
-  prisma-migrate:
+  migrate:
+    image: ghcr.io/ecehive/hums-migrate:latest
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.server
       target: prisma-migrate
     container_name: hums-prisma-migrate
     restart: "no"
@@ -36,9 +37,10 @@ services:
 
   # Server application
   server:
+    image: ghcr.io/ecehive/hums-server:latest
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.server
       target: server
     container_name: hums-server
     restart: unless-stopped
@@ -59,23 +61,16 @@ services:
       - hums-network
 
   # NGINX reverse proxy with client and kiosk static files
-  nginx:
+  web:
+    image: ghcr.io/ecehive/hums-web:latest
     build:
       context: .
-      dockerfile: Dockerfile
-      target: nginx
-      args:
-        VITE_AUTH_PROVIDER: ${VITE_AUTH_PROVIDER:-CAS}
-        VITE_CAS_LOGIN_URL: ${VITE_CAS_LOGIN_URL:-https://sso.gatech.edu/cas/login}
-        VITE_CAS_PROXY_URL: ${VITE_CAS_PROXY_URL:-}
-        VITE_CLIENT_SENTRY_DSN: ${VITE_CLIENT_SENTRY_DSN:-}
-        VITE_KIOSK_SENTRY_DSN: ${VITE_KIOSK_SENTRY_DSN:-}
-    environment:
-        TZ: ${TZ:-America/New_York}
+      dockerfile: Dockerfile.web
+      target: web
     container_name: hums-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "4483:80"
     depends_on:
       - server
     networks:

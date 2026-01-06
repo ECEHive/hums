@@ -10,16 +10,24 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import * as Sentry from "@sentry/react";
 import { ErrorPage } from "./components/errors/error-page";
+import { fetchConfig } from "./lib/config";
 import { routeTree } from "./routeTree.gen";
 
-if ((import.meta.env.VITE_CLIENT_SENTRY_DSN ?? "").trim().length > 0) {
-	Sentry.init({
-		dsn: import.meta.env.VITE_CLIENT_SENTRY_DSN,
-		sendDefaultPii: true,
-		enableLogs: true,
-		release: __APP_VERSION__,
+// Initialize Sentry from runtime config
+fetchConfig()
+	.then((config) => {
+		if (config.clientSentryDsn?.trim()) {
+			Sentry.init({
+				dsn: config.clientSentryDsn,
+				sendDefaultPii: true,
+				enableLogs: true,
+				release: __APP_VERSION__,
+			});
+		}
+	})
+	.catch((error) => {
+		console.error("Failed to load config for Sentry initialization:", error);
 	});
-}
 
 const router = createRouter({
 	routeTree,
