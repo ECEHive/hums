@@ -40,10 +40,6 @@ WORKDIR /app
 # =============================================================================
 FROM deps AS build-kiosk
 
-# Source files are already present from deps stage
-# Build kiosk
-COPY packages ./packages
-
 # Build kiosk
 WORKDIR /app/apps/kiosk
 RUN bun run build
