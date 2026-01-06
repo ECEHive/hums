@@ -14,7 +14,7 @@ export type TDeleteOptions = {
 export async function deleteHandler(options: TDeleteOptions) {
 	const { id } = options.input;
 
-	const deleted = await prisma.kiosk.delete({ where: { id } });
+	const deleted = await prisma.device.delete({ where: { id } });
 
-	return { kiosk: deleted };
+	return { device: deleted };
 }

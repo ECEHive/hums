@@ -6,6 +6,8 @@ export const ZCreateSchema = z.object({
 	name: z.string().min(1).max(100),
 	ipAddress: z.union([z.ipv4(), z.ipv6()]),
 	isActive: z.boolean().optional().default(true),
+	hasKioskAccess: z.boolean().optional().default(true),
+	hasDashboardAccess: z.boolean().optional().default(false),
 });
 
 export type TCreateSchema = z.infer<typeof ZCreateSchema>;
@@ -16,15 +18,18 @@ export type TCreateOptions = {
 };
 
 export async function createHandler(options: TCreateOptions) {
-	const { name, ipAddress, isActive } = options.input;
+	const { name, ipAddress, isActive, hasKioskAccess, hasDashboardAccess } =
+		options.input;
 
-	const newKiosk = await prisma.kiosk.create({
+	const newDevice = await prisma.device.create({
 		data: {
 			name,
 			ipAddress,
 			isActive,
+			hasKioskAccess,
+			hasDashboardAccess,
 		},
 	});
 
-	return { kiosk: newKiosk };
+	return { device: newDevice };
 }

@@ -18,7 +18,7 @@ export type TListOptions = {
 export async function listHandler(options: TListOptions) {
 	const { search, limit = 100, offset = 0 } = options.input;
 
-	const where: Prisma.KioskWhereInput = search
+	const where: Prisma.DeviceWhereInput = search
 		? {
 				OR: [
 					{ name: { contains: search, mode: "insensitive" } },
@@ -27,18 +27,18 @@ export async function listHandler(options: TListOptions) {
 			}
 		: {};
 
-	const [kiosks, count] = await Promise.all([
-		prisma.kiosk.findMany({
+	const [devices, count] = await Promise.all([
+		prisma.device.findMany({
 			where,
 			orderBy: { createdAt: "asc" },
 			skip: offset,
 			take: limit,
 		}),
-		prisma.kiosk.count({ where }),
+		prisma.device.count({ where }),
 	]);
 
 	return {
-		kiosks,
+		devices,
 		count,
 	};
 }

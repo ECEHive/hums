@@ -14,9 +14,9 @@ export type TGetOptions = {
 export async function getHandler(options: TGetOptions) {
 	const { id } = options.input;
 
-	const kiosk = await prisma.kiosk.findUnique({
+	const device = await prisma.device.findUnique({
 		where: { id },
 	});
 
-	return { kiosk };
+	return { device };
 }

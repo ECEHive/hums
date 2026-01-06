@@ -8,6 +8,8 @@ export const ZUpdateSchema = z.object({
 	name: z.string().min(1).max(100),
 	ipAddress: z.union([z.ipv4(), z.ipv6()]),
 	isActive: z.boolean(),
+	hasKioskAccess: z.boolean(),
+	hasDashboardAccess: z.boolean(),
 });
 
 export type TUpdateSchema = z.infer<typeof ZUpdateSchema>;
@@ -18,19 +20,20 @@ export type TUpdateOptions = {
 };
 
 export async function updateHandler(options: TUpdateOptions) {
-	const { id, name, ipAddress, isActive } = options.input;
+	const { id, name, ipAddress, isActive, hasKioskAccess, hasDashboardAccess } =
+		options.input;
 
-	const updated = await prisma.kiosk.update({
+	const updated = await prisma.device.update({
 		where: { id },
-		data: { name, ipAddress, isActive },
+		data: { name, ipAddress, isActive, hasKioskAccess, hasDashboardAccess },
 	});
 
 	if (!updated) {
 		throw new TRPCError({
 			code: "NOT_FOUND",
-			message: `Kiosk with id ${id} not found`,
+			message: `Device with id ${id} not found`,
 		});
 	}
 
-	return { kiosk: updated };
+	return { device: updated };
 }
