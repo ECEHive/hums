@@ -50,6 +50,13 @@ export type OneTimeLoginState = {
 	expiresAt: Date;
 };
 
+export type SuspensionState = {
+	userName: string;
+	endDate: Date;
+	externalNotes: string | null;
+	isExiting: boolean;
+};
+
 type TapWorkflowState = {
 	isProcessing: boolean;
 	pendingAgreement: PendingAgreementState | null;
@@ -58,6 +65,7 @@ type TapWorkflowState = {
 	tapNotification: TapNotificationState;
 	errorDialog: ErrorDialogState;
 	oneTimeLogin: OneTimeLoginState | null;
+	suspension: SuspensionState | null;
 };
 
 type TapWorkflowAction =
@@ -76,7 +84,10 @@ type TapWorkflowAction =
 	| { type: "error_clear" }
 	| { type: "error_exit_start" }
 	| { type: "one_time_login_set"; payload: OneTimeLoginState }
-	| { type: "one_time_login_clear" };
+	| { type: "one_time_login_clear" }
+	| { type: "suspension_set"; payload: Omit<SuspensionState, "isExiting"> }
+	| { type: "suspension_clear" }
+	| { type: "suspension_exit_start" };
 
 const INITIAL_STATE: TapWorkflowState = {
 	isProcessing: false,
@@ -92,6 +103,7 @@ const INITIAL_STATE: TapWorkflowState = {
 		isExiting: false,
 	},
 	oneTimeLogin: null,
+	suspension: null,
 };
 
 const tapWorkflowReducer = (
@@ -167,6 +179,23 @@ const tapWorkflowReducer = (
 			return { ...state, oneTimeLogin: action.payload };
 		case "one_time_login_clear":
 			return { ...state, oneTimeLogin: null };
+		case "suspension_set":
+			return {
+				...state,
+				suspension: {
+					...action.payload,
+					isExiting: false,
+				},
+			};
+		case "suspension_exit_start":
+			return {
+				...state,
+				suspension: state.suspension
+					? { ...state.suspension, isExiting: true }
+					: null,
+			};
+		case "suspension_clear":
+			return { ...state, suspension: null };
 		default:
 			return state;
 	}
@@ -190,6 +219,7 @@ export function useTapWorkflow() {
 		tapNotification,
 		errorDialog,
 		oneTimeLogin,
+		suspension,
 	} = state;
 
 	const currentTapEventRef = useRef<TapEvent | null>(null);
@@ -204,6 +234,8 @@ export function useTapWorkflow() {
 	const sessionTypeSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const tapOutActionSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const agreementFlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const suspensionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const suspensionExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const dismissTapNotification = useCallback(() => {
 		clearTimer(tapEventTimeoutRef);
@@ -335,6 +367,28 @@ export function useTapWorkflow() {
 						dispatch({ type: "pending_agreement_clear" });
 						showError("Entry denied. Complete all agreements to tap in.");
 					}, AGREEMENT_FLOW_TIMEOUT_MS);
+					return;
+				}
+
+				if (result.status === "suspended" && result.suspension) {
+					dispatch({ type: "processing_end" });
+					clearTimer(suspensionTimeoutRef);
+					clearTimer(suspensionExitTimeoutRef);
+					dispatch({
+						type: "suspension_set",
+						payload: {
+							userName: result.user.name,
+							endDate: result.suspension.endDate,
+							externalNotes: result.suspension.externalNotes,
+						},
+					});
+					// Show suspension dialog for 5 seconds then fade out
+					suspensionTimeoutRef.current = setTimeout(() => {
+						dispatch({ type: "suspension_exit_start" });
+						suspensionExitTimeoutRef.current = setTimeout(() => {
+							dispatch({ type: "suspension_clear" });
+						}, FADE_OUT_DURATION_MS);
+					}, 5000);
 					return;
 				}
 
@@ -505,6 +559,8 @@ export function useTapWorkflow() {
 			clearTimer(sessionTypeSelectorTimeoutRef);
 			clearTimer(tapOutActionSelectorTimeoutRef);
 			clearTimer(agreementFlowTimeoutRef);
+			clearTimer(suspensionTimeoutRef);
+			clearTimer(suspensionExitTimeoutRef);
 		};
 	}, []);
 
@@ -516,6 +572,7 @@ export function useTapWorkflow() {
 		tapNotification,
 		errorDialog,
 		oneTimeLogin,
+		suspension,
 		handleTap: handleTapInOut,
 		handleAgreementComplete,
 		handleAgreementCancel,

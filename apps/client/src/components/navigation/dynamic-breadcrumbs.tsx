@@ -19,6 +19,7 @@ const routeLabels: Record<string, string> = {
 	"/app/periods": "Periods",
 	"/app/api-tokens": "API Tokens",
 	"/app/audit-logs": "Audit Logs",
+	"/app/suspensions": "Suspensions",
 	"/shifts": "Shifts",
 	"/shifts/": "Dashboard",
 	"/shifts/shift-schedules": "Shift Schedules",

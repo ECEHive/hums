@@ -7,6 +7,7 @@ export type {
 } from "./template-renderer";
 export { renderEmail } from "./template-renderer";
 export type { SessionAutoLogoutEmailProps } from "./templates/SessionAutoLogoutEmail";
+export type { SuspensionNoticeEmailProps } from "./templates/SuspensionNoticeEmail";
 export type { WelcomeEmailProps } from "./templates/WelcomeEmail";
 export { htmlToPlainText } from "./text-generator";
 export type { EmailProvider, SendEmailParams } from "./types";

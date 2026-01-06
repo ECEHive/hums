@@ -108,6 +108,7 @@ function App() {
 							tapOutActionSelection={tapWorkflow.tapOutActionSelection}
 							pendingAgreement={tapWorkflow.pendingAgreement}
 							tapNotification={tapWorkflow.tapNotification}
+							suspension={tapWorkflow.suspension}
 							onSessionTypeSelect={tapWorkflow.handleSessionTypeSelect}
 							onSessionTypeCancel={tapWorkflow.handleSessionTypeCancel}
 							onTapOutActionSelect={tapWorkflow.handleTapOutActionSelect}

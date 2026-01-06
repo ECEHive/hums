@@ -3,6 +3,7 @@ import {
 	checkStaffingPermission,
 	endSession,
 	findUserByCard,
+	getActiveSuspension,
 	getCurrentSession,
 	startSession,
 	switchSessionType,
@@ -46,7 +47,20 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// If there is no session, or the most recent session has an endedAt, create a new session (tap in)
 		if (!mostRecentSession) {
-			// Check if user has agreed to all enabled agreements FIRST
+			// Check if user is suspended FIRST - they cannot start a new session
+			const activeSuspension = await getActiveSuspension(tx, user.id, now);
+			if (activeSuspension) {
+				return {
+					status: "suspended" as const,
+					user,
+					suspension: {
+						endDate: activeSuspension.endDate,
+						externalNotes: activeSuspension.externalNotes,
+					},
+				};
+			}
+
+			// Check if user has agreed to all enabled agreements
 			const missingAgreements = await checkMissingAgreements(tx, user.id);
 
 			if (missingAgreements.length > 0) {
@@ -90,6 +104,19 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// Handle switch to staffing session
 		if (tapAction === "switch_to_staffing") {
+			// Check suspension for switches too - they involve starting a new session
+			const activeSuspension = await getActiveSuspension(tx, user.id, now);
+			if (activeSuspension) {
+				return {
+					status: "suspended" as const,
+					user,
+					suspension: {
+						endDate: activeSuspension.endDate,
+						externalNotes: activeSuspension.externalNotes,
+					},
+				};
+			}
+
 			const { endedSession, newSession } = await switchSessionType(
 				tx,
 				mostRecentSession.id,
@@ -107,6 +134,19 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// Handle switch to regular session
 		if (tapAction === "switch_to_regular") {
+			// Check suspension for switches too - they involve starting a new session
+			const activeSuspension = await getActiveSuspension(tx, user.id, now);
+			if (activeSuspension) {
+				return {
+					status: "suspended" as const,
+					user,
+					suspension: {
+						endDate: activeSuspension.endDate,
+						externalNotes: activeSuspension.externalNotes,
+					},
+				};
+			}
+
 			const { endedSession, newSession } = await switchSessionType(
 				tx,
 				mostRecentSession.id,
@@ -122,7 +162,7 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			};
 		}
 
-		// Default: end session (tap out)
+		// Default: end session (tap out) - ALLOWED even if suspended
 		const session = await endSession(tx, mostRecentSession.id, now);
 
 		return {

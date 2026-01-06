@@ -26,6 +26,7 @@ import { Route as ShiftsMyShiftsRouteImport } from './routes/shifts/my-shifts'
 import { Route as ShiftsManageUsersRouteImport } from './routes/shifts/manage-users'
 import { Route as ShiftsAttendanceRouteImport } from './routes/shifts/attendance'
 import { Route as AppUsersRouteImport } from './routes/app/users'
+import { Route as AppSuspensionsRouteImport } from './routes/app/suspensions'
 import { Route as AppSessionsRouteImport } from './routes/app/sessions'
 import { Route as AppRolesRouteImport } from './routes/app/roles'
 import { Route as AppMySessionsRouteImport } from './routes/app/my-sessions'
@@ -121,6 +122,11 @@ const AppUsersRoute = AppUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSuspensionsRoute = AppSuspensionsRouteImport.update({
+  id: '/suspensions',
+  path: '/suspensions',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSessionsRoute = AppSessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/app/my-sessions': typeof AppMySessionsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
+  '/app/suspensions': typeof AppSuspensionsRoute
   '/app/users': typeof AppUsersRoute
   '/shifts/attendance': typeof ShiftsAttendanceRoute
   '/shifts/manage-users': typeof ShiftsManageUsersRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/app/my-sessions': typeof AppMySessionsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
+  '/app/suspensions': typeof AppSuspensionsRoute
   '/app/users': typeof AppUsersRoute
   '/shifts/attendance': typeof ShiftsAttendanceRoute
   '/shifts/manage-users': typeof ShiftsManageUsersRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/app/my-sessions': typeof AppMySessionsRoute
   '/app/roles': typeof AppRolesRoute
   '/app/sessions': typeof AppSessionsRoute
+  '/app/suspensions': typeof AppSuspensionsRoute
   '/app/users': typeof AppUsersRoute
   '/shifts/attendance': typeof ShiftsAttendanceRoute
   '/shifts/manage-users': typeof ShiftsManageUsersRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/app/my-sessions'
     | '/app/roles'
     | '/app/sessions'
+    | '/app/suspensions'
     | '/app/users'
     | '/shifts/attendance'
     | '/shifts/manage-users'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/app/my-sessions'
     | '/app/roles'
     | '/app/sessions'
+    | '/app/suspensions'
     | '/app/users'
     | '/shifts/attendance'
     | '/shifts/manage-users'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/app/my-sessions'
     | '/app/roles'
     | '/app/sessions'
+    | '/app/suspensions'
     | '/app/users'
     | '/shifts/attendance'
     | '/shifts/manage-users'
@@ -464,6 +476,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/suspensions': {
+      id: '/app/suspensions'
+      path: '/suspensions'
+      fullPath: '/app/suspensions'
+      preLoaderRoute: typeof AppSuspensionsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/sessions': {
       id: '/app/sessions'
       path: '/sessions'
@@ -540,6 +559,7 @@ interface AppRouteChildren {
   AppMySessionsRoute: typeof AppMySessionsRoute
   AppRolesRoute: typeof AppRolesRoute
   AppSessionsRoute: typeof AppSessionsRoute
+  AppSuspensionsRoute: typeof AppSuspensionsRoute
   AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -554,6 +574,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMySessionsRoute: AppMySessionsRoute,
   AppRolesRoute: AppRolesRoute,
   AppSessionsRoute: AppSessionsRoute,
+  AppSuspensionsRoute: AppSuspensionsRoute,
   AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,
 }

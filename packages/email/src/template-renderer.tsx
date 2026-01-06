@@ -6,6 +6,11 @@ import {
 	type SessionAutoLogoutEmailProps,
 } from "./templates/SessionAutoLogoutEmail";
 import {
+	SuspensionNoticeEmail,
+	type SuspensionNoticeEmailProps,
+	SuspensionNoticeEmailSubject,
+} from "./templates/SuspensionNoticeEmail";
+import {
 	WelcomeEmail,
 	type WelcomeEmailProps,
 	WelcomeEmailSubject,
@@ -15,7 +20,11 @@ import { htmlToPlainText } from "./text-generator";
 const logger = getLogger("email:renderer");
 
 // Re-export template props for external use
-export type { SessionAutoLogoutEmailProps, WelcomeEmailProps };
+export type {
+	SessionAutoLogoutEmailProps,
+	SuspensionNoticeEmailProps,
+	WelcomeEmailProps,
+};
 
 export type RenderEmailOptions =
 	| {
@@ -25,6 +34,10 @@ export type RenderEmailOptions =
 	| {
 			template: "session-auto-logout";
 			data: SessionAutoLogoutEmailProps;
+	  }
+	| {
+			template: "suspension-notice";
+			data: SuspensionNoticeEmailProps;
 	  };
 
 export interface RenderedEmail {
@@ -57,6 +70,14 @@ export async function renderEmail(
 					<SessionAutoLogoutEmail {...options.data} />,
 				);
 				subject = getSessionAutoLogoutSubject(options.data.sessionType);
+				break;
+			}
+
+			case "suspension-notice": {
+				html = renderToStaticMarkup(
+					<SuspensionNoticeEmail {...options.data} />,
+				);
+				subject = SuspensionNoticeEmailSubject;
 				break;
 			}
 		}
