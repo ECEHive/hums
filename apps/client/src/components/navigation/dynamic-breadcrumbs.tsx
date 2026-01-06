@@ -8,30 +8,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
-// Map of route IDs to human-readable labels
-const routeLabels: Record<string, string> = {
-	"/app": "Home",
-	"/app/users": "Users",
-	"/app/kiosks": "Kiosks",
-	"/app/my-agreements": "My Agreements",
-	"/app/my-sessions": "My Sessions",
-	"/app/periods": "Periods",
-	"/app/api-tokens": "API Tokens",
-	"/app/audit-logs": "Audit Logs",
-	"/app/suspensions": "Suspensions",
-	"/shifts": "Shifts",
-	"/shifts/": "Dashboard",
-	"/shifts/shift-schedules": "Shift Schedules",
-	"/shifts/scheduling": "Scheduling",
-	"/shifts/shift-types": "Shift Types",
-	"/shifts/period-exceptions": "Period Exceptions",
-	"/shifts/period-details": "Period Details",
-	"/shifts/manage-users": "Manage Users",
-	"/shifts/my-shifts": "My Shifts",
-	"/shifts/attendance": "Attendance",
-	"/shifts/reports": "Reports",
-};
+import { getBreadcrumbLabel } from "@/lib/routeMetadata";
 
 interface BreadcrumbSegment {
 	path: string;
@@ -51,8 +28,8 @@ export function DynamicBreadcrumbs() {
 		// Skip root route
 		if (routeId === "__root__") return;
 
-		// Get the label for this route
-		const label = routeLabels[routeId];
+		// Get the label for this route from centralized metadata
+		const label = getBreadcrumbLabel(routeId);
 		if (!label) return;
 
 		// Get the pathname from the match
