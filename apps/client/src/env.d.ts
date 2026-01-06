@@ -1,9 +1,8 @@
 declare global {
 	interface ImportMetaEnv {
-		readonly TZ: string;
-		readonly VITE_AUTH_PROVIDER?: "CAS" | "CAS_PROXIED";
-		readonly VITE_CAS_LOGIN_URL?: string;
-		readonly VITE_CAS_PROXY_URL?: string;
+		// Development-only variables used by Vite dev server
+		readonly VITE_DEV_PORT?: string;
+		readonly VITE_DEV_SERVER_URL?: string;
 	}
 
 	interface ImportMeta {

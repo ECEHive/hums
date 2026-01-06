@@ -1,0 +1,77 @@
+# =============================================================================
+# Web Dockerfile
+# Produces an optimized NGINX image serving the client and kiosk static files
+# =============================================================================
+
+# =============================================================================
+# Base Stage - Bun for building
+# =============================================================================
+FROM oven/bun:1-alpine AS base
+
+WORKDIR /app
+
+# =============================================================================
+# Dependencies Stage - Install all dependencies
+# =============================================================================
+FROM base AS deps
+
+# Copy workspace config and lockfile
+COPY package.json bun.lock ./
+
+# Copy package.json files for frontend workspaces
+COPY apps/client/package.json ./apps/client/
+COPY apps/kiosk/package.json ./apps/kiosk/
+COPY packages/config/package.json ./packages/config/
+COPY packages/trpc/package.json ./packages/trpc/
+
+# Install all dependencies
+RUN bun install --frozen-lockfile
+
+# =============================================================================
+# Build Client Stage
+# =============================================================================
+FROM deps AS build-client
+
+# Copy source files
+COPY apps/client ./apps/client
+COPY packages ./packages
+
+# Build client
+WORKDIR /app/apps/client
+RUN bun run build
+WORKDIR /app
+
+# =============================================================================
+# Build Kiosk Stage
+# =============================================================================
+FROM deps AS build-kiosk
+
+# Copy source files
+COPY apps/kiosk ./apps/kiosk
+COPY packages ./packages
+
+# Build kiosk
+WORKDIR /app/apps/kiosk
+RUN bun run build
+WORKDIR /app
+
+# =============================================================================
+# Production NGINX Image
+# =============================================================================
+FROM nginx:alpine AS web
+
+# Copy built static files
+COPY --from=build-client /app/apps/client/dist /usr/share/nginx/html/client
+COPY --from=build-kiosk /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose HTTP port
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

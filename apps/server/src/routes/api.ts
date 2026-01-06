@@ -2,6 +2,7 @@ import { restApiRoute } from "@ecehive/rest";
 import { appRouter, createContext } from "@ecehive/trpc/server";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import type { FastifyPluginAsync } from "fastify";
+import { configRoute } from "./config";
 
 export const apiRoute: FastifyPluginAsync = async (fastify) => {
 	fastify.get("/", async () => {
@@ -10,6 +11,10 @@ export const apiRoute: FastifyPluginAsync = async (fastify) => {
 			name: "API",
 			status: "ok",
 		};
+	});
+
+	fastify.register(configRoute, {
+		prefix: "/config",
 	});
 
 	fastify.get("/trpc", async () => {

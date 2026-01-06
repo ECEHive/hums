@@ -3,6 +3,7 @@ import advancedFormat from "dayjs/plugin/advancedFormat";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { getConfig } from "./config";
 
 // Configure dayjs with the plugins we rely on throughout the client.
 dayjsLib.extend(utc);
@@ -12,7 +13,16 @@ dayjsLib.extend(advancedFormat);
 
 export type DateInput = Date | string | number | Dayjs;
 
-export const APP_TZ = import.meta.env.TZ || "America/New_York";
+/**
+ * Get the application timezone from runtime config, with fallback.
+ * Note: This requires config to be loaded first via fetchConfig().
+ */
+export function getAppTimezone(): string {
+	return getConfig()?.timezone ?? "America/New_York";
+}
+
+// For backwards compatibility, export a getter that always returns current value
+export const APP_TZ = "America/New_York"; // Default, but prefer getAppTimezone() for dynamic access
 export const USER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 export const isUserInAppTimezone = APP_TZ === USER_TZ;
 

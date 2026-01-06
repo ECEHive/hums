@@ -1,9 +1,10 @@
-declare const __APP_VERSION__: string;
-
 declare global {
+	declare const __APP_VERSION__: string;
+
 	interface ImportMetaEnv {
-		readonly TZ: string;
-		readonly VITE_CLIENT_URL?: string;
+		// Development-only variables used by Vite dev server
+		readonly VITE_DEV_PORT?: string;
+		readonly VITE_DEV_SERVER_URL?: string;
 	}
 
 	interface ImportMeta {
