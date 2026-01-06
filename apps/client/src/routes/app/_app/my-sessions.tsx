@@ -38,7 +38,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
-export const Route = createFileRoute("/app/my-sessions")({
+export const Route = createFileRoute("/app/_app/my-sessions")({
 	component: () => RequireAuth({ children: <MySessionsPage /> }),
 });
 

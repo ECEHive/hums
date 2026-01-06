@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 export const permissions = ["config.read"];
 
-export const Route = createFileRoute("/app/configuration")({
+export const Route = createFileRoute("/app/_app/configuration")({
 	component: () =>
 		RequirePermissions({
 			permissions,

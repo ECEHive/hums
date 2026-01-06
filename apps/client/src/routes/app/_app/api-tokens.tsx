@@ -53,7 +53,7 @@ import { checkPermissions } from "@/lib/permissions";
 
 export const permissions = ["api_tokens.list"];
 
-export const Route = createFileRoute("/app/api-tokens")({
+export const Route = createFileRoute("/app/_app/api-tokens")({
 	component: () =>
 		RequirePermissions({
 			permissions,

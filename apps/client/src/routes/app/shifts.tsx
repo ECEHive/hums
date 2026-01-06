@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layout";
 import { ShiftsSidebar } from "@/components/navigation/shifts-sidebar";
 import { PeriodProvider } from "@/components/providers/period-provider";
 
-export const Route = createFileRoute("/shifts")({
+export const Route = createFileRoute("/app/shifts")({
 	component: AppLayout,
 });
 

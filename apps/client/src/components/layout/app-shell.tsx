@@ -8,6 +8,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 interface AppShellProps {
 	/**
@@ -38,6 +39,9 @@ interface AppShellProps {
  * ```
  */
 export function AppShell({ sidebar, banners, wrapper }: AppShellProps) {
+	// Automatically update page title based on current route
+	usePageTitle();
+
 	const content = (
 		<RequireAuth>
 			<SidebarProvider>

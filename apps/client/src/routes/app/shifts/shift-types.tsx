@@ -30,7 +30,7 @@ import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
-export const Route = createFileRoute("/shifts/shift-types")({
+export const Route = createFileRoute("/app/shifts/shift-types")({
 	component: () =>
 		RequirePermissions({
 			permissions,

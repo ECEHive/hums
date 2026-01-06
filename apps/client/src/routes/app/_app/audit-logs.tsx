@@ -45,7 +45,7 @@ import { checkPermissions } from "@/lib/permissions";
 
 export const permissions = ["audit_logs.list"];
 
-export const Route = createFileRoute("/app/audit-logs")({
+export const Route = createFileRoute("/app/_app/audit-logs")({
 	component: () =>
 		RequirePermissions({
 			permissions,

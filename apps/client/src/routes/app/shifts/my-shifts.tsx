@@ -54,7 +54,7 @@ import type { RequiredPermissions } from "@/lib/permissions";
 import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/shifts/my-shifts")({
+export const Route = createFileRoute("/app/shifts/my-shifts")({
 	component: () => (
 		<RequireShiftAccess>
 			<MyShifts />
@@ -308,7 +308,7 @@ function MyShifts() {
 			<PageHeader>
 				<PageTitle>My Shifts</PageTitle>
 				<PageActions>
-					<Link to="/shifts/attendance">
+					<Link to="/app/shifts/attendance">
 						<Button variant="outline">Shift History</Button>
 					</Link>
 				</PageActions>

@@ -32,7 +32,7 @@ import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
 export const permissions = ["period_exceptions.list"] as RequiredPermissions;
 
-export const Route = createFileRoute("/shifts/period-exceptions")({
+export const Route = createFileRoute("/app/shifts/period-exceptions")({
 	component: () =>
 		RequirePermissions({
 			permissions,

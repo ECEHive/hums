@@ -47,16 +47,16 @@ import {
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
-import { permissions as agreementsPagePermissions } from "@/routes/app/agreements";
-import { permissions as apiTokensPagePermissions } from "@/routes/app/api-tokens";
-import { permissions as auditLogsPagePermissions } from "@/routes/app/audit-logs";
-import { permissions as configurationPagePermissions } from "@/routes/app/configuration";
-import { permissions as appIndexPagePermissions } from "@/routes/app/index";
-import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
-import { permissions as rolesPagePermissions } from "@/routes/app/roles";
-import { permissions as sessionsPagePermissions } from "@/routes/app/sessions";
-import { permissions as suspensionsPagePermissions } from "@/routes/app/suspensions";
-import { permissions as usersPagePermissions } from "@/routes/app/users";
+import { permissions as agreementsPagePermissions } from "@/routes/app/_app/agreements";
+import { permissions as apiTokensPagePermissions } from "@/routes/app/_app/api-tokens";
+import { permissions as auditLogsPagePermissions } from "@/routes/app/_app/audit-logs";
+import { permissions as configurationPagePermissions } from "@/routes/app/_app/configuration";
+import { permissions as appIndexPagePermissions } from "@/routes/app/_app/index";
+import { permissions as kiosksPagePermissions } from "@/routes/app/_app/kiosks";
+import { permissions as rolesPagePermissions } from "@/routes/app/_app/roles";
+import { permissions as sessionsPagePermissions } from "@/routes/app/_app/sessions";
+import { permissions as suspensionsPagePermissions } from "@/routes/app/_app/suspensions";
+import { permissions as usersPagePermissions } from "@/routes/app/_app/users";
 
 // Sidebar menu items, grouped by section
 type AppSidebarItem = {
@@ -90,7 +90,7 @@ export const items: AppSidebarGroup[] = [
 			},
 			{
 				title: "Shifts",
-				url: "/shifts",
+				url: "/app/shifts",
 				icon: CalendarIcon,
 				permissions: [],
 				allowWithShiftAccess: true,

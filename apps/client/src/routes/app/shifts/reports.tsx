@@ -23,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-export const Route = createFileRoute("/shifts/reports")({
+export const Route = createFileRoute("/app/shifts/reports")({
 	component: () =>
 		RequirePermissions({
 			permissions,

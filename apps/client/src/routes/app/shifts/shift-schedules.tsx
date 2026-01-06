@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
-export const Route = createFileRoute("/shifts/shift-schedules")({
+export const Route = createFileRoute("/app/shifts/shift-schedules")({
 	component: () =>
 		RequirePermissions({
 			permissions,
