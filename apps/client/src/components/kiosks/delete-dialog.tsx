@@ -18,24 +18,24 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions } from "@/lib/permissions";
 
-type Kiosk = {
+type Device = {
 	id: number;
 	name: string;
 };
 
 type DeleteDialogProps = {
-	kiosk: Kiosk;
+	device: Device;
 };
 
-export function DeleteDialog({ kiosk }: DeleteDialogProps): JSX.Element {
+export function DeleteDialog({ device }: DeleteDialogProps): JSX.Element {
 	const [open, setOpen] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const queryClient = useQueryClient();
 
 	const deleteMutation = useMutation({
-		mutationFn: (id: number) => trpc.kiosks.delete.mutate({ id }),
+		mutationFn: (id: number) => trpc.devices.delete.mutate({ id }),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["kiosks"] });
+			queryClient.invalidateQueries({ queryKey: ["devices"] });
 			setOpen(false);
 		},
 		onError: (err) => {
@@ -44,11 +44,11 @@ export function DeleteDialog({ kiosk }: DeleteDialogProps): JSX.Element {
 	});
 
 	const handleDelete = () => {
-		deleteMutation.mutate(kiosk.id);
+		deleteMutation.mutate(device.id);
 	};
 
 	const user = useAuth().user;
-	const canDelete = user && checkPermissions(user, ["kiosks.delete"]);
+	const canDelete = user && checkPermissions(user, ["devices.delete"]);
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -59,9 +59,9 @@ export function DeleteDialog({ kiosk }: DeleteDialogProps): JSX.Element {
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
-					<DialogTitle>Delete Kiosk</DialogTitle>
+					<DialogTitle>Delete Device</DialogTitle>
 					<DialogDescription>
-						Are you sure you want to delete "{kiosk.name}"? This action cannot
+						Are you sure you want to delete "{device.name}"? This action cannot
 						be undone.
 					</DialogDescription>
 				</DialogHeader>

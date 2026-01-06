@@ -12,6 +12,7 @@ import {
 	HomeIcon,
 	KeyIcon,
 	LaptopMinimalCheckIcon,
+	LayoutDashboardIcon,
 	MoonIcon,
 	ScrollTextIcon,
 	SettingsIcon,
@@ -52,7 +53,7 @@ import { permissions as apiTokensPagePermissions } from "@/routes/app/_app/api-t
 import { permissions as auditLogsPagePermissions } from "@/routes/app/_app/audit-logs";
 import { permissions as configurationPagePermissions } from "@/routes/app/_app/configuration";
 import { permissions as appIndexPagePermissions } from "@/routes/app/_app/index";
-import { permissions as kiosksPagePermissions } from "@/routes/app/_app/kiosks";
+import { permissions as devicesPagePermissions } from "@/routes/app/_app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/_app/roles";
 import { permissions as sessionsPagePermissions } from "@/routes/app/_app/sessions";
 import { permissions as suspensionsPagePermissions } from "@/routes/app/_app/suspensions";
@@ -126,10 +127,10 @@ export const items: AppSidebarGroup[] = [
 				permissions: agreementsPagePermissions,
 			},
 			{
-				title: "Kiosks",
+				title: "Devices",
 				url: "/app/kiosks",
 				icon: LaptopMinimalCheckIcon,
-				permissions: kiosksPagePermissions,
+				permissions: devicesPagePermissions,
 			},
 			{
 				title: "API Tokens",
@@ -258,6 +259,13 @@ export function AppSidebar() {
 								className="w-[--radix-popper-anchor-width]"
 							>
 								<DropdownMenuLabel>HUMS v{__APP_VERSION__}</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<a href="/dashboard/" target="_blank" rel="noopener noreferrer">
+									<DropdownMenuItem>
+										<LayoutDashboardIcon />
+										Open Dashboard
+									</DropdownMenuItem>
+								</a>
 								<DropdownMenuSeparator />
 								<DropdownMenuLabel>Theme</DropdownMenuLabel>
 								<DropdownMenuItem onSelect={() => setTheme("light")}>
