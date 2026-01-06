@@ -274,13 +274,17 @@ model Session {
   @@unique([userId, endedAt])
 }
 
-model Kiosk {
+model Device {
   id Int @id @default(autoincrement())
 
   // fields
   name      String
   ipAddress String  @unique
   isActive  Boolean @default(true)
+
+  // Device access permissions
+  hasKioskAccess     Boolean @default(true)
+  hasDashboardAccess Boolean @default(false)
 
   // timestamps
   createdAt DateTime @default(now())

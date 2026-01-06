@@ -28,14 +28,14 @@ export const Route = createFileRoute("/app/_app/kiosks")({
 	component: () =>
 		RequirePermissions({
 			permissions,
-			children: <Kiosks />,
+			children: <Devices />,
 			forbiddenFallback: <MissingPermissions />,
 		}),
 });
 
-export const permissions = ["kiosks.list"];
+export const permissions = ["devices.list"];
 
-function Kiosks() {
+function Devices() {
 	const {
 		page,
 		setPage,
@@ -57,10 +57,10 @@ function Kiosks() {
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { kiosks: [], count: 0 }, isLoading } = useQuery({
-		queryKey: ["kiosks", queryParams],
+	const { data = { devices: [], count: 0 }, isLoading } = useQuery({
+		queryKey: ["devices", queryParams],
 		queryFn: async () => {
-			return await trpc.kiosks.list.query(queryParams);
+			return await trpc.devices.list.query(queryParams);
 		},
 		retry: false,
 	});
@@ -70,13 +70,13 @@ function Kiosks() {
 		total: data.count,
 		pageSize,
 		offset,
-		currentCount: data.kiosks.length,
+		currentCount: data.devices.length,
 	});
 
 	return (
 		<Page>
 			<PageHeader>
-				<PageTitle>Kiosks</PageTitle>
+				<PageTitle>Devices</PageTitle>
 				<PageActions>
 					<CreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
@@ -87,7 +87,7 @@ function Kiosks() {
 					<TableToolbar>
 						<TableSearchInput>
 							<SearchInput
-								placeholder="Search kiosks..."
+								placeholder="Search devices..."
 								value={search}
 								onChange={(value) => {
 									setSearch(value);
@@ -99,9 +99,9 @@ function Kiosks() {
 
 					<DataTable
 						columns={columns}
-						data={data.kiosks}
+						data={data.devices}
 						isLoading={isLoading}
-						emptyMessage="No kiosks found"
+						emptyMessage="No devices found"
 						emptyDescription="Try adjusting your search"
 					/>
 
@@ -110,9 +110,9 @@ function Kiosks() {
 						totalPages={totalPages}
 						onPageChange={setPage}
 						offset={offset}
-						currentCount={data.kiosks.length}
+						currentCount={data.devices.length}
 						total={data.count}
-						itemName="kiosks"
+						itemName="devices"
 						pageSize={pageSize}
 						onPageSizeChange={(size) => {
 							setPageSize(size);

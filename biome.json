@@ -36,7 +36,8 @@
 			"!**/dist",
 			"!**/build",
 			"!**/*.gen.*",
-			"!**/generated"
+			"!**/generated",
+			"!**/components/ui/*"
 		]
 	}
 }

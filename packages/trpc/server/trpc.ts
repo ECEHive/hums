@@ -145,34 +145,72 @@ export type TPermissionProtectedProcedureContext =
 	>["ctx"];
 
 /**
- * A procedure that requires the request to come from a registered kiosk IP address.
+ * A procedure that requires the request to come from a registered device IP address.
+ * Checks for kiosk access permission.
  */
 export const kioskProtectedProcedure = t.procedure.use(async (opts) => {
 	// Get the client IP address from the request
 	const ip = getClientIp(opts.ctx.req);
 
-	// Check if this IP is registered as an active kiosk
-	const kiosk = await prisma.kiosk.findFirst({
+	// Check if this IP is registered as an active device with kiosk access
+	const device = await prisma.device.findFirst({
 		where: {
 			ipAddress: ip,
 			isActive: true,
+			hasKioskAccess: true,
 		},
 	});
 
-	if (!kiosk) {
+	if (!device) {
 		throw new TRPCError({
 			code: "FORBIDDEN",
-			message: `Access denied. IP address ${ip} is not registered as a kiosk.`,
+			message: `Access denied. IP address ${ip} is not registered as a device with kiosk access.`,
 		});
 	}
 
 	return opts.next({
 		ctx: {
 			...opts.ctx,
-			kiosk,
+			device,
 		},
 	});
 });
 
 export type TKioskProtectedProcedureContext =
 	inferProcedureBuilderResolverOptions<typeof kioskProtectedProcedure>["ctx"];
+
+/**
+ * A procedure that requires the request to come from a registered device with dashboard access.
+ */
+export const dashboardProtectedProcedure = t.procedure.use(async (opts) => {
+	// Get the client IP address from the request
+	const ip = getClientIp(opts.ctx.req);
+
+	// Check if this IP is registered as an active device with dashboard access
+	const device = await prisma.device.findFirst({
+		where: {
+			ipAddress: ip,
+			isActive: true,
+			hasDashboardAccess: true,
+		},
+	});
+
+	if (!device) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: `Access denied. IP address ${ip} is not registered as a device with dashboard access.`,
+		});
+	}
+
+	return opts.next({
+		ctx: {
+			...opts.ctx,
+			device,
+		},
+	});
+});
+
+export type TDashboardProtectedProcedureContext =
+	inferProcedureBuilderResolverOptions<
+		typeof dashboardProtectedProcedure
+	>["ctx"];

@@ -16,18 +16,18 @@ export async function checkStatusHandler(options: TCheckStatusOptions) {
 	// Get the client IP address from the request
 	const ip = getClientIp(options.ctx.req);
 
-	// Check if this IP is registered as a kiosk
-	const kiosk = await prisma.kiosk.findFirst({
+	// Check if this IP is registered as a device
+	const device = await prisma.device.findFirst({
 		where: {
 			ipAddress: ip,
 			isActive: true,
 		},
 	});
 
-	if (kiosk) {
+	if (device) {
 		return {
 			status: true,
-			kiosk,
+			device,
 		};
 	}
 

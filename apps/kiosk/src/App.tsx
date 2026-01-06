@@ -18,21 +18,23 @@ function App() {
 	const tapWorkflow = useTapWorkflow();
 	const { data: config } = useConfig();
 
-	const { data: kioskStatusData, isLoading: kioskStatusLoading } = useQuery({
-		queryKey: ["kioskStatus"],
+	const { data: deviceStatusData, isLoading: deviceStatusLoading } = useQuery({
+		queryKey: ["deviceStatus"],
 		queryFn: async () => {
-			return await trpc.kiosks.checkStatus.query({});
+			return await trpc.devices.checkStatus.query({});
 		},
 		retry: 1,
 		refetchOnWindowFocus: false,
 	});
 
 	const kioskStatus: KioskStatus = {
-		isKiosk: kioskStatusData?.status ?? false,
-		ip: kioskStatusData?.status
-			? kioskStatusData.kiosk?.ipAddress
-			: kioskStatusData?.ip,
-		checking: kioskStatusLoading,
+		isKiosk: !!(
+			deviceStatusData?.status && deviceStatusData.device?.hasKioskAccess
+		),
+		ip: deviceStatusData?.status
+			? deviceStatusData.device?.ipAddress
+			: deviceStatusData?.ip,
+		checking: deviceStatusLoading,
 	};
 
 	const { connectionStatus, connect } = useCardReader({

@@ -28,6 +28,8 @@ const formSchema = z.object({
 		.string()
 		.regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/, "Must be a valid IP address"),
 	isActive: z.boolean(),
+	hasKioskAccess: z.boolean(),
+	hasDashboardAccess: z.boolean(),
 });
 
 type CreateDialogProps = {
@@ -40,14 +42,16 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const queryClient = useQueryClient();
 	const formId = useId();
 
-	const createKioskMutation = useMutation({
+	const createDeviceMutation = useMutation({
 		mutationFn: (input: {
 			name: string;
 			ipAddress: string;
 			isActive: boolean;
-		}) => trpc.kiosks.create.mutate(input),
+			hasKioskAccess: boolean;
+			hasDashboardAccess: boolean;
+		}) => trpc.devices.create.mutate(input),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["kiosks"] });
+			queryClient.invalidateQueries({ queryKey: ["devices"] });
 		},
 	});
 
@@ -56,13 +60,15 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			name: "",
 			ipAddress: "",
 			isActive: true,
+			hasKioskAccess: true,
+			hasDashboardAccess: false,
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await createKioskMutation.mutateAsync(value);
+				await createDeviceMutation.mutateAsync(value);
 				setOpen(false);
 				onUpdate?.();
 			} catch (err) {
@@ -87,18 +93,18 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	);
 
 	const user = useAuth().user;
-	const canCreate = user && checkPermissions(user, ["kiosks.create"]);
+	const canCreate = user && checkPermissions(user, ["devices.create"]);
 
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button disabled={!canCreate}>Create Kiosk</Button>
+				<Button disabled={!canCreate}>Create Device</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>Create Kiosk</DialogTitle>
+					<DialogTitle>Create Device</DialogTitle>
 					<DialogDescription>
-						Register a new kiosk device with its IP address.
+						Register a new device with its IP address and access permissions.
 					</DialogDescription>
 				</DialogHeader>
 				<form
@@ -117,7 +123,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 									value={field.state.value}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
-									placeholder="e.g., Front Desk Kiosk"
+									placeholder="e.g., Front Desk Device"
 								/>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>
@@ -155,6 +161,51 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
+
+					<div className="border-t pt-4 space-y-4">
+						<h4 className="text-sm font-medium">Access Permissions</h4>
+
+						<form.Field name="hasKioskAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Kiosk Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to function as a tap-in/out kiosk
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+
+						<form.Field name="hasDashboardAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Dashboard Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to view staffing information on the
+										dashboard
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+					</div>
 
 					{serverError && (
 						<div className="text-sm text-destructive">{serverError}</div>

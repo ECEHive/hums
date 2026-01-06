@@ -1,19 +1,22 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateInAppTimezone } from "@/lib/timezone";
 import { DeleteDialog } from "./delete-dialog";
 import { UpdateDialog } from "./update-dialog";
 
-type Kiosk = {
+type Device = {
 	id: number;
 	name: string;
 	ipAddress: string;
 	isActive: boolean;
+	hasKioskAccess: boolean;
+	hasDashboardAccess: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 };
 
-export function generateColumns(): ColumnDef<Kiosk>[] {
+export function generateColumns(): ColumnDef<Device>[] {
 	return [
 		{
 			accessorKey: "name",
@@ -40,6 +43,38 @@ export function generateColumns(): ColumnDef<Kiosk>[] {
 			},
 		},
 		{
+			accessorKey: "access",
+			header: "Access",
+			cell: ({ row }) => {
+				return (
+					<div className="flex gap-2">
+						<Badge
+							variant={row.original.hasKioskAccess ? "default" : "outline"}
+							className="flex items-center gap-1"
+						>
+							{row.original.hasKioskAccess ? (
+								<CheckCircle2 className="h-3 w-3" />
+							) : (
+								<XCircle className="h-3 w-3" />
+							)}
+							Kiosk
+						</Badge>
+						<Badge
+							variant={row.original.hasDashboardAccess ? "default" : "outline"}
+							className="flex items-center gap-1"
+						>
+							{row.original.hasDashboardAccess ? (
+								<CheckCircle2 className="h-3 w-3" />
+							) : (
+								<XCircle className="h-3 w-3" />
+							)}
+							Dashboard
+						</Badge>
+					</div>
+				);
+			},
+		},
+		{
 			accessorKey: "createdAt",
 			header: "Created",
 			cell: ({ row }) =>
@@ -53,8 +88,8 @@ export function generateColumns(): ColumnDef<Kiosk>[] {
 			cell: ({ row }) => {
 				return (
 					<div className="flex gap-2 items-center">
-						<UpdateDialog kiosk={row.original} />
-						<DeleteDialog kiosk={row.original} />
+						<UpdateDialog device={row.original} />
+						<DeleteDialog device={row.original} />
 					</div>
 				);
 			},

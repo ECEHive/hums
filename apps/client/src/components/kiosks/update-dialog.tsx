@@ -23,18 +23,20 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions } from "@/lib/permissions";
 
-type Kiosk = {
+type Device = {
 	id: number;
 	name: string;
 	ipAddress: string;
 	isActive: boolean;
+	hasKioskAccess: boolean;
+	hasDashboardAccess: boolean;
 };
 
 type UpdateDialogProps = {
-	kiosk: Kiosk;
+	device: Device;
 };
 
-export function UpdateDialog({ kiosk }: UpdateDialogProps): JSX.Element {
+export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 	const [open, setOpen] = useState(false);
 	const [serverError, setServerError] = useState<string | null>(null);
 	const queryClient = useQueryClient();
@@ -46,6 +48,8 @@ export function UpdateDialog({ kiosk }: UpdateDialogProps): JSX.Element {
 			.string()
 			.regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/, "Must be a valid IP address"),
 		isActive: z.boolean(),
+		hasKioskAccess: z.boolean(),
+		hasDashboardAccess: z.boolean(),
 	});
 
 	const updateMutation = useMutation({
@@ -54,24 +58,28 @@ export function UpdateDialog({ kiosk }: UpdateDialogProps): JSX.Element {
 			name: string;
 			ipAddress: string;
 			isActive: boolean;
-		}) => trpc.kiosks.update.mutate(input),
+			hasKioskAccess: boolean;
+			hasDashboardAccess: boolean;
+		}) => trpc.devices.update.mutate(input),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["kiosks"] });
+			queryClient.invalidateQueries({ queryKey: ["devices"] });
 		},
 	});
 
 	const form = useForm({
 		defaultValues: {
-			name: kiosk.name,
-			ipAddress: kiosk.ipAddress,
-			isActive: kiosk.isActive,
+			name: device.name,
+			ipAddress: device.ipAddress,
+			isActive: device.isActive,
+			hasKioskAccess: device.hasKioskAccess,
+			hasDashboardAccess: device.hasDashboardAccess,
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await updateMutation.mutateAsync({ id: kiosk.id, ...value });
+				await updateMutation.mutateAsync({ id: device.id, ...value });
 				setOpen(false);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
@@ -92,11 +100,11 @@ export function UpdateDialog({ kiosk }: UpdateDialogProps): JSX.Element {
 				setServerError(null);
 			}
 		},
-		[form, kiosk],
+		[form, device],
 	);
 
 	const user = useAuth().user;
-	const canUpdate = user && checkPermissions(user, ["kiosks.update"]);
+	const canUpdate = user && checkPermissions(user, ["devices.update"]);
 
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
@@ -107,8 +115,10 @@ export function UpdateDialog({ kiosk }: UpdateDialogProps): JSX.Element {
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>Update Kiosk</DialogTitle>
-					<DialogDescription>Edit kiosk details.</DialogDescription>
+					<DialogTitle>Update Device</DialogTitle>
+					<DialogDescription>
+						Edit device details and access permissions.
+					</DialogDescription>
 				</DialogHeader>
 
 				<form
@@ -127,7 +137,7 @@ export function UpdateDialog({ kiosk }: UpdateDialogProps): JSX.Element {
 									value={field.state.value}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
-									placeholder="e.g., Front Desk Kiosk"
+									placeholder="e.g., Front Desk Device"
 								/>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>
@@ -165,6 +175,51 @@ export function UpdateDialog({ kiosk }: UpdateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
+
+					<div className="border-t pt-4 space-y-4">
+						<h4 className="text-sm font-medium">Access Permissions</h4>
+
+						<form.Field name="hasKioskAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Kiosk Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to function as a tap-in/out kiosk
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+
+						<form.Field name="hasDashboardAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Dashboard Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to view staffing information on the
+										dashboard
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+					</div>
 
 					{serverError && (
 						<div className="text-sm text-destructive">{serverError}</div>

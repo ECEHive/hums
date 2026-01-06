@@ -25,7 +25,7 @@ services:
       context: .
       dockerfile: Dockerfile.server
       target: prisma-migrate
-    container_name: hums-prisma-migrate
+    container_name: hums-migrate
     restart: "no"
     depends_on:
       db:
@@ -47,7 +47,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      prisma-migrate:
+      migrate:
         condition: service_completed_successfully
     env_file:
       - .env
@@ -67,7 +67,7 @@ services:
       context: .
       dockerfile: Dockerfile.web
       target: web
-    container_name: hums-nginx
+    container_name: hums-web
     restart: unless-stopped
     ports:
       - "4483:80"
