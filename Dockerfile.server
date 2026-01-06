@@ -15,23 +15,11 @@ WORKDIR /app
 # =============================================================================
 FROM base AS deps
 
-# Copy workspace config and lockfile
+# Copy workspace manifests and workspaces
+# .dockerignore ensures node_modules and build outputs are excluded
 COPY package.json bun.lock ./
-
-# Copy package.json files for all workspaces
-COPY apps/server/package.json ./apps/server/
-COPY packages/auth/package.json ./packages/auth/
-COPY packages/config/package.json ./packages/config/
-COPY packages/email/package.json ./packages/email/
-COPY packages/env/package.json ./packages/env/
-COPY packages/features/package.json ./packages/features/
-COPY packages/ldap/package.json ./packages/ldap/
-COPY packages/logger/package.json ./packages/logger/
-COPY packages/prisma/package.json ./packages/prisma/
-COPY packages/rest/package.json ./packages/rest/
-COPY packages/trpc/package.json ./packages/trpc/
-COPY packages/user-data/package.json ./packages/user-data/
-COPY packages/workers/package.json ./packages/workers/
+COPY apps ./apps
+COPY packages ./packages
 
 # Install all dependencies
 RUN bun install --frozen-lockfile
@@ -61,11 +49,8 @@ WORKDIR /app
 # =============================================================================
 FROM prisma-generate AS build
 
-# Copy all source files
-COPY apps/server ./apps/server
-COPY packages ./packages
-
-# Build server
+# Source files are already present from the deps stage
+# Just build the server
 WORKDIR /app/apps/server
 RUN bun run build
 WORKDIR /app
@@ -75,23 +60,10 @@ WORKDIR /app
 # =============================================================================
 FROM base AS prod-deps
 
-# Copy workspace config and lockfile
+# Copy workspace manifests and workspaces
 COPY package.json bun.lock ./
-
-# Copy package.json files for all workspaces
-COPY apps/server/package.json ./apps/server/
-COPY packages/auth/package.json ./packages/auth/
-COPY packages/config/package.json ./packages/config/
-COPY packages/email/package.json ./packages/email/
-COPY packages/env/package.json ./packages/env/
-COPY packages/features/package.json ./packages/features/
-COPY packages/ldap/package.json ./packages/ldap/
-COPY packages/logger/package.json ./packages/logger/
-COPY packages/prisma/package.json ./packages/prisma/
-COPY packages/rest/package.json ./packages/rest/
-COPY packages/trpc/package.json ./packages/trpc/
-COPY packages/user-data/package.json ./packages/user-data/
-COPY packages/workers/package.json ./packages/workers/
+COPY apps ./apps
+COPY packages ./packages
 
 # Install production dependencies only
 RUN bun install --frozen-lockfile --production
@@ -114,10 +86,8 @@ COPY --from=prisma-generate /app/packages/prisma /app/packages/prisma
 
 WORKDIR /app/packages/prisma
 
-# Create non-root user
-RUN addgroup -g 1001 -S bun && \
-    adduser -u 1001 -S bun -G bun && \
-    chown -R bun:bun /app
+# Set ownership for bun user (already exists in base image)
+RUN chown -R bun:bun /app
 
 USER bun
 
@@ -148,10 +118,8 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 
-# Create non-root user
-RUN addgroup -g 1001 -S bun && \
-    adduser -u 1001 -S bun -G bun && \
-    chown -R bun:bun /app
+# Set ownership for bun user (already exists in base image)
+RUN chown -R bun:bun /app
 
 USER bun
 

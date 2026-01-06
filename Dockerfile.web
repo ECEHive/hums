@@ -15,14 +15,11 @@ WORKDIR /app
 # =============================================================================
 FROM base AS deps
 
-# Copy workspace config and lockfile
+# Copy workspace manifests and workspaces
+# .dockerignore ensures node_modules and build outputs are excluded
 COPY package.json bun.lock ./
-
-# Copy package.json files for frontend workspaces
-COPY apps/client/package.json ./apps/client/
-COPY apps/kiosk/package.json ./apps/kiosk/
-COPY packages/config/package.json ./packages/config/
-COPY packages/trpc/package.json ./packages/trpc/
+COPY apps ./apps
+COPY packages ./packages
 
 # Install all dependencies
 RUN bun install --frozen-lockfile
@@ -32,10 +29,7 @@ RUN bun install --frozen-lockfile
 # =============================================================================
 FROM deps AS build-client
 
-# Copy source files
-COPY apps/client ./apps/client
-COPY packages ./packages
-
+# Source files are already present from deps stage
 # Build client
 WORKDIR /app/apps/client
 RUN bun run build
@@ -46,11 +40,13 @@ WORKDIR /app
 # =============================================================================
 FROM deps AS build-kiosk
 
-# Copy source files
-COPY apps/kiosk ./apps/kiosk
+# Source files are already present from deps stage
+# Build kiosk
 COPY packages ./packages
 
 # Build kiosk
+WORKDIR /app/apps/kiosk
+RUN bun run build
 WORKDIR /app/apps/kiosk
 RUN bun run build
 WORKDIR /app
