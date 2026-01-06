@@ -23,35 +23,39 @@ export async function updateHandler(options: TUpdateOptions) {
 	const { id, startDate, endDate, internalNotes, externalNotes } =
 		options.input;
 
-	// Check if suspension exists
-	const existing = await prisma.suspension.findUnique({
-		where: { id },
-	});
-
-	if (!existing) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Suspension not found",
+	// Use a transaction to ensure atomicity and prevent race conditions
+	const suspension = await prisma.$transaction(async (tx) => {
+		// Fetch the latest suspension data within the transaction
+		const existing = await tx.suspension.findUnique({
+			where: { id },
 		});
-	}
 
-	// Validate dates if both are provided
-	const finalStartDate = startDate ?? existing.startDate;
-	const finalEndDate = endDate ?? existing.endDate;
+		if (!existing) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Suspension not found",
+			});
+		}
 
-	if (finalEndDate <= finalStartDate) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "End date must be after start date",
+		// Validate dates using the latest data
+		const finalStartDate = startDate ?? existing.startDate;
+		const finalEndDate = endDate ?? existing.endDate;
+
+		if (finalEndDate < finalStartDate) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: "End date must be after start date",
+			});
+		}
+
+		// Perform the update within the same transaction
+		return await updateSuspension(tx, {
+			id,
+			startDate,
+			endDate,
+			internalNotes,
+			externalNotes,
 		});
-	}
-
-	const suspension = await updateSuspension(prisma, {
-		id,
-		startDate,
-		endDate,
-		internalNotes,
-		externalNotes,
 	});
 
 	return suspension;

@@ -24,7 +24,7 @@ export async function createHandler(options: TCreateOptions) {
 		options.input;
 
 	// Validate that end date is after start date
-	if (endDate <= startDate) {
+	if (endDate < startDate) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
 			message: "End date must be after start date",

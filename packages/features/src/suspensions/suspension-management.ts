@@ -139,32 +139,45 @@ export async function listSuspensions(
 	const { userId, active, search, offset = 0, limit = 50 } = params;
 	const now = new Date();
 
-	const where: Prisma.SuspensionWhereInput = {};
+	const filters: Prisma.SuspensionWhereInput[] = [];
 
 	if (userId !== undefined) {
-		where.userId = userId;
+		filters.push({ userId });
 	}
 
 	if (active !== undefined) {
 		if (active) {
 			// Active suspensions: startDate <= now && endDate > now
-			where.startDate = { lte: now };
-			where.endDate = { gt: now };
+			filters.push({
+				startDate: { lte: now },
+				endDate: { gt: now },
+			});
 		} else {
 			// Inactive suspensions: endDate <= now OR startDate > now
-			where.OR = [{ endDate: { lte: now } }, { startDate: { gt: now } }];
+			filters.push({
+				OR: [{ endDate: { lte: now } }, { startDate: { gt: now } }],
+			});
 		}
 	}
 
 	if (search) {
-		where.OR = [
-			{ user: { name: { contains: search, mode: "insensitive" } } },
-			{ user: { username: { contains: search, mode: "insensitive" } } },
-			{ user: { email: { contains: search, mode: "insensitive" } } },
-			{ internalNotes: { contains: search, mode: "insensitive" } },
-			{ externalNotes: { contains: search, mode: "insensitive" } },
-		];
+		filters.push({
+			OR: [
+				{ user: { name: { contains: search, mode: "insensitive" } } },
+				{ user: { username: { contains: search, mode: "insensitive" } } },
+				{ user: { email: { contains: search, mode: "insensitive" } } },
+				{ internalNotes: { contains: search, mode: "insensitive" } },
+				{ externalNotes: { contains: search, mode: "insensitive" } },
+			],
+		});
 	}
+
+	const where: Prisma.SuspensionWhereInput =
+		filters.length === 0
+			? {}
+			: filters.length === 1
+				? filters[0]
+				: { AND: filters };
 
 	const [suspensions, total] = await Promise.all([
 		tx.suspension.findMany({

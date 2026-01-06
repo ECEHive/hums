@@ -95,7 +95,7 @@ export function SuspensionUpdateDialog({
 					return;
 				}
 
-				if (endDate <= startDate) {
+				if (endDate < startDate) {
 					setServerError("End date must be after start date");
 					return;
 				}

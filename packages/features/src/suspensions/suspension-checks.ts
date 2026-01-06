@@ -108,6 +108,7 @@ export async function getSuspensionsStartingSoon(
 		where: {
 			emailSentAt: null,
 			startDate: {
+				gt: now,
 				lte: cutoff,
 			},
 		},

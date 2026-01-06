@@ -63,8 +63,8 @@ export function SuspensionNoticeEmail({
 			</div>
 
 			<p>
-				During this suspension period, you will not be able visit or utilize The
-				Hive.
+				During this suspension period, you will not be able to visit or utilize
+				The Hive.
 			</p>
 
 			{externalNotes && (
