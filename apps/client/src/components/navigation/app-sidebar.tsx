@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+	BanIcon,
 	BugIcon,
 	CalendarIcon,
 	ChevronRightIcon,
@@ -54,6 +55,7 @@ import { permissions as appIndexPagePermissions } from "@/routes/app/index";
 import { permissions as kiosksPagePermissions } from "@/routes/app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/roles";
 import { permissions as sessionsPagePermissions } from "@/routes/app/sessions";
+import { permissions as suspensionsPagePermissions } from "@/routes/app/suspensions";
 import { permissions as usersPagePermissions } from "@/routes/app/users";
 
 // Sidebar menu items, grouped by section
@@ -110,6 +112,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app/users",
 				icon: UserIcon,
 				permissions: usersPagePermissions,
+			},
+			{
+				title: "Suspensions",
+				url: "/app/suspensions",
+				icon: BanIcon,
+				permissions: suspensionsPagePermissions,
 			},
 			{
 				title: "Agreements",
