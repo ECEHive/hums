@@ -47,8 +47,6 @@ COPY packages ./packages
 # Build kiosk
 WORKDIR /app/apps/kiosk
 RUN bun run build
-WORKDIR /app/apps/kiosk
-RUN bun run build
 WORKDIR /app
 
 # =============================================================================
