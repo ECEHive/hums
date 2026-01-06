@@ -46,6 +46,16 @@ RUN bun run build
 WORKDIR /app
 
 # =============================================================================
+# Build Dashboard Stage
+# =============================================================================
+FROM deps AS build-dashboard
+
+# Build dashboard
+WORKDIR /app/apps/dashboard
+RUN bun run build
+WORKDIR /app
+
+# =============================================================================
 # Production NGINX Image
 # =============================================================================
 FROM nginx:alpine AS web
@@ -53,6 +63,7 @@ FROM nginx:alpine AS web
 # Copy built static files
 COPY --from=build-client /app/apps/client/dist /usr/share/nginx/html/client
 COPY --from=build-kiosk /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
+COPY --from=build-dashboard /app/apps/dashboard/dist /usr/share/nginx/html/dashboard
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
