@@ -1,4 +1,4 @@
-import { getActiveSuspension } from "@ecehive/features";
+import { checkMissingAgreements, getActiveSuspension } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -113,6 +113,16 @@ export async function useHandler(options: TUseOptions) {
 						code: "FORBIDDEN",
 						message:
 							"Your access has been suspended. You cannot start a session at this time.",
+					});
+				}
+
+				// Check if user has agreed to all enabled agreements
+				const missingAgreements = await checkMissingAgreements(tx, userId);
+				if (missingAgreements.length > 0) {
+					throw new TRPCError({
+						code: "PRECONDITION_FAILED",
+						message:
+							"You must agree to all required agreements before starting a session.",
 					});
 				}
 
