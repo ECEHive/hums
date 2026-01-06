@@ -4,11 +4,13 @@ import { AgreementFlow } from "@/components/agreement-flow";
 import { ErrorDialog } from "@/components/error-dialog";
 import type { SelectionOverlayOption } from "@/components/session-type-selector";
 import { SelectionOverlay } from "@/components/session-type-selector";
+import { SuspensionDialog } from "@/components/suspension-dialog";
 import { TapNotification } from "@/components/tap-notification";
 import type {
 	ErrorDialogState,
 	PendingAgreementState,
 	SessionTypeSelectionState,
+	SuspensionState,
 	TapNotificationState,
 	TapOutActionSelectionState,
 } from "@/hooks/use-tap-workflow";
@@ -20,6 +22,7 @@ interface FlowOverlaysProps {
 	tapOutActionSelection: TapOutActionSelectionState | null;
 	pendingAgreement: PendingAgreementState | null;
 	tapNotification: TapNotificationState;
+	suspension: SuspensionState | null;
 	onSessionTypeSelect: (type: "regular" | "staffing") => void;
 	onSessionTypeCancel: () => void;
 	onTapOutActionSelect: (
@@ -38,6 +41,7 @@ export function FlowOverlays({
 	tapOutActionSelection,
 	pendingAgreement,
 	tapNotification,
+	suspension,
 	onSessionTypeSelect,
 	onSessionTypeCancel,
 	onTapOutActionSelect,
@@ -51,7 +55,8 @@ export function FlowOverlays({
 		!!errorDialog.message ||
 		!!pendingAgreement ||
 		!!sessionTypeSelection ||
-		!!tapOutActionSelection;
+		!!tapOutActionSelection ||
+		!!suspension;
 
 	type OverlayConfig = {
 		key: "session" | "tapout";
@@ -165,6 +170,15 @@ export function FlowOverlays({
 				<ErrorDialog
 					message={errorDialog.message}
 					isExiting={errorDialog.isExiting}
+				/>
+			)}
+
+			{suspension && (
+				<SuspensionDialog
+					userName={suspension.userName}
+					endDate={suspension.endDate}
+					externalNotes={suspension.externalNotes}
+					isExiting={suspension.isExiting}
 				/>
 			)}
 
