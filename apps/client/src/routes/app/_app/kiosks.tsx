@@ -1,10 +1,11 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Filter } from "lucide-react";
 import React from "react";
-import { RequirePermissions, useAuth } from "@/auth";
+import { RequirePermissions } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
+import { generateColumns } from "@/components/kiosks/columns";
+import { CreateDialog } from "@/components/kiosks/create-dialog";
 import {
 	Page,
 	PageActions,
@@ -20,26 +21,21 @@ import {
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
-import { Button } from "@/components/ui/button";
-import type { Role } from "@/components/users/columns";
-import { generateColumns } from "@/components/users/columns";
-import { CreateDialog } from "@/components/users/create-dialog";
-import { FilterDialog } from "@/components/users/filter-dialog";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
-export const Route = createFileRoute("/app/users")({
+export const Route = createFileRoute("/app/_app/kiosks")({
 	component: () =>
 		RequirePermissions({
 			permissions,
-			children: <Users />,
+			children: <Kiosks />,
 			forbiddenFallback: <MissingPermissions />,
 		}),
 });
 
-export const permissions = ["users.list"];
+export const permissions = ["kiosks.list"];
 
-function Users() {
+function Kiosks() {
 	const {
 		page,
 		setPage,
@@ -51,45 +47,36 @@ function Users() {
 		debouncedSearch,
 		resetToFirstPage,
 	} = useTableState();
-	const [filterRoles, setFilterRoles] = React.useState<Role[]>([]);
 
 	const queryParams = React.useMemo(() => {
 		return {
 			search:
 				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
 			offset,
-			filterRoles,
 			limit: pageSize,
 		};
-	}, [debouncedSearch, offset, pageSize, filterRoles]);
+	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { users: [], total: 0 }, isLoading } = useQuery({
-		// filterRoles needs to be an array of IDs for the query key to work properly
-		queryKey: [
-			"users",
-			{ ...queryParams, filterRoles: filterRoles.map((r) => r.id) },
-		],
+	const { data = { kiosks: [], count: 0 }, isLoading } = useQuery({
+		queryKey: ["kiosks", queryParams],
 		queryFn: async () => {
-			return await trpc.users.list.query({
-				...queryParams,
-				filterRoles: filterRoles.map((r) => r.id),
-			});
+			return await trpc.kiosks.list.query(queryParams);
 		},
 		retry: false,
 	});
 
-	const columns = generateColumns(useAuth().user);
+	const columns = generateColumns();
 	const { totalPages } = usePaginationInfo({
-		total: data.total,
+		total: data.count,
 		pageSize,
 		offset,
-		currentCount: data.users.length,
+		currentCount: data.kiosks.length,
 	});
 
 	return (
 		<Page>
 			<PageHeader>
-				<PageTitle>Users</PageTitle>
+				<PageTitle>Kiosks</PageTitle>
 				<PageActions>
 					<CreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
@@ -99,20 +86,8 @@ function Users() {
 				<TableContainer>
 					<TableToolbar>
 						<TableSearchInput>
-							<FilterDialog
-								onFilterChange={(newFilterRoles) => {
-									setFilterRoles(newFilterRoles);
-									resetToFirstPage();
-								}}
-								filterRoles={filterRoles}
-								trigger={
-									<Button variant="outline" size="icon">
-										<Filter className="size-4" />
-									</Button>
-								}
-							/>
 							<SearchInput
-								placeholder="Search users..."
+								placeholder="Search kiosks..."
 								value={search}
 								onChange={(value) => {
 									setSearch(value);
@@ -124,10 +99,10 @@ function Users() {
 
 					<DataTable
 						columns={columns}
-						data={data.users}
+						data={data.kiosks}
 						isLoading={isLoading}
-						emptyMessage="No users found"
-						emptyDescription="Try adjusting your search or filters"
+						emptyMessage="No kiosks found"
+						emptyDescription="Try adjusting your search"
 					/>
 
 					<TablePaginationFooter
@@ -135,9 +110,9 @@ function Users() {
 						totalPages={totalPages}
 						onPageChange={setPage}
 						offset={offset}
-						currentCount={data.users.length}
-						total={data.total}
-						itemName="users"
+						currentCount={data.kiosks.length}
+						total={data.count}
+						itemName="kiosks"
 						pageSize={pageSize}
 						onPageSizeChange={(size) => {
 							setPageSize(size);

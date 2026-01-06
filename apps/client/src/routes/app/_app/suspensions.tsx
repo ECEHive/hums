@@ -2,7 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import React from "react";
-import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
+import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
@@ -14,28 +14,28 @@ import {
 	TableSearchInput,
 	TableToolbar,
 } from "@/components/layout";
-import { generateColumns } from "@/components/roles/columns";
-import { CreateDialog } from "@/components/roles/create-dialog";
 import {
 	DataTable,
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
+import { generateColumns } from "@/components/suspensions/columns";
+import { SuspensionCreateDialog } from "@/components/suspensions/create-dialog";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
-export const Route = createFileRoute("/app/roles")({
+export const Route = createFileRoute("/app/_app/suspensions")({
 	component: () =>
 		RequirePermissions({
 			permissions,
-			children: <Roles />,
+			children: <Suspensions />,
 			forbiddenFallback: <MissingPermissions />,
 		}),
 });
 
-export const permissions = ["roles.list"];
+export const permissions = ["suspensions.list"];
 
-function Roles() {
+function Suspensions() {
 	const {
 		page,
 		setPage,
@@ -57,10 +57,10 @@ function Roles() {
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { roles: [], total: 0 }, isLoading } = useQuery({
-		queryKey: ["roles", queryParams],
+	const { data = { suspensions: [], total: 0 }, isLoading } = useQuery({
+		queryKey: ["suspensions", queryParams],
 		queryFn: async () => {
-			return await trpc.roles.list.query(queryParams);
+			return await trpc.suspensions.list.query(queryParams);
 		},
 		retry: false,
 	});
@@ -70,15 +70,15 @@ function Roles() {
 		total: data.total,
 		pageSize,
 		offset,
-		currentCount: data.roles.length,
+		currentCount: data.suspensions.length,
 	});
 
 	return (
 		<Page>
 			<PageHeader>
-				<PageTitle>Roles</PageTitle>
+				<PageTitle>Suspensions</PageTitle>
 				<PageActions>
-					<CreateDialog />
+					<SuspensionCreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
 			</PageHeader>
 
@@ -87,7 +87,7 @@ function Roles() {
 					<TableToolbar>
 						<TableSearchInput>
 							<SearchInput
-								placeholder="Search roles..."
+								placeholder="Search suspensions..."
 								value={search}
 								onChange={(value) => {
 									setSearch(value);
@@ -99,10 +99,10 @@ function Roles() {
 
 					<DataTable
 						columns={columns}
-						data={data.roles}
+						data={data.suspensions}
 						isLoading={isLoading}
-						emptyMessage="No roles found"
-						emptyDescription="Try adjusting your search"
+						emptyMessage="No suspensions found"
+						emptyDescription="Create a suspension to restrict user access"
 					/>
 
 					<TablePaginationFooter
@@ -110,9 +110,9 @@ function Roles() {
 						totalPages={totalPages}
 						onPageChange={setPage}
 						offset={offset}
-						currentCount={data.roles.length}
+						currentCount={data.suspensions.length}
 						total={data.total}
-						itemName="roles"
+						itemName="suspensions"
 						pageSize={pageSize}
 						onPageSizeChange={(size) => {
 							setPageSize(size);

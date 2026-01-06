@@ -42,7 +42,7 @@ import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import { checkPermissions } from "@/lib/permissions";
 
-export const Route = createFileRoute("/app/sessions")({
+export const Route = createFileRoute("/app/_app/sessions")({
 	component: () =>
 		RequirePermissions({
 			permissions,

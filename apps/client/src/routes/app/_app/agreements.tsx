@@ -24,7 +24,7 @@ import {
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
-export const Route = createFileRoute("/app/agreements")({
+export const Route = createFileRoute("/app/_app/agreements")({
 	component: () =>
 		RequirePermissions({
 			permissions,

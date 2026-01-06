@@ -40,7 +40,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 
-export const Route = createFileRoute("/app/my-agreements")({
+export const Route = createFileRoute("/app/_app/my-agreements")({
 	component: () => <RequireAuth>{<MyAgreements />}</RequireAuth>,
 });
 

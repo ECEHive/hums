@@ -111,7 +111,7 @@ type AttendanceData = Awaited<
 	ReturnType<typeof trpc.shiftAttendances.listForUser.query>
 >;
 
-export const Route = createFileRoute("/shifts/manage-users")({
+export const Route = createFileRoute("/app/shifts/manage-users")({
 	component: () =>
 		RequirePermissions({
 			permissions,

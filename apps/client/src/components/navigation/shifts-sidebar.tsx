@@ -46,16 +46,16 @@ import {
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
-import { permissions as attendancePagePermissions } from "@/routes/shifts/attendance";
-import { permissions as shiftsIndexPagePermissions } from "@/routes/shifts/index";
-import { permissions as manageUsersPagePermissions } from "@/routes/shifts/manage-users";
-import { permissions as myShiftsPagePermissions } from "@/routes/shifts/my-shifts";
-import { permissions as periodDetailsPagePermissions } from "@/routes/shifts/period-details";
-import { permissions as periodExceptionsPagePermissions } from "@/routes/shifts/period-exceptions";
-import { permissions as reportsPagePermissions } from "@/routes/shifts/reports";
-import { permissions as schedulingPagePermissions } from "@/routes/shifts/scheduling";
-import { permissions as shiftSchedulesPagePermissions } from "@/routes/shifts/shift-schedules";
-import { permissions as shiftTypesPagePermissions } from "@/routes/shifts/shift-types";
+import { permissions as attendancePagePermissions } from "@/routes/app/shifts/attendance";
+import { permissions as shiftsIndexPagePermissions } from "@/routes/app/shifts/index";
+import { permissions as manageUsersPagePermissions } from "@/routes/app/shifts/manage-users";
+import { permissions as myShiftsPagePermissions } from "@/routes/app/shifts/my-shifts";
+import { permissions as periodDetailsPagePermissions } from "@/routes/app/shifts/period-details";
+import { permissions as periodExceptionsPagePermissions } from "@/routes/app/shifts/period-exceptions";
+import { permissions as reportsPagePermissions } from "@/routes/app/shifts/reports";
+import { permissions as schedulingPagePermissions } from "@/routes/app/shifts/scheduling";
+import { permissions as shiftSchedulesPagePermissions } from "@/routes/app/shifts/shift-schedules";
+import { permissions as shiftTypesPagePermissions } from "@/routes/app/shifts/shift-types";
 
 // Sidebar menu items, grouped by section
 export const items = [
@@ -64,28 +64,28 @@ export const items = [
 		items: [
 			{
 				title: "Home",
-				url: "/shifts",
+				url: "/app/shifts",
 				icon: HomeIcon,
 				permissions: shiftsIndexPagePermissions,
 				allowWithShiftAccess: true,
 			},
 			{
 				title: "Scheduling",
-				url: "/shifts/scheduling",
+				url: "/app/shifts/scheduling",
 				icon: CalendarIcon,
 				permissions: schedulingPagePermissions,
 				allowWithShiftAccess: true,
 			},
 			{
 				title: "My Shifts",
-				url: "/shifts/my-shifts",
+				url: "/app/shifts/my-shifts",
 				icon: ClipboardListIcon,
 				permissions: myShiftsPagePermissions,
 				allowWithShiftAccess: true,
 			},
 			{
 				title: "Attendance",
-				url: "/shifts/attendance",
+				url: "/app/shifts/attendance",
 				icon: CalendarCheckIcon,
 				permissions: attendancePagePermissions,
 				allowWithShiftAccess: true,
@@ -97,37 +97,37 @@ export const items = [
 		items: [
 			{
 				title: "Period Details",
-				url: "/shifts/period-details",
+				url: "/app/shifts/period-details",
 				icon: CalendarIcon,
 				permissions: periodDetailsPagePermissions,
 			},
 			{
 				title: "Period Exceptions",
-				url: "/shifts/period-exceptions",
+				url: "/app/shifts/period-exceptions",
 				icon: CalendarXIcon,
 				permissions: periodExceptionsPagePermissions,
 			},
 			{
 				title: "Shift Types",
-				url: "/shifts/shift-types",
+				url: "/app/shifts/shift-types",
 				icon: ListIcon,
 				permissions: shiftTypesPagePermissions,
 			},
 			{
 				title: "Shift Schedules",
-				url: "/shifts/shift-schedules",
+				url: "/app/shifts/shift-schedules",
 				icon: ClockIcon,
 				permissions: shiftSchedulesPagePermissions,
 			},
 			{
 				title: "Manage Users",
-				url: "/shifts/manage-users",
+				url: "/app/shifts/manage-users",
 				icon: ShieldCheckIcon,
 				permissions: manageUsersPagePermissions,
 			},
 			{
 				title: "Reports",
-				url: "/shifts/reports",
+				url: "/app/shifts/reports",
 				icon: NotebookTextIcon,
 				permissions: reportsPagePermissions,
 			},

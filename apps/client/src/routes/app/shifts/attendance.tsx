@@ -31,7 +31,7 @@ import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import type { RequiredPermissions } from "@/lib/permissions";
 
-export const Route = createFileRoute("/shifts/attendance")({
+export const Route = createFileRoute("/app/shifts/attendance")({
 	component: () => (
 		<RequireShiftAccess>
 			<AttendancePage />

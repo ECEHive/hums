@@ -44,7 +44,7 @@ const QUICK_LINKS: QuickLink[] = [
 	},
 	{
 		title: "Shift Reports",
-		to: "/shifts/reports",
+		to: "/app/shifts/reports",
 		icon: FileBarChartIcon,
 		weight: 90,
 		condition: ({ user, hasActivePeriod }) =>
@@ -52,7 +52,7 @@ const QUICK_LINKS: QuickLink[] = [
 	},
 	{
 		title: "Register for Shifts",
-		to: "/shifts/scheduling",
+		to: "/app/shifts/scheduling",
 		icon: UserPlusIcon,
 		weight: 80,
 		condition: ({ canAccessShifts, hasActivePeriod }) =>
@@ -60,7 +60,7 @@ const QUICK_LINKS: QuickLink[] = [
 	},
 	{
 		title: "My Attendance",
-		to: "/shifts/attendance",
+		to: "/app/shifts/attendance",
 		icon: CalendarCheckIcon,
 		weight: 70,
 		condition: ({ canAccessShifts, hasActivePeriod }) =>

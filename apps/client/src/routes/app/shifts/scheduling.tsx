@@ -50,7 +50,7 @@ import {
 import type { RequiredPermissions } from "@/lib/permissions";
 import { formatInAppTimezone, formatTimeRange } from "@/lib/timezone";
 
-export const Route = createFileRoute("/shifts/scheduling")({
+export const Route = createFileRoute("/app/shifts/scheduling")({
 	component: () => (
 		<RequireShiftAccess>
 			<Scheduling />

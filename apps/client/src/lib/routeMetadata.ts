@@ -91,48 +91,48 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		breadcrumb: "Configuration",
 	},
 
-	// Shifts Routes
-	"/shifts": {
+	// Shifts Routes (under /app/shifts)
+    "/app/shifts": {
 		title: "Shifts",
 		breadcrumb: "Shifts",
 	},
-	"/shifts/": {
-		title: "Shifts Dashboard",
+	"/app/shifts/": {
+		title: "Shifts",
 		breadcrumb: "Dashboard",
 	},
-	"/shifts/shift-schedules": {
+	"/app/shifts/shift-schedules": {
 		title: "Shift Schedules",
 		breadcrumb: "Shift Schedules",
 	},
-	"/shifts/scheduling": {
+	"/app/shifts/scheduling": {
 		title: "Scheduling",
 		breadcrumb: "Scheduling",
 	},
-	"/shifts/shift-types": {
+	"/app/shifts/shift-types": {
 		title: "Shift Types",
 		breadcrumb: "Shift Types",
 	},
-	"/shifts/period-exceptions": {
+	"/app/shifts/period-exceptions": {
 		title: "Period Exceptions",
 		breadcrumb: "Period Exceptions",
 	},
-	"/shifts/period-details": {
+	"/app/shifts/period-details": {
 		title: "Period Details",
 		breadcrumb: "Period Details",
 	},
-	"/shifts/manage-users": {
+	"/app/shifts/manage-users": {
 		title: "Manage Users",
 		breadcrumb: "Manage Users",
 	},
-	"/shifts/my-shifts": {
+	"/app/shifts/my-shifts": {
 		title: "My Shifts",
 		breadcrumb: "My Shifts",
 	},
-	"/shifts/attendance": {
+	"/app/shifts/attendance": {
 		title: "Attendance",
 		breadcrumb: "Attendance",
 	},
-	"/shifts/reports": {
+	"/app/shifts/reports": {
 		title: "Reports",
 		breadcrumb: "Reports",
 	},

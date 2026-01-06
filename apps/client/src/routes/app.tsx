@@ -1,23 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AgreementsBanner } from "@/components/banners/agreements-banner";
-import { ImpersonationBanner } from "@/components/banners/impersonate-banner";
-import { AppShell } from "@/components/layout";
-import { AppSidebar } from "@/components/navigation/app-sidebar";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/app")({
-	component: AppLayout,
+	component: AppRoot,
 });
 
-function AppLayout() {
-	return (
-		<AppShell
-			sidebar={<AppSidebar />}
-			banners={
-				<>
-					<ImpersonationBanner />
-					<AgreementsBanner />
-				</>
-			}
-		/>
-	);
+function AppRoot() {
+	return <Outlet />;
 }

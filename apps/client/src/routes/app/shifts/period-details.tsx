@@ -23,7 +23,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 import { formatInAppTimezone } from "@/lib/timezone";
 
-export const Route = createFileRoute("/shifts/period-details")({
+export const Route = createFileRoute("/app/shifts/period-details")({
 	component: () =>
 		RequirePermissions({
 			permissions,
