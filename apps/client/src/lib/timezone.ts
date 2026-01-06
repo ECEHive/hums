@@ -21,10 +21,15 @@ export function getAppTimezone(): string {
 	return getConfig()?.timezone ?? "America/New_York";
 }
 
-// For backwards compatibility, export a getter that always returns current value
-export const APP_TZ = "America/New_York"; // Default, but prefer getAppTimezone() for dynamic access
 export const USER_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
-export const isUserInAppTimezone = APP_TZ === USER_TZ;
+
+/**
+ * Check if the user's browser timezone matches the application timezone.
+ * This is computed dynamically based on runtime configuration.
+ */
+export function isUserInAppTimezone(): boolean {
+	return getAppTimezone() === USER_TZ;
+}
 
 const DEFAULT_DATE_TIME_FORMAT = "MMM D, YYYY h:mm A";
 const DEFAULT_DATE_FORMAT = "MMM D, YYYY";
@@ -51,10 +56,11 @@ function getFormatter(timeZone: string) {
 }
 
 function getAbbreviation(day: Dayjs) {
+	const appTz = getAppTimezone();
 	return (
-		getFormatter(APP_TZ)
+		getFormatter(appTz)
 			.formatToParts(day.toDate())
-			.find((part) => part.type === "timeZoneName")?.value ?? APP_TZ
+			.find((part) => part.type === "timeZoneName")?.value ?? appTz
 	);
 }
 
@@ -62,20 +68,19 @@ function toAppDayjs(
 	value: DateInput,
 	options?: { treatAsLocalInput?: boolean },
 ) {
+	const appTz = getAppTimezone();
 	if (dayjsLib.isDayjs(value)) {
-		return options?.treatAsLocalInput
-			? value.tz(APP_TZ, true)
-			: value.tz(APP_TZ);
+		return options?.treatAsLocalInput ? value.tz(appTz, true) : value.tz(appTz);
 	}
 
 	const instance = dayjsLib(value);
 	return options?.treatAsLocalInput
-		? instance.tz(APP_TZ, true)
-		: instance.tz(APP_TZ);
+		? instance.tz(appTz, true)
+		: instance.tz(appTz);
 }
 
 function shouldAnnotateTimezone(include?: boolean) {
-	return (include ?? true) && !isUserInAppTimezone;
+	return (include ?? true) && !isUserInAppTimezone();
 }
 
 export function getAppTimezoneAbbreviation(
@@ -84,7 +89,7 @@ export function getAppTimezoneAbbreviation(
 ) {
 	const source = date
 		? toAppDayjs(date, { treatAsLocalInput: options?.treatAsLocalInput })
-		: dayjsLib().tz(APP_TZ);
+		: dayjsLib().tz(getAppTimezone());
 	return getAbbreviation(source);
 }
 
@@ -243,7 +248,7 @@ export function formatLocalRange(
 }
 
 export function getAppTimezoneDisplayLabel() {
-	return `${getAppTimezoneAbbreviation()} (${APP_TZ})`;
+	return `${getAppTimezoneAbbreviation()} (${getAppTimezone()})`;
 }
 
 export { dayjsLib as dayjs };
