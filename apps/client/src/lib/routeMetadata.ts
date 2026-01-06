@@ -66,10 +66,6 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Agreements",
 		breadcrumb: "Agreements",
 	},
-	"/app/periods": {
-		title: "Periods",
-		breadcrumb: "Periods",
-	},
 	"/app/api-tokens": {
 		title: "API Tokens",
 		breadcrumb: "API Tokens",

@@ -14,7 +14,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppShiftsRouteImport } from './routes/app/shifts'
-import { Route as AppAppLayoutRouteImport } from './routes/app/_appLayout'
 import { Route as AppAppRouteImport } from './routes/app/_app'
 import { Route as AppShiftsIndexRouteImport } from './routes/app/shifts/index'
 import { Route as AppAppIndexRouteImport } from './routes/app/_app/index'
@@ -62,10 +61,6 @@ const IndexRoute = IndexRouteImport.update({
 const AppShiftsRoute = AppShiftsRouteImport.update({
   id: '/shifts',
   path: '/shifts',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAppLayoutRoute = AppAppLayoutRouteImport.update({
-  id: '/_appLayout',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAppRoute = AppAppRouteImport.update({
@@ -186,7 +181,7 @@ const AppAppAgreementsRoute = AppAppAgreementsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppAppLayoutRoute
+  '/app': typeof AppAppRouteWithChildren
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/shifts': typeof AppShiftsRouteWithChildren
@@ -247,7 +242,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/_app': typeof AppAppRouteWithChildren
-  '/app/_appLayout': typeof AppAppLayoutRoute
   '/app/shifts': typeof AppShiftsRouteWithChildren
   '/app/_app/agreements': typeof AppAppAgreementsRoute
   '/app/_app/api-tokens': typeof AppAppApiTokensRoute
@@ -336,7 +330,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/ota-session-login'
     | '/app/_app'
-    | '/app/_appLayout'
     | '/app/shifts'
     | '/app/_app/agreements'
     | '/app/_app/api-tokens'
@@ -404,13 +397,6 @@ declare module '@tanstack/react-router' {
       path: '/shifts'
       fullPath: '/app/shifts'
       preLoaderRoute: typeof AppShiftsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/_appLayout': {
-      id: '/app/_appLayout'
-      path: ''
-      fullPath: '/app'
-      preLoaderRoute: typeof AppAppLayoutRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/_app': {
@@ -642,13 +628,11 @@ const AppShiftsRouteWithChildren = AppShiftsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAppRoute: typeof AppAppRouteWithChildren
-  AppAppLayoutRoute: typeof AppAppLayoutRoute
   AppShiftsRoute: typeof AppShiftsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRouteWithChildren,
-  AppAppLayoutRoute: AppAppLayoutRoute,
   AppShiftsRoute: AppShiftsRouteWithChildren,
 }
 
