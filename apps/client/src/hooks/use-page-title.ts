@@ -1,41 +1,34 @@
-import { useMatches } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { formatPageTitle, getPageTitle } from "@/lib/routeMetadata";
 
 /**
- * Custom hook to automatically update the browser tab title based on the current route
+ * Custom hook to automatically update the browser tab title based on the current URL path
  *
- * Finds the deepest route match and uses its title from the route metadata.
+ * Uses the URL pathname to look up the page title from route metadata.
  * Formats the title as "HUMS - {Page Title}"
  *
  * @example
  * ```tsx
  * function MyPage() {
- *   usePageTitle(); // Will automatically set the page title
+ *   usePageTitle(); // Will automatically set the page title based on current URL
  *   return <div>Content</div>;
  * }
  * ```
  */
 export function usePageTitle() {
-	const matches = useMatches();
+	const location = useLocation();
+	const pathname = location.pathname;
 
 	useEffect(() => {
-		// Get the deepest route match (last non-root route)
-		const currentRoute = matches
-			.filter((match) => match.routeId !== "__root__")
-			.pop();
+		// Look up title based on URL path
+		const title = getPageTitle(pathname);
 
-		if (currentRoute) {
-			const title = getPageTitle(currentRoute.routeId);
-			if (title) {
-				document.title = formatPageTitle(title);
-			} else {
-				// Fallback to default title if no metadata found
-				document.title = "HUMS - Hive User Management System";
-			}
+		if (title) {
+			document.title = formatPageTitle(title);
 		} else {
-			// Fallback for root route
+			// Fallback to default title if no metadata found
 			document.title = "HUMS - Hive User Management System";
 		}
-	}, [matches]);
+	}, [pathname]);
 }

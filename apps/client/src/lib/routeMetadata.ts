@@ -2,7 +2,7 @@
  * Centralized route metadata configuration
  *
  * This file contains all page titles and breadcrumb labels for the application.
- * Route IDs correspond to TanStack Router route IDs.
+ * Keys are URL paths (not internal route IDs).
  *
  * Format:
  * - title: Used for browser tab title (will be prefixed with "HUMS - ")
@@ -15,8 +15,8 @@ export interface RouteMetadata {
 }
 
 /**
- * Map of route IDs to their metadata
- * Route IDs match TanStack Router's route structure (e.g., "/app/users", "/shifts/attendance")
+ * Map of URL paths to their metadata
+ * Keys should match the actual URL paths users see in the browser
  */
 export const routeMetadata: Record<string, RouteMetadata> = {
 	// Root and Auth Routes
@@ -37,10 +37,6 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 	"/app": {
 		title: "Home",
 		breadcrumb: "Home",
-	},
-	"/app/": {
-		title: "Dashboard",
-		breadcrumb: "Dashboard",
 	},
 	"/app/users": {
 		title: "Users",
@@ -91,14 +87,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		breadcrumb: "Configuration",
 	},
 
-	// Shifts Routes (under /app/shifts)
-    "/app/shifts": {
+	// Shifts Routes
+	"/app/shifts": {
 		title: "Shifts",
 		breadcrumb: "Shifts",
-	},
-	"/app/shifts/": {
-		title: "Shifts",
-		breadcrumb: "Dashboard",
 	},
 	"/app/shifts/shift-schedules": {
 		title: "Shift Schedules",
@@ -139,30 +131,30 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 };
 
 /**
- * Get route metadata for a given route ID
- * @param routeId - The TanStack Router route ID
+ * Get route metadata for a given URL path
+ * @param path - The URL path (e.g., "/app/users")
  * @returns Route metadata or undefined if not found
  */
-export function getRouteMetadata(routeId: string): RouteMetadata | undefined {
-	return routeMetadata[routeId];
+export function getRouteMetadata(path: string): RouteMetadata | undefined {
+	return routeMetadata[path];
 }
 
 /**
- * Get the page title for a route (without the "HUMS - " prefix)
- * @param routeId - The TanStack Router route ID
+ * Get the page title for a URL path (without the "HUMS - " prefix)
+ * @param path - The URL path
  * @returns Page title or undefined if not found
  */
-export function getPageTitle(routeId: string): string | undefined {
-	return routeMetadata[routeId]?.title;
+export function getPageTitle(path: string): string | undefined {
+	return routeMetadata[path]?.title;
 }
 
 /**
- * Get the breadcrumb label for a route
- * @param routeId - The TanStack Router route ID
+ * Get the breadcrumb label for a URL path
+ * @param path - The URL path
  * @returns Breadcrumb label or undefined if not found
  */
-export function getBreadcrumbLabel(routeId: string): string | undefined {
-	return routeMetadata[routeId]?.breadcrumb;
+export function getBreadcrumbLabel(path: string): string | undefined {
+	return routeMetadata[path]?.breadcrumb;
 }
 
 /**
