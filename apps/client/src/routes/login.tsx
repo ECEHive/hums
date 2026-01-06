@@ -112,28 +112,35 @@ function Login() {
 		if (!service) return;
 		if (!config) return;
 
-		const redirect = encodeURIComponent(service);
-		if (authProvider === "CAS") {
-			const loginUrl = config.casLoginUrl;
-			if (!loginUrl) {
-				console.error("casLoginUrl must be configured for CAS login.");
-				return;
+		switch (authProvider) {
+			case "CAS_PROXIED": {
+				const proxyUrl = config.casProxyUrl;
+				if (!proxyUrl) {
+					console.error(
+						"casProxyUrl must be configured for CAS_PROXIED login.",
+					);
+					return;
+				}
+				const casProxyLoginUrl = new URL(proxyUrl);
+				casProxyLoginUrl.searchParams.set("service", service);
+				window.location.href = casProxyLoginUrl.toString();
+				break;
 			}
-			const casLoginUrl = new URL(loginUrl);
-			casLoginUrl.searchParams.set("service", service);
-			window.location.href = casLoginUrl.toString();
-			return;
+			case "CAS": {
+				const loginUrl = config.casLoginUrl;
+				if (!loginUrl) {
+					console.error("casLoginUrl must be configured for CAS login.");
+					return;
+				}
+				const casLoginUrl = new URL(loginUrl);
+				casLoginUrl.searchParams.set("service", service);
+				window.location.href = casLoginUrl.toString();
+				break;
+			}
+			default:
+				console.error("Unsupported auth provider:", authProvider);
+				return;
 		}
-
-		const proxyUrl = config.casProxyUrl;
-		if (!proxyUrl) {
-			console.error(
-				"casProxyUrl must be configured when using CAS_PROXIED auth.",
-			);
-			return;
-		}
-		const casUrl = `${proxyUrl}?redirect=${redirect}`;
-		window.location.href = casUrl;
 	};
 
 	return (
