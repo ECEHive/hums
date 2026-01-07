@@ -8,6 +8,7 @@ export const ZUpdateSchema = z.object({
 	id: z.number().min(1),
 	name: z.string().min(1).max(100),
 	email: z.email(),
+	slackUsername: z.string().optional(),
 	roleIds: z.array(z.number().min(1)).optional(),
 });
 
@@ -19,13 +20,14 @@ export type TUpdateOptions = {
 };
 
 export async function updateHandler(options: TUpdateOptions) {
-	const { id, name, email, roleIds } = options.input;
+	const { id, name, email, slackUsername, roleIds } = options.input;
 
 	const updated = await prisma.user.update({
 		where: { id },
 		data: {
 			name,
 			email,
+			slackUsername,
 			...(roleIds !== undefined
 				? {
 						roles: {

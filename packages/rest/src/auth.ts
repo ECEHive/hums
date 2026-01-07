@@ -5,7 +5,7 @@ import {
 	createAuditLogger,
 	verifyApiToken,
 } from "@ecehive/features";
-import type { ApiToken } from "@ecehive/prisma";
+import type { ApiToken, User } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { slackError } from "./shared/validation";
@@ -50,7 +50,7 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 			return slackError(
 				reply,
 				"Server misconfiguration",
-				"Slack signing secret not configured",
+				"Slack signing secret not configured.",
 			);
 		}
 
@@ -62,7 +62,7 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 			return slackError(
 				reply,
 				"Unauthorized request",
-				"Missing Slack signature or timestamp headers",
+				"Missing Slack signature or timestamp headers.",
 			);
 		}
 
@@ -72,7 +72,7 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 			return slackError(
 				reply,
 				"Unauthorized request",
-				"Invalid Slack request timestamp",
+				"Invalid Slack request timestamp.",
 			);
 		}
 
@@ -83,7 +83,7 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 			return slackError(
 				reply,
 				"Request expired",
-				"Slack request timestamp is too old",
+				"Slack request timestamp is too old.",
 			);
 		}
 
@@ -125,7 +125,7 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 				return slackError(
 					reply,
 					"Invalid request",
-					"Failed to read Slack request body",
+					"Failed to read Slack request body.",
 				);
 			}
 		}
@@ -161,28 +161,24 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 
 		const user = await prisma.user.findUnique({
 			where: {
-				username: slackUsername,
+				slackUsername: slackUsername,
 			},
 		});
 
 		if (!user) {
-			request.log.warn(
-				{ slackUsername },
-				"Slack command issued by unknown user",
-			);
 			return slackError(
 				reply,
 				"Unauthorized user",
-				`No HUMS user found with Slack username "${slackUsername}"`,
+				`No HUMS user found with Slack username "${slackUsername}".`,
 			);
 		}
 
-		// Attach audit logger to request
-
+		// Attach audit logger and user to request
 		request.audit = createAuditLogger({
 			userId: user.id,
 			source: "slack",
 		});
+		request.user = user;
 	} else {
 		const token = extractToken(request);
 		if (!token) {
@@ -225,5 +221,9 @@ declare module "fastify" {
 		apiToken?: ApiToken;
 		audit?: AuditLogger;
 		rawBody?: string;
+		user?: User;
+	}
+	interface FastifyReply {
+		success: boolean;
 	}
 }

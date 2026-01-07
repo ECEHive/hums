@@ -24,7 +24,8 @@ import { checkPermissions } from "@/lib/permissions";
 const formSchema = z.object({
 	username: z.string().min(1, "Username is required").max(100),
 	name: z.string().max(100),
-	email: z.union([z.email("Invalid email address"), z.literal("")]).optional(),
+	email: z.union([z.email("Invalid email address"), z.literal("")]),
+	slackUsername: z.string(),
 });
 
 type CreateDialogProps = {
@@ -38,7 +39,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const formId = useId();
 
 	const createUserMutation = useMutation({
-		mutationFn: (input: { username: string; name?: string; email?: string }) =>
+		mutationFn: (input: { username: string; name?: string; email?: string; slackUsername?: string }) =>
 			trpc.users.create.mutate(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -50,6 +51,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			username: "",
 			name: "",
 			email: "",
+			slackUsername: "",
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -60,6 +62,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 					username: value.username,
 					name: value.name || undefined,
 					email: value.email || undefined,
+					slackUsername: value.slackUsername || undefined,
 				});
 				setOpen(false);
 				onUpdate?.();
@@ -176,6 +179,29 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 										onChange={(e) => field.handleChange(e.target.value)}
 										placeholder="Enter email address"
 										autoComplete="email"
+									/>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					/>
+					
+					<form.Field
+						name="slackUsername"
+						children={(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Slack Username</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="Enter Slack username"
+										autoComplete="off"
 									/>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>

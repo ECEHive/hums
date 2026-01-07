@@ -52,11 +52,12 @@ model User {
   id Int @id @default(autoincrement())
 
   // fields
-  username     String  @unique
+  username     String   @unique
   name         String
-  email        String  @unique
-  cardNumber   String? @unique
-  isSystemUser Boolean @default(false)
+  email        String   @unique
+  cardNumber   String?  @unique
+  slackUsername String? @unique
+  isSystemUser Boolean  @default(false)
 
   // timestamps
   createdAt DateTime @default(now())

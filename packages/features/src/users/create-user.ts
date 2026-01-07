@@ -13,6 +13,7 @@ export type CreateUserData = {
 	name?: string | null;
 	email?: string | null;
 	cardNumber?: string | null;
+	slackUsername?: string | null;
 	isSystemUser?: boolean;
 	roleIds?: number[];
 };
@@ -33,6 +34,7 @@ export async function createUser(data: CreateUserData) {
 		let name = providedData.name ?? username;
 		let email =
 			providedData.email ?? `${username}@${env.FALLBACK_EMAIL_DOMAIN}`;
+		let slackUsername: string | undefined = providedData.slackUsername ?? undefined;
 		let cardNumber: string | undefined = providedData.cardNumber ?? undefined;
 		const isSystemUser = providedData.isSystemUser ?? false;
 
@@ -56,6 +58,7 @@ export async function createUser(data: CreateUserData) {
 			username,
 			name,
 			email,
+			slackUsername,
 			isSystemUser,
 			...(cardNumber ? { cardNumber } : {}),
 			...(roleIds && roleIds.length > 0

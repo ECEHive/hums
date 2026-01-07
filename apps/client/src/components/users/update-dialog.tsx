@@ -25,6 +25,7 @@ import { checkPermissions } from "@/lib/permissions";
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(100),
 	email: z.email("Email must be valid"),
+	slackUsername: z.string(),
 });
 
 type UpdateDialogProps = {
@@ -33,6 +34,7 @@ type UpdateDialogProps = {
 		username: string;
 		name: string;
 		email: string;
+		slackUsername: string;
 	};
 	onUpdate?: () => void;
 };
@@ -51,12 +53,14 @@ export function UserUpdateDialog({
 			id,
 			name,
 			email,
+			slackUsername,
 		}: {
 			id: number;
 			name: string;
 			email: string;
+			slackUsername: string;
 		}) => {
-			return trpc.users.update.mutate({ id, name, email });
+			return trpc.users.update.mutate({ id, name, email, slackUsername });
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -67,6 +71,7 @@ export function UserUpdateDialog({
 		defaultValues: {
 			name: user.name,
 			email: user.email,
+			slackUsername: user.slackUsername ?? user.username,
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -169,6 +174,29 @@ export function UserUpdateDialog({
 										onChange={(e) => field.handleChange(e.target.value)}
 										placeholder="user@example.com"
 										autoComplete="email"
+									/>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					/>
+
+					<form.Field
+						name="slackUsername"
+						children={(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Slack Username</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="gburdell3"
+										autoComplete="off"
 									/>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>

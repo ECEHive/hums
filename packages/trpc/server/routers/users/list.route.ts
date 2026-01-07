@@ -27,6 +27,7 @@ export async function listHandler(options: TListOptions) {
 			{ name: { contains: search, mode: "insensitive" } },
 			{ username: { contains: search, mode: "insensitive" } },
 			{ email: { contains: search, mode: "insensitive" } },
+			{ slackUsername: { contains: search, mode: "insensitive" } },
 		];
 	}
 
