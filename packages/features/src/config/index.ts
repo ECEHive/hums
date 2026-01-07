@@ -11,3 +11,4 @@ export * from "./types";
 // Import all configuration definitions to register them
 import "./definitions/sessions";
 import "./definitions/email";
+import "./definitions/slack";

@@ -1,0 +1,31 @@
+import { ConfigRegistry } from "../registry";
+import { defineConfig, type ExtractConfigType } from "../types";
+
+/**
+ * Slack Configuration
+ * Defines configuration options for Slack integration
+ */
+export const slackConfig = defineConfig({
+	groups: [
+		{
+			id: "slack-integration",
+			label: "Slack Integration Settings",
+			description: "Configure Slack integration options",
+			icon: "Slack",
+			fields: [
+				{
+					key: "slack.secret",
+					label: "Slack Signing Secret",
+					description: "The secret used to verify incoming Slack requests",
+					type: "secret",
+					defaultValue: "",
+				},
+			],
+		},
+	],
+} as const);
+
+export type SlackConfigType = ExtractConfigType<typeof slackConfig>;
+
+// Register the configuration
+ConfigRegistry.register("slack", slackConfig);
