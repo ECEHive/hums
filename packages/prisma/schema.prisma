@@ -41,6 +41,7 @@ enum MinMaxUnit {
 enum AuditLogSource {
   trpc
   rest
+  slack
 }
 
 //

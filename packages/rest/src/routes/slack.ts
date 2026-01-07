@@ -1,6 +1,6 @@
-import { type Prisma, prisma } from "@ecehive/prisma";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
+import { logRestAction } from "../shared/audit";
 import { slackError, slackSuccess } from "../shared/validation";
 
 // ===== Validation Schemas =====
@@ -108,13 +108,13 @@ export const slackRoutes: FastifyPluginAsync = async (fastify) => {
 			}
 
 			// Log the incoming command for audit/debug
-			// await logRestAction(request, `rest.slack.${payload.command.slice(1)}`, {
-			// 	command: `${payload.command} ${payload.text}`,
-			// 	user_name: payload.user_name,
-			// 	user_id: payload.user_id,
-			// 	channel_name: payload.channel_name,
-			// 	channel_id: payload.channel_id,
-			// });
+			await logRestAction(request, `rest.slack.${payload.command.slice(1)}`, {
+				command: `${payload.command} ${payload.text}`,
+				user_name: payload.user_name,
+				user_id: payload.user_id,
+				channel_name: payload.channel_name,
+				channel_id: payload.channel_id,
+			});
 
 			// Placeholder: actual command handling not implemented yet
 			return slackSuccess(

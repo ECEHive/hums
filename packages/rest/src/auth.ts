@@ -6,6 +6,7 @@ import {
 	verifyApiToken,
 } from "@ecehive/features";
 import type { ApiToken } from "@ecehive/prisma";
+import { prisma } from "@ecehive/prisma";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { slackError } from "./shared/validation";
 
@@ -155,12 +156,33 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 			);
 		}
 
-		// Verified — create audit logger (system origin)
-		// request.audit = createAuditLogger({
-		// 	userId: 0,
-		// 	apiTokenId: 0,
-		// 	source: "rest",
-		// });
+		// Signature verified - Find HUMS user ID of Slack caller
+		const slackUsername = (request.body.user_name as string) ?? "";
+
+		const user = await prisma.user.findUnique({
+			where: {
+				username: slackUsername,
+			},
+		});
+
+		if (!user) {
+			request.log.warn(
+				{ slackUsername },
+				"Slack command issued by unknown user",
+			);
+			return slackError(
+				reply,
+				"Unauthorized user",
+				`No HUMS user found with Slack username "${slackUsername}"`,
+			);
+		}
+
+		// Attach audit logger to request
+
+		request.audit = createAuditLogger({
+			userId: user.id,
+			source: "slack",
+		});
 	} else {
 		const token = extractToken(request);
 		if (!token) {

@@ -140,7 +140,7 @@ export function slackError(
 	details?: string,
 ) {
 	return reply.code(200).send({
-		response_type: "in_channel",
+		response_type: "ephemeral",
 		blocks: createSlackResponseBlocks(title, details),
 	});
 }
@@ -157,7 +157,7 @@ export function slackSuccess(
 	details?: string,
 ) {
 	return reply.code(200).send({
-		response_type: "in_channel",
+		response_type: "ephemeral",
 		blocks: createSlackResponseBlocks(title, details),
 	});
 }
