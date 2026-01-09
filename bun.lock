@@ -10,7 +10,7 @@
     },
     "apps/client": {
       "name": "@ecehive/client",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-accordion": "^1.2.12",
@@ -30,7 +30,7 @@
         "@radix-ui/react-toggle": "^1.1.10",
         "@radix-ui/react-toggle-group": "^1.1.11",
         "@radix-ui/react-tooltip": "^1.2.8",
-        "@sentry/react": "^10.29.0",
+        "@sentry/react": "^10.32.1",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.8.2",
         "@tanstack/react-form": "^1.27.1",
@@ -72,7 +72,7 @@
     },
     "apps/dashboard": {
       "name": "@ecehive/dashboard",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.15",
@@ -81,7 +81,7 @@
         "@radix-ui/react-slot": "^1.2.4",
         "@radix-ui/react-tabs": "^1.1.13",
         "@radix-ui/react-tooltip": "^1.2.8",
-        "@sentry/react": "^10.29.0",
+        "@sentry/react": "^10.32.1",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.8.2",
         "@tanstack/react-query": "^5.90.12",
@@ -117,12 +117,12 @@
     },
     "apps/kiosk": {
       "name": "@ecehive/kiosk",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-separator": "^1.1.8",
         "@radix-ui/react-slot": "^1.2.4",
-        "@sentry/react": "^10.29.0",
+        "@sentry/react": "^10.32.1",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.8.2",
         "@tanstack/react-query": "^5.90.12",
@@ -162,7 +162,7 @@
     },
     "apps/server": {
       "name": "@ecehive/server",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
@@ -181,7 +181,7 @@
     },
     "packages/auth": {
       "name": "@ecehive/auth",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -195,7 +195,7 @@
     },
     "packages/config": {
       "name": "@ecehive/config",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "devDependencies": {
         "@biomejs/biome": "2.3.8",
         "@types/node": "^24.10.1",
@@ -203,7 +203,7 @@
     },
     "packages/email": {
       "name": "@ecehive/email",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.713.0",
         "@ecehive/env": "workspace:*",
@@ -224,7 +224,7 @@
     },
     "packages/env": {
       "name": "@ecehive/env",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@types/node": "^24.5.2",
         "zod": "^4.1.9",
@@ -236,7 +236,7 @@
     },
     "packages/features": {
       "name": "@ecehive/features",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
@@ -254,7 +254,7 @@
     },
     "packages/ldap": {
       "name": "@ecehive/ldap",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -267,7 +267,7 @@
     },
     "packages/logger": {
       "name": "@ecehive/logger",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "tslog": "^4.9.3",
       },
@@ -277,7 +277,7 @@
     },
     "packages/prisma": {
       "name": "@ecehive/prisma",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@prisma/adapter-pg": "^7.1.0",
@@ -295,7 +295,7 @@
     },
     "packages/rest": {
       "name": "@ecehive/rest",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/features": "workspace:*",
         "@ecehive/prisma": "workspace:*",
@@ -311,7 +311,7 @@
     },
     "packages/trpc": {
       "name": "@ecehive/trpc",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/auth": "workspace:*",
@@ -334,7 +334,7 @@
     },
     "packages/user-data": {
       "name": "@ecehive/user-data",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
@@ -348,7 +348,7 @@
     },
     "packages/workers": {
       "name": "@ecehive/workers",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/email": "workspace:*",
@@ -808,19 +808,19 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.53.3", "", { "os": "win32", "cpu": "x64" }, "sha512-UhTd8u31dXadv0MopwGgNOBpUVROFKWVQgAg5N1ESyCz8AuBcMqm4AuTjrwgQKGDfoFuz02EuMRHQIw/frmYKQ=="],
 
-    "@sentry-internal/browser-utils": ["@sentry-internal/browser-utils@10.29.0", "", { "dependencies": { "@sentry/core": "10.29.0" } }, "sha512-M3kycMY6f3KY9a8jDYac+yG0E3ZgWVWSxlOEC5MhYyX+g7mqxkwrb3LFQyuxSm/m+CCgMTCaPOOaB2twXP6EQg=="],
+    "@sentry-internal/browser-utils": ["@sentry-internal/browser-utils@10.32.1", "", { "dependencies": { "@sentry/core": "10.32.1" } }, "sha512-sjLLep1es3rTkbtAdTtdpc/a6g7v7bK5YJiZJsUigoJ4NTiFeMI5uIDCxbH/tjJ1q23YE1LzVn7T96I+qBRjHA=="],
 
-    "@sentry-internal/feedback": ["@sentry-internal/feedback@10.29.0", "", { "dependencies": { "@sentry/core": "10.29.0" } }, "sha512-Y7IRsNeS99cEONu1mZWZc3HvbjNnu59Hgymm0swFFKbdgbCgdT6l85kn2oLsuq4Ew8Dw/pL/Sgpwsl9UgYFpUg=="],
+    "@sentry-internal/feedback": ["@sentry-internal/feedback@10.32.1", "", { "dependencies": { "@sentry/core": "10.32.1" } }, "sha512-O24G8jxbfBY1RE/v2qFikPJISVMOrd/zk8FKyl+oUVYdOxU2Ucjk2cR3EQruBFlc7irnL6rT3GPfRZ/kBgLkmQ=="],
 
-    "@sentry-internal/replay": ["@sentry-internal/replay@10.29.0", "", { "dependencies": { "@sentry-internal/browser-utils": "10.29.0", "@sentry/core": "10.29.0" } }, "sha512-45NVw9PwB9TQ8z+xJ6G6Za+wmQ1RTA35heBSzR6U4bknj8LmA04k2iwnobvxCBEQXeLfcJEO1vFgagMoqMZMBw=="],
+    "@sentry-internal/replay": ["@sentry-internal/replay@10.32.1", "", { "dependencies": { "@sentry-internal/browser-utils": "10.32.1", "@sentry/core": "10.32.1" } }, "sha512-KKmLUgIaLRM0VjrMA1ByQTawZyRDYSkG2evvEOVpEtR9F0sumidAQdi7UY71QEKE1RYe/Jcp/3WoaqsMh8tbnQ=="],
 
-    "@sentry-internal/replay-canvas": ["@sentry-internal/replay-canvas@10.29.0", "", { "dependencies": { "@sentry-internal/replay": "10.29.0", "@sentry/core": "10.29.0" } }, "sha512-typY4JrpAQQGPuSyd/BD8+nNCbvTV2UVvKzr+iKgI0m1qc4Dz8tHZ4Nfais2Z8eYn/pL1kqVQN5ERTmJoYFdIw=="],
+    "@sentry-internal/replay-canvas": ["@sentry-internal/replay-canvas@10.32.1", "", { "dependencies": { "@sentry-internal/replay": "10.32.1", "@sentry/core": "10.32.1" } }, "sha512-/XGTzWNWVc+B691fIVekV2KeoHFEDA5KftrLFAhEAW7uWOwk/xy3aQX4TYM0LcPm2PBKvoumlAD+Sd/aXk63oA=="],
 
-    "@sentry/browser": ["@sentry/browser@10.29.0", "", { "dependencies": { "@sentry-internal/browser-utils": "10.29.0", "@sentry-internal/feedback": "10.29.0", "@sentry-internal/replay": "10.29.0", "@sentry-internal/replay-canvas": "10.29.0", "@sentry/core": "10.29.0" } }, "sha512-XdbyIR6F4qoR9Z1JCWTgunVcTJjS9p2Th+v4wYs4ME+ZdLC4tuKKmRgYg3YdSIWCn1CBfIgdI6wqETSf7H6Njw=="],
+    "@sentry/browser": ["@sentry/browser@10.32.1", "", { "dependencies": { "@sentry-internal/browser-utils": "10.32.1", "@sentry-internal/feedback": "10.32.1", "@sentry-internal/replay": "10.32.1", "@sentry-internal/replay-canvas": "10.32.1", "@sentry/core": "10.32.1" } }, "sha512-NPNCXTZ05ZGTFyJdKNqjykpFm+urem0ebosILQiw3C4BxNVNGH4vfYZexyl6prRhmg91oB6GjVNiVDuJiap1gg=="],
 
-    "@sentry/core": ["@sentry/core@10.29.0", "", {}, "sha512-olQ2DU9dA/Bwsz3PtA9KNXRMqBWRQSkPw+MxwWEoU1K1qtiM9L0j6lbEFb5iSY3d7WYD5MB+1d5COugjSBrHtw=="],
+    "@sentry/core": ["@sentry/core@10.32.1", "", {}, "sha512-PH2ldpSJlhqsMj2vCTyU0BI2Fx1oIDhm7Izo5xFALvjVCS0gmlqHt1udu6YlKn8BtpGH6bGzssvv5APrk+OdPQ=="],
 
-    "@sentry/react": ["@sentry/react@10.29.0", "", { "dependencies": { "@sentry/browser": "10.29.0", "@sentry/core": "10.29.0", "hoist-non-react-statics": "^3.3.2" }, "peerDependencies": { "react": "^16.14.0 || 17.x || 18.x || 19.x" } }, "sha512-YGaEUXubzil7qssD1koh1fyt0aS8tHB61/6+oNShJ6xZPg03AB42bNMr2/y8fIFx36kb3MiCA5sFoH/ubF0LnQ=="],
+    "@sentry/react": ["@sentry/react@10.32.1", "", { "dependencies": { "@sentry/browser": "10.32.1", "@sentry/core": "10.32.1", "hoist-non-react-statics": "^3.3.2" }, "peerDependencies": { "react": "^16.14.0 || 17.x || 18.x || 19.x" } }, "sha512-/tX0HeACbAmVP57x8txTrGk/U3fa9pDBaoAtlOrnPv5VS/aC5SGkehXWeTGSAa+ahlOWwp3IF8ILVXRiOoG/Vg=="],
 
     "@smithy/abort-controller": ["@smithy/abort-controller@4.2.7", "", { "dependencies": { "@smithy/types": "^4.11.0", "tslib": "^2.6.2" } }, "sha512-rzMY6CaKx2qxrbYbqjXWS0plqEy7LOdKHS0bg4ixJ6aoGDPNUcLWk/FRNuCILh7GKLG9TFUXYYeQQldMBBwuyw=="],
 
