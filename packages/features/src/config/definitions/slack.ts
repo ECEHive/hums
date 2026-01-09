@@ -9,8 +9,8 @@ export const slackConfig = defineConfig({
 	groups: [
 		{
 			id: "slack-integration",
-			label: "Slack Integration Settings",
-			description: "Configure Slack integration options",
+			label: "Slack Integration",
+			description: "Configure Slack integration",
 			icon: "Slack",
 			fields: [
 				{
