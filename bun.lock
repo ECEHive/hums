@@ -52,7 +52,7 @@
         "react-dom": "^19.2.1",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.4.0",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -98,7 +98,7 @@
         "react-dom": "^19.2.1",
         "recharts": "2.15.4",
         "tailwind-merge": "^3.4.0",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -141,7 +141,7 @@
         "react-dom": "^19.2.1",
         "tailwind-merge": "^3.4.0",
         "tslog": "^4.10.2",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -227,7 +227,7 @@
       "version": "1.3.0",
       "dependencies": {
         "@types/node": "^24.5.2",
-        "zod": "^4.1.9",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -301,7 +301,7 @@
         "@ecehive/prisma": "workspace:*",
         "@ecehive/user-data": "workspace:*",
         "fastify": "^5.6.2",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -324,7 +324,7 @@
         "fastify": "^5.6.2",
         "nanoid": "^5.1.6",
         "superjson": "^2.2.6",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -1734,7 +1734,7 @@
 
     "zeptomatch": ["zeptomatch@2.0.2", "", { "dependencies": { "grammex": "^3.1.10" } }, "sha512-H33jtSKf8Ijtb5BW6wua3G5DhnFjbFML36eFu+VdOoVY4HD9e7ggjqdM6639B+L87rjnR6Y+XeRzBXZdy52B/g=="],
 
-    "zod": ["zod@4.1.13", "", {}, "sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig=="],
+    "zod": ["zod@4.3.5", "", {}, "sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g=="],
 
     "@aws-crypto/sha256-browser/@aws-sdk/types": ["@aws-sdk/types@3.957.0", "", { "dependencies": { "@smithy/types": "^4.11.0", "tslib": "^2.6.2" } }, "sha512-wzWC2Nrt859ABk6UCAVY/WYEbAd7FjkdrQL6m24+tfmWYDNRByTJ9uOgU/kw9zqLCAwb//CPvrJdhqjTznWXAg=="],
 

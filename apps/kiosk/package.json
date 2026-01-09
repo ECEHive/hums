@@ -31,7 +31,7 @@
 		"react-dom": "^19.2.1",
 		"tailwind-merge": "^3.4.0",
 		"tslog": "^4.10.2",
-		"zod": "^4.1.13"
+		"zod": "^4.3.5"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
