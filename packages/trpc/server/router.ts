@@ -3,7 +3,8 @@ import { apiTokensRouter } from "./routers/apiTokens/_route";
 import { auditLogsRouter } from "./routers/auditLogs/_route";
 import { authRouter } from "./routers/auth/_route";
 import { configRouter } from "./routers/config/_route";
-import { kiosksRouter } from "./routers/kiosks/_route";
+import { dashboardRouter } from "./routers/dashboard/_route";
+import { devicesRouter } from "./routers/devices/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
 import { periodsRouter } from "./routers/periods/_route";
@@ -15,6 +16,7 @@ import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
 import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
 import { shiftTypesRouter } from "./routers/shiftTypes/_route";
+import { suspensionsRouter } from "./routers/suspensions/_route";
 import { usersRouter } from "./routers/users/_route";
 import { router } from "./trpc";
 
@@ -23,6 +25,7 @@ export const appRouter = router({
 	apiTokens: apiTokensRouter,
 	auditLogs: auditLogsRouter,
 	config: configRouter,
+	dashboard: dashboardRouter,
 	users: usersRouter,
 	roles: rolesRouter,
 	permissions: permissionsRouter,
@@ -34,7 +37,8 @@ export const appRouter = router({
 	shiftOccurrences: shiftOccurrencesRouter,
 	shiftAttendances: shiftAttendancesRouter,
 	sessions: sessionsRouter,
-	kiosks: kiosksRouter,
+	suspensions: suspensionsRouter,
+	devices: devicesRouter,
 	oneTimeLoginCodes: oneTimeLoginCodesRouter,
 	reports: reportsRouter,
 });

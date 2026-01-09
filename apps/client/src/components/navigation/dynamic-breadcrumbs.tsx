@@ -1,4 +1,4 @@
-import { Link, useMatches } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import {
 	Breadcrumb,
@@ -8,29 +8,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
-// Map of route IDs to human-readable labels
-const routeLabels: Record<string, string> = {
-	"/app": "Home",
-	"/app/users": "Users",
-	"/app/kiosks": "Kiosks",
-	"/app/my-agreements": "My Agreements",
-	"/app/my-sessions": "My Sessions",
-	"/app/periods": "Periods",
-	"/app/api-tokens": "API Tokens",
-	"/app/audit-logs": "Audit Logs",
-	"/shifts": "Shifts",
-	"/shifts/": "Dashboard",
-	"/shifts/shift-schedules": "Shift Schedules",
-	"/shifts/scheduling": "Scheduling",
-	"/shifts/shift-types": "Shift Types",
-	"/shifts/period-exceptions": "Period Exceptions",
-	"/shifts/period-details": "Period Details",
-	"/shifts/manage-users": "Manage Users",
-	"/shifts/my-shifts": "My Shifts",
-	"/shifts/attendance": "Attendance",
-	"/shifts/reports": "Reports",
-};
+import { getBreadcrumbLabel } from "@/lib/routeMetadata";
 
 interface BreadcrumbSegment {
 	path: string;
@@ -38,31 +16,37 @@ interface BreadcrumbSegment {
 	isLast: boolean;
 }
 
+/**
+ * Dynamic breadcrumbs component that builds breadcrumb trail based on URL path
+ * Examples:
+ * - /app → "Home"
+ * - /app/users → "Home > Users"
+ * - /app/shifts/scheduling → "Home > Shifts > Scheduling"
+ */
 export function DynamicBreadcrumbs() {
-	const matches = useMatches();
+	const location = useLocation();
+	const pathname = location.pathname;
 
-	// Filter out root and get meaningful route segments
+	// Build breadcrumb segments from URL path
 	const breadcrumbSegments: BreadcrumbSegment[] = [];
 
-	matches.forEach((match, index) => {
-		const routeId = match.routeId;
+	// Split pathname into parts (e.g., "/app/shifts/scheduling" → ["app", "shifts", "scheduling"])
+	const pathParts = pathname.split("/").filter(Boolean);
 
-		// Skip root route
-		if (routeId === "__root__") return;
+	// Build cumulative paths and look up labels
+	let currentPath = "";
+	for (let i = 0; i < pathParts.length; i++) {
+		currentPath += `/${pathParts[i]}`;
+		const label = getBreadcrumbLabel(currentPath);
 
-		// Get the label for this route
-		const label = routeLabels[routeId];
-		if (!label) return;
-
-		// Get the pathname from the match
-		const path = match.pathname;
-
-		breadcrumbSegments.push({
-			path,
-			label,
-			isLast: index === matches.length - 1,
-		});
-	});
+		if (label) {
+			breadcrumbSegments.push({
+				path: currentPath,
+				label,
+				isLast: i === pathParts.length - 1,
+			});
+		}
+	}
 
 	// Don't render breadcrumbs if we don't have any segments
 	if (breadcrumbSegments.length === 0) {

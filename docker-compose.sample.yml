@@ -1,0 +1,90 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: hums-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hums
+      POSTGRES_USER: hums
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hums-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hums"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prisma migration runner (one-shot)
+  migrate:
+    image: ghcr.io/ecehive/hums-migrate:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+      target: prisma-migrate
+    container_name: hums-migrate
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+    networks:
+      - hums-network
+
+  # Server application
+  server:
+    image: ghcr.io/ecehive/hums-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+      target: server
+    container_name: hums-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+      NODE_ENV: production
+      PORT: 44830
+    expose:
+      - "44830"
+    networks:
+      - hums-network
+
+  # NGINX reverse proxy with client and kiosk static files
+  web:
+    image: ghcr.io/ecehive/hums-web:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      target: web
+    container_name: hums-web
+    restart: unless-stopped
+    ports:
+      - "4483:80"
+    depends_on:
+      - server
+    networks:
+      - hums-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  hums-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

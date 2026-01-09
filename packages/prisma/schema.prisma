@@ -41,6 +41,7 @@ enum MinMaxUnit {
 enum AuditLogSource {
   trpc
   rest
+  slack
 }
 
 //
@@ -51,11 +52,12 @@ model User {
   id Int @id @default(autoincrement())
 
   // fields
-  username     String  @unique
+  username     String   @unique
   name         String
-  email        String  @unique
-  cardNumber   String? @unique
-  isSystemUser Boolean @default(false)
+  email        String   @unique
+  cardNumber   String?  @unique
+  slackUsername String? @unique
+  isSystemUser Boolean  @default(false)
 
   // timestamps
   createdAt DateTime @default(now())
@@ -71,6 +73,8 @@ model User {
   // One-to-many
   sessions    Session[]
   attendances ShiftAttendance[]
+  suspensions Suspension[]
+  createdSuspensions Suspension[] @relation("SuspensionCreatedBy")
   
   // Many-to-many (explicit)
   userAgreements UserAgreement[]
@@ -272,13 +276,17 @@ model Session {
   @@unique([userId, endedAt])
 }
 
-model Kiosk {
+model Device {
   id Int @id @default(autoincrement())
 
   // fields
   name      String
   ipAddress String  @unique
   isActive  Boolean @default(true)
+
+  // Device access permissions
+  hasKioskAccess     Boolean @default(true)
+  hasDashboardAccess Boolean @default(false)
 
   // timestamps
   createdAt DateTime @default(now())
@@ -396,4 +404,30 @@ model ConfigValue {
 
   // indexes
   @@index([key])
+}
+
+model Suspension {
+  id Int @id @default(autoincrement())
+
+  // fields
+  userId        Int
+  startDate     DateTime
+  endDate       DateTime
+  internalNotes String?  @db.Text  // Not shared with user
+  externalNotes String?  @db.Text  // Shared with user
+  createdById   Int?
+  emailSentAt   DateTime?          // Track when suspension notice was sent
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("SuspensionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // indexes
+  @@index([userId])
+  @@index([startDate, endDate])
+  @@index([emailSentAt, startDate])
 }

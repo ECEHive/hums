@@ -156,6 +156,17 @@ export function ConfigField({
 					/>
 				);
 
+			case "secret":
+				return (
+					<Input
+						type="password"
+						value={inputValue as string}
+						onChange={(e) => handleChange(e.target.value)}
+						placeholder={field.placeholder}
+						disabled={!canWrite || isSaving}
+					/>
+				);
+
 			default:
 				return (
 					<Input

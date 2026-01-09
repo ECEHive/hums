@@ -10,27 +10,31 @@ import { ReadyView } from "@/components/ready-view";
 import { SetupView } from "@/components/setup-view";
 import { useCardReader } from "@/hooks/use-card-reader";
 import { useTapWorkflow } from "@/hooks/use-tap-workflow";
+import { useConfig } from "@/hooks/useConfig";
 import type { KioskStatus } from "@/types";
 
 function App() {
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const tapWorkflow = useTapWorkflow();
+	const { data: config } = useConfig();
 
-	const { data: kioskStatusData, isLoading: kioskStatusLoading } = useQuery({
-		queryKey: ["kioskStatus"],
+	const { data: deviceStatusData, isLoading: deviceStatusLoading } = useQuery({
+		queryKey: ["deviceStatus"],
 		queryFn: async () => {
-			return await trpc.kiosks.checkStatus.query({});
+			return await trpc.devices.checkStatus.query({});
 		},
 		retry: 1,
 		refetchOnWindowFocus: false,
 	});
 
 	const kioskStatus: KioskStatus = {
-		isKiosk: kioskStatusData?.status ?? false,
-		ip: kioskStatusData?.status
-			? kioskStatusData.kiosk?.ipAddress
-			: kioskStatusData?.ip,
-		checking: kioskStatusLoading,
+		isKiosk: !!(
+			deviceStatusData?.status && deviceStatusData.device?.hasKioskAccess
+		),
+		ip: deviceStatusData?.status
+			? deviceStatusData.device?.ipAddress
+			: deviceStatusData?.ip,
+		checking: deviceStatusLoading,
 	};
 
 	const { connectionStatus, connect } = useCardReader({
@@ -76,9 +80,8 @@ function App() {
 	const logoUrl = new URL("./assets/logo_dark.svg", import.meta.url).href;
 
 	// Determine the client base URL for one-time login
-	// If VITE_CLIENT_URL is set, use that; otherwise use the current page's origin
-	const clientBaseUrl =
-		import.meta.env.VITE_CLIENT_URL || window.location.origin;
+	// Use runtime config clientBaseUrl, otherwise fall back to current page's origin
+	const clientBaseUrl = config?.clientBaseUrl || window.location.origin;
 
 	const isPreConnection =
 		!kioskStatus.isKiosk ||
@@ -107,6 +110,7 @@ function App() {
 							tapOutActionSelection={tapWorkflow.tapOutActionSelection}
 							pendingAgreement={tapWorkflow.pendingAgreement}
 							tapNotification={tapWorkflow.tapNotification}
+							suspension={tapWorkflow.suspension}
 							onSessionTypeSelect={tapWorkflow.handleSessionTypeSelect}
 							onSessionTypeCancel={tapWorkflow.handleSessionTypeCancel}
 							onTapOutActionSelect={tapWorkflow.handleTapOutActionSelect}

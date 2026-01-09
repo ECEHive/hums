@@ -60,12 +60,12 @@ export function DeleteDialog({
 					try {
 						setPeriod(null);
 					} catch (_) {}
-					window.location.href = "/shifts/";
+					window.location.href = "/app/shifts/";
 				}
 			} catch (err) {
 				// If fetching periods failed, fallback to navigating to the periods list
 				console.error("Failed to fetch periods after delete:", err);
-				window.location.href = "/shifts/";
+				window.location.href = "/app/shifts/";
 			}
 		},
 		onError: (err) => {

@@ -8,7 +8,7 @@ import tsConfigPaths from "vite-tsconfig-paths";
 import packageConfig from "./package.json";
 
 export default defineConfig(({ mode }) => {
-	const env = loadEnv(mode, process.cwd(), ["VITE_", "TZ"]);
+	const env = loadEnv(mode, process.cwd(), ["VITE_"]);
 
 	return {
 		publicDir: "public",
@@ -16,7 +16,6 @@ export default defineConfig(({ mode }) => {
 		define: {
 			__APP_VERSION__: JSON.stringify(packageConfig.version ?? "dev"),
 		},
-		envPrefix: ["VITE_", "TZ"],
 		server: {
 			port: env.VITE_DEV_PORT ? parseInt(env.VITE_DEV_PORT, 10) : 44832,
 			host: "0.0.0.0",

@@ -2,7 +2,7 @@ import { listAuditLogs } from "@ecehive/features";
 import { z } from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-const auditLogSources = ["trpc", "rest"] as const;
+const auditLogSources = ["trpc", "rest", "slack"] as const;
 
 export const ZListAuditLogsSchema = z.object({
 	userId: z.number().int().positive().optional(),

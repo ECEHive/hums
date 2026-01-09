@@ -6,15 +6,23 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./globals.css";
+import { fetchConfig } from "./lib/config";
 
-if ((import.meta.env.VITE_KIOSK_SENTRY_DSN ?? "").trim().length > 0) {
-	Sentry.init({
-		dsn: import.meta.env.VITE_KIOSK_SENTRY_DSN,
-		sendDefaultPii: true,
-		enableLogs: true,
-		release: __APP_VERSION__,
+// Initialize Sentry from runtime config
+fetchConfig()
+	.then((config) => {
+		if (config.kioskSentryDsn?.trim()) {
+			Sentry.init({
+				dsn: config.kioskSentryDsn,
+				sendDefaultPii: true,
+				enableLogs: true,
+				release: __APP_VERSION__,
+			});
+		}
+	})
+	.catch((error) => {
+		console.error("Failed to load config for Sentry initialization:", error);
 	});
-}
 
 const queryClient = new QueryClient();
 

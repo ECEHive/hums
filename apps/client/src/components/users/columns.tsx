@@ -42,6 +42,10 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 			header: "Email",
 		},
 		{
+			accessorKey: "slackUsername",
+			header: "Slack Username",
+		},
+		{
 			accessorKey: "roles",
 			header: "Roles",
 			cell: ({ row }) => {

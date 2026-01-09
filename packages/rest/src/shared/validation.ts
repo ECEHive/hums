@@ -93,3 +93,71 @@ export function internalError(reply: FastifyReply, message?: string) {
 		},
 	});
 }
+
+// ===== Slack Response Helpers =====
+
+/**
+ * Creates Slack message blocks for responses
+ * @param title - The title of the message
+ * @param details - Optional detailed text to include in the message
+ * @returns An array of Slack Block Kit blocks for the message
+ */
+export function createSlackResponseBlocks(title: string, details?: string) {
+	const blocks: Array<Record<string, unknown>> = [
+		{
+			type: "header",
+			text: {
+				type: "plain_text",
+				text: title,
+			},
+		},
+	];
+
+	if (details) {
+		blocks.push({
+			type: "section",
+			text: {
+				type: "mrkdwn",
+				text: `>${details.replace(/\n/g, "\n>")}`,
+			},
+		});
+	}
+
+	return blocks;
+}
+
+/**
+ * Sends a Slack-formatted error response
+ * @param reply - The Fastify reply object
+ * @param title - The title of the error message
+ * @param details - Optional detailed text about the error
+ */
+export function slackError(
+	reply: FastifyReply,
+	title: string,
+	details?: string,
+) {
+	reply.success = false;
+	return reply.code(200).send({
+		response_type: "ephemeral",
+		blocks: createSlackResponseBlocks(title, details),
+	});
+}
+
+/**
+ * Sends a Slack-formatted success response
+ * @param reply - The Fastify reply object
+ * @param title - The title of the success message
+ * @param details - Optional detailed text about the success
+ */
+export function slackSuccess(
+	reply: FastifyReply,
+	title: string,
+	details?: string,
+) {
+	reply.success = true;
+	return reply.code(200).send({
+		response_type: "ephemeral",
+		blocks: createSlackResponseBlocks(title, details),
+	});
+}

@@ -25,6 +25,7 @@ import { checkPermissions } from "@/lib/permissions";
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(100),
 	email: z.email("Email must be valid"),
+	slackUsername: z.string(),
 });
 
 type UpdateDialogProps = {
@@ -33,6 +34,7 @@ type UpdateDialogProps = {
 		username: string;
 		name: string;
 		email: string;
+		slackUsername?: string;
 	};
 	onUpdate?: () => void;
 };
@@ -51,12 +53,25 @@ export function UserUpdateDialog({
 			id,
 			name,
 			email,
+			slackUsername,
 		}: {
 			id: number;
 			name: string;
 			email: string;
+			slackUsername?: string | null;
 		}) => {
-			return trpc.users.update.mutate({ id, name, email });
+			// Pass through slackUsername as given:
+			// - undefined -> omit (leave unchanged)
+			// - null -> set column to NULL (clear)
+			// - string -> set to that value (may be empty string)
+			// Cast through unknown to satisfy generated trpc client types
+			const payload = { id, name, email, slackUsername } as unknown as {
+				id: number;
+				name: string;
+				email: string;
+				slackUsername?: string | undefined;
+			};
+			return trpc.users.update.mutate(payload);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -67,13 +82,36 @@ export function UserUpdateDialog({
 		defaultValues: {
 			name: user.name,
 			email: user.email,
+			slackUsername: user.slackUsername ?? "",
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await updateUserMutation.mutateAsync({ id: user.id, ...value });
+				const payload: {
+					id: number;
+					name: string;
+					email: string;
+					slackUsername?: string | null;
+				} = { id: user.id, name: value.name, email: value.email };
+
+				// If the slackUsername field is empty string, we interpret that as
+				// an explicit clear request only if the original value was non-empty.
+				// In that case, send `null` so the DB column is set to NULL. If the
+				// original value was already empty/null, omit the field to avoid
+				// unnecessary writes.
+				const original = user.slackUsername ?? "";
+				if (value.slackUsername === "") {
+					if (original !== "") {
+						payload.slackUsername = null;
+					}
+					// else omit
+				} else {
+					payload.slackUsername = value.slackUsername;
+				}
+
+				await updateUserMutation.mutateAsync(payload);
 				setOpen(false);
 				onUpdate?.();
 			} catch (err) {
@@ -169,6 +207,32 @@ export function UserUpdateDialog({
 										onChange={(e) => field.handleChange(e.target.value)}
 										placeholder="user@example.com"
 										autoComplete="email"
+									/>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					/>
+
+					<form.Field
+						name="slackUsername"
+						children={(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>
+										Slack Username
+										<span className="text-muted-foreground">(optional)</span>
+									</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="gburdell3"
+										autoComplete="off"
 									/>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>

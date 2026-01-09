@@ -1,4 +1,8 @@
-import { Clock as ClockIcon, Settings as SettingsIcon } from "lucide-react";
+import {
+	Clock as ClockIcon,
+	Settings as SettingsIcon,
+	Slack as SlackIcon,
+} from "lucide-react";
 import {
 	Card,
 	CardContent,
@@ -11,6 +15,7 @@ import { ConfigField } from "./config-field";
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 	Clock: ClockIcon,
 	Settings: SettingsIcon,
+	Slack: SlackIcon,
 };
 
 interface ConfigFieldDef {

@@ -24,3 +24,8 @@ generated/
 # MacOS
 
 .DS_Store
+
+# Docker
+
+docker-compose.yml
+docker-compose.yaml

@@ -72,10 +72,6 @@ test-results
 .devcontainer
 
 # Docker
-docker-compose*.yml
-!docker-compose.yml
-Dockerfile*
-!Dockerfile
 .dockerignore
 
 # Misc
@@ -105,8 +101,3 @@ generated
 # IDE specific
 .vscode-test
 .history
-
-# Docker
-Dockerfile
-docker-compose*.yml
-.dockerignore

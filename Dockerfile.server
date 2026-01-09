@@ -1,0 +1,133 @@
+# =============================================================================
+# Server Dockerfile
+# Produces an optimized production image for the HUMS API server
+# =============================================================================
+
+# =============================================================================
+# Base Stage - Bun runtime
+# =============================================================================
+FROM oven/bun:1-alpine AS base
+
+WORKDIR /app
+
+# =============================================================================
+# Dependencies Stage - Install all dependencies
+# =============================================================================
+FROM base AS deps
+
+# Copy workspace manifests and workspaces
+# .dockerignore ensures node_modules and build outputs are excluded
+COPY package.json bun.lock ./
+COPY apps ./apps
+COPY packages ./packages
+
+# Install all dependencies
+RUN bun install --frozen-lockfile
+
+# =============================================================================
+# Prisma Generate Stage
+# =============================================================================
+FROM deps AS prisma-generate
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
+# Copy Prisma schema
+COPY packages/prisma/schema.prisma ./packages/prisma/
+COPY packages/prisma/prisma.config.ts ./packages/prisma/
+
+# Set dummy DATABASE_URL for Prisma generation
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+
+# Generate Prisma client
+WORKDIR /app/packages/prisma
+RUN bun x prisma generate
+WORKDIR /app
+
+# =============================================================================
+# Build Stage - Build the server
+# =============================================================================
+FROM prisma-generate AS build
+
+# Source files are already present from the deps stage
+# Just build the server
+WORKDIR /app/apps/server
+RUN bun run build
+WORKDIR /app
+
+# =============================================================================
+# Production Dependencies Stage
+# =============================================================================
+FROM base AS prod-deps
+
+# Copy workspace manifests and workspaces
+COPY package.json bun.lock ./
+COPY apps ./apps
+COPY packages ./packages
+
+# Install production dependencies only
+RUN bun install --frozen-lockfile --production
+
+# =============================================================================
+# Prisma Migration Runner (one-shot container)
+# =============================================================================
+FROM base AS prisma-migrate
+
+# Install OpenSSL for Prisma runtime
+RUN apk add --no-cache openssl
+
+# Copy dependencies
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=prod-deps /app/package.json /app/package.json
+COPY --from=prod-deps /app/bun.lock /app/bun.lock
+
+# Copy Prisma files with generated client
+COPY --from=prisma-generate /app/packages/prisma /app/packages/prisma
+
+WORKDIR /app/packages/prisma
+
+# Set ownership for bun user (already exists in base image)
+RUN chown -R bun:bun /app
+
+USER bun
+
+CMD ["bun", "x", "prisma", "migrate", "deploy"]
+
+# =============================================================================
+# Production Server Image
+# =============================================================================
+FROM base AS server
+
+# Install runtime dependencies
+RUN apk add --no-cache openssl libldap
+
+# Copy production dependencies
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=prod-deps /app/package.json /app/package.json
+COPY --from=prod-deps /app/bun.lock /app/bun.lock
+COPY --from=prod-deps /app/apps/server/package.json /app/apps/server/package.json
+
+# Copy built server
+COPY --from=build /app/apps/server/dist /app/apps/server/dist
+
+# Copy Prisma files with generated client
+COPY --from=prisma-generate /app/packages/prisma /app/packages/prisma
+
+WORKDIR /app
+
+# Set production environment
+ENV NODE_ENV=production
+
+# Set ownership for bun user (already exists in base image)
+RUN chown -R bun:bun /app
+
+USER bun
+
+# Expose server port
+EXPOSE 44830
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:44830/api || exit 1
+
+CMD ["bun", "/app/apps/server/dist/index.js"]

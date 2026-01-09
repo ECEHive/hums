@@ -83,6 +83,19 @@ export type TapResponse =
 				content: string;
 				confirmationText: string;
 			}[];
+	  }
+	| {
+			status: "suspended";
+			user: {
+				id: number;
+				name: string;
+				email: string;
+				username: string;
+			};
+			suspension: {
+				endDate: Date;
+				externalNotes: string | null;
+			};
 	  };
 
 export type TapEvent = Extract<

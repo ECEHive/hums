@@ -137,7 +137,7 @@ export function CreatePeriodSheet({
 				}
 				// navigate to the period details page
 				navigate({
-					to: "/shifts/period-details",
+					to: "/app/shifts/period-details",
 				});
 			}
 		},
