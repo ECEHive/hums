@@ -28,7 +28,7 @@ interface SchedulingTimelineProps {
 
 const TIME_COLUMN_WIDTH = "clamp(68px, 18vw, 120px)";
 const DAY_COLUMN_WIDTH = "clamp(110px, 14vw, 160px)";
-const TIME_HEADER_LABEL = isUserInAppTimezone
+const TIME_HEADER_LABEL = isUserInAppTimezone()
 	? "Time"
 	: `Time (${getAppTimezoneAbbreviation()})`;
 
