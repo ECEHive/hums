@@ -252,7 +252,6 @@ export const slackRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.addHook(
 		"preHandler",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-
 			if (!request.user) {
 				return slackError(
 					reply,
