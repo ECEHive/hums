@@ -262,8 +262,16 @@ export const slackRoutes: FastifyPluginAsync = async (fastify) => {
 				);
 			}
 
-			// Check command against registry
-			const commandInfo = slackCommands[request.body.command];
+			// Check command against registry by validating the Slack payload first
+			const parsedCommandPayload = SlackSchema.safeParse(request.body);
+			if (!parsedCommandPayload.success) {
+				return slackError(
+					reply,
+					"Invalid request",
+					"Slack payload malformed, please contact an app administrator.",
+				);
+			}
+			const commandInfo = slackCommands[parsedCommandPayload.data.command];
 			if (commandInfo?.permissions && commandInfo.permissions.length > 0) {
 				// System users bypass permission checks
 				if (authUser.user.isSystemUser) {

@@ -49,7 +49,17 @@ export function UserUpdateDialog({
 	const formId = useId();
 
 	const updateUserMutation = useMutation({
-		mutationFn: ({ id, name, email, slackUsername }: { id: number; name: string; email: string; slackUsername?: string | null; }) => {
+		mutationFn: ({
+			id,
+			name,
+			email,
+			slackUsername,
+		}: {
+			id: number;
+			name: string;
+			email: string;
+			slackUsername?: string | null;
+		}) => {
 			// Pass through slackUsername as given:
 			// - undefined -> omit (leave unchanged)
 			// - null -> set column to NULL (clear)

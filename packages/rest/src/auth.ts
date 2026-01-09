@@ -45,8 +45,10 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 			| undefined;
 		const signingSecret = await ConfigService.get("slack.secret");
 
-		if (!signingSecret) {
-			request.log.error("SLACK_SIGNING_SECRET is not configured");
+		if (!signingSecret || typeof signingSecret !== "string") {
+			request.log.error(
+				"SLACK_SIGNING_SECRET is not configured or is not a string",
+			);
 			return slackError(
 				reply,
 				"Server misconfiguration",
@@ -157,13 +159,35 @@ async function authGuard(request: FastifyRequest, reply: FastifyReply) {
 		}
 
 		// Signature verified - Find HUMS user ID of Slack caller
-		const slackUsername = (request.body.user_name as string) ?? "";
+		let slackUsername = "";
+		const body = request.body;
+		if (body && typeof body === "object" && "user_name" in body) {
+			try {
+				const b = body as Record<string, unknown>;
+				const uname = b.user_name;
+				slackUsername = typeof uname === "string" ? uname : String(uname ?? "");
+			} catch {
+				slackUsername = "";
+			}
+		}
 
-		const user = await prisma.user.findUnique({
-			where: {
-				slackUsername: slackUsername,
-			},
-		});
+		let user: User | null = null;
+		const bodyObj =
+			request.body && typeof request.body === "object"
+				? (request.body as Record<string, unknown>)
+				: null;
+
+		const lookupName =
+			slackUsername ||
+			(bodyObj && typeof bodyObj.user_name === "string"
+				? bodyObj.user_name
+				: "");
+
+		if (lookupName) {
+			user = await prisma.user.findUnique({
+				where: { slackUsername: lookupName },
+			});
+		}
 
 		if (!user) {
 			return slackError(
