@@ -49,7 +49,7 @@
 		"react-dom": "^19.2.1",
 		"sonner": "^2.0.7",
 		"tailwind-merge": "^3.4.0",
-		"zod": "^4.1.13"
+		"zod": "^4.3.5"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",

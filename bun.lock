@@ -10,7 +10,7 @@
     },
     "apps/client": {
       "name": "@ecehive/client",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-accordion": "^1.2.12",
@@ -52,7 +52,7 @@
         "react-dom": "^19.2.1",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.4.0",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -72,7 +72,7 @@
     },
     "apps/dashboard": {
       "name": "@ecehive/dashboard",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.15",
@@ -98,7 +98,7 @@
         "react-dom": "^19.2.1",
         "recharts": "2.15.4",
         "tailwind-merge": "^3.4.0",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -117,7 +117,7 @@
     },
     "apps/kiosk": {
       "name": "@ecehive/kiosk",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-separator": "^1.1.8",
@@ -141,7 +141,7 @@
         "react-dom": "^19.2.1",
         "tailwind-merge": "^3.4.0",
         "tslog": "^4.10.2",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -162,7 +162,7 @@
     },
     "apps/server": {
       "name": "@ecehive/server",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
@@ -181,7 +181,7 @@
     },
     "packages/auth": {
       "name": "@ecehive/auth",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -195,7 +195,7 @@
     },
     "packages/config": {
       "name": "@ecehive/config",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "devDependencies": {
         "@biomejs/biome": "2.3.8",
         "@types/node": "^24.10.1",
@@ -203,7 +203,7 @@
     },
     "packages/email": {
       "name": "@ecehive/email",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.713.0",
         "@ecehive/env": "workspace:*",
@@ -224,10 +224,10 @@
     },
     "packages/env": {
       "name": "@ecehive/env",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@types/node": "^24.5.2",
-        "zod": "^4.1.9",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -236,7 +236,7 @@
     },
     "packages/features": {
       "name": "@ecehive/features",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
@@ -254,7 +254,7 @@
     },
     "packages/ldap": {
       "name": "@ecehive/ldap",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -267,7 +267,7 @@
     },
     "packages/logger": {
       "name": "@ecehive/logger",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "tslog": "^4.9.3",
       },
@@ -277,7 +277,7 @@
     },
     "packages/prisma": {
       "name": "@ecehive/prisma",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@prisma/adapter-pg": "^7.1.0",
@@ -295,13 +295,13 @@
     },
     "packages/rest": {
       "name": "@ecehive/rest",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/features": "workspace:*",
         "@ecehive/prisma": "workspace:*",
         "@ecehive/user-data": "workspace:*",
         "fastify": "^5.6.2",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -311,7 +311,7 @@
     },
     "packages/trpc": {
       "name": "@ecehive/trpc",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/auth": "workspace:*",
@@ -324,7 +324,7 @@
         "fastify": "^5.6.2",
         "nanoid": "^5.1.6",
         "superjson": "^2.2.6",
-        "zod": "^4.1.13",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -334,7 +334,7 @@
     },
     "packages/user-data": {
       "name": "@ecehive/user-data",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
@@ -348,7 +348,7 @@
     },
     "packages/workers": {
       "name": "@ecehive/workers",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/email": "workspace:*",
@@ -1734,7 +1734,7 @@
 
     "zeptomatch": ["zeptomatch@2.0.2", "", { "dependencies": { "grammex": "^3.1.10" } }, "sha512-H33jtSKf8Ijtb5BW6wua3G5DhnFjbFML36eFu+VdOoVY4HD9e7ggjqdM6639B+L87rjnR6Y+XeRzBXZdy52B/g=="],
 
-    "zod": ["zod@4.1.13", "", {}, "sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig=="],
+    "zod": ["zod@4.3.5", "", {}, "sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g=="],
 
     "@aws-crypto/sha256-browser/@smithy/util-utf8": ["@smithy/util-utf8@2.3.0", "", { "dependencies": { "@smithy/util-buffer-from": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-R8Rdn8Hy72KKcebgLiv8jQcQkXoLMOGGv5uI1/k0l+snqkOzQ1R0ChUBCxWMlBsFMekWjq0wRudIweFs7sKT5A=="],
 
