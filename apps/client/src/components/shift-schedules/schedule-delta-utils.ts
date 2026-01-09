@@ -339,10 +339,12 @@ export function applyScheduleDelta(
 	const schedule = currentData.schedules[scheduleIndex];
 
 	// Create updated schedule with new users list from delta
+	// IMPORTANT: Update isRegistered immediately so requirement progress calculation is correct
 	const updatedSchedule: ShiftSchedule = {
 		...schedule,
 		users: event.delta.users,
 		availableSlots: event.delta.availableSlots,
+		isRegistered: event.delta.users.some((u) => u.id === currentUserId),
 	};
 
 	// Create new schedules array with the updated schedule
@@ -350,6 +352,7 @@ export function applyScheduleDelta(
 	newSchedules[scheduleIndex] = updatedSchedule;
 
 	// Recalculate requirement progress first (needed for hasReachedMax)
+	// This now uses the correct isRegistered value from updatedSchedule
 	const newRequirementProgress = recalculateRequirementProgress(
 		newSchedules,
 		currentData.period,
