@@ -105,23 +105,21 @@ export function internalError(reply: FastifyReply, message?: string) {
 export function createSlackResponseBlocks(title: string, details?: string) {
 	const blocks: Array<Record<string, unknown>> = [
 		{
-			type: "section",
+			type: "header",
 			text: {
-				type: "mrkdwn",
-				text: `*${title}*`,
+				type: "plain_text",
+				text: title,
 			},
 		},
 	];
 
 	if (details) {
 		blocks.push({
-			type: "context",
-			elements: [
-				{
-					type: "mrkdwn",
-					text: `\`\`\`${details}\`\`\``,
-				},
-			],
+			type: "section",
+			text: {
+				type: "mrkdwn",
+				text: `>${details.replace("\n", "\n>")}`,
+			},
 		});
 	}
 
@@ -141,7 +139,7 @@ export function slackError(
 ) {
 	reply.success = false;
 	return reply.code(200).send({
-		response_type: "in_channel",
+		response_type: "ephemeral",
 		blocks: createSlackResponseBlocks(title, details),
 	});
 }
@@ -159,7 +157,7 @@ export function slackSuccess(
 ) {
 	reply.success = true;
 	return reply.code(200).send({
-		response_type: "in_channel",
+		response_type: "ephemeral",
 		blocks: createSlackResponseBlocks(title, details),
 	});
 }

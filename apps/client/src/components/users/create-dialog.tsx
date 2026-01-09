@@ -39,8 +39,12 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const formId = useId();
 
 	const createUserMutation = useMutation({
-		mutationFn: (input: { username: string; name?: string; email?: string; slackUsername?: string }) =>
-			trpc.users.create.mutate(input),
+		mutationFn: (input: {
+			username: string;
+			name?: string;
+			email?: string;
+			slackUsername?: string;
+		}) => trpc.users.create.mutate(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["users"] });
 		},
@@ -185,7 +189,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 							);
 						}}
 					/>
-					
+
 					<form.Field
 						name="slackUsername"
 						children={(field) => {
@@ -193,7 +197,10 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								field.state.meta.isTouched && !field.state.meta.isValid;
 							return (
 								<Field data-invalid={isInvalid}>
-									<FieldLabel htmlFor={field.name}>Slack Username</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										Slack Username{" "}
+										<span className="text-muted-foreground">(optional)</span>
+									</FieldLabel>
 									<Input
 										id={field.name}
 										name={field.name}

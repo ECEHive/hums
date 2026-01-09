@@ -8,7 +8,7 @@ export const ZUpdateSchema = z.object({
 	id: z.number().min(1),
 	name: z.string().min(1).max(100),
 	email: z.email(),
-	slackUsername: z.string().optional(),
+	slackUsername: z.string().nullable().optional(),
 	roleIds: z.array(z.number().min(1)).optional(),
 });
 
@@ -27,7 +27,7 @@ export async function updateHandler(options: TUpdateOptions) {
 		data: {
 			name,
 			email,
-			slackUsername,
+			slackUsername: slackUsername === "" ? null : slackUsername,
 			...(roleIds !== undefined
 				? {
 						roles: {
