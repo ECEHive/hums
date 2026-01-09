@@ -34,6 +34,10 @@ function extractToken(request: FastifyRequest) {
 }
 
 async function authGuard(request: FastifyRequest, reply: FastifyReply) {
+
+	// Default to unsuccessful
+	reply.success = false;
+
 	// Check for Slack signature first, if not present, normal REST
 	if (request.headers["x-slack-signature"]) {
 		// Verify Slack signing secret signature (per Slack docs)

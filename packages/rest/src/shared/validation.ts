@@ -100,7 +100,7 @@ export function internalError(reply: FastifyReply, message?: string) {
  * Creates Slack message blocks for responses
  * @param title - The title of the message
  * @param details - Optional detailed text to include in the message
- * @returns
+ * @returns An array of Slack Block Kit blocks for the message
  */
 export function createSlackResponseBlocks(title: string, details?: string) {
 	const blocks: Array<Record<string, unknown>> = [
@@ -118,7 +118,7 @@ export function createSlackResponseBlocks(title: string, details?: string) {
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text: `>${details.replace("\n", "\n>")}`,
+				text: `>${details.replace(/\n/g, "\n>")}`,
 			},
 		});
 	}

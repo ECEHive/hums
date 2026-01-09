@@ -252,15 +252,16 @@ export const slackRoutes: FastifyPluginAsync = async (fastify) => {
 	fastify.addHook(
 		"preHandler",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const authUser = await getUserPermissions(request.user as User);
 
-			if (!authUser) {
+			if (!request.user) {
 				return slackError(
 					reply,
 					"Unauthorized user",
 					"No HUMS user found with Slack username.",
 				);
 			}
+
+			const authUser = await getUserPermissions(request.user as User);
 
 			// Check command against registry by validating the Slack payload first
 			const parsedCommandPayload = SlackSchema.safeParse(request.body);
