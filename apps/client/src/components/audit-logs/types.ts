@@ -27,7 +27,7 @@ export type AuditLogFilterApiToken = {
 export type AuditLogRow = {
 	id: number;
 	action: string;
-	source: "trpc" | "rest" | "kiosk";
+	source: "trpc" | "rest" | "kiosk" | "slack";
 	metadata: unknown;
 	createdAt: string | Date;
 	userId: number | null;

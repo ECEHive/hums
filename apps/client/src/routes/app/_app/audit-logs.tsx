@@ -55,7 +55,7 @@ export const Route = createFileRoute("/app/_app/audit-logs")({
 });
 
 type FilterState = {
-	source: "" | "trpc" | "rest";
+	source: "" | "trpc" | "rest" | "slack";
 	actor: AuditLogFilterUser | null;
 	impersonatedBy: AuditLogFilterUser | null;
 	apiToken: AuditLogFilterApiToken | null;
@@ -307,6 +307,7 @@ function AuditLogsPage() {
 									<SelectContent>
 										<SelectItem value="trpc">TRPC</SelectItem>
 										<SelectItem value="rest">REST</SelectItem>
+										<SelectItem value="slack">Slack</SelectItem>
 									</SelectContent>
 								</Select>
 							</FilterField>

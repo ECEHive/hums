@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { HatGlassesIcon, UserCogIcon } from "lucide-react";
+import { HatGlassesIcon, SlackIcon, UserCogIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,6 +108,14 @@ function ActorCell({ log }: { log: AuditLogRow }) {
 						<TooltipContent>
 							API token {formatAuditLogApiTokenPrimary(log.apiToken)}
 						</TooltipContent>
+					</Tooltip>
+				) : null}
+				{log.source === "slack" ? (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<SlackIcon className="size-3 text-amber-500" />
+						</TooltipTrigger>
+						<TooltipContent>From Slack</TooltipContent>
 					</Tooltip>
 				) : null}
 				<span>{formatActor(log.user) ?? "System"}</span>

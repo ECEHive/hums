@@ -7,6 +7,7 @@
 		"packages/*"
 	],
 	"scripts": {
+		"dev": "bun --filter './apps/*' dev",
 		"check": "biome check --write",
 		"typecheck": "bun --filter './packages/*' --filter './apps/*' typecheck",
 		"set-version": "bun scripts/set-package-versions.ts"

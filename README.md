@@ -68,8 +68,10 @@ Refer to each app's README for required variables.
 To start server, client, and kiosk with hot-reload, run the following in the workspace root,
 
 ```sh
-bun run -r dev
+bun dev
 ```
+
+Alternatively, run the above in a specific directory within `apps/` to individually start the server, client, or kiosk.
 
 You can then access the client at https://localhost:44831/.
 

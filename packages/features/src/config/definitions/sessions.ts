@@ -9,7 +9,7 @@ export const sessionConfig = defineConfig({
 	groups: [
 		{
 			id: "session-timeout",
-			label: "Session Timeout Settings",
+			label: "Session Timeout",
 			description:
 				"Configure automatic session logout based on session duration",
 			icon: "Clock",
