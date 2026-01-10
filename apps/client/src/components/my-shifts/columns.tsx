@@ -224,7 +224,7 @@ export function createColumns(
 		},
 		{
 			id: "actions",
-			header: "Actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				const occurrence = row.original;
 				const canDrop = options.canDropPermission && occurrence.canDrop;

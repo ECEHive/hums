@@ -47,8 +47,8 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Agreement>[] {
 			},
 		},
 		{
-			accessorKey: "modify",
-			header: "Actions",
+			id: "actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				return (
 					<div className="flex gap-2 items-center">

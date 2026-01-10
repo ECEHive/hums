@@ -327,8 +327,9 @@ function DeleteTokenButton({
 					size="icon"
 					onClick={() => setOpen(true)}
 					disabled={disabled}
+					aria-label={`Delete token ${token.name}`}
 				>
-					<Trash2Icon className="size-4" />
+					<Trash2Icon className="size-4 text-destructive" />
 				</Button>
 			</AlertDialogTrigger>
 			<AlertDialogContent>

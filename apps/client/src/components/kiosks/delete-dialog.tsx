@@ -54,7 +54,7 @@ export function DeleteDialog({ device }: DeleteDialogProps): JSX.Element {
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				<Button variant="ghost" size="icon" disabled={!canDelete}>
-					<Trash2 className="h-4 w-4" />
+					<Trash2 className="h-4 w-4 text-destructive" />
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">

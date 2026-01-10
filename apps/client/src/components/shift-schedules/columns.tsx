@@ -63,7 +63,7 @@ export function generateColumns(
 	if (canEdit || canDelete) {
 		columns.push({
 			id: "actions",
-			header: "Actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				const [editSheetOpen, setEditSheetOpen] = React.useState(false);
 

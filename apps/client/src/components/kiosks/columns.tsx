@@ -83,8 +83,8 @@ export function generateColumns(): ColumnDef<Device>[] {
 				}),
 		},
 		{
-			accessorKey: "modify",
-			header: "Actions",
+			id: "actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				return (
 					<div className="flex gap-2 items-center">

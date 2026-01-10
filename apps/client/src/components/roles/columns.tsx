@@ -49,11 +49,11 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Role>[] {
 			},
 		},
 		{
-			accessorKey: "modify",
-			header: "Modify",
+			id: "actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				return (
-					<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+					<div className="flex gap-2 items-center">
 						{canRename && <RenameDialog role={row.original} />}
 						{canDelete && (
 							<DeleteDialog
