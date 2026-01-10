@@ -68,7 +68,7 @@ export function generateColumns(
 				const [editSheetOpen, setEditSheetOpen] = React.useState(false);
 
 				return (
-					<div className="flex items-center gap-2">
+					<div className="flex items-center justify-end gap-2">
 						{canEdit && (
 							<>
 								<Button

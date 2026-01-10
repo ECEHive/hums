@@ -53,7 +53,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Role>[] {
 			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				return (
-					<div className="flex gap-2 items-center">
+					<div className="flex gap-2 items-center justify-end">
 						{canRename && <RenameDialog role={row.original} />}
 						{canDelete && (
 							<DeleteDialog

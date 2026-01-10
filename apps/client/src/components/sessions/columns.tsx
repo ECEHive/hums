@@ -190,7 +190,11 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Session>[] {
 				if (session.endedAt !== null) {
 					return null;
 				}
-				return <EndSessionButton session={session} />;
+				return (
+					<div className="flex justify-end">
+						<EndSessionButton session={session} />
+					</div>
+				);
 			},
 		});
 	}

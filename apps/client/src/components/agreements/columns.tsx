@@ -51,7 +51,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Agreement>[] {
 			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				return (
-					<div className="flex gap-2 items-center">
+					<div className="flex gap-2 items-center justify-end">
 						{canEdit && <EditDialog agreement={row.original} />}
 						{canDelete && (
 							<DeleteDialog
