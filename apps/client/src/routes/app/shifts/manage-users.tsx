@@ -619,7 +619,9 @@ function SchedulesSection({
 								<TableHead>Shift</TableHead>
 								<TableHead>Day / Time</TableHead>
 								<TableHead>Slots</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
+								<TableHead className="text-right">
+									<span className="sr-only">Actions</span>
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -767,7 +769,9 @@ function AssignedSchedulesSection({
 						<TableHead>Shift</TableHead>
 						<TableHead>Day / Time</TableHead>
 						<TableHead>Slots</TableHead>
-						<TableHead className="text-right">Actions</TableHead>
+						<TableHead className="text-right">
+							<span className="sr-only">Actions</span>
+						</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>

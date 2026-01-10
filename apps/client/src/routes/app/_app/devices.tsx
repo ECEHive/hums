@@ -1,11 +1,12 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
+import { generateColumns } from "@/components/devices/columns";
+import { CreateDialog } from "@/components/devices/create-dialog";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
-import { generateColumns } from "@/components/kiosks/columns";
-import { CreateDialog } from "@/components/kiosks/create-dialog";
 import {
 	Page,
 	PageActions,
@@ -21,10 +22,11 @@ import {
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
+import { Button } from "@/components/ui/button";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
-export const Route = createFileRoute("/app/_app/kiosks")({
+export const Route = createFileRoute("/app/_app/devices")({
 	component: () =>
 		RequirePermissions({
 			permissions,
@@ -57,7 +59,12 @@ function Devices() {
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { devices: [], count: 0 }, isLoading } = useQuery({
+	const {
+		data = { devices: [], count: 0 },
+		isLoading,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: ["devices", queryParams],
 		queryFn: async () => {
 			return await trpc.devices.list.query(queryParams);
@@ -78,6 +85,17 @@ function Devices() {
 			<PageHeader>
 				<PageTitle>Devices</PageTitle>
 				<PageActions>
+					<Button
+						variant="outline"
+						onClick={() => refetch()}
+						disabled={isFetching}
+					>
+						{isFetching ? (
+							<Loader2Icon className="size-4 animate-spin" />
+						) : (
+							<RefreshCcwIcon className="size-4" />
+						)}
+					</Button>
 					<CreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
 			</PageHeader>

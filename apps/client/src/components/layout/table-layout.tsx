@@ -40,7 +40,7 @@ function TableSearchInput({
 	return (
 		<div
 			data-slot="table-search"
-			className={cn("flex items-center gap-2 flex-1 max-w-sm", className)}
+			className={cn("flex items-center gap-2 flex-1 max-w-md", className)}
 			{...props}
 		/>
 	);

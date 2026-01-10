@@ -1,8 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { FilterIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { AuditLogApiTokenSelector } from "@/components/audit-logs/api-token-selector";
@@ -22,8 +21,15 @@ import {
 	PageHeader,
 	PageTitle,
 	TableContainer,
+	TableSearchInput,
+	TableToolbar,
 } from "@/components/layout";
-import { DataTable, TablePaginationFooter } from "@/components/shared";
+import {
+	DataTable,
+	FilterField,
+	TableFilters,
+	TablePaginationFooter,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -232,123 +238,130 @@ function AuditLogsPage() {
 				<PageActions>
 					<Button
 						variant="outline"
-						size="sm"
 						onClick={() => refetch()}
 						disabled={isFetching}
 					>
 						{isFetching ? (
-							<Loader2Icon className="mr-2 size-4 animate-spin" />
+							<Loader2Icon className="size-4 animate-spin" />
 						) : (
-							<RefreshCcwIcon className="mr-2 size-4" />
+							<RefreshCcwIcon className="size-4" />
 						)}
-						Refresh
 					</Button>
 				</PageActions>
 			</PageHeader>
 
 			<PageContent>
-				{/* Filters Card */}
+				{/* Audit Logs Table */}
 				<Card>
 					<CardHeader>
-						<div className="flex items-center gap-2">
-							<FilterIcon className="size-4" />
-							<CardTitle>Filters</CardTitle>
-						</div>
-						<CardDescription>
-							Filter audit logs by action, actor, token, and source
-						</CardDescription>
+						<CardTitle>Audit Logs</CardTitle>
+						<CardDescription>View and filter system audit logs</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-							<FilterField label="Action">
-								<Input
-									placeholder="users.create"
-									value={actionInput}
-									onChange={(event) => setActionInput(event.target.value)}
-								/>
-							</FilterField>
-							{canFilterUsers ? (
-								<>
-									<FilterField label="Actor">
-										<AuditLogUserSelector
-											placeholder="Search by name"
-											value={filters.actor}
-											onChange={handleActorChange}
-										/>
-									</FilterField>
-									<FilterField label="Impersonated by">
-										<AuditLogUserSelector
-											placeholder="Search impersonators"
-											value={filters.impersonatedBy}
-											onChange={handleImpersonatedByChange}
-										/>
-									</FilterField>
-								</>
-							) : null}
-							{canFilterApiTokens ? (
-								<FilterField label="API token">
-									<AuditLogApiTokenSelector
-										placeholder="Search API tokens"
-										value={filters.apiToken}
-										onChange={handleApiTokenChange}
+						<TableContainer>
+							<TableToolbar>
+								<TableSearchInput className="max-w-md">
+									<Input
+										placeholder="Search by action (e.g., users.create)..."
+										value={actionInput}
+										onChange={(event) => setActionInput(event.target.value)}
 									/>
-								</FilterField>
-							) : null}
-							<FilterField label="Source">
-								<Select
-									value={filters.source || undefined}
-									onValueChange={(value) =>
-										handleSourceChange(value as FilterState["source"])
+								</TableSearchInput>
+								<TableFilters
+									activeFiltersCount={
+										(filters.actor ? 1 : 0) +
+										(filters.impersonatedBy ? 1 : 0) +
+										(filters.apiToken ? 1 : 0) +
+										(filters.source ? 1 : 0)
 									}
+									hasActiveFilters={
+										!!filters.actor ||
+										!!filters.impersonatedBy ||
+										!!filters.apiToken ||
+										!!filters.source
+									}
+									onReset={handleReset}
 								>
-									<SelectTrigger className="w-full justify-between">
-										<SelectValue placeholder="All sources" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="trpc">TRPC</SelectItem>
-										<SelectItem value="rest">REST</SelectItem>
-										<SelectItem value="slack">Slack</SelectItem>
-									</SelectContent>
-								</Select>
-							</FilterField>
-						</div>
-						<div className="mt-4">
-							<Button type="button" variant="outline" onClick={handleReset}>
-								Reset
-							</Button>
-						</div>
+									{canFilterUsers && (
+										<>
+											<FilterField label="Actor">
+												<AuditLogUserSelector
+													placeholder="Search by name"
+													value={filters.actor}
+													onChange={handleActorChange}
+												/>
+											</FilterField>
+											<FilterField label="Impersonated by">
+												<AuditLogUserSelector
+													placeholder="Search impersonators"
+													value={filters.impersonatedBy}
+													onChange={handleImpersonatedByChange}
+												/>
+											</FilterField>
+										</>
+									)}
+									{canFilterApiTokens && (
+										<FilterField label="API token">
+											<AuditLogApiTokenSelector
+												placeholder="Search API tokens"
+												value={filters.apiToken}
+												onChange={handleApiTokenChange}
+											/>
+										</FilterField>
+									)}
+									<FilterField label="Source">
+										<Select
+											value={filters.source || "all"}
+											onValueChange={(value) =>
+												handleSourceChange(
+													value === "all"
+														? ""
+														: (value as FilterState["source"]),
+												)
+											}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="All sources" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="all">All sources</SelectItem>
+												<SelectItem value="trpc">TRPC</SelectItem>
+												<SelectItem value="rest">REST</SelectItem>
+												<SelectItem value="slack">Slack</SelectItem>
+											</SelectContent>
+										</Select>
+									</FilterField>
+								</TableFilters>
+							</TableToolbar>
+							<DataTable
+								columns={columns}
+								data={logs}
+								isLoading={isLoading || isFetching}
+								emptyMessage="No audit logs found"
+								emptyDescription="Try adjusting your filters"
+								onRowClick={handleSelectLog}
+							/>
+
+							{total > 0 && (
+								<TablePaginationFooter
+									page={resolvedPage}
+									totalPages={totalPages}
+									onPageChange={handlePageChange}
+									offset={(resolvedPage - 1) * resolvedPageSize}
+									currentCount={logs.length}
+									total={total}
+									itemName="audit logs"
+									pageSize={pageSize}
+									onPageSizeChange={(size) => {
+										setPageSize(size);
+										setPage(1);
+									}}
+									pageSizeOptions={PAGE_SIZE_OPTIONS}
+								/>
+							)}
+						</TableContainer>
 					</CardContent>
 				</Card>
-
-				{/* Audit Logs Table */}
-				<TableContainer>
-					<DataTable
-						columns={columns}
-						data={logs}
-						isLoading={isLoading || isFetching}
-						emptyMessage="No audit logs found"
-						emptyDescription="Try adjusting your filters"
-						onRowClick={handleSelectLog}
-					/>
-
-					{total > 0 && (
-						<TablePaginationFooter
-							page={resolvedPage}
-							totalPages={totalPages}
-							onPageChange={handlePageChange}
-							offset={(resolvedPage - 1) * resolvedPageSize}
-							currentCount={logs.length}
-							total={total}
-							itemName="audit logs"
-							pageSize={pageSize}
-							onPageSizeChange={(size) => {
-								setPageSize(size);
-								setPage(1);
-							}}
-							pageSizeOptions={PAGE_SIZE_OPTIONS}
-						/>
-					)}
-				</TableContainer>
 
 				<AuditLogDetailsSheet
 					log={selectedLog}
@@ -359,21 +372,6 @@ function AuditLogsPage() {
 				/>
 			</PageContent>
 		</Page>
-	);
-}
-
-function FilterField({
-	label,
-	children,
-}: {
-	label: string;
-	children: ReactNode;
-}) {
-	return (
-		<div className="flex flex-col gap-2 text-sm font-medium text-foreground">
-			<span className="text-muted-foreground">{label}</span>
-			{children}
-		</div>
 	);
 }
 

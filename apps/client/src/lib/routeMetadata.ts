@@ -42,9 +42,9 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Users",
 		breadcrumb: "Users",
 	},
-	"/app/kiosks": {
-		title: "Kiosks",
-		breadcrumb: "Kiosks",
+	"/app/devices": {
+		title: "Devices",
+		breadcrumb: "Devices",
 	},
 	"/app/roles": {
 		title: "Roles",

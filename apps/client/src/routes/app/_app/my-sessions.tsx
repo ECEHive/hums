@@ -56,6 +56,7 @@ function MySessionsPage() {
 				offset,
 			});
 		},
+		refetchInterval: 5000,
 	});
 
 	const { data: statsData } = useQuery({
@@ -63,6 +64,7 @@ function MySessionsPage() {
 		queryFn: async () => {
 			return trpc.sessions.myStats.query({});
 		},
+		refetchInterval: 5000,
 	});
 
 	const endSessionMutation = useMutation({

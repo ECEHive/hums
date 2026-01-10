@@ -115,7 +115,7 @@ export function generateColumns(
 			cell: ({ row }) => {
 				if (!canManage) return null;
 				return (
-					<div className="flex gap-2 items-center">
+					<div className="flex gap-2 items-center justify-end">
 						<SuspensionUpdateDialog suspension={row.original} />
 					</div>
 				);

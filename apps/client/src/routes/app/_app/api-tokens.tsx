@@ -139,11 +139,10 @@ function ApiTokensPage() {
 						disabled={isFetching}
 					>
 						{isFetching ? (
-							<Loader2Icon className="mr-2 size-4 animate-spin" />
+							<Loader2Icon className="size-4 animate-spin" />
 						) : (
-							<RefreshCcwIcon className="mr-2 size-4" />
+							<RefreshCcwIcon className="size-4" />
 						)}
-						Refresh
 					</Button>
 					<CreateTokenDialog
 						disabled={!canCreate}
@@ -327,8 +326,9 @@ function DeleteTokenButton({
 					size="icon"
 					onClick={() => setOpen(true)}
 					disabled={disabled}
+					aria-label={`Delete token ${token.name}`}
 				>
-					<Trash2Icon className="size-4" />
+					<Trash2Icon className="size-4 text-destructive" />
 				</Button>
 			</AlertDialogTrigger>
 			<AlertDialogContent>

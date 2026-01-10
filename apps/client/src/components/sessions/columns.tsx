@@ -183,14 +183,18 @@ export function generateColumns(user: AuthUser | null): ColumnDef<Session>[] {
 	if (canManageSessions) {
 		baseColumns.push({
 			id: "actions",
-			header: "Actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				const session = row.original;
 				// Only show button for active sessions
 				if (session.endedAt !== null) {
 					return null;
 				}
-				return <EndSessionButton session={session} />;
+				return (
+					<div className="flex justify-end">
+						<EndSessionButton session={session} />
+					</div>
+				);
 			},
 		});
 	}

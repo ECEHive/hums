@@ -144,7 +144,7 @@ export function UserUpdateDialog({
 			<DialogTrigger asChild>
 				<Button
 					variant="ghost"
-					size="sm"
+					size="icon"
 					disabled={!canUpdate}
 					aria-label={`Edit user ${user.username}`}
 					title={`Edit user ${user.username}`}
