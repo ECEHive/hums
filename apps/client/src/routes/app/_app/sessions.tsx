@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ClockIcon, Filter, RefreshCcw, UserCog, X } from "lucide-react";
+import { ClockIcon, Loader2Icon, RefreshCcwIcon, UserCog } from "lucide-react";
 import React, { useState } from "react";
 import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -19,10 +19,11 @@ import { AdminSessionManagementDialog } from "@/components/sessions/admin-sessio
 import { generateColumns } from "@/components/sessions/columns";
 import {
 	DataTable,
+	FilterField,
 	SearchInput,
+	TableFilters,
 	TablePaginationFooter,
 } from "@/components/shared";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -32,11 +33,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
@@ -95,18 +97,30 @@ function SessionsPage() {
 		return params;
 	}, [pageSize, offset, filterSessionType, debouncedSearch]);
 
-	const { data: sessionsData, isLoading, refetch } = useQuery({
+	const {
+		data: sessionsData,
+		isLoading,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: ["sessions", queryParams],
 		queryFn: async () => {
 			return trpc.sessions.list.query(queryParams);
 		},
+		refetchInterval: 30000,
 	});
 
-	const { data: statsData, isLoading: isStatsLoading, refetch: refetchStats } = useQuery({
+	const {
+		data: statsData,
+		isLoading: isStatsLoading,
+		isFetching: isStatsFetching,
+		refetch: refetchStats,
+	} = useQuery({
 		queryKey: ["sessionsStats"],
 		queryFn: async () => {
 			return trpc.sessions.stats.query({});
 		},
+		refetchInterval: 30000,
 	});
 
 	const sessions = sessionsData?.sessions ?? [];
@@ -125,6 +139,20 @@ function SessionsPage() {
 				<PageTitle>Sessions</PageTitle>
 				{canManageSessions && (
 					<PageActions>
+						<Button
+							variant="outline"
+							onClick={() => {
+								refetch();
+								refetchStats();
+							}}
+							disabled={isFetching || isStatsFetching}
+						>
+							{isFetching || isStatsFetching ? (
+								<Loader2Icon className="size-4 animate-spin" />
+							) : (
+								<RefreshCcwIcon className="size-4" />
+							)}
+						</Button>
 						<Button onClick={() => setManageDialogOpen(true)}>
 							<UserCog className="mr-2 h-4 w-4" />
 							Manage User Session
@@ -203,7 +231,7 @@ function SessionsPage() {
 					<CardContent>
 						<TableContainer>
 							<TableToolbar>
-								<TableSearchInput className="max-w-full md:max-w-2xl">
+								<TableSearchInput className="max-w-md">
 									<SearchInput
 										placeholder="Search by user name, username, or email..."
 										value={search}
@@ -212,70 +240,38 @@ function SessionsPage() {
 											resetToFirstPage();
 										}}
 									/>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button variant="outline" className="gap-2">
-												<Filter className="size-4" />
-												Session Type
-												{filterSessionType && (
-													<Badge variant="secondary" className="ml-1">
-														{filterSessionType === "staffing"
-															? "Staffing"
-															: "Regular"}
-													</Badge>
-												)}
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="start">
-											<DropdownMenuItem
-												onClick={() => {
-													setFilterSessionType(null);
-													resetToFirstPage();
-												}}
-											>
-												All Types
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setFilterSessionType("regular");
-													resetToFirstPage();
-												}}
-											>
-												Regular
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setFilterSessionType("staffing");
-													resetToFirstPage();
-												}}
-											>
-												Staffing
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-									{(search || filterSessionType) && (
-										<Button
-											variant="ghost"
-											onClick={() => {
-												setSearch("");
-												setFilterSessionType(null);
+								</TableSearchInput>
+								<TableFilters
+									activeFiltersCount={filterSessionType ? 1 : 0}
+									hasActiveFilters={!!filterSessionType}
+									onReset={() => {
+										setFilterSessionType(null);
+										resetToFirstPage();
+									}}
+								>
+									<FilterField label="Session Type">
+										<Select
+											value={filterSessionType || "all"}
+											onValueChange={(value) => {
+												setFilterSessionType(
+													value === "all"
+														? null
+														: (value as "regular" | "staffing"),
+												);
 												resetToFirstPage();
 											}}
-											className="gap-2"
 										>
-											<X className="size-4" />
-											Clear Filters
-										</Button>
-									)}
-								</TableSearchInput>
-								<Button
-									variant="outline"
-									size="icon"
-									onClick={() => { refetch(); refetchStats(); }}
-									title="Refresh"
-								>
-									<RefreshCcw className="h-4 w-4" />
-								</Button>
+											<SelectTrigger>
+												<SelectValue placeholder="All types" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="all">All types</SelectItem>
+												<SelectItem value="regular">Regular</SelectItem>
+												<SelectItem value="staffing">Staffing</SelectItem>
+											</SelectContent>
+										</Select>
+									</FilterField>
+								</TableFilters>
 							</TableToolbar>
 
 							<DataTable

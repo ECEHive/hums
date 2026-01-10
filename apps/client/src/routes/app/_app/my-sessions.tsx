@@ -11,7 +11,7 @@ import {
 	PageHeader,
 	PageTitle,
 	TableContainer,
-	TableToolbar
+	TableToolbar,
 } from "@/components/layout";
 import { columns } from "@/components/my-sessions/columns";
 import { DataTable, TablePaginationFooter } from "@/components/shared";
@@ -56,7 +56,7 @@ function MySessionsPage() {
 				offset,
 			});
 		},
-		refetchInterval: 5000
+		refetchInterval: 5000,
 	});
 
 	const { data: statsData } = useQuery({
@@ -64,7 +64,7 @@ function MySessionsPage() {
 		queryFn: async () => {
 			return trpc.sessions.myStats.query({});
 		},
-		refetchInterval: 5000
+		refetchInterval: 5000,
 	});
 
 	const endSessionMutation = useMutation({
@@ -211,7 +211,7 @@ function MySessionsPage() {
 							<TableToolbar>
 								<div />
 							</TableToolbar>
-							
+
 							<DataTable
 								columns={columns}
 								data={sessions}

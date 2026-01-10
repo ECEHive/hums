@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { RefreshCcw } from "lucide-react";
+import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -59,7 +59,12 @@ function Devices() {
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { devices: [], count: 0 }, isLoading, refetch } = useQuery({
+	const {
+		data = { devices: [], count: 0 },
+		isLoading,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: ["devices", queryParams],
 		queryFn: async () => {
 			return await trpc.devices.list.query(queryParams);
@@ -80,6 +85,17 @@ function Devices() {
 			<PageHeader>
 				<PageTitle>Devices</PageTitle>
 				<PageActions>
+					<Button
+						variant="outline"
+						onClick={() => refetch()}
+						disabled={isFetching}
+					>
+						{isFetching ? (
+							<Loader2Icon className="size-4 animate-spin" />
+						) : (
+							<RefreshCcwIcon className="size-4" />
+						)}
+					</Button>
 					<CreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
 			</PageHeader>
@@ -97,14 +113,6 @@ function Devices() {
 								}}
 							/>
 						</TableSearchInput>
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={() => refetch()}
-							title="Refresh"
-						>
-							<RefreshCcw className="h-4 w-4" />
-						</Button>
 					</TableToolbar>
 
 					<DataTable

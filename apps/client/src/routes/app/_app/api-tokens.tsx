@@ -139,11 +139,10 @@ function ApiTokensPage() {
 						disabled={isFetching}
 					>
 						{isFetching ? (
-							<Loader2Icon className="mr-2 size-4 animate-spin" />
+							<Loader2Icon className="size-4 animate-spin" />
 						) : (
-							<RefreshCcwIcon className="mr-2 size-4" />
+							<RefreshCcwIcon className="size-4" />
 						)}
-						Refresh
 					</Button>
 					<CreateTokenDialog
 						disabled={!canCreate}
