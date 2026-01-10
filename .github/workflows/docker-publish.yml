@@ -46,7 +46,7 @@ jobs:
             type=semver,pattern={{version}},priority=900
             type=semver,pattern={{major}}.{{minor}},priority=800
             type=semver,pattern={{major}},priority=700
-            type=raw,value=latest,enable={{is_default_branch}},priority=600
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }},priority=600
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }},priority=500
 
       - name: Extract metadata for migrate image
@@ -58,7 +58,7 @@ jobs:
             type=semver,pattern={{version}},priority=900
             type=semver,pattern={{major}}.{{minor}},priority=800
             type=semver,pattern={{major}},priority=700
-            type=raw,value=latest,enable={{is_default_branch}},priority=600
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }},priority=600
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }},priority=500
 
       - name: Extract metadata for web image
@@ -70,7 +70,7 @@ jobs:
             type=semver,pattern={{version}},priority=900
             type=semver,pattern={{major}}.{{minor}},priority=800
             type=semver,pattern={{major}},priority=700
-            type=raw,value=latest,enable={{is_default_branch}},priority=600
+            type=raw,value=latest,enable=${{ github.event_name == 'release' }},priority=600
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }},priority=500
 
       - name: Build and push server image
@@ -115,9 +115,9 @@ jobs:
       - name: Make images public
         run: |
           # Set packages to public visibility
-          gh api --method PATCH /user/packages/container/${{ github.event.repository.name }}-server/versions -f visibility=public || true
-          gh api --method PATCH /user/packages/container/${{ github.event.repository.name }}-migrate/versions -f visibility=public || true
-          gh api --method PATCH /user/packages/container/${{ github.event.repository.name }}-web/versions -f visibility=public || true
+          gh api --method PATCH /user/packages/container/hums-server -f visibility=public || true
+          gh api --method PATCH /user/packages/container/hums-migrate -f visibility=public || true
+          gh api --method PATCH /user/packages/container/hums-web -f visibility=public || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
