@@ -1,5 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 import type { JSX } from "react/jsx-runtime";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
@@ -45,8 +46,13 @@ export function DeleteDialog({
 		<Dialog>
 			<form>
 				<DialogTrigger asChild>
-					<Button variant="destructive" size="sm" disabled={!canDelete}>
-						Delete
+					<Button
+						variant="ghost"
+						size="icon"
+						disabled={!canDelete}
+						aria-label={`Delete role ${roleName}`}
+					>
+						<Trash2 className="h-4 w-4 text-destructive" />
 					</Button>
 				</DialogTrigger>
 				<DialogContent className="sm:max-w-[425px]">

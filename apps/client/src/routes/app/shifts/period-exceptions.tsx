@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Loader2Icon, Plus, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
@@ -71,7 +71,7 @@ function PeriodExceptionsPage() {
 		};
 	}, [periodId, debouncedSearch, offset, pageSize]);
 
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, refetch, isFetching } = useQuery({
 		queryKey: ["periodExceptions", queryParams],
 		enabled: periodId !== null,
 		queryFn: async () => trpc.periodExceptions.list.query(queryParams),
@@ -102,14 +102,25 @@ function PeriodExceptionsPage() {
 		<Page>
 			<PageHeader>
 				<PageTitle>Period Exceptions</PageTitle>
-				{canCreate && (
-					<PageActions>
+				<PageActions>
+					<Button
+						variant="outline"
+						onClick={() => refetch()}
+						disabled={isFetching}
+					>
+						{isFetching ? (
+							<Loader2Icon className="size-4 animate-spin" />
+						) : (
+							<RefreshCcwIcon className="size-4" />
+						)}
+					</Button>
+					{canCreate && (
 						<Button onClick={() => setCreateOpen(true)}>
 							<Plus className="mr-2 h-4 w-4" />
 							New Exception
 						</Button>
-					</PageActions>
-				)}
+					)}
+				</PageActions>
 			</PageHeader>
 
 			<PageContent>

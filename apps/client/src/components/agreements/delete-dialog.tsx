@@ -51,7 +51,12 @@ export function DeleteDialog({
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button variant="ghost" size="sm" disabled={!canDelete}>
+				<Button
+					variant="ghost"
+					size="icon"
+					disabled={!canDelete}
+					aria-label="Delete agreement"
+				>
 					<Trash2 className="h-4 w-4 text-destructive" />
 				</Button>
 			</DialogTrigger>

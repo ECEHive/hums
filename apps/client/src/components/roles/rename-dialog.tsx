@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Pencil } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
@@ -94,8 +95,13 @@ export function RenameDialog({
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" disabled={!canRename}>
-					Rename
+				<Button
+					variant="ghost"
+					size="icon"
+					disabled={!canRename}
+					aria-label={`Rename role ${role.name}`}
+				>
+					<Pencil className="h-4 w-4" />
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">

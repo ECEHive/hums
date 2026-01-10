@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -21,6 +22,7 @@ import {
 } from "@/components/shared";
 import { generateColumns } from "@/components/suspensions/columns";
 import { SuspensionCreateDialog } from "@/components/suspensions/create-dialog";
+import { Button } from "@/components/ui/button";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
@@ -57,7 +59,12 @@ function Suspensions() {
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { suspensions: [], total: 0 }, isLoading } = useQuery({
+	const {
+		data = { suspensions: [], total: 0 },
+		isLoading,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: ["suspensions", queryParams],
 		queryFn: async () => {
 			return await trpc.suspensions.list.query(queryParams);
@@ -78,6 +85,17 @@ function Suspensions() {
 			<PageHeader>
 				<PageTitle>Suspensions</PageTitle>
 				<PageActions>
+					<Button
+						variant="outline"
+						onClick={() => refetch()}
+						disabled={isFetching}
+					>
+						{isFetching ? (
+							<Loader2Icon className="size-4 animate-spin" />
+						) : (
+							<RefreshCcwIcon className="size-4" />
+						)}
+					</Button>
 					<SuspensionCreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
 			</PageHeader>

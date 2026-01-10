@@ -99,7 +99,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 			header: "",
 			cell: ({ row }) => {
 				return (
-					<div className="flex gap-2 items-center">
+					<div className="flex gap-2 items-center justify-end">
 						<UserUpdateDialog user={row.original} />
 						{canImpersonateUsers && (
 							<ImpersonateUserButton

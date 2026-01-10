@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
 import { generateColumns } from "@/components/agreements/columns";
@@ -21,6 +22,7 @@ import {
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
+import { Button } from "@/components/ui/button";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
@@ -57,7 +59,12 @@ function Agreements() {
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { agreements: [], total: 0 }, isLoading } = useQuery({
+	const {
+		data = { agreements: [], total: 0 },
+		isLoading,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: ["agreements", queryParams],
 		queryFn: async () => {
 			return await trpc.agreements.list.query(queryParams);
@@ -78,6 +85,17 @@ function Agreements() {
 			<PageHeader>
 				<PageTitle>Agreements</PageTitle>
 				<PageActions>
+					<Button
+						variant="outline"
+						onClick={() => refetch()}
+						disabled={isFetching}
+					>
+						{isFetching ? (
+							<Loader2Icon className="size-4 animate-spin" />
+						) : (
+							<RefreshCcwIcon className="size-4" />
+						)}
+					</Button>
 					<CreateDialog />
 				</PageActions>
 			</PageHeader>

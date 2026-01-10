@@ -82,7 +82,7 @@ export function DeleteDialog({
 			<form>
 				<DialogTrigger asChild>
 					<Button variant="ghost" size="icon" aria-label="Delete period">
-						<Trash2 className="h-4 w-4" />
+						<Trash2 className="h-4 w-4 text-destructive" />
 					</Button>
 				</DialogTrigger>
 				<DialogContent className="sm:max-w-[425px]">

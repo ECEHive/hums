@@ -224,7 +224,7 @@ export function createColumns(
 		},
 		{
 			id: "actions",
-			header: "Actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				const occurrence = row.original;
 				const canDrop = options.canDropPermission && occurrence.canDrop;
@@ -232,12 +232,14 @@ export function createColumns(
 
 				if (!canDrop && !canMakeup) {
 					return (
-						<span className="text-sm text-muted-foreground">Not available</span>
+						<span className="text-sm text-muted-foreground text-right">
+							Not available
+						</span>
 					);
 				}
 
 				return (
-					<div className="flex flex-wrap gap-2">
+					<div className="flex flex-wrap gap-2 justify-end">
 						{canDrop ? (
 							<Button
 								size="sm"

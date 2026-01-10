@@ -108,7 +108,12 @@ export function EditDialog({ agreement }: EditDialogProps): JSX.Element {
 	return (
 		<Dialog open={open} onOpenChange={handleDialogChange}>
 			<DialogTrigger asChild>
-				<Button variant="ghost" size="sm" disabled={!canEdit}>
+				<Button
+					variant="ghost"
+					size="icon"
+					disabled={!canEdit}
+					aria-label="Edit agreement"
+				>
 					<Pencil className="h-4 w-4" />
 				</Button>
 			</DialogTrigger>

@@ -43,12 +43,12 @@ export function generateColumns(
 	if (canEdit || canDelete) {
 		columns.push({
 			id: "actions",
-			header: "Actions",
+			header: () => <span className="sr-only">Actions</span>,
 			cell: ({ row }) => {
 				const [editOpen, setEditOpen] = React.useState(false);
 
 				return (
-					<div className="flex items-center gap-2">
+					<div className="flex items-center justify-end gap-2">
 						{canEdit && (
 							<>
 								<Button
