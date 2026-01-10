@@ -52,8 +52,8 @@ import { permissions as agreementsPagePermissions } from "@/routes/app/_app/agre
 import { permissions as apiTokensPagePermissions } from "@/routes/app/_app/api-tokens";
 import { permissions as auditLogsPagePermissions } from "@/routes/app/_app/audit-logs";
 import { permissions as configurationPagePermissions } from "@/routes/app/_app/configuration";
+import { permissions as devicesPagePermissions } from "@/routes/app/_app/devices";
 import { permissions as appIndexPagePermissions } from "@/routes/app/_app/index";
-import { permissions as devicesPagePermissions } from "@/routes/app/_app/kiosks";
 import { permissions as rolesPagePermissions } from "@/routes/app/_app/roles";
 import { permissions as sessionsPagePermissions } from "@/routes/app/_app/sessions";
 import { permissions as suspensionsPagePermissions } from "@/routes/app/_app/suspensions";
@@ -128,7 +128,7 @@ export const items: AppSidebarGroup[] = [
 			},
 			{
 				title: "Devices",
-				url: "/app/kiosks",
+				url: "/app/devices",
 				icon: LaptopMinimalCheckIcon,
 				permissions: devicesPagePermissions,
 			},

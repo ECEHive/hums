@@ -4,9 +4,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
+import { generateColumns } from "@/components/devices/columns";
+import { CreateDialog } from "@/components/devices/create-dialog";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
-import { generateColumns } from "@/components/kiosks/columns";
-import { CreateDialog } from "@/components/kiosks/create-dialog";
 import {
 	Page,
 	PageActions,
@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
-export const Route = createFileRoute("/app/_app/kiosks")({
+export const Route = createFileRoute("/app/_app/devices")({
 	component: () =>
 		RequirePermissions({
 			permissions,

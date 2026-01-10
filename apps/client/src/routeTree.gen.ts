@@ -32,7 +32,7 @@ import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
 import { Route as AppAppRolesRouteImport } from './routes/app/_app/roles'
 import { Route as AppAppMySessionsRouteImport } from './routes/app/_app/my-sessions'
 import { Route as AppAppMyAgreementsRouteImport } from './routes/app/_app/my-agreements'
-import { Route as AppAppKiosksRouteImport } from './routes/app/_app/kiosks'
+import { Route as AppAppDevicesRouteImport } from './routes/app/_app/devices'
 import { Route as AppAppConfigurationRouteImport } from './routes/app/_app/configuration'
 import { Route as AppAppAuditLogsRouteImport } from './routes/app/_app/audit-logs'
 import { Route as AppAppApiTokensRouteImport } from './routes/app/_app/api-tokens'
@@ -153,9 +153,9 @@ const AppAppMyAgreementsRoute = AppAppMyAgreementsRouteImport.update({
   path: '/my-agreements',
   getParentRoute: () => AppAppRoute,
 } as any)
-const AppAppKiosksRoute = AppAppKiosksRouteImport.update({
-  id: '/kiosks',
-  path: '/kiosks',
+const AppAppDevicesRoute = AppAppDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
   getParentRoute: () => AppAppRoute,
 } as any)
 const AppAppConfigurationRoute = AppAppConfigurationRouteImport.update({
@@ -189,7 +189,7 @@ export interface FileRoutesByFullPath {
   '/app/api-tokens': typeof AppAppApiTokensRoute
   '/app/audit-logs': typeof AppAppAuditLogsRoute
   '/app/configuration': typeof AppAppConfigurationRoute
-  '/app/kiosks': typeof AppAppKiosksRoute
+  '/app/devices': typeof AppAppDevicesRoute
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
   '/app/my-sessions': typeof AppAppMySessionsRoute
   '/app/roles': typeof AppAppRolesRoute
@@ -217,7 +217,7 @@ export interface FileRoutesByTo {
   '/app/api-tokens': typeof AppAppApiTokensRoute
   '/app/audit-logs': typeof AppAppAuditLogsRoute
   '/app/configuration': typeof AppAppConfigurationRoute
-  '/app/kiosks': typeof AppAppKiosksRoute
+  '/app/devices': typeof AppAppDevicesRoute
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
   '/app/my-sessions': typeof AppAppMySessionsRoute
   '/app/roles': typeof AppAppRolesRoute
@@ -247,7 +247,7 @@ export interface FileRoutesById {
   '/app/_app/api-tokens': typeof AppAppApiTokensRoute
   '/app/_app/audit-logs': typeof AppAppAuditLogsRoute
   '/app/_app/configuration': typeof AppAppConfigurationRoute
-  '/app/_app/kiosks': typeof AppAppKiosksRoute
+  '/app/_app/devices': typeof AppAppDevicesRoute
   '/app/_app/my-agreements': typeof AppAppMyAgreementsRoute
   '/app/_app/my-sessions': typeof AppAppMySessionsRoute
   '/app/_app/roles': typeof AppAppRolesRoute
@@ -278,7 +278,7 @@ export interface FileRouteTypes {
     | '/app/api-tokens'
     | '/app/audit-logs'
     | '/app/configuration'
-    | '/app/kiosks'
+    | '/app/devices'
     | '/app/my-agreements'
     | '/app/my-sessions'
     | '/app/roles'
@@ -306,7 +306,7 @@ export interface FileRouteTypes {
     | '/app/api-tokens'
     | '/app/audit-logs'
     | '/app/configuration'
-    | '/app/kiosks'
+    | '/app/devices'
     | '/app/my-agreements'
     | '/app/my-sessions'
     | '/app/roles'
@@ -335,7 +335,7 @@ export interface FileRouteTypes {
     | '/app/_app/api-tokens'
     | '/app/_app/audit-logs'
     | '/app/_app/configuration'
-    | '/app/_app/kiosks'
+    | '/app/_app/devices'
     | '/app/_app/my-agreements'
     | '/app/_app/my-sessions'
     | '/app/_app/roles'
@@ -525,11 +525,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppMyAgreementsRouteImport
       parentRoute: typeof AppAppRoute
     }
-    '/app/_app/kiosks': {
-      id: '/app/_app/kiosks'
-      path: '/kiosks'
-      fullPath: '/app/kiosks'
-      preLoaderRoute: typeof AppAppKiosksRouteImport
+    '/app/_app/devices': {
+      id: '/app/_app/devices'
+      path: '/devices'
+      fullPath: '/app/devices'
+      preLoaderRoute: typeof AppAppDevicesRouteImport
       parentRoute: typeof AppAppRoute
     }
     '/app/_app/configuration': {
@@ -568,7 +568,7 @@ interface AppAppRouteChildren {
   AppAppApiTokensRoute: typeof AppAppApiTokensRoute
   AppAppAuditLogsRoute: typeof AppAppAuditLogsRoute
   AppAppConfigurationRoute: typeof AppAppConfigurationRoute
-  AppAppKiosksRoute: typeof AppAppKiosksRoute
+  AppAppDevicesRoute: typeof AppAppDevicesRoute
   AppAppMyAgreementsRoute: typeof AppAppMyAgreementsRoute
   AppAppMySessionsRoute: typeof AppAppMySessionsRoute
   AppAppRolesRoute: typeof AppAppRolesRoute
@@ -583,7 +583,7 @@ const AppAppRouteChildren: AppAppRouteChildren = {
   AppAppApiTokensRoute: AppAppApiTokensRoute,
   AppAppAuditLogsRoute: AppAppAuditLogsRoute,
   AppAppConfigurationRoute: AppAppConfigurationRoute,
-  AppAppKiosksRoute: AppAppKiosksRoute,
+  AppAppDevicesRoute: AppAppDevicesRoute,
   AppAppMyAgreementsRoute: AppAppMyAgreementsRoute,
   AppAppMySessionsRoute: AppAppMySessionsRoute,
   AppAppRolesRoute: AppAppRolesRoute,
