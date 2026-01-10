@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { RefreshCcw } from "lucide-react";
 import React from "react";
 import { RequirePermissions } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -21,6 +22,7 @@ import {
 	SearchInput,
 	TablePaginationFooter,
 } from "@/components/shared";
+import { Button } from "@/components/ui/button";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 
@@ -57,7 +59,7 @@ function Devices() {
 		};
 	}, [debouncedSearch, offset, pageSize]);
 
-	const { data = { devices: [], count: 0 }, isLoading } = useQuery({
+	const { data = { devices: [], count: 0 }, isLoading, refetch } = useQuery({
 		queryKey: ["devices", queryParams],
 		queryFn: async () => {
 			return await trpc.devices.list.query(queryParams);
@@ -95,6 +97,14 @@ function Devices() {
 								}}
 							/>
 						</TableSearchInput>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={() => refetch()}
+							title="Refresh"
+						>
+							<RefreshCcw className="h-4 w-4" />
+						</Button>
 					</TableToolbar>
 
 					<DataTable

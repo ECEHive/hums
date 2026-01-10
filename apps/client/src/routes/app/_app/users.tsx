@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Filter } from "lucide-react";
+import { Filter, RefreshCcw } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -63,7 +63,7 @@ function Users() {
 		};
 	}, [debouncedSearch, offset, pageSize, filterRoles]);
 
-	const { data = { users: [], total: 0 }, isLoading } = useQuery({
+	const { data = { users: [], total: 0 }, isLoading, refetch } = useQuery({
 		// filterRoles needs to be an array of IDs for the query key to work properly
 		queryKey: [
 			"users",
@@ -120,6 +120,14 @@ function Users() {
 								}}
 							/>
 						</TableSearchInput>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={() => refetch()}
+							title="Refresh"
+						>
+							<RefreshCcw className="h-4 w-4" />
+						</Button>
 					</TableToolbar>
 
 					<DataTable

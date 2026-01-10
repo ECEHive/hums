@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCcw } from "lucide-react";
 import React from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
@@ -66,7 +66,7 @@ function ShiftTypesPage() {
 		};
 	}, [periodId, debouncedSearch, offset, pageSize]);
 
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, refetch } = useQuery({
 		queryKey: ["shiftTypes", queryParams],
 		queryFn: async () => trpc.shiftTypes.list.query(queryParams),
 	});
@@ -121,6 +121,14 @@ function ShiftTypesPage() {
 								}}
 							/>
 						</TableSearchInput>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={() => refetch()}
+							title="Refresh"
+						>
+							<RefreshCcw className="h-4 w-4" />
+						</Button>
 					</TableToolbar>
 
 					<DataTable

@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ClockIcon, Filter, UserCog, X } from "lucide-react";
+import { ClockIcon, Filter, RefreshCcw, UserCog, X } from "lucide-react";
 import React, { useState } from "react";
 import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -95,14 +95,14 @@ function SessionsPage() {
 		return params;
 	}, [pageSize, offset, filterSessionType, debouncedSearch]);
 
-	const { data: sessionsData, isLoading } = useQuery({
+	const { data: sessionsData, isLoading, refetch } = useQuery({
 		queryKey: ["sessions", queryParams],
 		queryFn: async () => {
 			return trpc.sessions.list.query(queryParams);
 		},
 	});
 
-	const { data: statsData, isLoading: isStatsLoading } = useQuery({
+	const { data: statsData, isLoading: isStatsLoading, refetch: refetchStats } = useQuery({
 		queryKey: ["sessionsStats"],
 		queryFn: async () => {
 			return trpc.sessions.stats.query({});
@@ -203,7 +203,7 @@ function SessionsPage() {
 					<CardContent>
 						<TableContainer>
 							<TableToolbar>
-								<TableSearchInput>
+								<TableSearchInput className="max-w-full md:max-w-2xl">
 									<SearchInput
 										placeholder="Search by user name, username, or email..."
 										value={search}
@@ -268,6 +268,14 @@ function SessionsPage() {
 										</Button>
 									)}
 								</TableSearchInput>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={() => { refetch(); refetchStats(); }}
+									title="Refresh"
+								>
+									<RefreshCcw className="h-4 w-4" />
+								</Button>
 							</TableToolbar>
 
 							<DataTable
