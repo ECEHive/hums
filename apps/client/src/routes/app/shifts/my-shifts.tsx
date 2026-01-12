@@ -50,6 +50,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { CalendarSyncButton } from "@/components/user/calendar-sync-button";
 import type { RequiredPermissions } from "@/lib/permissions";
 import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
@@ -308,6 +309,7 @@ function MyShifts() {
 			<PageHeader>
 				<PageTitle>My Shifts</PageTitle>
 				<PageActions>
+					<CalendarSyncButton />
 					<Link to="/app/shifts/attendance">
 						<Button variant="outline">Shift History</Button>
 					</Link>

@@ -30,13 +30,14 @@ import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
 import { Route as AppAppRolesRouteImport } from './routes/app/_app/roles'
-import { Route as AppAppMySessionsRouteImport } from './routes/app/_app/my-sessions'
 import { Route as AppAppMyAgreementsRouteImport } from './routes/app/_app/my-agreements'
 import { Route as AppAppDevicesRouteImport } from './routes/app/_app/devices'
 import { Route as AppAppConfigurationRouteImport } from './routes/app/_app/configuration'
 import { Route as AppAppAuditLogsRouteImport } from './routes/app/_app/audit-logs'
 import { Route as AppAppApiTokensRouteImport } from './routes/app/_app/api-tokens'
 import { Route as AppAppAgreementsRouteImport } from './routes/app/_app/agreements'
+import { Route as AppAppMeIndexRouteImport } from './routes/app/_app/me/index'
+import { Route as AppAppMeSessionsRouteImport } from './routes/app/_app/me/sessions'
 
 const OtaSessionLoginRoute = OtaSessionLoginRouteImport.update({
   id: '/ota-session-login',
@@ -143,11 +144,6 @@ const AppAppRolesRoute = AppAppRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => AppAppRoute,
 } as any)
-const AppAppMySessionsRoute = AppAppMySessionsRouteImport.update({
-  id: '/my-sessions',
-  path: '/my-sessions',
-  getParentRoute: () => AppAppRoute,
-} as any)
 const AppAppMyAgreementsRoute = AppAppMyAgreementsRouteImport.update({
   id: '/my-agreements',
   path: '/my-agreements',
@@ -178,6 +174,16 @@ const AppAppAgreementsRoute = AppAppAgreementsRouteImport.update({
   path: '/agreements',
   getParentRoute: () => AppAppRoute,
 } as any)
+const AppAppMeIndexRoute = AppAppMeIndexRouteImport.update({
+  id: '/me/',
+  path: '/me/',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppMeSessionsRoute = AppAppMeSessionsRouteImport.update({
+  id: '/me/sessions',
+  path: '/me/sessions',
+  getParentRoute: () => AppAppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -191,7 +197,6 @@ export interface FileRoutesByFullPath {
   '/app/configuration': typeof AppAppConfigurationRoute
   '/app/devices': typeof AppAppDevicesRoute
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
-  '/app/my-sessions': typeof AppAppMySessionsRoute
   '/app/roles': typeof AppAppRolesRoute
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
@@ -207,6 +212,8 @@ export interface FileRoutesByFullPath {
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
   '/app/': typeof AppAppIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
+  '/app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/me': typeof AppAppMeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -219,7 +226,6 @@ export interface FileRoutesByTo {
   '/app/configuration': typeof AppAppConfigurationRoute
   '/app/devices': typeof AppAppDevicesRoute
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
-  '/app/my-sessions': typeof AppAppMySessionsRoute
   '/app/roles': typeof AppAppRolesRoute
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
@@ -234,6 +240,8 @@ export interface FileRoutesByTo {
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
   '/app/shifts': typeof AppShiftsIndexRoute
+  '/app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/me': typeof AppAppMeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -249,7 +257,6 @@ export interface FileRoutesById {
   '/app/_app/configuration': typeof AppAppConfigurationRoute
   '/app/_app/devices': typeof AppAppDevicesRoute
   '/app/_app/my-agreements': typeof AppAppMyAgreementsRoute
-  '/app/_app/my-sessions': typeof AppAppMySessionsRoute
   '/app/_app/roles': typeof AppAppRolesRoute
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
@@ -265,6 +272,8 @@ export interface FileRoutesById {
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
   '/app/_app/': typeof AppAppIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
+  '/app/_app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/_app/me/': typeof AppAppMeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -280,7 +289,6 @@ export interface FileRouteTypes {
     | '/app/configuration'
     | '/app/devices'
     | '/app/my-agreements'
-    | '/app/my-sessions'
     | '/app/roles'
     | '/app/sessions'
     | '/app/suspensions'
@@ -296,6 +304,8 @@ export interface FileRouteTypes {
     | '/app/shifts/shift-types'
     | '/app/'
     | '/app/shifts/'
+    | '/app/me/sessions'
+    | '/app/me'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -308,7 +318,6 @@ export interface FileRouteTypes {
     | '/app/configuration'
     | '/app/devices'
     | '/app/my-agreements'
-    | '/app/my-sessions'
     | '/app/roles'
     | '/app/sessions'
     | '/app/suspensions'
@@ -323,6 +332,8 @@ export interface FileRouteTypes {
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
     | '/app/shifts'
+    | '/app/me/sessions'
+    | '/app/me'
   id:
     | '__root__'
     | '/'
@@ -337,7 +348,6 @@ export interface FileRouteTypes {
     | '/app/_app/configuration'
     | '/app/_app/devices'
     | '/app/_app/my-agreements'
-    | '/app/_app/my-sessions'
     | '/app/_app/roles'
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
@@ -353,6 +363,8 @@ export interface FileRouteTypes {
     | '/app/shifts/shift-types'
     | '/app/_app/'
     | '/app/shifts/'
+    | '/app/_app/me/sessions'
+    | '/app/_app/me/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -511,13 +523,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppRolesRouteImport
       parentRoute: typeof AppAppRoute
     }
-    '/app/_app/my-sessions': {
-      id: '/app/_app/my-sessions'
-      path: '/my-sessions'
-      fullPath: '/app/my-sessions'
-      preLoaderRoute: typeof AppAppMySessionsRouteImport
-      parentRoute: typeof AppAppRoute
-    }
     '/app/_app/my-agreements': {
       id: '/app/_app/my-agreements'
       path: '/my-agreements'
@@ -560,6 +565,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppAgreementsRouteImport
       parentRoute: typeof AppAppRoute
     }
+    '/app/_app/me/': {
+      id: '/app/_app/me/'
+      path: '/me'
+      fullPath: '/app/me'
+      preLoaderRoute: typeof AppAppMeIndexRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/me/sessions': {
+      id: '/app/_app/me/sessions'
+      path: '/me/sessions'
+      fullPath: '/app/me/sessions'
+      preLoaderRoute: typeof AppAppMeSessionsRouteImport
+      parentRoute: typeof AppAppRoute
+    }
   }
 }
 
@@ -570,12 +589,13 @@ interface AppAppRouteChildren {
   AppAppConfigurationRoute: typeof AppAppConfigurationRoute
   AppAppDevicesRoute: typeof AppAppDevicesRoute
   AppAppMyAgreementsRoute: typeof AppAppMyAgreementsRoute
-  AppAppMySessionsRoute: typeof AppAppMySessionsRoute
   AppAppRolesRoute: typeof AppAppRolesRoute
   AppAppSessionsRoute: typeof AppAppSessionsRoute
   AppAppSuspensionsRoute: typeof AppAppSuspensionsRoute
   AppAppUsersRoute: typeof AppAppUsersRoute
   AppAppIndexRoute: typeof AppAppIndexRoute
+  AppAppMeSessionsRoute: typeof AppAppMeSessionsRoute
+  AppAppMeIndexRoute: typeof AppAppMeIndexRoute
 }
 
 const AppAppRouteChildren: AppAppRouteChildren = {
@@ -585,12 +605,13 @@ const AppAppRouteChildren: AppAppRouteChildren = {
   AppAppConfigurationRoute: AppAppConfigurationRoute,
   AppAppDevicesRoute: AppAppDevicesRoute,
   AppAppMyAgreementsRoute: AppAppMyAgreementsRoute,
-  AppAppMySessionsRoute: AppAppMySessionsRoute,
   AppAppRolesRoute: AppAppRolesRoute,
   AppAppSessionsRoute: AppAppSessionsRoute,
   AppAppSuspensionsRoute: AppAppSuspensionsRoute,
   AppAppUsersRoute: AppAppUsersRoute,
   AppAppIndexRoute: AppAppIndexRoute,
+  AppAppMeSessionsRoute: AppAppMeSessionsRoute,
+  AppAppMeIndexRoute: AppAppMeIndexRoute,
 }
 
 const AppAppRouteWithChildren =

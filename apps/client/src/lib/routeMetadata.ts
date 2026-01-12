@@ -38,6 +38,14 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Home",
 		breadcrumb: "Home",
 	},
+	"/app/me": {
+		title: "My Profile",
+		breadcrumb: "My Profile",
+	},
+	"/app/me/sessions": {
+		title: "My Sessions",
+		breadcrumb: "My Sessions",
+	},
 	"/app/users": {
 		title: "Users",
 		breadcrumb: "Users",
@@ -53,10 +61,6 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 	"/app/sessions": {
 		title: "Sessions",
 		breadcrumb: "Sessions",
-	},
-	"/app/my-sessions": {
-		title: "My Sessions",
-		breadcrumb: "My Sessions",
 	},
 	"/app/my-agreements": {
 		title: "My Agreements",

@@ -3,6 +3,7 @@ import { appRouter, createContext } from "@ecehive/trpc/server";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import type { FastifyPluginAsync } from "fastify";
 import { configRoute } from "./config";
+import { icalRoute } from "./ical";
 
 export const apiRoute: FastifyPluginAsync = async (fastify) => {
 	fastify.get("/", async () => {
@@ -15,6 +16,10 @@ export const apiRoute: FastifyPluginAsync = async (fastify) => {
 
 	fastify.register(configRoute, {
 		prefix: "/config",
+	});
+
+	fastify.register(icalRoute, {
+		prefix: "/ical",
 	});
 
 	fastify.get("/trpc", async () => {
