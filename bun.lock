@@ -10,12 +10,13 @@
     },
     "apps/client": {
       "name": "@ecehive/client",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.1.15",
         "@radix-ui/react-checkbox": "^1.3.3",
+        "@radix-ui/react-collapsible": "^1.1.12",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-dropdown-menu": "^2.1.16",
         "@radix-ui/react-hover-card": "^1.1.15",
@@ -72,11 +73,14 @@
     },
     "apps/dashboard": {
       "name": "@ecehive/dashboard",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
+        "@radix-ui/react-checkbox": "^1.3.3",
         "@radix-ui/react-dialog": "^1.1.15",
+        "@radix-ui/react-label": "^2.1.8",
         "@radix-ui/react-progress": "^1.1.8",
+        "@radix-ui/react-select": "^2.2.6",
         "@radix-ui/react-separator": "^1.1.8",
         "@radix-ui/react-slot": "^1.2.4",
         "@radix-ui/react-tabs": "^1.1.13",
@@ -117,7 +121,7 @@
     },
     "apps/kiosk": {
       "name": "@ecehive/kiosk",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-separator": "^1.1.8",
@@ -162,7 +166,7 @@
     },
     "apps/server": {
       "name": "@ecehive/server",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
@@ -181,7 +185,7 @@
     },
     "packages/auth": {
       "name": "@ecehive/auth",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -195,7 +199,7 @@
     },
     "packages/config": {
       "name": "@ecehive/config",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "devDependencies": {
         "@biomejs/biome": "2.3.8",
         "@types/node": "^24.10.1",
@@ -203,7 +207,7 @@
     },
     "packages/email": {
       "name": "@ecehive/email",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.966.0",
         "@ecehive/env": "workspace:*",
@@ -224,7 +228,7 @@
     },
     "packages/env": {
       "name": "@ecehive/env",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@types/node": "^24.5.2",
         "zod": "^4.3.5",
@@ -236,7 +240,7 @@
     },
     "packages/features": {
       "name": "@ecehive/features",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
@@ -254,7 +258,7 @@
     },
     "packages/ldap": {
       "name": "@ecehive/ldap",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -267,7 +271,7 @@
     },
     "packages/logger": {
       "name": "@ecehive/logger",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "tslog": "^4.9.3",
       },
@@ -277,7 +281,7 @@
     },
     "packages/prisma": {
       "name": "@ecehive/prisma",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@prisma/adapter-pg": "^7.1.0",
@@ -295,7 +299,7 @@
     },
     "packages/rest": {
       "name": "@ecehive/rest",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/features": "workspace:*",
         "@ecehive/prisma": "workspace:*",
@@ -311,7 +315,7 @@
     },
     "packages/trpc": {
       "name": "@ecehive/trpc",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/auth": "workspace:*",
@@ -334,7 +338,7 @@
     },
     "packages/user-data": {
       "name": "@ecehive/user-data",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
@@ -348,7 +352,7 @@
     },
     "packages/workers": {
       "name": "@ecehive/workers",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/email": "workspace:*",

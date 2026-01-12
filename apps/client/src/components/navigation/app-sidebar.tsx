@@ -2,11 +2,15 @@ import { Link, useLocation } from "@tanstack/react-router";
 import {
 	BanIcon,
 	BugIcon,
+	CalendarClock,
 	CalendarIcon,
 	ChevronRightIcon,
+	ChevronsDownIcon,
+	ChevronsUpIcon,
 	ChevronUpIcon,
 	ClockIcon,
 	DoorOpenIcon,
+	ExternalLink,
 	FileClockIcon,
 	FileTextIcon,
 	HomeIcon,
@@ -26,6 +30,11 @@ import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Logo } from "@/components/shared/logo";
 import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -44,6 +53,9 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useShiftAccess } from "@/hooks/use-shift-access";
@@ -84,17 +96,18 @@ export const items: AppSidebarGroup[] = [
 				permissions: appIndexPagePermissions,
 			},
 			{
-				title: "My Sessions",
-				url: "/app/my-sessions",
-				icon: ClockIcon,
-				permissions: [], // Available to all authenticated users
-			},
-			{
 				title: "Shifts",
 				url: "/app/shifts",
 				icon: CalendarIcon,
 				permissions: [],
 				allowWithShiftAccess: true,
+				hasChildren: true,
+			},
+			{
+				title: "My Profile",
+				url: "/app/me",
+				icon: User2Icon,
+				permissions: [], // Available to all authenticated users
 				hasChildren: true,
 			},
 		],
@@ -183,6 +196,14 @@ export function AppSidebar() {
 		group.items.filter((item) => canViewItem(item)),
 	);
 
+	// Also include nested routes under "My Profile" for proper highlighting
+	const nestedProfileUrls = [
+		"/app/me/sessions",
+		...(canAccessShifts
+			? ["/app/shifts/my-shifts", "/app/shifts/attendance"]
+			: []),
+	];
+
 	const isPathActive = (itemUrl: string) => {
 		// Normalize trailing slashes for comparison
 		const normalize = (p: string) => p.replace(/\/+$/, "");
@@ -193,9 +214,14 @@ export function AppSidebar() {
 		const matches = nPath === nItem || nPath.startsWith(`${nItem}/`);
 		if (!matches) return false;
 
-		// Find the longest matching item URL (most specific)
-		const longestMatch = allVisibleItems
-			.map((item) => normalize(item.url))
+		// Combine main items and nested profile URLs for matching
+		const allUrls = [
+			...allVisibleItems.map((item) => normalize(item.url)),
+			...nestedProfileUrls.map(normalize),
+		];
+
+		// Find the longest matching URL (most specific)
+		const longestMatch = allUrls
 			.filter((url) => nPath === url || nPath.startsWith(`${url}/`))
 			.sort((a, b) => b.length - a.length)[0];
 
@@ -219,25 +245,114 @@ export function AppSidebar() {
 							)}
 							<SidebarGroupContent>
 								<SidebarMenu>
-									{visibleItems.map((item) => (
-										<SidebarMenuItem key={item.title}>
-											<SidebarMenuButton
-												asChild
-												isActive={isPathActive(item.url)}
-											>
-												<Link
-													to={item.url}
-													className="flex w-full items-center gap-3"
+									{visibleItems.map((item) => {
+										// Special handling for "My Profile" - make it collapsible with nested items
+										if (item.title === "My Profile") {
+											// Auto-expand when on My Profile or any sub-page
+											const isProfileSection = pathname.startsWith("/app/me");
+
+											return (
+												<Collapsible
+													key={item.title}
+													className="group/collapsible"
+													open={isProfileSection}
 												>
-													<item.icon className="h-4 w-4" />
-													<span className="flex-1">{item.title}</span>
-													{item.hasChildren && (
-														<ChevronRightIcon className="ml-2 h-4 w-4 text-muted-foreground" />
-													)}
-												</Link>
-											</SidebarMenuButton>
-										</SidebarMenuItem>
-									))}
+													<SidebarMenuItem>
+														<CollapsibleTrigger asChild>
+															<SidebarMenuButton
+																asChild
+																isActive={isPathActive(item.url)}
+																tooltip={item.title}
+															>
+																<Link to={item.url} className="w-full">
+																	<item.icon className="h-4 w-4" />
+																	<span className="flex-1">{item.title}</span>
+																	{isProfileSection ? (
+																		<ChevronsDownIcon className="ml-auto h-4 w-4" />
+																	) : (
+																		<ChevronsUpIcon className="ml-auto h-4 w-4" />
+																	)}
+																</Link>
+															</SidebarMenuButton>
+														</CollapsibleTrigger>
+														<CollapsibleContent>
+															<SidebarMenuSub>
+																{/* My Sessions - always visible */}
+																<SidebarMenuSubItem>
+																	<SidebarMenuSubButton
+																		asChild
+																		isActive={isPathActive("/app/me/sessions")}
+																	>
+																		<Link to="/app/me/sessions">
+																			<ClockIcon className="h-4 w-4" />
+																			<span>My Sessions</span>
+																		</Link>
+																	</SidebarMenuSubButton>
+																</SidebarMenuSubItem>
+
+																{/* My Shifts - only if canAccessShifts */}
+																{canAccessShifts && (
+																	<SidebarMenuSubItem>
+																		<SidebarMenuSubButton
+																			asChild
+																			isActive={isPathActive(
+																				"/app/shifts/my-shifts",
+																			)}
+																		>
+																			<Link to="/app/shifts/my-shifts">
+																				<CalendarIcon className="h-4 w-4" />
+																				<span>My Shifts</span>
+																				<ExternalLink className="ml-auto h-3 w-3 text-muted-foreground" />
+																			</Link>
+																		</SidebarMenuSubButton>
+																	</SidebarMenuSubItem>
+																)}
+
+																{/* My Attendance - only if canAccessShifts */}
+																{canAccessShifts && (
+																	<SidebarMenuSubItem>
+																		<SidebarMenuSubButton
+																			asChild
+																			isActive={isPathActive(
+																				"/app/shifts/attendance",
+																			)}
+																		>
+																			<Link to="/app/shifts/attendance">
+																				<CalendarClock className="h-4 w-4" />
+																				<span>My Attendance</span>
+																				<ExternalLink className="ml-auto h-3 w-3 text-muted-foreground" />
+																			</Link>
+																		</SidebarMenuSubButton>
+																	</SidebarMenuSubItem>
+																)}
+															</SidebarMenuSub>
+														</CollapsibleContent>
+													</SidebarMenuItem>
+												</Collapsible>
+											);
+										}
+
+										// Regular menu items
+										return (
+											<SidebarMenuItem key={item.title}>
+												<SidebarMenuButton
+													asChild
+													isActive={isPathActive(item.url)}
+												>
+													<Link
+														to={item.url}
+														className="flex w-full items-center gap-3"
+													>
+														<item.icon className="h-4 w-4" />
+														<span className="flex-1">{item.title}</span>
+														{item.hasChildren && (
+															<ChevronRightIcon className="ml-2 h-4 w-4 text-muted-foreground" />
+														)}
+													</Link>
+												</SidebarMenuButton>
+											</SidebarMenuItem>
+										);
+									})}
 								</SidebarMenu>
 							</SidebarGroupContent>
 						</SidebarGroup>

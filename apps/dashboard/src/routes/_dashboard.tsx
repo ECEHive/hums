@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { DashboardHeader } from "@/components/navigation/dashboard-header";
 import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
@@ -11,7 +12,8 @@ function DashboardLayout() {
 		<SidebarProvider>
 			<DashboardSidebar />
 			<SidebarInset>
-				<main className="flex-1 p-6">
+				<DashboardHeader />
+				<main className="flex-1 p-4 md:p-6">
 					<Outlet />
 					<footer className="mt-12 pt-6 border-t border-border">
 						<p className="text-xs text-muted-foreground text-center">
