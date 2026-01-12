@@ -40,6 +40,7 @@ function buildVevent(
 	occurrence: {
 		id: number;
 		timestamp: Date;
+		updatedAt: Date;
 		shiftSchedule: {
 			startTime: string;
 			endTime: string;
@@ -71,6 +72,7 @@ function buildVevent(
 	const dtstamp = formatIcalDateTime(createdAt);
 	const dtstart = formatIcalDateTime(startDate);
 	const dtend = formatIcalDateTime(endDate);
+	const lastModified = formatIcalDateTime(occurrence.updatedAt);
 
 	return [
 		"BEGIN:VEVENT",
@@ -81,6 +83,8 @@ function buildVevent(
 		`SUMMARY:${summary}`,
 		`LOCATION:${location}`,
 		`DESCRIPTION:${description}`,
+		`LAST-MODIFIED:${lastModified}`,
+		"SEQUENCE:0",
 		"STATUS:CONFIRMED",
 		"END:VEVENT",
 	].join("\r\n");
