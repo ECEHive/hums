@@ -3,6 +3,12 @@ name: Build and Publish Docker Images
 on:
   release:
     types: [published]
+  workflow_run:
+    workflows: ["Create Release"]
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       tag:
@@ -43,10 +49,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},priority=900
-            type=semver,pattern={{major}}.{{minor}},priority=800
-            type=semver,pattern={{major}},priority=700
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }},priority=600
+            type=semver,pattern=v{{version}},priority=900
+            type=semver,pattern=v{{major}}.{{minor}},priority=800
+            type=semver,pattern=v{{major}},priority=700
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_run' }},priority=600
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }},priority=500
 
       - name: Extract metadata for migrate image
@@ -55,10 +61,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},priority=900
-            type=semver,pattern={{major}}.{{minor}},priority=800
-            type=semver,pattern={{major}},priority=700
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }},priority=600
+            type=semver,pattern=v{{version}},priority=900
+            type=semver,pattern=v{{major}}.{{minor}},priority=800
+            type=semver,pattern=v{{major}},priority=700
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_run' }},priority=600
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }},priority=500
 
       - name: Extract metadata for web image
@@ -67,10 +73,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},priority=900
-            type=semver,pattern={{major}}.{{minor}},priority=800
-            type=semver,pattern={{major}},priority=700
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }},priority=600
+            type=semver,pattern=v{{version}},priority=900
+            type=semver,pattern=v{{major}}.{{minor}},priority=800
+            type=semver,pattern=v{{major}},priority=700
+            type=raw,value=latest,enable=${{ github.event_name == 'release' || github.event_name == 'workflow_run' }},priority=600
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }},priority=500
 
       - name: Build and push server image
@@ -114,10 +120,19 @@ jobs:
 
       - name: Make images public
         run: |
-          # Set packages to public visibility
-          gh api --method PATCH /user/packages/container/hums-server -f visibility=public || true
-          gh api --method PATCH /user/packages/container/hums-migrate -f visibility=public || true
-          gh api --method PATCH /user/packages/container/hums-web -f visibility=public || true
+          # Set packages to public visibility using organization packages API
+          gh api --method PATCH /orgs/${{ github.repository_owner }}/packages/container/hums-server \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f visibility=public || true
+          gh api --method PATCH /orgs/${{ github.repository_owner }}/packages/container/hums-migrate \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f visibility=public || true
+          gh api --method PATCH /orgs/${{ github.repository_owner }}/packages/container/hums-web \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f visibility=public || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
