@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardIndexRouteImport } from './routes/_dashboard/index'
 import { Route as DashboardStaffingRouteImport } from './routes/_dashboard/staffing'
+import { Route as DashboardExportSchedulesRouteImport } from './routes/_dashboard/export-schedules'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/_dashboard',
@@ -27,27 +28,41 @@ const DashboardStaffingRoute = DashboardStaffingRouteImport.update({
   path: '/staffing',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardExportSchedulesRoute =
+  DashboardExportSchedulesRouteImport.update({
+    id: '/export-schedules',
+    path: '/export-schedules',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
+  '/export-schedules': typeof DashboardExportSchedulesRoute
   '/staffing': typeof DashboardStaffingRoute
   '/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
+  '/export-schedules': typeof DashboardExportSchedulesRoute
   '/staffing': typeof DashboardStaffingRoute
   '/': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
+  '/_dashboard/export-schedules': typeof DashboardExportSchedulesRoute
   '/_dashboard/staffing': typeof DashboardStaffingRoute
   '/_dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/staffing' | '/'
+  fullPaths: '/export-schedules' | '/staffing' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/staffing' | '/'
-  id: '__root__' | '/_dashboard' | '/_dashboard/staffing' | '/_dashboard/'
+  to: '/export-schedules' | '/staffing' | '/'
+  id:
+    | '__root__'
+    | '/_dashboard'
+    | '/_dashboard/export-schedules'
+    | '/_dashboard/staffing'
+    | '/_dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,15 +92,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardStaffingRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/export-schedules': {
+      id: '/_dashboard/export-schedules'
+      path: '/export-schedules'
+      fullPath: '/export-schedules'
+      preLoaderRoute: typeof DashboardExportSchedulesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardExportSchedulesRoute: typeof DashboardExportSchedulesRoute
   DashboardStaffingRoute: typeof DashboardStaffingRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardExportSchedulesRoute: DashboardExportSchedulesRoute,
   DashboardStaffingRoute: DashboardStaffingRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }

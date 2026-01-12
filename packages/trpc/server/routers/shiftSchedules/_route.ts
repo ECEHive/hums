@@ -22,6 +22,10 @@ import {
 	ZListEligibleUsersSchema,
 } from "./listEligibleUsers.route";
 import {
+	listForExportHandler,
+	ZListForExportSchema,
+} from "./listForExport.route";
+import {
 	listForRegistrationHandler,
 	ZListForRegistrationSchema,
 } from "./listForRegistration.route";
@@ -44,6 +48,9 @@ export const shiftSchedulesRouter = router({
 	listEligibleUsers: permissionProtectedProcedure("shift_schedules.manipulate")
 		.input(ZListEligibleUsersSchema)
 		.query(listEligibleUsersHandler),
+	listForExport: permissionProtectedProcedure("shift_schedules.list")
+		.input(ZListForExportSchema)
+		.query(listForExportHandler),
 	listForRegistration: protectedProcedure
 		.input(ZListForRegistrationSchema)
 		.query(listForRegistrationHandler),
