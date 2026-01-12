@@ -128,6 +128,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Reports",
 		breadcrumb: "Reports",
 	},
+	"/app/shifts/export": {
+		title: "Export Shifts",
+		breadcrumb: "Export Shifts",
+	},
 };
 
 /**
