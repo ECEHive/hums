@@ -1,5 +1,5 @@
 import { Activity, Clock, TrendingDown, TrendingUp, Users } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -66,10 +66,10 @@ function getBusynessColor(
 	if (isDark) {
 		// Dark mode: lighter colors are less busy, brighter/more saturated are more busy
 		if (ratio < 0.25) {
-			return "hsl(220 60% 90%)";  // Desaturated blue for low activity
+			return "hsl(220 60% 90%)"; // Desaturated blue for low activity
 		}
 		if (ratio < 0.5) {
-			return "hsl(220 65% 75%)";  // Medium saturation
+			return "hsl(220 65% 75%)"; // Medium saturation
 		}
 		if (ratio < 0.75) {
 			return "hsl(220 70% 60%)"; // Higher saturation
@@ -91,7 +91,15 @@ function getBusynessColor(
 }
 
 // Custom tick component that respects theme colors
-function CustomTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string | number } }) {
+function CustomTick({
+	x,
+	y,
+	payload,
+}: {
+	x?: number;
+	y?: number;
+	payload?: { value: string | number };
+}) {
 	return (
 		<text
 			x={x}
@@ -107,7 +115,15 @@ function CustomTick({ x, y, payload }: { x?: number; y?: number; payload?: { val
 }
 
 // Custom Y-axis tick component
-function CustomYTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string | number } }) {
+function CustomYTick({
+	x,
+	y,
+	payload,
+}: {
+	x?: number;
+	y?: number;
+	payload?: { value: string | number };
+}) {
 	return (
 		<text
 			x={x}
@@ -133,16 +149,16 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 		const checkTheme = () => {
 			setIsDark(document.documentElement.classList.contains("dark"));
 		};
-		
+
 		checkTheme();
-		
+
 		// Watch for theme changes
 		const observer = new MutationObserver(checkTheme);
 		observer.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ["class"],
 		});
-		
+
 		return () => observer.disconnect();
 	}, []);
 
@@ -269,13 +285,17 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 							content={
 								<ChartTooltipContent
 									formatter={(value, _name, item) => {
-										const entry = (item as { payload?: (typeof chartData)[0] })?.payload;
+										const entry = (item as { payload?: (typeof chartData)[0] })
+											?.payload;
 										return (
 											<div className="flex flex-col gap-1">
 												<div className="flex items-center gap-2">
 													<Users className="h-3 w-3 text-muted-foreground" />
 													<span className="font-medium">
-														~{typeof value === "number" ? value.toFixed(1) : value}{" "}
+														~
+														{typeof value === "number"
+															? value.toFixed(1)
+															: value}{" "}
 														people
 													</span>
 												</div>
@@ -311,7 +331,8 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 							))}
 						</Bar>
 					</BarChart>
-				</ChartContainer>		</div>
+				</ChartContainer>{" "}
+			</div>
 			{/* Legend */}
 			<div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
 				{selectedDay === today && (
@@ -322,9 +343,9 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 				)}
 				<div className="flex items-center gap-1.5">
 					<div className="flex gap-0.5">
-					<div className="w-2 h-3 rounded-sm bg-[hsl(220_60%_90%)]" />
-					<div className="w-2 h-3 rounded-sm bg-[hsl(220_65%_75%)]" />
-					<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_60%)]" />
+						<div className="w-2 h-3 rounded-sm bg-[hsl(220_60%_90%)]" />
+						<div className="w-2 h-3 rounded-sm bg-[hsl(220_65%_75%)]" />
+						<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_60%)]" />
 					</div>
 					<span>Less to more busy</span>
 				</div>

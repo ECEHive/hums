@@ -16,82 +16,6 @@ export const Route = createFileRoute("/_dashboard/")({
 	component: DashboardHome,
 });
 
-// Simulated data for testing
-const SIMULATED_DATA = {
-	analytics: [
-		{
-			dayOfWeek: 0,
-			dayName: "Sunday",
-			hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-				hour,
-				averageCount: Math.max(0, Math.sin((hour - 8) / 3) * 8 + 3 + Math.random() * 2),
-				maxCount: Math.max(0, Math.sin((hour - 8) / 3) * 12 + 5),
-			})),
-		},
-		{
-			dayOfWeek: 1,
-			dayName: "Monday",
-			hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-				hour,
-				averageCount: Math.max(0, Math.sin((hour - 9) / 3.5) * 12 + 6 + Math.random() * 3),
-				maxCount: Math.max(0, Math.sin((hour - 9) / 3.5) * 18 + 9),
-			})),
-		},
-		{
-			dayOfWeek: 2,
-			dayName: "Tuesday",
-			hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-				hour,
-				averageCount: Math.max(0, Math.sin((hour - 10) / 3.5) * 14 + 8 + Math.random() * 3),
-				maxCount: Math.max(0, Math.sin((hour - 10) / 3.5) * 20 + 12),
-			})),
-		},
-		{
-			dayOfWeek: 3,
-			dayName: "Wednesday",
-			hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-				hour,
-				averageCount: Math.max(0, Math.sin((hour - 10) / 3.5) * 15 + 9 + Math.random() * 3),
-				maxCount: Math.max(0, Math.sin((hour - 10) / 3.5) * 22 + 14),
-			})),
-		},
-		{
-			dayOfWeek: 4,
-			dayName: "Thursday",
-			hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-				hour,
-				averageCount: Math.max(0, Math.sin((hour - 10) / 3.5) * 16 + 10 + Math.random() * 3),
-				maxCount: Math.max(0, Math.sin((hour - 10) / 3.5) * 24 + 15),
-			})),
-		},
-		{
-			dayOfWeek: 5,
-			dayName: "Friday",
-			hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-				hour,
-				averageCount: Math.max(0, Math.sin((hour - 11) / 4) * 18 + 12 + Math.random() * 4),
-				maxCount: Math.max(0, Math.sin((hour - 11) / 4) * 26 + 18),
-			})),
-		},
-		{
-			dayOfWeek: 6,
-			dayName: "Saturday",
-			hourlyData: Array.from({ length: 24 }, (_, hour) => ({
-				hour,
-				averageCount: Math.max(0, Math.sin((hour - 9) / 3.5) * 10 + 5 + Math.random() * 2),
-				maxCount: Math.max(0, Math.sin((hour - 9) / 3.5) * 15 + 8),
-			})),
-		},
-	],
-	current: {
-		count: 12,
-		dayOfWeek: new Date().getDay(),
-		hour: new Date().getHours(),
-		typicalCount: 8,
-		comparison: "busier" as const,
-	},
-};
-
 function DashboardHome() {
 	const { data: sessionCount, isLoading: sessionsLoading } = useQuery({
 		queryKey: ["dashboard", "activeSessionsCount"],
@@ -106,7 +30,7 @@ function DashboardHome() {
 	});
 
 	// Use simulated data if no real data is available
-	const displayData = busynessData; // || SIMULATED_DATA;
+	const displayData = busynessData;
 
 	return (
 		<div className="space-y-4 md:space-y-6">
@@ -154,7 +78,7 @@ function DashboardHome() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="pt-0">
-					{busynessLoading ? (
+					{busynessLoading || !displayData ? (
 						<div className="space-y-4">
 							<Skeleton className="h-10 w-full" />
 							<Skeleton className="h-[160px] md:h-[200px] w-full" />
