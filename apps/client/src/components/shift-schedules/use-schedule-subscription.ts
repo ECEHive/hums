@@ -187,9 +187,26 @@ export function useScheduleSubscription({
 						setWsState("connected");
 					}
 
-					// Type assertion for the event data from tRPC tracked()
-					const rawEvent = data as { id: string; data: unknown };
-					const event = rawEvent.data as ShiftScheduleUpdateEvent;
+					// tRPC tracked() returns data in array format: [id, eventData, null]
+					// Extract the event data from the array
+					let event: ShiftScheduleUpdateEvent | undefined;
+
+					if (Array.isArray(data) && data.length >= 2) {
+						// Array format from tracked(): [id, data, null]
+						event = data[1] as ShiftScheduleUpdateEvent | undefined;
+					} else if (data && typeof data === "object" && "data" in data) {
+						// Object format: { id, data }
+						event = (data as { id: string; data: unknown }).data as
+							| ShiftScheduleUpdateEvent
+							| undefined;
+					}
+
+					// Validate event data before processing
+					if (!event || typeof event.shiftScheduleId !== "number") {
+						// Invalid event data, skip processing
+						console.warn("Received invalid schedule update event:", data);
+						return;
+					}
 
 					// Get current user ID from ref
 					const userId = currentUserIdRef.current;
