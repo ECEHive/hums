@@ -67,6 +67,17 @@ function formatTime(time: string): string {
 	return `${hours12}:${minutes.toString().padStart(2, "0")}${period}`;
 }
 
+function escapeHtml(text: string): string {
+	const map: Record<string, string> = {
+		"&": "&amp;",
+		"<": "&lt;",
+		">": "&gt;",
+		'"': "&quot;",
+		"'": "&#39;",
+	};
+	return text.replace(/[&<>"']/g, (char) => map[char]);
+}
+
 function ExportSchedulesPage() {
 	const { period: selectedPeriodId } = usePeriod();
 	const currentUser = useCurrentUser();
@@ -176,7 +187,7 @@ function ExportSchedulesPage() {
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Shift Schedule - ${exportData.period.name}</title>
+	<title>Shift Schedule - ${escapeHtml(exportData.period.name)}</title>
 	<style>
 		@page {
 			size: letter portrait;
@@ -259,7 +270,7 @@ function ExportSchedulesPage() {
 </head>
 <body>
 	<div class="header">
-		<div class="title">Shift Schedule - ${exportData.period.name}</div>
+		<div class="title">Shift Schedule - ${escapeHtml(exportData.period.name)}</div>
 		<div class="subtitle">Generated on ${new Date().toLocaleString("en-US", {
 			weekday: "long",
 			year: "numeric",
@@ -278,7 +289,7 @@ function ExportSchedulesPage() {
 				${tableData.shiftTypes
 					.map(
 						(st) =>
-							`<th>${st.name}${st.location ? `<span class="location">${st.location}</span>` : ""}</th>`,
+							`<th>${escapeHtml(st.name)}${st.location ? `<span class="location">${escapeHtml(st.location)}</span>` : ""}</th>`,
 					)
 					.join("")}
 			</tr>
@@ -288,13 +299,13 @@ function ExportSchedulesPage() {
 				.map(
 					(timeSlot) => `
 				<tr>
-					<td>${timeSlot}</td>
+					<td>${escapeHtml(timeSlot)}</td>
 					${tableData.shiftTypes
 						.map((st) => {
 							const users =
 								tableData.data.get(timeSlot)?.get(st.id)?.users ?? [];
 							if (users.length > 0) {
-								return `<td>${users.map((u) => `<div class="user-name">${u.name}</div>`).join("")}</td>`;
+								return `<td>${users.map((u) => `<div class="user-name">${escapeHtml(u.name)}</div>`).join("")}</td>`;
 							}
 							return '<td><span class="empty-cell">—</span></td>';
 						})
