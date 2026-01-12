@@ -38,14 +38,14 @@ function StaffingPage() {
 	// Show access denied if not a dashboard device
 	if (!deviceLoading && !hasDashboardAccess) {
 		return (
-			<div className="flex items-center justify-center h-[50vh]">
-				<Card className="max-w-md">
+			<div className="flex items-center justify-center min-h-[50vh] p-4">
+				<Card className="max-w-md w-full">
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
+						<CardTitle className="flex items-center gap-2 text-base md:text-lg">
 							<AlertTriangle className="h-5 w-5 text-destructive" />
 							Access Restricted
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="text-sm">
 							This page is only available to registered devices with dashboard
 							access.
 						</CardDescription>
@@ -57,14 +57,14 @@ function StaffingPage() {
 
 	if (error) {
 		return (
-			<div className="flex items-center justify-center h-[50vh]">
-				<Card className="max-w-md">
+			<div className="flex items-center justify-center min-h-[50vh] p-4">
+				<Card className="max-w-md w-full">
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
+						<CardTitle className="flex items-center gap-2 text-base md:text-lg">
 							<AlertTriangle className="h-5 w-5 text-destructive" />
 							Error Loading Data
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="text-sm">
 							Unable to load staffing information. Please try again later.
 						</CardDescription>
 					</CardHeader>
@@ -74,10 +74,13 @@ function StaffingPage() {
 	}
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+		<div className="space-y-4 md:space-y-6">
+			{/* Page Header */}
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 				<div>
-					<h1 className="text-3xl font-bold tracking-tight">Staffing</h1>
+					<h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+						Staffing
+					</h1>
 				</div>
 				{/* Live update indicator */}
 				<div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -94,21 +97,21 @@ function StaffingPage() {
 
 			{/* Current Staff */}
 			<Card>
-				<CardHeader>
+				<CardHeader className="pb-2 md:pb-4">
 					<div className="flex items-center justify-between">
-						<div>
-							<CardTitle className="flex items-center gap-2">
-								<UserCheck className="h-5 w-5" />
+						<div className="space-y-1">
+							<CardTitle className="flex items-center gap-2 text-base md:text-lg">
+								<UserCheck className="h-4 w-4 md:h-5 md:w-5" />
 								On Duty
 							</CardTitle>
-							<CardDescription>
+							<CardDescription className="text-xs md:text-sm">
 								Currently active staffing sessions
 							</CardDescription>
 						</div>
 						{!isLoading && data && (
 							<Badge
 								variant="secondary"
-								className="text-base font-semibold px-3 py-1.5"
+								className="text-sm md:text-base font-semibold px-2.5 py-1 md:px-3 md:py-1.5"
 							>
 								{data.currentStaffers.length}
 							</Badge>
@@ -117,50 +120,58 @@ function StaffingPage() {
 				</CardHeader>
 				<CardContent>
 					{isLoading || deviceLoading ? (
-						<div className="space-y-4">
+						<div className="space-y-3 md:space-y-4">
 							{[1, 2, 3].map((i) => (
-								<div key={i} className="flex items-center gap-4">
-									<Skeleton className="h-10 w-10 rounded-full" />
-									<div className="space-y-2 flex-1">
-										<Skeleton className="h-4 w-32" />
-										<Skeleton className="h-3 w-48" />
+								<div key={i} className="flex items-center gap-3 md:gap-4">
+									<Skeleton className="h-9 w-9 md:h-10 md:w-10 rounded-full" />
+									<div className="space-y-1.5 md:space-y-2 flex-1">
+										<Skeleton className="h-4 w-28 md:w-32" />
+										<Skeleton className="h-3 w-40 md:w-48" />
 									</div>
 								</div>
 							))}
 						</div>
 					) : data?.currentStaffers.length === 0 ? (
-						<p className="text-muted-foreground text-center py-8">
+						<p className="text-muted-foreground text-center py-6 md:py-8 text-sm">
 							Nobody currently on duty
 						</p>
 					) : (
-						<div className="space-y-4">
+						<div className="space-y-3 md:space-y-4">
 							{data?.currentStaffers.map((staffer) => (
 								<div
 									key={staffer.id}
-									className="flex items-center gap-4 p-3 rounded-lg bg-muted/50"
+									className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 rounded-lg bg-muted/50"
 								>
-									<div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-										<User className="h-5 w-5 text-primary" />
+									<div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+										<User className="h-4 w-4 md:h-5 md:w-5 text-primary" />
 									</div>
-									<div className="flex-1">
-										<div className="font-medium">{staffer.name}</div>
+									<div className="flex-1 min-w-0">
+										<div className="font-medium text-sm md:text-base truncate">
+											{staffer.name}
+										</div>
 										{staffer.shiftInfo ? (
-											<div className="flex items-center gap-2 text-sm text-muted-foreground">
-												<MapPin className="h-3 w-3" />
-												<span>{staffer.shiftInfo.shiftTypeName}</span>
-												<span>•</span>
-												<span>{staffer.shiftInfo.location}</span>
+											<div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
+												<span className="flex items-center gap-1">
+													<MapPin className="h-3 w-3 shrink-0" />
+													<span className="truncate">
+														{staffer.shiftInfo.shiftTypeName}
+													</span>
+												</span>
+												<span className="hidden sm:inline">•</span>
+												<span className="hidden sm:inline truncate">
+													{staffer.shiftInfo.location}
+												</span>
 												{staffer.shiftInfo.status === "late" && (
 													<Badge
 														variant="outline"
-														className="text-orange-500 border-orange-500"
+														className="text-orange-500 border-orange-500 text-xs px-1.5 py-0"
 													>
-														Arrived Late
+														Late
 													</Badge>
 												)}
 											</div>
 										) : (
-											<div className="text-sm text-muted-foreground">
+											<div className="text-xs md:text-sm text-muted-foreground">
 												Staffing (no scheduled shift)
 											</div>
 										)}
@@ -175,35 +186,48 @@ function StaffingPage() {
 			{/* Missing Staff */}
 			{!isLoading && data && data.missingStaffers.length > 0 && (
 				<Card className="border-destructive/50">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-destructive">
-							<AlertTriangle className="h-5 w-5" />
+					<CardHeader className="pb-2 md:pb-4">
+						<CardTitle className="flex items-center gap-2 text-destructive text-base md:text-lg">
+							<AlertTriangle className="h-4 w-4 md:h-5 md:w-5" />
 							Missing
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="text-xs md:text-sm">
 							Assigned to current shifts but not checked in
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="space-y-4">
+						<div className="space-y-3 md:space-y-4">
 							{data.missingStaffers.map((missing, index) => (
 								<div
 									key={`${missing.user.id}-${index}`}
-									className="flex items-center gap-4 p-3 rounded-lg bg-destructive/10"
+									className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 rounded-lg bg-destructive/10"
 								>
-									<div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center">
-										<User className="h-5 w-5 text-destructive" />
+									<div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+										<User className="h-4 w-4 md:h-5 md:w-5 text-destructive" />
 									</div>
-									<div className="flex-1">
-										<div className="font-medium">{missing.user.name}</div>
-										<div className="flex items-center gap-2 text-sm text-muted-foreground">
-											<MapPin className="h-3 w-3" />
-											<span>{missing.shiftType.name}</span>
-											<span>•</span>
-											<span>{missing.shiftType.location}</span>
+									<div className="flex-1 min-w-0">
+										<div className="font-medium text-sm md:text-base truncate">
+											{missing.user.name}
+										</div>
+										<div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
+											<span className="flex items-center gap-1">
+												<MapPin className="h-3 w-3 shrink-0" />
+												<span className="truncate">
+													{missing.shiftType.name}
+												</span>
+											</span>
+											<span className="hidden sm:inline">•</span>
+											<span className="hidden sm:inline truncate">
+												{missing.shiftType.location}
+											</span>
 										</div>
 									</div>
-									<Badge variant="destructive">Missing</Badge>
+									<Badge
+										variant="destructive"
+										className="text-xs px-1.5 py-0.5 shrink-0"
+									>
+										Missing
+									</Badge>
 								</div>
 							))}
 						</div>
@@ -214,35 +238,44 @@ function StaffingPage() {
 			{/* Upcoming Shifts */}
 			{!isLoading && data && data.upcomingShifts.length > 0 && (
 				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<Clock className="h-5 w-5" />
+					<CardHeader className="pb-2 md:pb-4">
+						<CardTitle className="flex items-center gap-2 text-base md:text-lg">
+							<Clock className="h-4 w-4 md:h-5 md:w-5" />
 							Upcoming Shifts
 						</CardTitle>
-						<CardDescription>
+						<CardDescription className="text-xs md:text-sm">
 							Shifts starting in the next 30 minutes
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="space-y-4">
+						<div className="space-y-3 md:space-y-4">
 							{data.upcomingShifts.map((shift, index) => (
 								<div
 									key={`${shift.user.id}-${index}`}
-									className="flex items-center gap-4 p-3 rounded-lg bg-muted/50"
+									className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 rounded-lg bg-muted/50"
 								>
-									<div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-										<User className="h-5 w-5" />
+									<div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+										<User className="h-4 w-4 md:h-5 md:w-5" />
 									</div>
-									<div className="flex-1">
-										<div className="font-medium">{shift.user.name}</div>
-										<div className="flex items-center gap-2 text-sm text-muted-foreground">
-											<MapPin className="h-3 w-3" />
-											<span>{shift.shiftType.name}</span>
-											<span>•</span>
-											<span>{shift.shiftType.location}</span>
+									<div className="flex-1 min-w-0">
+										<div className="font-medium text-sm md:text-base truncate">
+											{shift.user.name}
+										</div>
+										<div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
+											<span className="flex items-center gap-1">
+												<MapPin className="h-3 w-3 shrink-0" />
+												<span className="truncate">{shift.shiftType.name}</span>
+											</span>
+											<span className="hidden sm:inline">•</span>
+											<span className="hidden sm:inline truncate">
+												{shift.shiftType.location}
+											</span>
 										</div>
 									</div>
-									<Badge variant="outline" className="text-xs">
+									<Badge
+										variant="outline"
+										className="text-xs px-1.5 py-0.5 shrink-0"
+									>
 										{formatTime(shift.startTime)}
 									</Badge>
 								</div>

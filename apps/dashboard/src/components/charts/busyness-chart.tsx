@@ -1,14 +1,6 @@
-import { Minus, TrendingDown, TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
-import {
-	Bar,
-	BarChart,
-	CartesianGrid,
-	Cell,
-	ReferenceLine,
-	XAxis,
-	YAxis,
-} from "recharts";
+import { Activity, Clock, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import {
 	type ChartConfig,
@@ -17,6 +9,7 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 interface HourlyData {
 	hour: number;
@@ -41,19 +34,126 @@ interface BusynessChartProps {
 	current?: CurrentBusyness;
 }
 
+// Using accessible colors that work on both light and dark backgrounds
 const chartConfig = {
 	average: {
-		label: "Avg People",
-		color: "var(--chart-1)",
+		label: "Average visitors",
+		color: "hsl(220 70% 50%)", // Blue that works on both themes
+	},
+	current: {
+		label: "Current hour",
+		color: "hsl(142 76% 36%)", // Green for current hour
 	},
 } satisfies ChartConfig;
+
+// Color scale based on busyness level (Google Maps style)
+function getBusynessColor(
+	value: number,
+	maxValue: number,
+	isCurrent: boolean,
+	isDark: boolean,
+): string {
+	if (isCurrent) {
+		// Bright, accessible green for current hour
+		return isDark ? "hsl(142 76% 45%)" : "hsl(142 76% 36%)";
+	}
+
+	// Gradient from light to dark blue based on busyness
+	const ratio = maxValue > 0 ? value / maxValue : 0;
+
+	// Use different color scales for light and dark mode for better visibility
+	if (isDark) {
+		// Dark mode: brighter colors for visibility
+		if (ratio < 0.25) {
+			return "hsl(220 70% 40%)"; // Darker blue for low activity
+		}
+		if (ratio < 0.5) {
+			return "hsl(220 70% 55%)"; // Medium blue
+		}
+		if (ratio < 0.75) {
+			return "hsl(220 70% 70%)"; // Light blue
+		}
+		return "hsl(220 70% 85%)"; // Very light blue for high activity
+	} else {
+		// Light mode: darker colors for visibility
+		if (ratio < 0.25) {
+			return "hsl(220 70% 85%)"; // Very light blue for low activity
+		}
+		if (ratio < 0.5) {
+			return "hsl(220 70% 70%)"; // Light blue
+		}
+		if (ratio < 0.75) {
+			return "hsl(220 70% 55%)"; // Medium blue
+		}
+		return "hsl(220 70% 40%)"; // Dark blue for high activity
+	}
+}
+
+// Custom tick component that respects theme colors
+function CustomTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string | number } }) {
+	return (
+		<text
+			x={x}
+			y={y}
+			fill="currentColor"
+			className="fill-muted-foreground text-[10px]"
+			textAnchor="middle"
+			dy={4}
+		>
+			{payload?.value}
+		</text>
+	);
+}
+
+// Custom Y-axis tick component
+function CustomYTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string | number } }) {
+	return (
+		<text
+			x={x}
+			y={y}
+			fill="currentColor"
+			className="fill-muted-foreground text-[10px]"
+			textAnchor="end"
+			dy={3}
+		>
+			{payload?.value}
+		</text>
+	);
+}
 
 export function BusynessChart({ data, current }: BusynessChartProps) {
 	const today = new Date().getDay();
 	const currentHour = new Date().getHours();
 	const [selectedDay, setSelectedDay] = useState(today);
+	const [isDark, setIsDark] = useState(false);
+
+	// Detect theme changes
+	useEffect(() => {
+		const checkTheme = () => {
+			setIsDark(document.documentElement.classList.contains("dark"));
+		};
+		
+		checkTheme();
+		
+		// Watch for theme changes
+		const observer = new MutationObserver(checkTheme);
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["class"],
+		});
+		
+		return () => observer.disconnect();
+	}, []);
 
 	const dayData = data.find((d) => d.dayOfWeek === selectedDay);
+
+	// Find max value for color scaling
+	const maxAverage = useMemo(() => {
+		return Math.max(
+			...(dayData?.hourlyData.map((h) => h.averageCount) ?? [1]),
+			1,
+		);
+	}, [dayData]);
 
 	// Format data for chart - only show business hours (6am to 11pm)
 	const chartData = useMemo(() => {
@@ -70,39 +170,36 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 		);
 	}, [dayData, selectedDay, today, currentHour]);
 
+	// Find current hour index for the indicator
+	const currentHourIndex = chartData.findIndex((d) => d.isCurrent);
+
 	const getComparisonBadge = () => {
 		if (!current) return null;
 		const { comparison } = current;
 
 		if (comparison === "busier") {
 			return (
-				<Badge
-					variant="destructive"
-					className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium"
-				>
+				<Badge className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800">
 					<TrendingUp className="h-4 w-4" />
-					Busier than usual
+					<span>Currently More Busy than Normal</span>
 				</Badge>
 			);
 		}
 		if (comparison === "quieter") {
 			return (
-				<Badge
-					variant="secondary"
-					className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-				>
+				<Badge className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
 					<TrendingDown className="h-4 w-4" />
-					Quieter than usual
+					<span>Currently Less Busy than Normal</span>
 				</Badge>
 			);
 		}
 		return (
 			<Badge
 				variant="outline"
-				className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium"
+				className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-muted/50"
 			>
-				<Minus className="h-4 w-4" />
-				About typical
+				<Activity className="h-4 w-4" />
+				<span>Currently About Typical</span>
 			</Badge>
 		);
 	};
@@ -110,23 +207,23 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 	return (
 		<div className="space-y-4">
 			{/* Day selector and comparison badge */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+			<div className="flex flex-col gap-4">
 				{/* Day selector - Using Tabs component */}
 				<Tabs
 					value={selectedDay.toString()}
 					onValueChange={(value) => setSelectedDay(parseInt(value, 10))}
-					className="w-full sm:w-auto"
+					className="w-full"
 				>
-					<TabsList className="grid w-full grid-cols-7 h-9">
+					<TabsList className="grid w-full grid-cols-7 h-10">
 						{data.map((day) => (
 							<TabsTrigger
 								key={day.dayOfWeek}
 								value={day.dayOfWeek.toString()}
-								className={`text-xs px-2 ${
-									day.dayOfWeek === today
-										? "data-[state=active]:ring-2 data-[state=active]:ring-primary/50"
-										: ""
-								}`}
+								className={cn(
+									"text-xs sm:text-sm px-1 sm:px-3 transition-all",
+									day.dayOfWeek === today &&
+										"font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+								)}
 							>
 								<span className="hidden sm:inline">
 									{day.dayName.slice(0, 3)}
@@ -139,100 +236,121 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 
 				{/* Comparison badge - only show for today */}
 				{selectedDay === today && current && (
-					<div className="flex-shrink-0 self-start sm:self-auto">
+					<div className="flex justify-center sm:justify-start">
 						{getComparisonBadge()}
 					</div>
 				)}
 			</div>
 
-			{/* Chart - Google Maps style */}
-			<ChartContainer
-				config={chartConfig}
-				className="h-[180px] sm:h-[200px] w-full"
-			>
-				<BarChart
-					data={chartData}
-					margin={{ top: 20, right: 5, left: -20, bottom: 0 }}
+			{/* Chart */}
+			<div className="relative">
+				<ChartContainer
+					config={chartConfig}
+					className="h-[160px] sm:h-[200px] w-full"
 				>
-					<CartesianGrid
-						vertical={false}
-						strokeDasharray="3 3"
-						className="stroke-muted/50"
-					/>
-					<XAxis
-						dataKey="hour"
-						fontSize={10}
-						tickLine={false}
-						axisLine={false}
-						className="fill-muted-foreground"
-						interval={1}
-						tick={{ fontSize: 9 }}
-					/>
-					<YAxis
-						fontSize={10}
-						tickLine={false}
-						axisLine={false}
-						className="fill-muted-foreground"
-						width={25}
-					/>
-					<ChartTooltip
-						cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
-						content={
-							<ChartTooltipContent
-								formatter={(value) => (
-									<div className="flex items-center gap-2">
-										<div
-											className="h-2 w-2 rounded-full"
-											style={{ backgroundColor: "var(--chart-1)" }}
-										/>
-										<span className="text-muted-foreground">Avg:</span>
-										<span className="font-medium">
-											{typeof value === "number" ? value.toFixed(1) : value}{" "}
-											people
-										</span>
-									</div>
-								)}
-								labelFormatter={(label) => (
-									<span className="font-medium">{label}</span>
-								)}
-							/>
-						}
-					/>
-					{/* Current time indicator line */}
-					{selectedDay === today && (
-						<ReferenceLine
-							x={formatHour(currentHour)}
-							stroke="hsl(var(--primary))"
-							strokeWidth={2}
-							strokeDasharray="4 4"
+					<BarChart
+						data={chartData}
+						margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+					>
+						<XAxis
+							dataKey="hour"
+							tickLine={false}
+							axisLine={false}
+							interval={2}
+							tick={<CustomTick />}
 						/>
-					)}
-					<Bar dataKey="average" radius={[4, 4, 0, 0]} maxBarSize={40}>
-						{chartData.map((entry, index) => (
-							<Cell
-								key={`cell-${index}`}
-								fill={
-									entry.isCurrent ? "hsl(var(--primary))" : "var(--chart-1)"
-								}
-								fillOpacity={entry.isCurrent ? 1 : 0.8}
-							/>
-						))}
-					</Bar>
-				</BarChart>
-			</ChartContainer>
+						<YAxis
+							tickLine={false}
+							axisLine={false}
+							width={32}
+							tickFormatter={(value) => Math.round(value).toString()}
+							tick={<CustomYTick />}
+						/>
+						<ChartTooltip
+							cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+							content={
+								<ChartTooltipContent
+									formatter={(value, _name, item) => {
+										const entry = (item as { payload?: (typeof chartData)[0] })?.payload;
+										return (
+											<div className="flex flex-col gap-1">
+												<div className="flex items-center gap-2">
+													<Users className="h-3 w-3 text-muted-foreground" />
+													<span className="font-medium">
+														~{typeof value === "number" ? value.toFixed(1) : value}{" "}
+														people
+													</span>
+												</div>
+												{entry?.isCurrent && (
+													<div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+														<Clock className="h-3 w-3" />
+														<span>Current hour</span>
+													</div>
+												)}
+											</div>
+										);
+									}}
+									labelFormatter={(label) => (
+										<span className="font-semibold text-foreground">
+											{label}
+										</span>
+									)}
+								/>
+							}
+						/>
+						<Bar dataKey="average" radius={[4, 4, 0, 0]} maxBarSize={32}>
+							{chartData.map((entry, index) => (
+								<Cell
+									key={`cell-${index}`}
+									fill={getBusynessColor(
+										entry.average,
+										maxAverage,
+										entry.isCurrent,
+										isDark,
+									)}
+									className="transition-all duration-200"
+								/>
+							))}
+						</Bar>
+					</BarChart>
+				</ChartContainer>
 
-			{/* Current time indicator text */}
-			{selectedDay === today && (
-				<p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
-					<span className="inline-block w-3 h-0.5 bg-primary" />
-					Current time: {formatHour(currentHour)}
-				</p>
-			)}
+				{/* Current time indicator arrow */}
+				{selectedDay === today && currentHourIndex >= 0 && (
+					<div
+						className="absolute bottom-0 flex flex-col items-center pointer-events-none"
+						style={{
+							left: `calc(${((currentHourIndex + 0.5) / chartData.length) * 100}% + 5px)`,
+							transform: "translateX(-50%)",
+						}}
+					>
+						<div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent border-b-emerald-500 dark:border-b-emerald-400" />
+					</div>
+				)}
+			</div>
+
+			{/* Legend */}
+			<div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+				{selectedDay === today && (
+					<div className="flex items-center gap-1.5">
+						<div className="w-3 h-3 rounded-sm bg-emerald-500 dark:bg-emerald-400" />
+						<span>Now ({formatHour(currentHour)})</span>
+					</div>
+				)}
+				<div className="flex items-center gap-1.5">
+					<div className="flex gap-0.5">
+						<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_85%)]" />
+						<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_55%)]" />
+						<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_40%)]" />
+					</div>
+					<span>Less to more busy</span>
+				</div>
+			</div>
 
 			{/* Historical note */}
 			{selectedDay !== today && (
 				<p className="text-xs text-muted-foreground text-center">
-					Showing typical activity for{" "}
+					Based on typical activity for{" "}
 					{data.find((d) => d.dayOfWeek === selectedDay)?.dayName}s
 				</p>
 			)}
