@@ -59,33 +59,34 @@ function getBusynessColor(
 	}
 
 	// Gradient from light to dark blue based on busyness
+	// LIGHT = less busy, DARK = more busy
 	const ratio = maxValue > 0 ? value / maxValue : 0;
 
 	// Use different color scales for light and dark mode for better visibility
 	if (isDark) {
-		// Dark mode: brighter colors for visibility
+		// Dark mode: lighter colors are less busy, brighter/more saturated are more busy
 		if (ratio < 0.25) {
-			return "hsl(220 70% 40%)"; // Darker blue for low activity
+			return "hsl(220 60% 90%)";  // Desaturated blue for low activity
 		}
 		if (ratio < 0.5) {
-			return "hsl(220 70% 55%)"; // Medium blue
+			return "hsl(220 65% 75%)";  // Medium saturation
 		}
 		if (ratio < 0.75) {
-			return "hsl(220 70% 70%)"; // Light blue
+			return "hsl(220 70% 60%)"; // Higher saturation
 		}
-		return "hsl(220 70% 85%)"; // Very light blue for high activity
+		return "hsl(220 75% 45%)"; // Most saturated/bright for high activity
 	} else {
-		// Light mode: darker colors for visibility
+		// Light mode: lighter colors are less busy, darker are more busy
 		if (ratio < 0.25) {
-			return "hsl(220 70% 85%)"; // Very light blue for low activity
+			return "hsl(220 60% 90%)"; // Very light blue for low activity
 		}
 		if (ratio < 0.5) {
-			return "hsl(220 70% 70%)"; // Light blue
+			return "hsl(220 65% 75%)"; // Light blue
 		}
 		if (ratio < 0.75) {
-			return "hsl(220 70% 55%)"; // Medium blue
+			return "hsl(220 70% 60%)"; // Medium blue
 		}
-		return "hsl(220 70% 40%)"; // Dark blue for high activity
+		return "hsl(220 75% 45%)"; // Dark blue for high activity
 	}
 }
 
@@ -169,9 +170,6 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 				})) ?? []
 		);
 	}, [dayData, selectedDay, today, currentHour]);
-
-	// Find current hour index for the indicator
-	const currentHourIndex = chartData.findIndex((d) => d.isCurrent);
 
 	const getComparisonBadge = () => {
 		if (!current) return null;
@@ -313,22 +311,7 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 							))}
 						</Bar>
 					</BarChart>
-				</ChartContainer>
-
-				{/* Current time indicator arrow */}
-				{selectedDay === today && currentHourIndex >= 0 && (
-					<div
-						className="absolute bottom-0 flex flex-col items-center pointer-events-none"
-						style={{
-							left: `calc(${((currentHourIndex + 0.5) / chartData.length) * 100}% + 5px)`,
-							transform: "translateX(-50%)",
-						}}
-					>
-						<div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[8px] border-l-transparent border-r-transparent border-b-emerald-500 dark:border-b-emerald-400" />
-					</div>
-				)}
-			</div>
-
+				</ChartContainer>		</div>
 			{/* Legend */}
 			<div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
 				{selectedDay === today && (
@@ -339,9 +322,9 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 				)}
 				<div className="flex items-center gap-1.5">
 					<div className="flex gap-0.5">
-						<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_85%)]" />
-						<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_55%)]" />
-						<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_40%)]" />
+					<div className="w-2 h-3 rounded-sm bg-[hsl(220_60%_90%)]" />
+					<div className="w-2 h-3 rounded-sm bg-[hsl(220_65%_75%)]" />
+					<div className="w-2 h-3 rounded-sm bg-[hsl(220_70%_60%)]" />
 					</div>
 					<span>Less to more busy</span>
 				</div>
