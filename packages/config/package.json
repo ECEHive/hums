@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/config",
-	"version": "1.4.1",
+	"version": "1.4.2",
 	"type": "module",
 	"files": [
 		"tsconfig/base.json",
