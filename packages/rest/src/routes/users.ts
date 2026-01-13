@@ -1,6 +1,7 @@
-import { createUser } from "@ecehive/features";
+import { createUser, findUserByCard } from "@ecehive/features";
 import { Prisma, prisma } from "@ecehive/prisma";
 import { normalizeCardNumber } from "@ecehive/user-data";
+import { TRPCError } from "@trpc/server";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
@@ -104,6 +105,10 @@ const BulkRoleOperationsSchema = z.object({
 
 const RoleOperationSchema = z.object({
 	roles: z.array(z.string().trim().min(1)).min(1),
+});
+
+const CardNumberParamsSchema = z.object({
+	cardNumber: z.string().trim().min(1),
 });
 
 // ===== Helper Types =====
@@ -710,6 +715,53 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		});
 
 		return bulkResponse([], updated, failed);
+	});
+
+	// ===== Card Number Lookup =====
+
+	// Get or create user by card number (like kiosk tap-in)
+	// If user exists with this card, return their info
+	// If not, attempt to find and create user from external data provider
+	fastify.get("/card/:cardNumber", async (request, reply) => {
+		const parsed = CardNumberParamsSchema.safeParse(request.params);
+		if (!parsed.success) {
+			return validationError(reply, parsed.error);
+		}
+
+		console.log("Looking up user by card number:", parsed.data.cardNumber);
+
+		try {
+			const user = await findUserByCard(parsed.data.cardNumber);
+
+			// Fetch user with roles for serialization
+			const userWithRoles = await prisma.user.findUnique({
+				where: { id: user.id },
+				include: { roles: true },
+			});
+
+			if (!userWithRoles) {
+				return notFoundError(reply, "User");
+			}
+
+			await logRestAction(request, "rest.users.card.lookup", {
+				userId: user.id,
+				username: user.username,
+				cardNumber: parsed.data.cardNumber,
+			});
+
+			return successResponse(serializeUser(userWithRoles));
+		} catch (error) {
+			if (error instanceof TRPCError) {
+				if (error.code === "BAD_REQUEST") {
+					return badRequestError(reply, error.message);
+				}
+				if (error.code === "NOT_FOUND") {
+					return notFoundError(reply, "User", `card:${parsed.data.cardNumber}`);
+				}
+			}
+
+			throw error;
+		}
 	});
 
 	// ===== Standard Operations =====
