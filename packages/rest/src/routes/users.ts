@@ -50,6 +50,7 @@ const CreateUserSchema = z.object({
 	name: z.string().trim().max(255).optional(),
 	email: z.email().max(255).optional(),
 	cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
+	slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 	roles: z.array(z.string().trim().min(1)).optional().default([]),
 });
 
@@ -57,6 +58,7 @@ const UpdateUserSchema = z.object({
 	name: z.string().trim().min(1).max(255).optional(),
 	email: z.string().email().max(255).optional(),
 	cardNumber: z.string().trim().min(1).max(50).optional(),
+	slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 	roles: z.array(z.string().trim().min(1)).optional(),
 });
 
@@ -68,6 +70,7 @@ const BulkCreateUsersSchema = z.object({
 				name: z.string().trim().max(255).optional(),
 				email: z.email().max(255).optional(),
 				cardNumber: z.string().trim().min(1).max(50).optional(),
+				slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 				roles: z.array(z.string().trim().min(1)).optional().default([]),
 			}),
 		)
@@ -83,6 +86,7 @@ const BulkUpsertUsersSchema = z.object({
 				name: z.string().trim().min(1).max(255).optional(),
 				email: z.string().email().max(255).optional(),
 				cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
+				slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 				roles: z.array(z.string().trim().min(1)).optional(),
 			}),
 		)
@@ -121,6 +125,7 @@ type SerializedUser = {
 	name: string;
 	email: string;
 	cardNumber: string | null;
+	slackUsername: string | null;
 	roles?: string[];
 	createdAt: Date;
 	updatedAt: Date;
@@ -138,6 +143,7 @@ function serializeUser(
 		name: user.name,
 		email: user.email,
 		cardNumber: user.cardNumber,
+		slackUsername: user.slackUsername,
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt,
 	};
@@ -310,6 +316,12 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 						normalizedCard;
 					upsertData.create.cardNumber = normalizedCard;
 				}
+				// Only add slackUsername to update/create if it has a concrete value (null or string)
+				if (finalUserData.slackUsername !== undefined) {
+					(upsertData.update as Prisma.UserUpdateInput).slackUsername =
+						finalUserData.slackUsername;
+					upsertData.create.slackUsername = finalUserData.slackUsername;
+				}
 
 				const user = await prisma.user.upsert(upsertData);
 
@@ -406,12 +418,14 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			name?: string;
 			email?: string;
 			cardNumber: string | null | undefined;
+			slackUsername?: string | null;
 			roleIds: number[];
 			originalData: {
 				username: string;
 				name?: string;
 				email?: string;
 				cardNumber?: string | null;
+				slackUsername?: string | null;
 				roles?: string[];
 			};
 		};
@@ -474,6 +488,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				name: data.name,
 				email: data.email,
 				cardNumber: normalizedCard,
+				slackUsername: data.slackUsername,
 				roleIds,
 				originalData: userData,
 			});
@@ -489,6 +504,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 							name: userData.name || undefined,
 							email: userData.email || undefined,
 							cardNumber: userData.cardNumber ?? undefined,
+							slackUsername: userData.slackUsername,
 							roleIds: userData.roleIds,
 						}),
 					),
@@ -506,6 +522,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 							name: userData.name,
 							email: userData.email,
 							cardNumber: userData.cardNumber ?? undefined,
+							slackUsername: userData.slackUsername,
 							roleIds: userData.roleIds,
 						});
 
@@ -881,6 +898,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			name: userData.name || undefined,
 			email: userData.email || undefined,
 			cardNumber: normalizedCard,
+			slackUsername: userData.slackUsername,
 			roleIds: roles.map((r) => r.id),
 		});
 
@@ -914,7 +932,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return notFoundError(reply, "User", params.data.username);
 		}
 
-		const { roles: roleNames, cardNumber, ...userData } = body.data;
+		const { roles: roleNames, cardNumber, slackUsername, ...userData } = body.data;
 
 		// Normalize card number if provided
 		let normalizedCard: string | null | undefined;
@@ -948,6 +966,9 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		};
 		if (normalizedCard !== undefined) {
 			updateData.cardNumber = normalizedCard;
+		}
+		if (slackUsername !== undefined) {
+			updateData.slackUsername = slackUsername;
 		}
 		if (roles !== null) {
 			updateData.roles = {
