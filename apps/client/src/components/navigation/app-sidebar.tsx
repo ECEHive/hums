@@ -378,7 +378,7 @@ export function AppSidebar() {
 								<a href="/overview/" target="_blank" rel="noopener noreferrer">
 									<DropdownMenuItem>
 										<LayoutDashboardIcon />
-										Open Overview
+										Open Space Overview
 									</DropdownMenuItem>
 								</a>
 								<DropdownMenuSeparator />
