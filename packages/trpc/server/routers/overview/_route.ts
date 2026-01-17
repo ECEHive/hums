@@ -16,8 +16,8 @@ import {
 	ZCurrentStaffingSchema,
 } from "./currentStaffing.route";
 
-export const dashboardRouter = router({
-	// Public endpoints (available to anyone viewing the dashboard)
+export const overviewRouter = router({
+	// Public endpoints (available to anyone viewing the overview)
 	activeSessionsCount: publicProcedure
 		.input(ZActiveSessionsCountSchema)
 		.query(activeSessionsCountHandler),
@@ -25,7 +25,7 @@ export const dashboardRouter = router({
 		.input(ZBusynessAnalyticsSchema)
 		.query(busynessAnalyticsHandler),
 
-	// Protected endpoints (require dashboard device access)
+	// Protected endpoints (require overview device access)
 	currentStaffing: dashboardProtectedProcedure
 		.input(ZCurrentStaffingSchema)
 		.query(currentStaffingHandler),

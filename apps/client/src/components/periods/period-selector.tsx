@@ -38,6 +38,9 @@ export function PeriodSelector({
 			}
 			return trpc.periods.listVisible.query({ limit: 100 });
 		},
+		// Disable refetch on window focus to prevent unnecessary re-renders
+		// that could disrupt UI state (e.g., open dialogs)
+		refetchOnWindowFocus: false,
 	});
 
 	const periods = periodsData?.periods ?? [];
@@ -57,6 +60,9 @@ export function PeriodSelector({
 			enabled:
 				selectedPeriodId !== null &&
 				!periods.some((p) => p.id === selectedPeriodId),
+			// Disable refetch on window focus to prevent unnecessary re-renders
+			// that could disrupt UI state (e.g., open dialogs)
+			refetchOnWindowFocus: false,
 		});
 
 	// Build displayedPeriods: include the selected period (from a single fetch)

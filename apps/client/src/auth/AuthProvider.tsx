@@ -65,6 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		},
 		enabled: Boolean(token),
 		retry: false,
+		// Disable refetch on window focus to prevent unnecessary re-renders
+		// that could disrupt UI state (e.g., open dialogs)
+		refetchOnWindowFocus: false,
 	});
 
 	// If token removed, clear any previous user data

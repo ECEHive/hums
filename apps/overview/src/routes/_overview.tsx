@@ -1,18 +1,18 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { DashboardHeader } from "@/components/navigation/dashboard-header";
-import { DashboardSidebar } from "@/components/navigation/dashboard-sidebar";
+import { OverviewHeader } from "@/components/navigation/overview-header";
+import { OverviewSidebar } from "@/components/navigation/overview-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-export const Route = createFileRoute("/_dashboard")({
-	component: DashboardLayout,
+export const Route = createFileRoute("/_overview")({
+	component: OverviewLayout,
 });
 
-function DashboardLayout() {
+function OverviewLayout() {
 	return (
 		<SidebarProvider>
-			<DashboardSidebar />
+			<OverviewSidebar />
 			<SidebarInset>
-				<DashboardHeader />
+				<OverviewHeader />
 				<main className="flex-1 p-4 md:p-6">
 					<Outlet />
 					<footer className="mt-12 pt-6 border-t border-border">

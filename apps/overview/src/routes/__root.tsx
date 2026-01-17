@@ -3,7 +3,7 @@ import { DeviceProvider } from "@/components/providers/device-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
 const RootLayout = () => (
-	<ThemeProvider defaultTheme="dark" storageKey="dashboard-theme">
+	<ThemeProvider defaultTheme="dark" storageKey="overview-theme">
 		<DeviceProvider>
 			<Outlet />
 		</DeviceProvider>

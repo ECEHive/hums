@@ -21,6 +21,7 @@ export const configRoute: FastifyPluginAsync = async (fastify) => {
 			// Observability
 			clientSentryDsn: process.env.CLIENT_SENTRY_DSN ?? null,
 			kioskSentryDsn: process.env.KIOSK_SENTRY_DSN ?? null,
+			overviewSentryDsn: process.env.OVERVIEW_SENTRY_DSN ?? null,
 
 			// Timezone
 			timezone: process.env.TZ ?? "America/New_York",

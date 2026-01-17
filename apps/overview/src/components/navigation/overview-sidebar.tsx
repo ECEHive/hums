@@ -49,14 +49,14 @@ const mainItems: SidebarItem[] = [
 	},
 ];
 
-export function DashboardSidebar() {
+export function OverviewSidebar() {
 	const location = useLocation();
 	const pathname = location?.pathname ?? "/";
 	const { theme, setTheme } = useTheme();
 	const { isDevice, hasDashboardAccess } = useDevice();
 
 	const isPathActive = (itemUrl: string) => {
-		const basePath = "/dashboard";
+		const basePath = "/overview";
 		const fullPath = itemUrl === "/" ? basePath : `${basePath}${itemUrl}`;
 		const normalizedPath = pathname.replace(/\/+$/, "");
 		const normalizedItem = fullPath.replace(/\/+$/, "");

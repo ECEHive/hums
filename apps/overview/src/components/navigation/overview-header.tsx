@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useSidebar } from "@/components/ui/sidebar";
 
-export function DashboardHeader() {
+export function OverviewHeader() {
 	const { toggleSidebar } = useSidebar();
 
 	return (
