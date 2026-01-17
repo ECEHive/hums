@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Activity, Users } from "lucide-react";
 import { BusynessChart } from "@/components/charts/busyness-chart";
+import { OpenStatusCard } from "@/components/shared/open-status-card";
 import {
 	Card,
 	CardContent,
@@ -44,25 +45,31 @@ function OverviewHome() {
 				</p>
 			</div>
 
-			{/* People in Space Card */}
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-					<CardTitle className="text-sm font-medium">Active Users</CardTitle>
-					<Users className="h-4 w-4 text-muted-foreground" />
-				</CardHeader>
-				<CardContent>
-					{sessionsLoading ? (
-						<Skeleton className="h-10 w-24" />
-					) : (
-						<div className="text-3xl md:text-4xl font-bold tabular-nums">
-							{sessionCount?.total ?? 0}
-						</div>
-					)}
-					<p className="text-xs md:text-sm text-muted-foreground">
-						Users currently in the space
-					</p>
-				</CardContent>
-			</Card>
+			{/* Status Cards */}
+			<div className="grid gap-4 md:grid-cols-2">
+				{/* Open/Closed Status Card */}
+				<OpenStatusCard />
+
+				{/* People in Space Card */}
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Active Users</CardTitle>
+						<Users className="h-4 w-4 text-muted-foreground" />
+					</CardHeader>
+					<CardContent>
+						{sessionsLoading ? (
+							<Skeleton className="h-10 w-24" />
+						) : (
+							<div className="text-3xl md:text-4xl font-bold tabular-nums">
+								{sessionCount?.total ?? 0}
+							</div>
+						)}
+						<p className="text-xs md:text-sm text-muted-foreground">
+							Users currently in the space
+						</p>
+					</CardContent>
+				</Card>
+			</div>
 
 			{/* Busyness Chart - Google Maps style */}
 			<Card>
