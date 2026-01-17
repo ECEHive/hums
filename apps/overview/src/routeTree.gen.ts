@@ -29,8 +29,8 @@ const OverviewStaffingRoute = OverviewStaffingRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof OverviewIndexRoute
   '/staffing': typeof OverviewStaffingRoute
+  '/': typeof OverviewIndexRoute
 }
 export interface FileRoutesByTo {
   '/staffing': typeof OverviewStaffingRoute
@@ -44,7 +44,7 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/staffing'
+  fullPaths: '/staffing' | '/'
   fileRoutesByTo: FileRoutesByTo
   to: '/staffing' | '/'
   id: '__root__' | '/_overview' | '/_overview/staffing' | '/_overview/'
@@ -59,7 +59,7 @@ declare module '@tanstack/react-router' {
     '/_overview': {
       id: '/_overview'
       path: ''
-      fullPath: '/'
+      fullPath: ''
       preLoaderRoute: typeof OverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
