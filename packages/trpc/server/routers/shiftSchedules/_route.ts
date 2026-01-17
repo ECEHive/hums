@@ -18,6 +18,10 @@ import {
 import { getHandler, ZGetSchema } from "./get.route";
 import { listHandler, ZListSchema } from "./list.route";
 import {
+	listAllUsersWithStatsHandler,
+	ZListAllUsersWithStatsSchema,
+} from "./listAllUsersWithStats.route";
+import {
 	listEligibleUsersHandler,
 	ZListEligibleUsersSchema,
 } from "./listEligibleUsers.route";
@@ -45,6 +49,11 @@ export const shiftSchedulesRouter = router({
 	list: permissionProtectedProcedure("shift_schedules.list")
 		.input(ZListSchema)
 		.query(listHandler),
+	listAllUsersWithStats: permissionProtectedProcedure(
+		"shift_schedules.manipulate",
+	)
+		.input(ZListAllUsersWithStatsSchema)
+		.query(listAllUsersWithStatsHandler),
 	listEligibleUsers: permissionProtectedProcedure("shift_schedules.manipulate")
 		.input(ZListEligibleUsersSchema)
 		.query(listEligibleUsersHandler),
