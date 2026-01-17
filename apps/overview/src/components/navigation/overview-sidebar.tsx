@@ -56,10 +56,12 @@ export function OverviewSidebar() {
 	const { isDevice, hasDashboardAccess } = useDevice();
 
 	const isPathActive = (itemUrl: string) => {
-		const basePath = "/overview";
-		const fullPath = itemUrl === "/" ? basePath : `${basePath}${itemUrl}`;
+		// const basePath = "/overview";
+		// const fullPath = itemUrl === "/" ? basePath : `${basePath}${itemUrl}`;
 		const normalizedPath = pathname.replace(/\/+$/, "");
-		const normalizedItem = fullPath.replace(/\/+$/, "");
+		const normalizedItem = itemUrl.replace(/\/+$/, "");
+
+		console.log("Comparing paths:", { normalizedPath, normalizedItem });
 
 		return normalizedPath === normalizedItem;
 	};
