@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2Icon, RefreshCcwIcon, UserIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { RequirePermissions } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -21,10 +21,20 @@ import {
 import { usePeriod } from "@/components/providers/period-provider";
 import {
 	DataTable,
+	FilterField,
 	SearchInput,
+	TableFilters,
 	TablePaginationFooter,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import type { RequiredPermissions } from "@/lib/permissions";
@@ -124,8 +134,104 @@ function generateColumns(): ColumnDef<UserWithStats>[] {
 	];
 }
 
+type NumericFilterOperator = "gt" | "lt" | "gte" | "lte" | "eq";
+
+type NumericFilter = {
+	operator: NumericFilterOperator;
+	value: number;
+} | null;
+
+type ShiftFilters = {
+	registeredShifts: NumericFilter;
+	droppedShifts: NumericFilter;
+	makeupShifts: NumericFilter;
+};
+
+const DEFAULT_FILTERS: ShiftFilters = {
+	registeredShifts: null,
+	droppedShifts: null,
+	makeupShifts: null,
+};
+
+const OPERATOR_LABELS: Record<NumericFilterOperator, string> = {
+	gt: "Greater than",
+	lt: "Less than",
+	gte: "At least",
+	lte: "At most",
+	eq: "Exactly",
+};
+
+function NumericFilterInput({
+	label,
+	value,
+	onChange,
+}: {
+	label: string;
+	value: NumericFilter;
+	onChange: (value: NumericFilter) => void;
+}) {
+	const [operator, setOperator] = useState<NumericFilterOperator>(
+		value?.operator ?? "gte",
+	);
+	const [inputValue, setInputValue] = useState<string>(
+		value?.value?.toString() ?? "",
+	);
+
+	const handleApply = () => {
+		const num = Number.parseInt(inputValue, 10);
+		if (!Number.isNaN(num) && num >= 0) {
+			onChange({ operator, value: num });
+		}
+	};
+
+	const handleClear = () => {
+		setInputValue("");
+		onChange(null);
+	};
+
+	return (
+		<div className="space-y-2">
+			<span className="text-sm font-medium">{label}</span>
+			<div className="flex gap-2">
+				<Select
+					value={operator}
+					onValueChange={(val) => setOperator(val as NumericFilterOperator)}
+				>
+					<SelectTrigger className="w-[130px]">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{Object.entries(OPERATOR_LABELS).map(([op, opLabel]) => (
+							<SelectItem key={op} value={op}>
+								{opLabel}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<Input
+					type="number"
+					min={0}
+					placeholder="0"
+					value={inputValue}
+					onChange={(e) => setInputValue(e.target.value)}
+					className="w-20"
+				/>
+				<Button size="sm" variant="secondary" onClick={handleApply}>
+					Apply
+				</Button>
+				{value && (
+					<Button size="sm" variant="ghost" onClick={handleClear}>
+						Clear
+					</Button>
+				)}
+			</div>
+		</div>
+	);
+}
+
 function ManageUsersPage() {
 	const { period: selectedPeriodId } = usePeriod();
+	const [filters, setFilters] = useState<ShiftFilters>(DEFAULT_FILTERS);
 
 	const {
 		page,
@@ -139,6 +245,14 @@ function ManageUsersPage() {
 		resetToFirstPage,
 	} = useTableState({ initialPageSize: 20 });
 
+	const activeFiltersCount = [
+		filters.registeredShifts,
+		filters.droppedShifts,
+		filters.makeupShifts,
+	].filter(Boolean).length;
+
+	const hasActiveFilters = activeFiltersCount > 0;
+
 	const queryParams = useMemo(() => {
 		return {
 			periodId: selectedPeriodId ?? 0,
@@ -146,8 +260,11 @@ function ManageUsersPage() {
 				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
 			offset,
 			limit: pageSize,
+			registeredShiftsFilter: filters.registeredShifts ?? undefined,
+			droppedShiftsFilter: filters.droppedShifts ?? undefined,
+			makeupShiftsFilter: filters.makeupShifts ?? undefined,
 		};
-	}, [selectedPeriodId, debouncedSearch, offset, pageSize]);
+	}, [selectedPeriodId, debouncedSearch, offset, pageSize, filters]);
 
 	const {
 		data = { users: [], total: 0, period: null },
@@ -215,6 +332,63 @@ function ManageUsersPage() {
 								}}
 							/>
 						</TableSearchInput>
+						<TableFilters
+							activeFiltersCount={activeFiltersCount}
+							hasActiveFilters={hasActiveFilters}
+							onReset={() => {
+								setFilters(DEFAULT_FILTERS);
+								resetToFirstPage();
+							}}
+						>
+							<FilterField
+								label="Registered Shifts"
+								description="Filter by number of registered shifts"
+							>
+								<NumericFilterInput
+									label=""
+									value={filters.registeredShifts}
+									onChange={(value) => {
+										setFilters((prev) => ({
+											...prev,
+											registeredShifts: value,
+										}));
+										resetToFirstPage();
+									}}
+								/>
+							</FilterField>
+							<FilterField
+								label="Dropped Shifts"
+								description="Filter by number of dropped shifts"
+							>
+								<NumericFilterInput
+									label=""
+									value={filters.droppedShifts}
+									onChange={(value) => {
+										setFilters((prev) => ({
+											...prev,
+											droppedShifts: value,
+										}));
+										resetToFirstPage();
+									}}
+								/>
+							</FilterField>
+							<FilterField
+								label="Makeup Shifts"
+								description="Filter by number of makeup shifts"
+							>
+								<NumericFilterInput
+									label=""
+									value={filters.makeupShifts}
+									onChange={(value) => {
+										setFilters((prev) => ({
+											...prev,
+											makeupShifts: value,
+										}));
+										resetToFirstPage();
+									}}
+								/>
+							</FilterField>
+						</TableFilters>
 					</TableToolbar>
 
 					<DataTable

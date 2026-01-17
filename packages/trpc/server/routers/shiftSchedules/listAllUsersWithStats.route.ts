@@ -8,11 +8,23 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
+// Schema for numeric comparison filters
+const numericFilterSchema = z
+	.object({
+		operator: z.enum(["gt", "lt", "gte", "lte", "eq"]),
+		value: z.number().min(0),
+	})
+	.optional();
+
 export const ZListAllUsersWithStatsSchema = z.object({
 	periodId: z.number().min(1),
 	search: z.string().max(100).optional(),
 	limit: z.number().min(1).max(100).optional(),
 	offset: z.number().min(0).optional(),
+	// Numeric filters
+	registeredShiftsFilter: numericFilterSchema,
+	droppedShiftsFilter: numericFilterSchema,
+	makeupShiftsFilter: numericFilterSchema,
 });
 
 export type TListAllUsersWithStatsSchema = z.infer<
@@ -25,6 +37,30 @@ export type TListAllUsersWithStatsOptions = {
 };
 
 /**
+ * Helper function to check if a value passes a numeric filter
+ */
+function passesNumericFilter(
+	value: number,
+	filter?: { operator: "gt" | "lt" | "gte" | "lte" | "eq"; value: number },
+): boolean {
+	if (!filter) return true;
+	switch (filter.operator) {
+		case "gt":
+			return value > filter.value;
+		case "lt":
+			return value < filter.value;
+		case "gte":
+			return value >= filter.value;
+		case "lte":
+			return value <= filter.value;
+		case "eq":
+			return value === filter.value;
+		default:
+			return true;
+	}
+}
+
+/**
  * Lists all users eligible for a period with their shift statistics.
  * Returns users with:
  * - Number of registered shifts
@@ -34,7 +70,15 @@ export type TListAllUsersWithStatsOptions = {
 export async function listAllUsersWithStatsHandler(
 	options: TListAllUsersWithStatsOptions,
 ) {
-	const { periodId, search, limit = 20, offset = 0 } = options.input;
+	const {
+		periodId,
+		search,
+		limit = 20,
+		offset = 0,
+		registeredShiftsFilter,
+		droppedShiftsFilter,
+		makeupShiftsFilter,
+	} = options.input;
 
 	const actor = await getUserWithRoles(prisma, options.ctx.user.id);
 
@@ -100,14 +144,19 @@ export async function listAllUsersWithStatsHandler(
 		where.AND = andFilters;
 	}
 
-	// Get total count and users with pagination
+	// Determine if we need to fetch all users for numeric filtering
+	const hasNumericFilters =
+		registeredShiftsFilter || droppedShiftsFilter || makeupShiftsFilter;
+
+	// Get total count and users
+	// When numeric filters are active, we need all users to compute stats first
 	const [total, users] = await Promise.all([
 		prisma.user.count({ where }),
 		prisma.user.findMany({
 			where,
 			orderBy: [{ name: "asc" }, { username: "asc" }],
-			skip: offset,
-			take: limit,
+			// Only apply pagination here if no numeric filters
+			...(hasNumericFilters ? {} : { skip: offset, take: limit }),
 			select: {
 				id: true,
 				name: true,
@@ -211,8 +260,8 @@ export async function listAllUsersWithStatsHandler(
 		makeupByUser.set(stat.userId, stat._count.id);
 	}
 
-	// Build final response
-	const usersWithStats = users.map((user) => ({
+	// Build users with stats (before filtering)
+	const allUsersWithStats = users.map((user) => ({
 		id: user.id,
 		name: user.name,
 		username: user.username,
@@ -223,9 +272,30 @@ export async function listAllUsersWithStatsHandler(
 		makeupShifts: makeupByUser.get(user.id) ?? 0,
 	}));
 
+	// Apply numeric filters
+	let filteredUsers = allUsersWithStats;
+	if (hasNumericFilters) {
+		filteredUsers = allUsersWithStats.filter((user) => {
+			if (!passesNumericFilter(user.registeredShifts, registeredShiftsFilter)) {
+				return false;
+			}
+			if (!passesNumericFilter(user.droppedShifts, droppedShiftsFilter)) {
+				return false;
+			}
+			if (!passesNumericFilter(user.makeupShifts, makeupShiftsFilter)) {
+				return false;
+			}
+			return true;
+		});
+	}
+
+	// Apply pagination to filtered results
+	const filteredTotal = filteredUsers.length;
+	const paginatedUsers = filteredUsers.slice(offset, offset + limit);
+
 	return {
-		users: usersWithStats,
-		total,
+		users: paginatedUsers,
+		total: hasNumericFilters ? filteredTotal : total,
 		period: {
 			id: period.id,
 			name: period.name,

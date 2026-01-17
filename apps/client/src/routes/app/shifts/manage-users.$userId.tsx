@@ -7,12 +7,7 @@ import { toast } from "sonner";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
-import {
-	Page,
-	PageContent,
-	PageHeader,
-	PageTitle,
-} from "@/components/layout";
+import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
 import { usePeriod } from "@/components/providers/period-provider";
 import {
 	AssignedSchedulesSection,
