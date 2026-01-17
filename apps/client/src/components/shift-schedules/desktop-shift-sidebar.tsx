@@ -1,4 +1,6 @@
 import { CalendarDays } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { ShiftCard } from "./shift-card";
 import {
 	DAYS_OF_WEEK,
@@ -15,6 +17,11 @@ interface DesktopShiftSidebarProps {
 	isWithinSignupWindow: boolean;
 }
 
+// Minimum width in pixels to switch to grid layout (2 columns)
+const GRID_BREAKPOINT = 500;
+// Width at which we switch to 3 columns
+const THREE_COLUMN_BREAKPOINT = 750;
+
 export function DesktopShiftSidebar({
 	schedules,
 	dayOfWeek,
@@ -25,9 +32,40 @@ export function DesktopShiftSidebar({
 	const day = DAYS_OF_WEEK.find((d) => d.value === dayOfWeek);
 	const timeLabel = formatCompactTime(timeBlock);
 	const { registerMutation, unregisterMutation } = useShiftMutations(periodId);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [columns, setColumns] = useState(1);
+
+	const updateColumns = useCallback(() => {
+		if (containerRef.current) {
+			const width = containerRef.current.offsetWidth;
+			if (width >= THREE_COLUMN_BREAKPOINT) {
+				setColumns(3);
+			} else if (width >= GRID_BREAKPOINT) {
+				setColumns(2);
+			} else {
+				setColumns(1);
+			}
+		}
+	}, []);
+
+	useEffect(() => {
+		const container = containerRef.current;
+		if (!container) return;
+
+		// Initial measurement
+		updateColumns();
+
+		// Watch for resize
+		const resizeObserver = new ResizeObserver(updateColumns);
+		resizeObserver.observe(container);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, [updateColumns]);
 
 	return (
-		<div className="flex h-full flex-col">
+		<div className="flex h-full flex-col" ref={containerRef}>
 			<div className="border-b bg-card p-4">
 				<h3 className="text-lg font-semibold">
 					{day?.label} at {timeLabel}
@@ -37,7 +75,18 @@ export function DesktopShiftSidebar({
 				</p>
 			</div>
 
-			<div className="flex-1 space-y-3 overflow-y-auto p-4 pb-24">
+			<div
+				className={cn(
+					"flex-1 overflow-y-auto p-4 pb-24",
+					columns === 1 && "space-y-3",
+					columns > 1 && "grid gap-3",
+				)}
+				style={
+					columns > 1
+						? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }
+						: undefined
+				}
+			>
 				{schedules.map((schedule) => (
 					<ShiftCard
 						key={schedule.id}
