@@ -1,23 +1,23 @@
 /**
- * Runtime configuration for the dashboard application.
+ * Runtime configuration for the overview application.
  */
-export interface DashboardConfig {
-	/** Sentry DSN for dashboard error tracking (null if disabled) */
-	dashboardSentryDsn: string | null;
+export interface OverviewConfig {
+	/** Sentry DSN for overview error tracking (null if disabled) */
+	overviewSentryDsn: string | null;
 	/** Application timezone */
 	timezone: string;
 	/** Client base URL for login link */
 	clientBaseUrl: string | null;
 }
 
-let cachedConfig: DashboardConfig | null = null;
-let configPromise: Promise<DashboardConfig> | null = null;
+let cachedConfig: OverviewConfig | null = null;
+let configPromise: Promise<OverviewConfig> | null = null;
 
 /**
- * Fetches the dashboard configuration from the server.
+ * Fetches the overview configuration from the server.
  * Results are cached to avoid repeated network requests.
  */
-export async function fetchConfig(): Promise<DashboardConfig> {
+export async function fetchConfig(): Promise<OverviewConfig> {
 	if (cachedConfig) {
 		return cachedConfig;
 	}
@@ -31,7 +31,7 @@ export async function fetchConfig(): Promise<DashboardConfig> {
 			if (!response.ok) {
 				throw new Error(`Failed to fetch config: ${response.status}`);
 			}
-			return response.json() as Promise<DashboardConfig>;
+			return response.json() as Promise<OverviewConfig>;
 		})
 		.then((config) => {
 			cachedConfig = config;
@@ -48,7 +48,7 @@ export async function fetchConfig(): Promise<DashboardConfig> {
 /**
  * Returns the cached config if available, otherwise null.
  */
-export function getConfig(): DashboardConfig | null {
+export function getConfig(): OverviewConfig | null {
 	return cachedConfig;
 }
 

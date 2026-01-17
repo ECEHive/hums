@@ -12,20 +12,20 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const Route = createFileRoute("/_dashboard/")({
-	component: DashboardHome,
+export const Route = createFileRoute("/_overview/")({
+	component: OverviewHome,
 });
 
-function DashboardHome() {
+function OverviewHome() {
 	const { data: sessionCount, isLoading: sessionsLoading } = useQuery({
-		queryKey: ["dashboard", "activeSessionsCount"],
-		queryFn: () => trpc.dashboard.activeSessionsCount.query({}),
+		queryKey: ["overview", "activeSessionsCount"],
+		queryFn: () => trpc.overview.activeSessionsCount.query({}),
 		refetchInterval: 10 * 1000, // Refresh every 10 seconds for more live feel
 	});
 
 	const { data: busynessData, isLoading: busynessLoading } = useQuery({
-		queryKey: ["dashboard", "busynessAnalytics"],
-		queryFn: () => trpc.dashboard.busynessAnalytics.query({ weeksBack: 2 }),
+		queryKey: ["overview", "busynessAnalytics"],
+		queryFn: () => trpc.overview.busynessAnalytics.query({ weeksBack: 2 }),
 		refetchInterval: 60 * 1000, // Refresh every minute
 	});
 
@@ -37,7 +37,7 @@ function DashboardHome() {
 			{/* Page Header */}
 			<div>
 				<h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-					Dashboard
+					Overview
 				</h1>
 				<p className="text-sm md:text-base text-muted-foreground">
 					Real-time overview of the space

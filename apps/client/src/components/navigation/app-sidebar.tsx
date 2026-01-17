@@ -375,10 +375,10 @@ export function AppSidebar() {
 							>
 								<DropdownMenuLabel>HUMS v{__APP_VERSION__}</DropdownMenuLabel>
 								<DropdownMenuSeparator />
-								<a href="/dashboard/" target="_blank" rel="noopener noreferrer">
+								<a href="/overview/" target="_blank" rel="noopener noreferrer">
 									<DropdownMenuItem>
 										<LayoutDashboardIcon />
-										Open Dashboard
+										Open Space Overview
 									</DropdownMenuItem>
 								</a>
 								<DropdownMenuSeparator />

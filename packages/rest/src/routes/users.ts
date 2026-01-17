@@ -932,7 +932,12 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return notFoundError(reply, "User", params.data.username);
 		}
 
-		const { roles: roleNames, cardNumber, slackUsername, ...userData } = body.data;
+		const {
+			roles: roleNames,
+			cardNumber,
+			slackUsername,
+			...userData
+		} = body.data;
 
 		// Normalize card number if provided
 		let normalizedCard: string | null | undefined;

@@ -11,6 +11,7 @@ import {
 	DoorOpenIcon,
 	FileDownIcon,
 	HomeIcon,
+	LayoutDashboardIcon,
 	ListIcon,
 	MoonIcon,
 	NotebookTextIcon,
@@ -259,6 +260,13 @@ export function ShiftsSidebar() {
 								className="w-[--radix-popper-anchor-width]"
 							>
 								<DropdownMenuLabel>HUMS v{__APP_VERSION__}</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<a href="/overview/" target="_blank" rel="noopener noreferrer">
+									<DropdownMenuItem>
+										<LayoutDashboardIcon />
+										Open Space Overview
+									</DropdownMenuItem>
+								</a>
 								<DropdownMenuSeparator />
 								<DropdownMenuLabel>Theme</DropdownMenuLabel>
 								<DropdownMenuItem onSelect={() => setTheme("light")}>

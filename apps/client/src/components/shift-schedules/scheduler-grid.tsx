@@ -132,7 +132,7 @@ export function SchedulerGrid({
 
 	return (
 		<div className="flex-1 overflow-auto relative">
-			<div className="inline-block min-w-full">
+			<div className="inline-block min-w-full pb-24">
 				<table className="border-collapse">
 					{/* Sticky Header Row */}
 					<thead>

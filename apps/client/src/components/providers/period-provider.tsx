@@ -26,11 +26,17 @@ export function PeriodProvider({ children }: { children: React.ReactNode }) {
 	const { data: currentPeriodData, isLoading: currentLoading } = useQuery({
 		queryKey: ["currentPeriod"],
 		queryFn: async () => trpc.periods.getCurrent.query(),
+		// Disable refetch on window focus to prevent unnecessary re-renders
+		// that could disrupt UI state (e.g., open dialogs)
+		refetchOnWindowFocus: false,
 	});
 
 	const { data: visiblePeriodsData, isLoading: visibleLoading } = useQuery({
 		queryKey: ["periods", "listVisible", { limit: 100 }],
 		queryFn: async () => trpc.periods.listVisible.query({ limit: 100 }),
+		// Disable refetch on window focus to prevent unnecessary re-renders
+		// that could disrupt UI state (e.g., open dialogs)
+		refetchOnWindowFocus: false,
 	});
 
 	// Decide and set a sensible default once initial data is available. We

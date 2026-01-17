@@ -37,7 +37,7 @@ export function DesktopShiftSidebar({
 				</p>
 			</div>
 
-			<div className="flex-1 space-y-3 overflow-y-auto p-4">
+			<div className="flex-1 space-y-3 overflow-y-auto p-4 pb-24">
 				{schedules.map((schedule) => (
 					<ShiftCard
 						key={schedule.id}

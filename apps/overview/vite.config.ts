@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		publicDir: "public",
-		base: "/dashboard/",
+		base: "/overview/",
 		define: {
 			__APP_VERSION__: JSON.stringify(packageConfig.version ?? "dev"),
 		},

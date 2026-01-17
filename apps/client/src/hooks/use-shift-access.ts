@@ -29,6 +29,9 @@ export function useShiftAccess() {
 		queryKey: ["periods", "listVisible", { limit: 1 }],
 		queryFn: async () => trpc.periods.listVisible.query({ limit: 1 }),
 		enabled: Boolean(user) && !hasExplicitPermission,
+		// Disable refetch on window focus to prevent unnecessary re-renders
+		// that could disrupt UI state (e.g., open dialogs)
+		refetchOnWindowFocus: false,
 	});
 
 	const hasVisiblePeriodAccess = Boolean(data?.periods?.length);

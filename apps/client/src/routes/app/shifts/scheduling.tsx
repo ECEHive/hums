@@ -232,6 +232,9 @@ function Scheduling() {
 		// This prevents the query from refetching (and potentially resetting UI state)
 		// when the browser fires the 'online' event
 		refetchOnReconnect: false,
+		// Disable automatic refetch on window focus to prevent the scheduler dialog
+		// from being disrupted when user navigates away and back to the page
+		refetchOnWindowFocus: false,
 		// Keep data fresh for a reasonable time since we get real-time updates via subscription
 		staleTime: 1000 * 60 * 5, // 5 minutes
 		retry: (failureCount, error) => {

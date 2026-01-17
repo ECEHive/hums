@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export const Route = createFileRoute("/_dashboard/staffing")({
+export const Route = createFileRoute("/_overview/staffing")({
 	component: StaffingPage,
 });
 
@@ -28,8 +28,8 @@ function StaffingPage() {
 	const { hasDashboardAccess, isLoading: deviceLoading } = useDevice();
 
 	const { data, isLoading, error, dataUpdatedAt, isFetching } = useQuery({
-		queryKey: ["dashboard", "currentStaffing"],
-		queryFn: () => trpc.dashboard.currentStaffing.query({}),
+		queryKey: ["overview", "currentStaffing"],
+		queryFn: () => trpc.overview.currentStaffing.query({}),
 		refetchInterval: 5 * 1000, // Refresh every 5 seconds for live updates
 		enabled: hasDashboardAccess,
 		staleTime: 3 * 1000, // Consider data stale after 3 seconds
@@ -46,7 +46,7 @@ function StaffingPage() {
 							Access Restricted
 						</CardTitle>
 						<CardDescription className="text-sm">
-							This page is only available to registered devices with dashboard
+							This page is only available to registered devices with overview
 							access.
 						</CardDescription>
 					</CardHeader>

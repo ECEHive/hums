@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@ecehive/hums",
@@ -70,8 +71,53 @@
         "vite-tsconfig-paths": "^5.1.4",
       },
     },
-    "apps/dashboard": {
-      "name": "@ecehive/dashboard",
+    "apps/kiosk": {
+      "name": "@ecehive/kiosk",
+      "version": "1.4.2",
+      "dependencies": {
+        "@ecehive/trpc": "workspace:*",
+        "@radix-ui/react-separator": "^1.1.8",
+        "@radix-ui/react-slot": "^1.2.4",
+        "@sentry/react": "^10.32.1",
+        "@tanstack/devtools-vite": "^0.3.11",
+        "@tanstack/react-devtools": "^0.8.2",
+        "@tanstack/react-query": "^5.90.12",
+        "@tanstack/react-query-devtools": "^5.91.2",
+        "@trpc/client": "11.7.2",
+        "@trpc/tanstack-react-query": "11.7.2",
+        "@vitejs/plugin-basic-ssl": "^2.1.0",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
+        "dayjs": "^1.11.19",
+        "lucide-react": "^0.556.0",
+        "motion": "^12.23.25",
+        "qrcode": "^1.5.4",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3",
+        "tailwind-merge": "^3.4.0",
+        "tslog": "^4.10.2",
+        "zod": "^4.3.5",
+      },
+      "devDependencies": {
+        "@ecehive/config": "workspace:*",
+        "@tailwindcss/typography": "^0.5.19",
+        "@tailwindcss/vite": "^4.1.17",
+        "@types/node": "^24.10.1",
+        "@types/qrcode": "^1.5.6",
+        "@types/react": "^19.2.8",
+        "@types/react-dom": "^19.2.3",
+        "@types/w3c-web-serial": "^1.0.8",
+        "@vitejs/plugin-react": "^5.1.2",
+        "tailwindcss": "^4.1.17",
+        "tw-animate-css": "^1.4.0",
+        "typescript": "^5.9.3",
+        "vite": "^7.2.7",
+        "vite-tsconfig-paths": "^5.1.4",
+      },
+    },
+    "apps/overview": {
+      "name": "@ecehive/overview",
       "version": "1.4.2",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
@@ -110,51 +156,6 @@
         "@types/node": "^24.10.1",
         "@types/react": "^19.2.8",
         "@types/react-dom": "^19.2.3",
-        "@vitejs/plugin-react": "^5.1.2",
-        "tailwindcss": "^4.1.17",
-        "tw-animate-css": "^1.4.0",
-        "typescript": "^5.9.3",
-        "vite": "^7.2.7",
-        "vite-tsconfig-paths": "^5.1.4",
-      },
-    },
-    "apps/kiosk": {
-      "name": "@ecehive/kiosk",
-      "version": "1.4.2",
-      "dependencies": {
-        "@ecehive/trpc": "workspace:*",
-        "@radix-ui/react-separator": "^1.1.8",
-        "@radix-ui/react-slot": "^1.2.4",
-        "@sentry/react": "^10.32.1",
-        "@tanstack/devtools-vite": "^0.3.11",
-        "@tanstack/react-devtools": "^0.8.2",
-        "@tanstack/react-query": "^5.90.12",
-        "@tanstack/react-query-devtools": "^5.91.2",
-        "@trpc/client": "11.7.2",
-        "@trpc/tanstack-react-query": "11.7.2",
-        "@vitejs/plugin-basic-ssl": "^2.1.0",
-        "class-variance-authority": "^0.7.1",
-        "clsx": "^2.1.1",
-        "cmdk": "^1.1.1",
-        "dayjs": "^1.11.19",
-        "lucide-react": "^0.556.0",
-        "motion": "^12.23.25",
-        "qrcode": "^1.5.4",
-        "react": "^19.2.3",
-        "react-dom": "^19.2.3",
-        "tailwind-merge": "^3.4.0",
-        "tslog": "^4.10.2",
-        "zod": "^4.3.5",
-      },
-      "devDependencies": {
-        "@ecehive/config": "workspace:*",
-        "@tailwindcss/typography": "^0.5.19",
-        "@tailwindcss/vite": "^4.1.17",
-        "@types/node": "^24.10.1",
-        "@types/qrcode": "^1.5.6",
-        "@types/react": "^19.2.8",
-        "@types/react-dom": "^19.2.3",
-        "@types/w3c-web-serial": "^1.0.8",
         "@vitejs/plugin-react": "^5.1.2",
         "tailwindcss": "^4.1.17",
         "tw-animate-css": "^1.4.0",
@@ -523,8 +524,6 @@
 
     "@ecehive/config": ["@ecehive/config@workspace:packages/config"],
 
-    "@ecehive/dashboard": ["@ecehive/dashboard@workspace:apps/dashboard"],
-
     "@ecehive/email": ["@ecehive/email@workspace:packages/email"],
 
     "@ecehive/env": ["@ecehive/env@workspace:packages/env"],
@@ -536,6 +535,8 @@
     "@ecehive/ldap": ["@ecehive/ldap@workspace:packages/ldap"],
 
     "@ecehive/logger": ["@ecehive/logger@workspace:packages/logger"],
+
+    "@ecehive/overview": ["@ecehive/overview@workspace:apps/overview"],
 
     "@ecehive/prisma": ["@ecehive/prisma@workspace:packages/prisma"],
 
@@ -1761,11 +1762,11 @@
 
     "@cspotcode/source-map-support/@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.9", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.0.3", "@jridgewell/sourcemap-codec": "^1.4.10" } }, "sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ=="],
 
-    "@ecehive/dashboard/lucide-react": ["lucide-react@0.562.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-82hOAu7y0dbVuFfmO4bYF1XEwYk/mEbM5E+b1jgci/udUBEE/R7LF5Ip0CCEmXe8AybRM8L+04eP+LGZeDvkiw=="],
-
     "@ecehive/email/@types/react-dom": ["@types/react-dom@18.3.7", "", { "peerDependencies": { "@types/react": "^18.0.0" } }, "sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ=="],
 
     "@ecehive/email/react-dom": ["react-dom@18.3.1", "", { "dependencies": { "loose-envify": "^1.1.0", "scheduler": "^0.23.2" }, "peerDependencies": { "react": "^18.3.1" } }, "sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw=="],
+
+    "@ecehive/overview/lucide-react": ["lucide-react@0.562.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-82hOAu7y0dbVuFfmO4bYF1XEwYk/mEbM5E+b1jgci/udUBEE/R7LF5Ip0CCEmXe8AybRM8L+04eP+LGZeDvkiw=="],
 
     "@ecehive/trpc/@trpc/server": ["@trpc/server@11.8.0", "", { "peerDependencies": { "typescript": ">=5.7.2" } }, "sha512-DphyQnLuyX2nwJCQGWQ9zYz4hZGvRhSBqDhQ0SH3tDhQ3PU4u68xofA0pJ741Ir4InEAFD+TtJVLAQy+wVOkiQ=="],
 
