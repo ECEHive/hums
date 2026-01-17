@@ -66,6 +66,11 @@ function passesNumericFilter(
  * - Number of registered shifts
  * - Number of dropped shifts
  * - Number of makeup shifts
+ *
+ * @note When numeric filters are active, this function fetches all users
+ * matching the base criteria into memory to compute stats before filtering.
+ * For very large user bases, this could cause performance issues. Consider
+ * implementing database-level aggregation if this becomes a bottleneck.
  */
 export async function listAllUsersWithStatsHandler(
 	options: TListAllUsersWithStatsOptions,
@@ -257,7 +262,8 @@ export async function listAllUsersWithStatsHandler(
 	});
 
 	for (const stat of makeupStats) {
-		makeupByUser.set(stat.userId, stat._count.id);
+		const current = makeupByUser.get(stat.userId) ?? 0;
+		makeupByUser.set(stat.userId, current + stat._count.id);
 	}
 
 	// Build users with stats (before filtering)

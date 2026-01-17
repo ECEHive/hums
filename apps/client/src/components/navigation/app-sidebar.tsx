@@ -268,9 +268,9 @@ export function AppSidebar() {
 																	<item.icon className="h-4 w-4" />
 																	<span className="flex-1">{item.title}</span>
 																	{isProfileSection ? (
-																		<ChevronsUpIcon className="ml-auto h-4 w-4" />
-																	) : (
 																		<ChevronsDownIcon className="ml-auto h-4 w-4" />
+																	) : (
+																		<ChevronsUpIcon className="ml-auto h-4 w-4" />
 																	)}
 																</Link>
 															</SidebarMenuButton>

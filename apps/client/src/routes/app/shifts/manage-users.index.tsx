@@ -251,7 +251,8 @@ function ManageUsersPage() {
 		filters.makeupShifts,
 	].filter(Boolean).length;
 
-	const hasActiveFilters = activeFiltersCount > 0;
+	const hasActiveFilters =
+		activeFiltersCount > 0 || debouncedSearch.trim().length > 0;
 
 	const queryParams = useMemo(() => {
 		return {
@@ -396,7 +397,11 @@ function ManageUsersPage() {
 						data={data.users}
 						isLoading={isLoading}
 						emptyMessage="No users found"
-						emptyDescription="No users match the period's shift roles, or try adjusting your search"
+						emptyDescription={
+							hasActiveFilters
+								? "No users match the current filters. Try adjusting or clearing your filters."
+								: "No users match the period's shift roles."
+						}
 					/>
 
 					{data.total > 0 && (
