@@ -51,7 +51,7 @@ import { checkPermissions } from "@/lib/permissions";
 import { permissions as attendancePagePermissions } from "@/routes/app/shifts/attendance";
 import { permissions as exportPagePermissions } from "@/routes/app/shifts/export";
 import { permissions as shiftsIndexPagePermissions } from "@/routes/app/shifts/index";
-import { permissions as manageUsersPagePermissions } from "@/routes/app/shifts/manage-users";
+import { permissions as manageUsersPagePermissions } from "@/routes/app/shifts/manage-users.index";
 import { permissions as myShiftsPagePermissions } from "@/routes/app/shifts/my-shifts";
 import { permissions as periodDetailsPagePermissions } from "@/routes/app/shifts/period-details";
 import { permissions as periodExceptionsPagePermissions } from "@/routes/app/shifts/period-exceptions";

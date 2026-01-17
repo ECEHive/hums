@@ -130,15 +130,21 @@ export function SchedulerGrid({
 }: SchedulerGridProps) {
 	const isDarkMode = useIsDarkMode();
 
+	// Calculate minimum table width: 80px for time column + 120px per day column
+	const minTableWidth = 80 + visibleDays.length * 120;
+
 	return (
 		<div className="flex-1 overflow-auto relative">
-			<div className="inline-block min-w-full pb-24">
-				<table className="border-collapse">
+			<div className="pb-24" style={{ minWidth: minTableWidth }}>
+				<table className="w-full border-collapse table-fixed">
 					{/* Sticky Header Row */}
 					<thead>
 						<tr>
 							{/* Corner cell - sticky both ways */}
-							<th className="sticky left-0 top-0 z-30 bg-background p-2 min-w-[70px] border-b border-r">
+							<th
+								className="sticky left-0 top-0 z-30 bg-background p-2 border-b border-r"
+								style={{ width: 80 }}
+							>
 								<span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
 									Time
 								</span>
@@ -147,7 +153,7 @@ export function SchedulerGrid({
 							{visibleDays.map((day) => (
 								<th
 									key={day.value}
-									className="sticky top-0 z-20 bg-background p-2 min-w-[120px] border-b"
+									className="sticky top-0 z-20 bg-background p-2 border-b"
 								>
 									<div className="text-center py-1">
 										<div className="hidden sm:block text-sm font-semibold">

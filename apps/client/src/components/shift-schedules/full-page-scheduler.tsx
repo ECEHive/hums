@@ -13,6 +13,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -188,6 +193,8 @@ export function FullPageScheduler({
 				<DialogPrimitive.Content
 					data-slot="dialog-content"
 					className="!fixed !inset-0 !max-w-none !w-screen !h-screen !p-0 !gap-0 !rounded-none !border-0 !translate-x-0 !translate-y-0 !top-0 !left-0 overflow-hidden z-50 bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right duration-300"
+					onInteractOutside={(e) => e.preventDefault()}
+					onPointerDownOutside={(e) => e.preventDefault()}
 				>
 					<div className="flex flex-col h-screen w-screen bg-background">
 						{/* Fixed Header */}
@@ -240,18 +247,24 @@ export function FullPageScheduler({
 												)}
 											</Button>
 										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end" className="w-56">
+										<DropdownMenuContent
+											align="end"
+											className="w-56"
+											onCloseAutoFocus={(e) => e.preventDefault()}
+										>
 											<DropdownMenuLabel>Filters</DropdownMenuLabel>
 											<DropdownMenuSeparator />
 											<DropdownMenuCheckboxItem
 												checked={showOnlyAvailable}
 												onCheckedChange={setShowOnlyAvailable}
+												onSelect={(e) => e.preventDefault()}
 											>
 												Available only
 											</DropdownMenuCheckboxItem>
 											<DropdownMenuCheckboxItem
 												checked={showOnlyRegistered}
 												onCheckedChange={setShowOnlyRegistered}
+												onSelect={(e) => e.preventDefault()}
 											>
 												My registrations
 											</DropdownMenuCheckboxItem>
@@ -274,6 +287,7 @@ export function FullPageScheduler({
 																}
 																setShiftTypeFilter(newFilter);
 															}}
+															onSelect={(e) => e.preventDefault()}
 														>
 															<div className="flex items-center gap-2">
 																{type.color && (
@@ -296,7 +310,10 @@ export function FullPageScheduler({
 															variant="outline"
 															size="sm"
 															className="w-full"
-															onClick={clearFilters}
+															onClick={() => {
+																clearFilters();
+																setFilterOpen(false);
+															}}
 														>
 															Clear filters
 														</Button>
@@ -330,87 +347,151 @@ export function FullPageScheduler({
 
 						{/* Main Content Area */}
 						<div className="flex flex-1 min-h-0 overflow-hidden">
-							{/* Schedule Grid */}
-							<main
-								className={cn(
-									"flex-1 min-w-0 flex flex-col overflow-hidden",
-									selectedBlock && "hidden md:flex",
-								)}
-							>
-								{isLoading ? (
-									<div className="flex-1 flex items-center justify-center">
-										<Spinner className="w-8 h-8" />
-									</div>
-								) : filteredSchedules.length === 0 ? (
-									<div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-										<CalendarDays className="w-12 h-12 text-muted-foreground/50 mb-4" />
-										<h3 className="text-lg font-medium mb-1">
-											No shifts found
-										</h3>
-										<p className="text-sm text-muted-foreground mb-4">
-											{hasActiveFilters
-												? "Try adjusting your filters"
-												: "No shifts available for this period"}
-										</p>
-										{hasActiveFilters && (
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={clearFilters}
-											>
-												Clear filters
-											</Button>
+							{isMobile ? (
+								<>
+									{/* Mobile: No resizable panels */}
+									<main
+										className={cn(
+											"flex-1 min-w-0 flex flex-col overflow-hidden",
+											selectedBlock && "hidden",
 										)}
-									</div>
-								) : (
-									<>
-										{/* Legend */}
-										<div className="shrink-0 px-4 py-2 border-b bg-muted/30">
-											<SchedulerLegend />
-										</div>
+									>
+										{isLoading ? (
+											<div className="flex-1 flex items-center justify-center">
+												<Spinner className="w-8 h-8" />
+											</div>
+										) : filteredSchedules.length === 0 ? (
+											<div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+												<CalendarDays className="w-12 h-12 text-muted-foreground/50 mb-4" />
+												<h3 className="text-lg font-medium mb-1">
+													No shifts found
+												</h3>
+												<p className="text-sm text-muted-foreground mb-4">
+													{hasActiveFilters
+														? "Try adjusting your filters"
+														: "No shifts available for this period"}
+												</p>
+												{hasActiveFilters && (
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={clearFilters}
+													>
+														Clear filters
+													</Button>
+												)}
+											</div>
+										) : (
+											<>
+												{/* Legend */}
+												<div className="shrink-0 px-4 py-2 border-b bg-muted/30">
+													<SchedulerLegend />
+												</div>
 
-										{/* Scrollable Grid */}
-										<SchedulerGrid
-											visibleDays={visibleDays}
-											timeBlockStarts={timeBlockStarts}
-											blocks={blocks}
-											selectedBlock={selectedBlock}
-											onSelectBlock={(dayOfWeek, timeBlock) =>
-												setSelectedBlock({ dayOfWeek, timeBlock })
-											}
-										/>
-									</>
-								)}
-							</main>
+												{/* Scrollable Grid */}
+												<SchedulerGrid
+													visibleDays={visibleDays}
+													timeBlockStarts={timeBlockStarts}
+													blocks={blocks}
+													selectedBlock={selectedBlock}
+													onSelectBlock={(dayOfWeek, timeBlock) =>
+														setSelectedBlock({ dayOfWeek, timeBlock })
+													}
+												/>
+											</>
+										)}
+									</main>
 
-							{/* Desktop Sidebar */}
-							{!isMobile && (
-								<aside className="hidden w-96 shrink-0 border-l bg-card md:flex md:flex-col">
-									{selectedBlock ? (
-										<DesktopShiftSidebar
+									{/* Mobile Sheet */}
+									{selectedBlock && (
+										<MobileShiftSheet
+											open={selectedBlock !== null}
 											schedules={selectedBlockSchedules}
 											dayOfWeek={selectedBlock.dayOfWeek}
 											timeBlock={selectedBlock.timeBlock}
 											periodId={periodId}
 											isWithinSignupWindow={isWithinSignupWindow}
+											onClose={() => setSelectedBlock(null)}
 										/>
-									) : (
-										<DesktopShiftSidebarEmpty />
 									)}
-								</aside>
-							)}
+								</>
+							) : (
+								/* Desktop: Resizable panels */
+								<ResizablePanelGroup
+									orientation="horizontal"
+									className="flex-1"
+								>
+									<ResizablePanel minSize={500}>
+										<main className="flex h-full flex-col overflow-hidden">
+											{isLoading ? (
+												<div className="flex-1 flex items-center justify-center">
+													<Spinner className="w-8 h-8" />
+												</div>
+											) : filteredSchedules.length === 0 ? (
+												<div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+													<CalendarDays className="w-12 h-12 text-muted-foreground/50 mb-4" />
+													<h3 className="text-lg font-medium mb-1">
+														No shifts found
+													</h3>
+													<p className="text-sm text-muted-foreground mb-4">
+														{hasActiveFilters
+															? "Try adjusting your filters"
+															: "No shifts available for this period"}
+													</p>
+													{hasActiveFilters && (
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={clearFilters}
+														>
+															Clear filters
+														</Button>
+													)}
+												</div>
+											) : (
+												<>
+													{/* Legend */}
+													<div className="shrink-0 px-4 py-2 border-b bg-muted/30">
+														<SchedulerLegend />
+													</div>
 
-							{/* Mobile Sheet */}
-							{isMobile && selectedBlock && (
-								<MobileShiftSheet
-									open={selectedBlock !== null}
-									schedules={selectedBlockSchedules}
-									dayOfWeek={selectedBlock.dayOfWeek}
-									timeBlock={selectedBlock.timeBlock}
-									periodId={periodId}
-									isWithinSignupWindow={isWithinSignupWindow}
-									onClose={() => setSelectedBlock(null)}
-								/>
+													{/* Scrollable Grid */}
+													<SchedulerGrid
+														visibleDays={visibleDays}
+														timeBlockStarts={timeBlockStarts}
+														blocks={blocks}
+														selectedBlock={selectedBlock}
+														onSelectBlock={(dayOfWeek, timeBlock) =>
+															setSelectedBlock({ dayOfWeek, timeBlock })
+														}
+													/>
+												</>
+											)}
+										</main>
+									</ResizablePanel>
+
+									<ResizableHandle withHandle />
+
+									<ResizablePanel
+										defaultSize={400}
+										minSize={100}
+										maxSize={1000}
+									>
+										<aside className="h-full bg-card flex flex-col overflow-hidden">
+											{selectedBlock ? (
+												<DesktopShiftSidebar
+													schedules={selectedBlockSchedules}
+													dayOfWeek={selectedBlock.dayOfWeek}
+													timeBlock={selectedBlock.timeBlock}
+													periodId={periodId}
+													isWithinSignupWindow={isWithinSignupWindow}
+												/>
+											) : (
+												<DesktopShiftSidebarEmpty />
+											)}
+										</aside>
+									</ResizablePanel>
+								</ResizablePanelGroup>
 							)}
 						</div>
 					</div>

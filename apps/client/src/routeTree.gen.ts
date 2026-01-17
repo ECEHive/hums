@@ -37,7 +37,9 @@ import { Route as AppAppConfigurationRouteImport } from './routes/app/_app/confi
 import { Route as AppAppAuditLogsRouteImport } from './routes/app/_app/audit-logs'
 import { Route as AppAppApiTokensRouteImport } from './routes/app/_app/api-tokens'
 import { Route as AppAppAgreementsRouteImport } from './routes/app/_app/agreements'
+import { Route as AppShiftsManageUsersIndexRouteImport } from './routes/app/shifts/manage-users.index'
 import { Route as AppAppMeIndexRouteImport } from './routes/app/_app/me/index'
+import { Route as AppShiftsManageUsersUserIdRouteImport } from './routes/app/shifts/manage-users.$userId'
 import { Route as AppAppMeSessionsRouteImport } from './routes/app/_app/me/sessions'
 
 const OtaSessionLoginRoute = OtaSessionLoginRouteImport.update({
@@ -180,11 +182,23 @@ const AppAppAgreementsRoute = AppAppAgreementsRouteImport.update({
   path: '/agreements',
   getParentRoute: () => AppAppRoute,
 } as any)
+const AppShiftsManageUsersIndexRoute =
+  AppShiftsManageUsersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppShiftsManageUsersRoute,
+  } as any)
 const AppAppMeIndexRoute = AppAppMeIndexRouteImport.update({
   id: '/me/',
   path: '/me/',
   getParentRoute: () => AppAppRoute,
 } as any)
+const AppShiftsManageUsersUserIdRoute =
+  AppShiftsManageUsersUserIdRouteImport.update({
+    id: '/$userId',
+    path: '/$userId',
+    getParentRoute: () => AppShiftsManageUsersRoute,
+  } as any)
 const AppAppMeSessionsRoute = AppAppMeSessionsRouteImport.update({
   id: '/me/sessions',
   path: '/me/sessions',
@@ -209,7 +223,7 @@ export interface FileRoutesByFullPath {
   '/app/users': typeof AppAppUsersRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
   '/app/shifts/export': typeof AppShiftsExportRoute
-  '/app/shifts/manage-users': typeof AppShiftsManageUsersRoute
+  '/app/shifts/manage-users': typeof AppShiftsManageUsersRouteWithChildren
   '/app/shifts/my-shifts': typeof AppShiftsMyShiftsRoute
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
@@ -220,7 +234,9 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppAppIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
   '/app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
   '/app/me': typeof AppAppMeIndexRoute
+  '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -239,7 +255,6 @@ export interface FileRoutesByTo {
   '/app/users': typeof AppAppUsersRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
   '/app/shifts/export': typeof AppShiftsExportRoute
-  '/app/shifts/manage-users': typeof AppShiftsManageUsersRoute
   '/app/shifts/my-shifts': typeof AppShiftsMyShiftsRoute
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
@@ -249,7 +264,9 @@ export interface FileRoutesByTo {
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
   '/app/shifts': typeof AppShiftsIndexRoute
   '/app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
   '/app/me': typeof AppAppMeIndexRoute
+  '/app/shifts/manage-users': typeof AppShiftsManageUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -271,7 +288,7 @@ export interface FileRoutesById {
   '/app/_app/users': typeof AppAppUsersRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
   '/app/shifts/export': typeof AppShiftsExportRoute
-  '/app/shifts/manage-users': typeof AppShiftsManageUsersRoute
+  '/app/shifts/manage-users': typeof AppShiftsManageUsersRouteWithChildren
   '/app/shifts/my-shifts': typeof AppShiftsMyShiftsRoute
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
@@ -282,7 +299,9 @@ export interface FileRoutesById {
   '/app/_app/': typeof AppAppIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
   '/app/_app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
   '/app/_app/me/': typeof AppAppMeIndexRoute
+  '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -315,7 +334,9 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/shifts/'
     | '/app/me/sessions'
+    | '/app/shifts/manage-users/$userId'
     | '/app/me'
+    | '/app/shifts/manage-users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -334,7 +355,6 @@ export interface FileRouteTypes {
     | '/app/users'
     | '/app/shifts/attendance'
     | '/app/shifts/export'
-    | '/app/shifts/manage-users'
     | '/app/shifts/my-shifts'
     | '/app/shifts/period-details'
     | '/app/shifts/period-exceptions'
@@ -344,7 +364,9 @@ export interface FileRouteTypes {
     | '/app/shifts/shift-types'
     | '/app/shifts'
     | '/app/me/sessions'
+    | '/app/shifts/manage-users/$userId'
     | '/app/me'
+    | '/app/shifts/manage-users'
   id:
     | '__root__'
     | '/'
@@ -376,7 +398,9 @@ export interface FileRouteTypes {
     | '/app/_app/'
     | '/app/shifts/'
     | '/app/_app/me/sessions'
+    | '/app/shifts/manage-users/$userId'
     | '/app/_app/me/'
+    | '/app/shifts/manage-users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -584,12 +608,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppAgreementsRouteImport
       parentRoute: typeof AppAppRoute
     }
+    '/app/shifts/manage-users/': {
+      id: '/app/shifts/manage-users/'
+      path: '/'
+      fullPath: '/app/shifts/manage-users/'
+      preLoaderRoute: typeof AppShiftsManageUsersIndexRouteImport
+      parentRoute: typeof AppShiftsManageUsersRoute
+    }
     '/app/_app/me/': {
       id: '/app/_app/me/'
       path: '/me'
       fullPath: '/app/me'
       preLoaderRoute: typeof AppAppMeIndexRouteImport
       parentRoute: typeof AppAppRoute
+    }
+    '/app/shifts/manage-users/$userId': {
+      id: '/app/shifts/manage-users/$userId'
+      path: '/$userId'
+      fullPath: '/app/shifts/manage-users/$userId'
+      preLoaderRoute: typeof AppShiftsManageUsersUserIdRouteImport
+      parentRoute: typeof AppShiftsManageUsersRoute
     }
     '/app/_app/me/sessions': {
       id: '/app/_app/me/sessions'
@@ -636,10 +674,23 @@ const AppAppRouteChildren: AppAppRouteChildren = {
 const AppAppRouteWithChildren =
   AppAppRoute._addFileChildren(AppAppRouteChildren)
 
+interface AppShiftsManageUsersRouteChildren {
+  AppShiftsManageUsersUserIdRoute: typeof AppShiftsManageUsersUserIdRoute
+  AppShiftsManageUsersIndexRoute: typeof AppShiftsManageUsersIndexRoute
+}
+
+const AppShiftsManageUsersRouteChildren: AppShiftsManageUsersRouteChildren = {
+  AppShiftsManageUsersUserIdRoute: AppShiftsManageUsersUserIdRoute,
+  AppShiftsManageUsersIndexRoute: AppShiftsManageUsersIndexRoute,
+}
+
+const AppShiftsManageUsersRouteWithChildren =
+  AppShiftsManageUsersRoute._addFileChildren(AppShiftsManageUsersRouteChildren)
+
 interface AppShiftsRouteChildren {
   AppShiftsAttendanceRoute: typeof AppShiftsAttendanceRoute
   AppShiftsExportRoute: typeof AppShiftsExportRoute
-  AppShiftsManageUsersRoute: typeof AppShiftsManageUsersRoute
+  AppShiftsManageUsersRoute: typeof AppShiftsManageUsersRouteWithChildren
   AppShiftsMyShiftsRoute: typeof AppShiftsMyShiftsRoute
   AppShiftsPeriodDetailsRoute: typeof AppShiftsPeriodDetailsRoute
   AppShiftsPeriodExceptionsRoute: typeof AppShiftsPeriodExceptionsRoute
@@ -653,7 +704,7 @@ interface AppShiftsRouteChildren {
 const AppShiftsRouteChildren: AppShiftsRouteChildren = {
   AppShiftsAttendanceRoute: AppShiftsAttendanceRoute,
   AppShiftsExportRoute: AppShiftsExportRoute,
-  AppShiftsManageUsersRoute: AppShiftsManageUsersRoute,
+  AppShiftsManageUsersRoute: AppShiftsManageUsersRouteWithChildren,
   AppShiftsMyShiftsRoute: AppShiftsMyShiftsRoute,
   AppShiftsPeriodDetailsRoute: AppShiftsPeriodDetailsRoute,
   AppShiftsPeriodExceptionsRoute: AppShiftsPeriodExceptionsRoute,

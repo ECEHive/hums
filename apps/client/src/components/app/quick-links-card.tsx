@@ -68,7 +68,7 @@ const QUICK_LINKS: QuickLink[] = [
 	},
 	{
 		title: "Session History",
-		to: "/app/my-sessions",
+		to: "/app/me/sessions",
 		icon: HistoryIcon,
 		weight: 60,
 		condition: () => true, // Always available to authenticated users
