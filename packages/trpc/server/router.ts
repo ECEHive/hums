@@ -3,9 +3,9 @@ import { apiTokensRouter } from "./routers/apiTokens/_route";
 import { auditLogsRouter } from "./routers/auditLogs/_route";
 import { authRouter } from "./routers/auth/_route";
 import { configRouter } from "./routers/config/_route";
-import { dashboardRouter } from "./routers/dashboard/_route";
 import { devicesRouter } from "./routers/devices/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
+import { overviewRouter } from "./routers/overview/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
 import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
@@ -25,7 +25,7 @@ export const appRouter = router({
 	apiTokens: apiTokensRouter,
 	auditLogs: auditLogsRouter,
 	config: configRouter,
-	dashboard: dashboardRouter,
+	overview: overviewRouter,
 	users: usersRouter,
 	roles: rolesRouter,
 	permissions: permissionsRouter,

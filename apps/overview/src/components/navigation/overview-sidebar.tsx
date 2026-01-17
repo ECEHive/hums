@@ -49,14 +49,14 @@ const mainItems: SidebarItem[] = [
 	},
 ];
 
-export function DashboardSidebar() {
+export function OverviewSidebar() {
 	const location = useLocation();
 	const pathname = location?.pathname ?? "/";
 	const { theme, setTheme } = useTheme();
 	const { isDevice, hasDashboardAccess } = useDevice();
 
 	const isPathActive = (itemUrl: string) => {
-		const basePath = "/dashboard";
+		const basePath = "/overview";
 		const fullPath = itemUrl === "/" ? basePath : `${basePath}${itemUrl}`;
 		const normalizedPath = pathname.replace(/\/+$/, "");
 		const normalizedItem = fullPath.replace(/\/+$/, "");
@@ -124,7 +124,7 @@ export function DashboardSidebar() {
 					<Button variant="outline" className="w-full justify-start" asChild>
 						<a href="/login" target="_blank" rel="noopener noreferrer">
 							<ExternalLinkIcon className="h-4 w-4 mr-2" />
-							Login to HUMS
+							Open HUMS
 						</a>
 					</Button>
 				)}

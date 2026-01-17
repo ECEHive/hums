@@ -14,9 +14,9 @@ import "./globals.css";
 // Initialize Sentry from runtime config
 fetchConfig()
 	.then((config) => {
-		if (config.dashboardSentryDsn?.trim()) {
+		if (config.overviewSentryDsn?.trim()) {
 			Sentry.init({
-				dsn: config.dashboardSentryDsn,
+				dsn: config.overviewSentryDsn,
 				sendDefaultPii: true,
 				enableLogs: true,
 				release: __APP_VERSION__,
@@ -35,7 +35,7 @@ const router = createRouter({
 		return <ErrorPage error={error} />;
 	},
 	defaultViewTransition: true,
-	basepath: "/dashboard",
+	basepath: "/overview",
 });
 
 // Register the router instance for type safety

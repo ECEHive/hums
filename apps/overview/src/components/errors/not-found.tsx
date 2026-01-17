@@ -23,9 +23,9 @@ export function NotFound() {
 				</CardHeader>
 				<CardFooter className="flex justify-center">
 					<Button asChild>
-						<a href="/dashboard">
+						<a href="/overview">
 							<Home className="mr-2 h-4 w-4" />
-							Go to Dashboard
+							Go to Overview
 						</a>
 					</Button>
 				</CardFooter>
