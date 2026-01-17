@@ -53,7 +53,27 @@ const MAX_COUNTDOWN_HOURS = 24;
  * Parse time string (HH:mm) to minutes since midnight
  */
 function timeToMinutes(time: string): number {
-	const [hours, minutes] = time.split(":").map(Number);
+	// Validate format HH:mm (zero-padded) before parsing
+	if (typeof time !== "string" || !/^\d{2}:\d{2}$/.test(time)) {
+		return NaN;
+	}
+
+	const [hoursStr, minutesStr] = time.split(":");
+	const hours = Number(hoursStr);
+	const minutes = Number(minutesStr);
+
+	// Ensure numeric values are integers within valid time ranges
+	if (
+		!Number.isInteger(hours) ||
+		!Number.isInteger(minutes) ||
+		hours < 0 ||
+		hours > 23 ||
+		minutes < 0 ||
+		minutes > 59
+	) {
+		return NaN;
+	}
+
 	return hours * 60 + minutes;
 }
 
@@ -74,11 +94,15 @@ function isInException(
 	exceptions: PeriodException[],
 ): PeriodException | null {
 	for (const exception of exceptions) {
+		// Create new Date objects to avoid mutating the original exception dates
 		const exStart = new Date(exception.start);
 		const exEnd = new Date(exception.end);
-		exStart.setHours(0, 0, 0, 0);
-		exEnd.setHours(23, 59, 59, 999);
-		if (now >= exStart && now <= exEnd) {
+		// Set time bounds on the cloned dates
+		const startOfDay = new Date(exStart);
+		startOfDay.setHours(0, 0, 0, 0);
+		const endOfDay = new Date(exEnd);
+		endOfDay.setHours(23, 59, 59, 999);
+		if (now >= startOfDay && now <= endOfDay) {
 			return exception;
 		}
 	}
@@ -364,7 +388,6 @@ export function OpenStatusCard() {
 		if (transition.minutesUntil > maxMinutes) return null;
 
 		const timeStr = formatCountdown(transition.minutesUntil);
-		console.log("transition", transition, timeStr);
 		return transition.type === "closing"
 			? `Closing in ${timeStr}`
 			: `Opening in ${timeStr}`;

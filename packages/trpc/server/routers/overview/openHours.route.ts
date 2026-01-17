@@ -62,7 +62,27 @@ const CACHE_DURATION_MS = 30 * 1000; // 30 seconds
  * Parse time string (HH:mm) to minutes since midnight
  */
 function timeToMinutes(time: string): number {
-	const [hours, minutes] = time.split(":").map(Number);
+	// Validate basic format "HH:mm"
+	if (!/^\d{2}:\d{2}$/.test(time)) {
+		return NaN;
+	}
+
+	const [hoursStr, minutesStr] = time.split(":");
+	const hours = Number(hoursStr);
+	const minutes = Number(minutesStr);
+
+	// Ensure numeric values and valid ranges
+	if (
+		!Number.isInteger(hours) ||
+		!Number.isInteger(minutes) ||
+		hours < 0 ||
+		hours > 23 ||
+		minutes < 0 ||
+		minutes > 59
+	) {
+		return NaN;
+	}
+
 	return hours * 60 + minutes;
 }
 
@@ -79,7 +99,20 @@ function minutesToTime(minutes: number): string {
  * Format time in 12-hour format (e.g., "10:00am")
  */
 function formatTime12Hour(time: string): string {
-	const [hours, minutes] = time.split(":").map(Number);
+	// Validate format HH:mm before parsing
+	if (!/^\d{2}:\d{2}$/.test(time)) {
+		return "Invalid time";
+	}
+
+	const [hoursStr, minutesStr] = time.split(":");
+	const hours = Number(hoursStr);
+	const minutes = Number(minutesStr);
+
+	// Validate ranges
+	if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+		return "Invalid time";
+	}
+
 	const period = hours >= 12 ? "pm" : "am";
 	const hour12 = hours % 12 || 12;
 	return `${hour12}:${minutes.toString().padStart(2, "0")}${period}`;
