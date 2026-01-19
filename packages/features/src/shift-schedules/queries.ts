@@ -55,7 +55,12 @@ export async function getAllSchedulesForBalancing(
 	prisma: PrismaClient | PrismaTransaction,
 ) {
 	return prisma.shiftSchedule.findMany({
-		include: {
+		select: {
+			id: true,
+			dayOfWeek: true,
+			startTime: true,
+			endTime: true,
+			slots: true,
 			users: { select: { id: true } },
 		},
 	});
