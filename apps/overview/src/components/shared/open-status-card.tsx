@@ -49,6 +49,16 @@ interface OpenHoursResponse {
 
 const MAX_COUNTDOWN_HOURS = 24;
 
+const DAY_NAMES = [
+	"Sunday",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+];
+
 /**
  * Parse time string (HH:mm) to minutes since midnight
  */
@@ -109,13 +119,22 @@ function isInException(
 	return null;
 }
 
+interface TransitionInfo {
+	minutesUntil: number;
+	type: "opening" | "closing";
+	openingTime?: string; // HH:mm format for the opening time
+	openingDayOfWeek?: number; // Day of week (0-6) for the opening
+	openingDate?: Date; // Actual date of the opening
+}
+
 /**
  * Find the next opening or closing time
+ * Now handles future periods and calculates exact opening dates
  */
 function findNextTransition(
 	data: OpenHoursResponse | undefined,
 	isCurrentlyOpen: boolean,
-): { minutesUntil: number; type: "opening" | "closing" } | null {
+): TransitionInfo | null {
 	if (!data || data.periods.length === 0) {
 		return null;
 	}
@@ -124,6 +143,8 @@ function findNextTransition(
 	const currentDayOfWeek = now.getDay();
 	const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
+	let bestTransition: TransitionInfo | null = null;
+
 	// Check each period for transitions
 	for (const period of data.periods) {
 		// Skip if in exception
@@ -131,13 +152,72 @@ function findNextTransition(
 			continue;
 		}
 
-		// Check if period is active
 		const periodStart = new Date(period.periodStart);
 		const periodEnd = new Date(period.periodEnd);
-		if (now < periodStart || now > periodEnd) {
+
+		// Period hasn't started yet - find when it opens
+		if (now < periodStart) {
+			// Find the first day with a schedule at or after the period start
+			const periodStartDay = periodStart.getDay();
+			const periodStartMinutes =
+				periodStart.getHours() * 60 + periodStart.getMinutes();
+
+			// Check each day starting from period start day
+			for (let dayOffset = 0; dayOffset <= 7; dayOffset++) {
+				const checkDayOfWeek = (periodStartDay + dayOffset) % 7;
+				const daySchedule = period.schedule.find(
+					(s) => s.dayOfWeek === checkDayOfWeek,
+				);
+				if (daySchedule && daySchedule.ranges.length > 0) {
+					for (const range of daySchedule.ranges) {
+						const openMinutes = timeToMinutes(range.start);
+
+						// Calculate the actual opening date
+						const openingDate = new Date(periodStart);
+						openingDate.setDate(periodStart.getDate() + dayOffset);
+						openingDate.setHours(
+							Math.floor(openMinutes / 60),
+							openMinutes % 60,
+							0,
+							0,
+						);
+
+						// Skip if this opening is before the period actually starts
+						if (dayOffset === 0 && openMinutes < periodStartMinutes) {
+							continue;
+						}
+
+						const minutesUntilOpen = Math.floor(
+							(openingDate.getTime() - now.getTime()) / (1000 * 60),
+						);
+
+						if (
+							minutesUntilOpen > 0 &&
+							(!bestTransition ||
+								minutesUntilOpen < bestTransition.minutesUntil)
+						) {
+							bestTransition = {
+								minutesUntil: minutesUntilOpen,
+								type: "opening",
+								openingTime: range.start,
+								openingDayOfWeek: openingDate.getDay(),
+								openingDate,
+							};
+						}
+						// Found the first opening for this day, move to next day
+						break;
+					}
+				}
+			}
 			continue;
 		}
 
+		// Period has ended - skip it
+		if (now > periodEnd) {
+			continue;
+		}
+
+		// Period is active - find transitions within the period
 		const todaySchedule = period.schedule.find(
 			(s) => s.dayOfWeek === currentDayOfWeek,
 		);
@@ -154,7 +234,28 @@ function findNextTransition(
 					const openMinutes = timeToMinutes(firstRange.start);
 					const minutesUntil =
 						dayOffset * 24 * 60 - currentMinutes + openMinutes;
-					return { minutesUntil, type: "opening" };
+
+					// Calculate the actual opening date
+					const openingDate = new Date(now);
+					openingDate.setDate(now.getDate() + dayOffset);
+					openingDate.setHours(
+						Math.floor(openMinutes / 60),
+						openMinutes % 60,
+						0,
+						0,
+					);
+
+					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
+						bestTransition = {
+							minutesUntil,
+							type: "opening",
+							openingTime: firstRange.start,
+							openingDayOfWeek: nextDayOfWeek,
+							openingDate,
+						};
+						// Found the earliest opening for this period, no need to check further days
+						break;
+					}
 				}
 			}
 			continue;
@@ -164,61 +265,116 @@ function findNextTransition(
 		if (isCurrentlyOpen) {
 			// Find when we close - check all ranges to find which one we're in
 			// or the next closing time
+			let foundClosingForThisPeriod = false;
 			for (const range of todaySchedule.ranges) {
 				const startMinutes = timeToMinutes(range.start);
 				const endMinutes = timeToMinutes(range.end);
 
 				// If we're currently in this range, return time until it ends
 				if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
-					return { minutesUntil: endMinutes - currentMinutes, type: "closing" };
+					const minutesUntil = endMinutes - currentMinutes;
+					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
+						bestTransition = { minutesUntil, type: "closing" };
+					}
+					foundClosingForThisPeriod = true;
+					break;
 				}
 
 				// If this range ends after current time, it might be a closing time
 				// (for cases where ranges overlap or there's a gap we're in)
 				if (endMinutes > currentMinutes && startMinutes <= currentMinutes) {
-					return { minutesUntil: endMinutes - currentMinutes, type: "closing" };
+					const minutesUntil = endMinutes - currentMinutes;
+					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
+						bestTransition = { minutesUntil, type: "closing" };
+					}
+					foundClosingForThisPeriod = true;
+					break;
 				}
 			}
 
 			// If still open but couldn't find closing time in current ranges,
 			// find the last range that ends today
-			const endTimes = todaySchedule.ranges
-				.map((r) => timeToMinutes(r.end))
-				.filter((end) => end > currentMinutes);
-			if (endTimes.length > 0) {
-				const nextEnd = Math.min(...endTimes);
-				return { minutesUntil: nextEnd - currentMinutes, type: "closing" };
+			if (!foundClosingForThisPeriod) {
+				const endTimes = todaySchedule.ranges
+					.map((r) => timeToMinutes(r.end))
+					.filter((end) => end > currentMinutes);
+				if (endTimes.length > 0) {
+					const nextEnd = Math.min(...endTimes);
+					const minutesUntil = nextEnd - currentMinutes;
+					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
+						bestTransition = { minutesUntil, type: "closing" };
+					}
+				}
 			}
 		} else {
 			// Find next opening time today
+			let foundToday = false;
 			for (const range of todaySchedule.ranges) {
 				const startMinutes = timeToMinutes(range.start);
 				if (currentMinutes < startMinutes) {
-					return {
-						minutesUntil: startMinutes - currentMinutes,
-						type: "opening",
-					};
+					const minutesUntil = startMinutes - currentMinutes;
+					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
+						const openingDate = new Date(now);
+						openingDate.setHours(
+							Math.floor(startMinutes / 60),
+							startMinutes % 60,
+							0,
+							0,
+						);
+
+						bestTransition = {
+							minutesUntil,
+							type: "opening",
+							openingTime: range.start,
+							openingDayOfWeek: currentDayOfWeek,
+							openingDate,
+						};
+					}
+					foundToday = true;
+					break;
 				}
 			}
 
 			// All today's ranges have passed, check tomorrow and following days
-			for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
-				const nextDayOfWeek = (currentDayOfWeek + dayOffset) % 7;
-				const nextDaySchedule = period.schedule.find(
-					(s) => s.dayOfWeek === nextDayOfWeek,
-				);
-				if (nextDaySchedule && nextDaySchedule.ranges.length > 0) {
-					const firstRange = nextDaySchedule.ranges[0];
-					const openMinutes = timeToMinutes(firstRange.start);
-					const minutesUntil =
-						dayOffset * 24 * 60 - currentMinutes + openMinutes;
-					return { minutesUntil, type: "opening" };
+			if (!foundToday) {
+				for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
+					const nextDayOfWeek = (currentDayOfWeek + dayOffset) % 7;
+					const nextDaySchedule = period.schedule.find(
+						(s) => s.dayOfWeek === nextDayOfWeek,
+					);
+					if (nextDaySchedule && nextDaySchedule.ranges.length > 0) {
+						const firstRange = nextDaySchedule.ranges[0];
+						const openMinutes = timeToMinutes(firstRange.start);
+						const minutesUntil =
+							dayOffset * 24 * 60 - currentMinutes + openMinutes;
+
+						if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
+							const openingDate = new Date(now);
+							openingDate.setDate(now.getDate() + dayOffset);
+							openingDate.setHours(
+								Math.floor(openMinutes / 60),
+								openMinutes % 60,
+								0,
+								0,
+							);
+
+							bestTransition = {
+								minutesUntil,
+								type: "opening",
+								openingTime: firstRange.start,
+								openingDayOfWeek: nextDayOfWeek,
+								openingDate,
+							};
+							// Found the earliest opening for this period, no need to check further days
+							break;
+						}
+					}
 				}
 			}
 		}
 	}
 
-	return null;
+	return bestTransition;
 }
 
 /**
@@ -234,6 +390,57 @@ function formatCountdown(minutes: number): string {
 		return `${hours} hour${hours !== 1 ? "s" : ""}`;
 	}
 	return `${hours}h ${remainingMinutes}m`;
+}
+
+/**
+ * Format time string (HH:mm) to 12-hour format (e.g., "6:00am")
+ */
+function formatTime12Hour(time: string): string {
+	const minutes = timeToMinutes(time);
+	if (Number.isNaN(minutes)) return "Invalid time";
+
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	const period = hours >= 12 ? "pm" : "am";
+	const hour12 = hours % 12 || 12;
+	return `${hour12}:${mins.toString().padStart(2, "0")}${period}`;
+}
+
+/**
+ * Format the opening message based on how far away it is
+ * - Less than 24 hours: "Opening in X hours"
+ * - Within 7 days: "Opening Tuesday 6:00am"
+ * - More than 7 days: "Opening Jan 27 6:00am"
+ */
+function formatOpeningMessage(transition: TransitionInfo): string | null {
+	const maxMinutes = MAX_COUNTDOWN_HOURS * 60;
+	const maxMinutesForDayName = 7 * 24 * 60; // 7 days in minutes
+
+	if (transition.minutesUntil <= maxMinutes) {
+		const timeStr = formatCountdown(transition.minutesUntil);
+		return `Opening in ${timeStr}`;
+	}
+
+	// More than 24 hours away - show day/date and time
+	if (transition.openingTime && transition.openingDate) {
+		const timeStr = formatTime12Hour(transition.openingTime);
+
+		// If within 7 days, show day name; otherwise show the date
+		if (
+			transition.minutesUntil <= maxMinutesForDayName &&
+			transition.openingDayOfWeek !== undefined
+		) {
+			const dayName = DAY_NAMES[transition.openingDayOfWeek];
+			return `Opening ${dayName} ${timeStr}`;
+		}
+
+		// More than 7 days away - show the date
+		const dateStr = dayjs(transition.openingDate).format("MMM D");
+		return `Opening ${dateStr} ${timeStr}`;
+	}
+
+	// Fallback if we don't have the opening info
+	return null;
 }
 
 /**
@@ -384,13 +591,16 @@ export function OpenStatusCard() {
 
 	const countdownMessage = useMemo(() => {
 		if (!transition) return null;
-		const maxMinutes = MAX_COUNTDOWN_HOURS * 60;
-		if (transition.minutesUntil > maxMinutes) return null;
 
-		const timeStr = formatCountdown(transition.minutesUntil);
-		return transition.type === "closing"
-			? `Closing in ${timeStr}`
-			: `Opening in ${timeStr}`;
+		if (transition.type === "closing") {
+			const maxMinutes = MAX_COUNTDOWN_HOURS * 60;
+			if (transition.minutesUntil > maxMinutes) return null;
+			const timeStr = formatCountdown(transition.minutesUntil);
+			return `Closing in ${timeStr}`;
+		}
+
+		// For opening, use the new formatting function that handles >24h case
+		return formatOpeningMessage(transition);
 	}, [transition]);
 
 	if (isLoading) {
