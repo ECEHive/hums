@@ -15,9 +15,19 @@ export type ShiftScheduleLite = {
 	dayOfWeek: number;
 	startTime: string;
 	endTime: string;
+	slots?: number;
 	users?: { id: number }[];
 	shiftType?: ShiftTypeLite;
 };
+
+/**
+ * Check if a schedule is full (no available slots)
+ */
+function isScheduleFull(schedule: ShiftScheduleLite): boolean {
+	const slots = schedule.slots ?? 0;
+	const filledSlots = (schedule.users ?? []).length;
+	return slots > 0 && filledSlots >= slots;
+}
 
 /**
  * Regular expression to validate time format (HH:MM or HH:MM:SS)
@@ -203,24 +213,29 @@ export function meetsBalancingRequirement(
 	const currentFilledSlots = (schedule.users ?? []).length;
 
 	// Check isBalancedAcrossPeriod: all schedules must have >= current filled slots
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossPeriod) {
 		for (const other of allSchedules) {
 			if (other.id === schedule.id) continue;
+			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) return false;
 		}
 	}
 
 	// Check isBalancedAcrossDay: all schedules on the same day must have >= current filled slots
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossDay) {
 		const sameDay = allSchedules.filter(
 			(s) => s.dayOfWeek === schedule.dayOfWeek && s.id !== schedule.id,
 		);
 		for (const other of sameDay) {
+			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) return false;
 		}
 	}
 
 	// Check isBalancedAcrossOverlap: all overlapping schedules must have >= current filled slots
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossOverlap) {
 		const overlapping = allSchedules.filter((s) => {
 			if (s.id === schedule.id) return false;
@@ -234,6 +249,7 @@ export function meetsBalancingRequirement(
 		});
 
 		for (const other of overlapping) {
+			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) return false;
 		}
 	}
@@ -262,9 +278,11 @@ export function validateBalancingRequirement(
 	const currentFilledSlots = (schedule.users ?? []).length;
 
 	// Check isBalancedAcrossPeriod
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossPeriod) {
 		for (const other of allSchedules) {
 			if (other.id === schedule.id) continue;
+			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) {
 				throw new Error(
 					"Cannot register. All shift schedules in the period must be balanced (have equal or more slots filled) before you can register for this one.",
@@ -274,11 +292,13 @@ export function validateBalancingRequirement(
 	}
 
 	// Check isBalancedAcrossDay
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossDay) {
 		const sameDay = allSchedules.filter(
 			(s) => s.dayOfWeek === schedule.dayOfWeek && s.id !== schedule.id,
 		);
 		for (const other of sameDay) {
+			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) {
 				throw new Error(
 					`Cannot register. All shift schedules on ${getDayName(schedule.dayOfWeek)} must be balanced (have equal or more slots filled) before you can register for this one.`,
@@ -288,6 +308,7 @@ export function validateBalancingRequirement(
 	}
 
 	// Check isBalancedAcrossOverlap
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossOverlap) {
 		const overlapping = allSchedules.filter((s) => {
 			if (s.id === schedule.id) return false;
@@ -301,6 +322,7 @@ export function validateBalancingRequirement(
 		});
 
 		for (const other of overlapping) {
+			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) {
 				throw new Error(
 					"Cannot register. All overlapping shift schedules must be balanced (have equal or more slots filled) before you can register for this one.",

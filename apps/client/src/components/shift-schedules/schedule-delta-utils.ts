@@ -138,24 +138,29 @@ function calculateMeetsBalancingRequirement(
 
 	// Check isBalancedAcrossPeriod: ALL other schedules must have >= current filled slots
 	// Note: Server checks against all schedules, not just same shift type
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (schedule.isBalancedAcrossPeriod) {
 		for (const other of allSchedules) {
 			if (other.id === schedule.id) continue;
+			if (other.slots > 0 && other.users.length >= other.slots) continue;
 			if (other.users.length < currentFilledSlots) return false;
 		}
 	}
 
 	// Check isBalancedAcrossDay: all schedules on the same day must have >= current filled slots
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (schedule.isBalancedAcrossDay) {
 		const sameDaySchedules = allSchedules.filter(
 			(s) => s.dayOfWeek === schedule.dayOfWeek && s.id !== schedule.id,
 		);
 		for (const other of sameDaySchedules) {
+			if (other.slots > 0 && other.users.length >= other.slots) continue;
 			if (other.users.length < currentFilledSlots) return false;
 		}
 	}
 
 	// Check isBalancedAcrossOverlap: all overlapping schedules must have >= current filled slots
+	// Skip schedules that are already full - they shouldn't block others from registering
 	if (schedule.isBalancedAcrossOverlap) {
 		const overlappingSchedules = allSchedules.filter((s) => {
 			if (s.id === schedule.id) return false;
@@ -169,6 +174,7 @@ function calculateMeetsBalancingRequirement(
 		});
 
 		for (const other of overlappingSchedules) {
+			if (other.slots > 0 && other.users.length >= other.slots) continue;
 			if (other.users.length < currentFilledSlots) return false;
 		}
 	}

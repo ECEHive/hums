@@ -169,15 +169,11 @@ function formatDayHours(ranges: TimeRange[]): string {
 async function calculateOpenHours(): Promise<OpenHoursResponse> {
 	const now = new Date();
 
-	// Find all currently visible periods (within visibility window and currently active)
+	// Find all currently visible periods (within visibility window)
+	// Include periods that haven't started yet or have already ended, as long as they're visible
 	const visiblePeriods = await prisma.period.findMany({
 		where: {
-			AND: [
-				{ visibleStart: { lte: now } },
-				{ visibleEnd: { gte: now } },
-				{ start: { lte: now } },
-				{ end: { gte: now } },
-			],
+			AND: [{ visibleStart: { lte: now } }, { visibleEnd: { gte: now } }],
 		},
 		include: {
 			periodExceptions: {
