@@ -172,11 +172,11 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 		);
 	}, [dayData]);
 
-	// Format data for chart - only show business hours (6am to 11pm)
+	// Format data for chart - only show during the day (8am to 8pm)
 	const chartData = useMemo(() => {
 		return (
 			dayData?.hourlyData
-				.filter((h) => h.hour >= 6 && h.hour <= 23)
+				.filter((h) => h.hour >= 8 && h.hour <= 20)
 				.map((h) => ({
 					hour: formatHour(h.hour),
 					hourNum: h.hour,
