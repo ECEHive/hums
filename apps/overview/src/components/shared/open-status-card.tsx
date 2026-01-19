@@ -204,9 +204,9 @@ function findNextTransition(
 								openingDate,
 							};
 						}
-						break; // Found the first opening for this day
+						// Found the first opening for this day, move to next day
+						break;
 					}
-					if (bestTransition) break; // Found an opening, stop searching
 				}
 			}
 			continue;
@@ -253,8 +253,9 @@ function findNextTransition(
 							openingDayOfWeek: nextDayOfWeek,
 							openingDate,
 						};
+						// Found the earliest opening for this period, no need to check further days
+						break;
 					}
-					break;
 				}
 			}
 			continue;
@@ -264,6 +265,7 @@ function findNextTransition(
 		if (isCurrentlyOpen) {
 			// Find when we close - check all ranges to find which one we're in
 			// or the next closing time
+			let foundClosingForThisPeriod = false;
 			for (const range of todaySchedule.ranges) {
 				const startMinutes = timeToMinutes(range.start);
 				const endMinutes = timeToMinutes(range.end);
@@ -274,6 +276,7 @@ function findNextTransition(
 					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
 						bestTransition = { minutesUntil, type: "closing" };
 					}
+					foundClosingForThisPeriod = true;
 					break;
 				}
 
@@ -284,13 +287,14 @@ function findNextTransition(
 					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
 						bestTransition = { minutesUntil, type: "closing" };
 					}
+					foundClosingForThisPeriod = true;
 					break;
 				}
 			}
 
 			// If still open but couldn't find closing time in current ranges,
 			// find the last range that ends today
-			if (!bestTransition || bestTransition.type !== "closing") {
+			if (!foundClosingForThisPeriod) {
 				const endTimes = todaySchedule.ranges
 					.map((r) => timeToMinutes(r.end))
 					.filter((end) => end > currentMinutes);
@@ -361,8 +365,9 @@ function findNextTransition(
 								openingDayOfWeek: nextDayOfWeek,
 								openingDate,
 							};
+							// Found the earliest opening for this period, no need to check further days
+							break;
 						}
-						break;
 					}
 				}
 			}
