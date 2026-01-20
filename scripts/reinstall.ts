@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { $ } from "bun";
-import { join } from "node:path";
 import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { $ } from "bun";
 
 const workspaceRoot = join(import.meta.dir, "..");
 
