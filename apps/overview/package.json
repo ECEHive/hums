@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/overview",
-	"version": "1.5.1",
+	"version": "1.6.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -26,7 +26,7 @@
 		"@tanstack/react-query-devtools": "^5.91.2",
 		"@tanstack/react-router": "^1.140.0",
 		"@trpc/client": "11.7.2",
-		"@trpc/tanstack-react-query": "11.7.2",
+		"@trpc/tanstack-react-query": "11.8.1",
 		"@vitejs/plugin-basic-ssl": "^2.1.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",

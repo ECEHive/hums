@@ -12,12 +12,15 @@ import { prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TKioskProtectedProcedureContext } from "../../trpc";
 
+const EARLY_LEAVE_THRESHOLD_MS = 60000; // 1 minute
+
 export const ZTapInOutSchema = z.object({
 	cardNumber: z.string().regex(/^\d+$/),
 	sessionType: z.enum(["regular", "staffing"]).optional(),
 	tapAction: z
 		.enum(["end_session", "switch_to_staffing", "switch_to_regular"])
 		.optional(),
+	forceEarlyLeave: z.boolean().optional(),
 });
 
 export type TTapInOutSchema = z.infer<typeof ZTapInOutSchema>;
@@ -28,7 +31,7 @@ export type TTapInOutOptions = {
 };
 
 export async function tapInOutHandler(options: TTapInOutOptions) {
-	const { cardNumber, sessionType, tapAction } = options.input;
+	const { cardNumber, sessionType, tapAction, forceEarlyLeave } = options.input;
 
 	const user = await findUserByCard(cardNumber);
 
@@ -163,6 +166,19 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 		}
 
 		// Default: end session (tap out) - ALLOWED even if suspended
+		// For non-staff users, check if this is an early leave (within 1 minute)
+		if (!hasStaffingPermission && !forceEarlyLeave) {
+			const sessionDuration =
+				now.getTime() - mostRecentSession.startedAt.getTime();
+			if (sessionDuration < EARLY_LEAVE_THRESHOLD_MS) {
+				return {
+					status: "confirm_early_leave" as const,
+					user,
+					currentSession: mostRecentSession,
+				};
+			}
+		}
+
 		const session = await endSession(tx, mostRecentSession.id, now);
 
 		return {
