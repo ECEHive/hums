@@ -23,15 +23,17 @@ export async function sessionActivityHandler(options: TSessionActivityOptions) {
 		dateFilter.startedAt = {};
 		if (startDate) {
 			const sd = new Date(startDate);
-			if (!Number.isNaN(sd.getTime())) {
-				dateFilter.startedAt.gte = sd;
+			if (Number.isNaN(sd.getTime())) {
+				throw new Error("Invalid startDate: expected a valid ISO date string");
 			}
+			dateFilter.startedAt.gte = sd;
 		}
 		if (endDate) {
 			const ed = new Date(endDate);
-			if (!Number.isNaN(ed.getTime())) {
-				dateFilter.startedAt.lte = ed;
+			if (Number.isNaN(ed.getTime())) {
+				throw new Error("Invalid endDate: expected a valid ISO date string");
 			}
+			dateFilter.startedAt.lte = ed;
 		}
 	}
 
@@ -65,7 +67,6 @@ export async function sessionActivityHandler(options: TSessionActivityOptions) {
 
 		// Calculate total duration in minutes
 		let totalDuration = 0;
-		let lastSessionDate: Date | null = null;
 
 		for (const session of sessions) {
 			if (session.endedAt) {
@@ -73,10 +74,10 @@ export async function sessionActivityHandler(options: TSessionActivityOptions) {
 					(session.endedAt.getTime() - session.startedAt.getTime()) / 60000; // Convert to minutes
 				totalDuration += duration;
 			}
-			if (!lastSessionDate && session.startedAt) {
-				lastSessionDate = session.startedAt;
-			}
 		}
+
+		// Sessions are ordered by startedAt DESC, so the first session is the most recent
+		const lastSessionDate = sessions.length > 0 ? sessions[0].startedAt : null;
 
 		const averageSessionDuration =
 			totalSessions > 0 ? totalDuration / totalSessions : 0;

@@ -468,9 +468,7 @@ function ReportsPage() {
 			{
 				accessorKey: "timeSlot" as const,
 				header: "Day & Time",
-				cell: ({
-					row,
-				}: { row: { original: Record<string, unknown> } }) =>
+				cell: ({ row }: { row: { original: Record<string, unknown> } }) =>
 					row.original.timeSlot as string,
 			},
 		];

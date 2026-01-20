@@ -25,9 +25,12 @@ function timeToHours(startTime: string, endTime: string): number {
 	const startTotalMinutes = startHours * 60 + startMinutes;
 	let endTotalMinutes = endHours * 60 + endMinutes;
 
-	// Handle overnight shifts
-	if (endTotalMinutes <= startTotalMinutes) {
+	// Handle overnight shifts (end time is earlier than start time)
+	if (endTotalMinutes < startTotalMinutes) {
 		endTotalMinutes += 24 * 60;
+	} else if (endTotalMinutes === startTotalMinutes) {
+		// Zero-duration shift (start and end at same time) - return 0 hours
+		return 0;
 	}
 
 	return (endTotalMinutes - startTotalMinutes) / 60;

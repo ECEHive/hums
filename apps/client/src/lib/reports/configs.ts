@@ -8,6 +8,7 @@ import {
 	UsersIcon,
 } from "lucide-react";
 import type {
+	ExportFormat,
 	ReportConfig,
 	SessionActivityReport,
 	ShiftCoverageReport,
@@ -22,6 +23,12 @@ import {
 	formatHours,
 	formatPercentage,
 } from "./utils";
+
+/**
+ * Default export formats available for all reports.
+ * Centralized here to avoid repetition across report configurations.
+ */
+const DEFAULT_EXPORT_FORMATS: ExportFormat[] = ["csv", "html"];
 
 /**
  * User Attendance Report Configuration
@@ -81,7 +88,7 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 				formatPercentage(row.original.pastAttendancePercentage),
 		},
 	],
-	exportFormats: ["csv", "html"],
+	exportFormats: DEFAULT_EXPORT_FORMATS,
 };
 
 /**
@@ -136,7 +143,7 @@ export const sessionActivityReportConfig: ReportConfig<SessionActivityReport> =
 				cell: ({ row }) => formatDate(row.original.lastSessionDate),
 			},
 		],
-		exportFormats: ["csv", "html"],
+		exportFormats: DEFAULT_EXPORT_FORMATS,
 	};
 
 /**
@@ -199,7 +206,7 @@ export const shiftCoverageReportConfig: ReportConfig<ShiftCoverageReport> = {
 			cell: ({ row }) => formatPercentage(row.original.coveragePercentage),
 		},
 	],
-	exportFormats: ["csv", "html"],
+	exportFormats: DEFAULT_EXPORT_FORMATS,
 };
 
 /**
@@ -259,7 +266,7 @@ export const userScheduleSummaryConfig: ReportConfig<UserScheduleSummary> = {
 			cell: ({ row }) => row.original.daysScheduled.join(", ") || "—",
 		},
 	],
-	exportFormats: ["csv", "html"],
+	exportFormats: DEFAULT_EXPORT_FORMATS,
 };
 
 /**
@@ -328,7 +335,7 @@ export const shiftUsersReportConfig: ReportConfig<ShiftUsersReport> = {
 			cell: ({ row }) => row.original.shiftTypes || "—",
 		},
 	],
-	exportFormats: ["csv", "html"],
+	exportFormats: DEFAULT_EXPORT_FORMATS,
 };
 
 /**
@@ -375,7 +382,7 @@ export const scheduleExportReportConfig: ReportConfig<ScheduleExportReport> = {
 		},
 		// Dynamic columns for shift types are added at runtime
 	],
-	exportFormats: ["csv", "html"],
+	exportFormats: DEFAULT_EXPORT_FORMATS,
 };
 
 /**

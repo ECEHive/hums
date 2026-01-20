@@ -2,7 +2,10 @@ import type { ExportFormat } from "./types";
 import { escapeHtml, generateTimestampForFilename } from "./utils";
 
 /**
- * Escape a value for CSV format
+ * Escape a value for CSV format.
+ * Uses selective quoting (RFC 4180 compliant): only quotes values that contain
+ * special characters (comma, newline, quote). This produces smaller, more readable
+ * CSV files while maintaining compatibility with spreadsheet software.
  */
 function csvEscape(value: unknown): string {
 	if (value === null || value === undefined) return "";
@@ -273,7 +276,8 @@ export function exportReport<T extends Record<string, unknown>>(
 }
 
 /**
- * Convert column definitions from TanStack Table format to export format
+ * Convert column definitions from TanStack Table format to export format.
+ * Uses the header as label when it's a string, otherwise falls back to accessorKey.
  */
 export function columnsToExportFormat<T extends Record<string, unknown>>(
 	columns: { accessorKey?: string; header?: string | unknown }[],
@@ -282,7 +286,8 @@ export function columnsToExportFormat<T extends Record<string, unknown>>(
 		.filter((col) => col.accessorKey)
 		.map((col) => ({
 			key: col.accessorKey as keyof T,
+			// Use header if it's a string, otherwise fallback to accessorKey for readability
 			label:
-				typeof col.header === "string" ? col.header : String(col.header ?? ""),
+				typeof col.header === "string" ? col.header : (col.accessorKey ?? ""),
 		}));
 }

@@ -41,6 +41,11 @@ export async function shiftUsersHandler(options: TShiftUsersOptions) {
 
 	// Time range filtering - find shifts that overlap with the specified time range
 	// A shift overlaps if: shift.startTime < filter.endTime AND shift.endTime > filter.startTime
+	// NOTE: This simple string comparison works correctly for shifts within the same day.
+	// For overnight shifts (e.g., 22:00-02:00), the comparison may not work as expected
+	// because "02:00" < "22:00" as strings. The current implementation assumes shifts
+	// do not span midnight. If overnight shift filtering is needed, convert times to
+	// minutes from midnight and handle the wraparound case.
 	if (startTime) {
 		where.endTime = { ...where.endTime, gte: startTime };
 	}
