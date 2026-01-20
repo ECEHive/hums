@@ -108,6 +108,7 @@ function App() {
 							errorDialog={tapWorkflow.errorDialog}
 							sessionTypeSelection={tapWorkflow.sessionTypeSelection}
 							tapOutActionSelection={tapWorkflow.tapOutActionSelection}
+							earlyLeaveConfirmation={tapWorkflow.earlyLeaveConfirmation}
 							pendingAgreement={tapWorkflow.pendingAgreement}
 							tapNotification={tapWorkflow.tapNotification}
 							suspension={tapWorkflow.suspension}
@@ -115,6 +116,8 @@ function App() {
 							onSessionTypeCancel={tapWorkflow.handleSessionTypeCancel}
 							onTapOutActionSelect={tapWorkflow.handleTapOutActionSelect}
 							onTapOutActionCancel={tapWorkflow.handleTapOutActionCancel}
+							onEarlyLeaveConfirm={tapWorkflow.handleEarlyLeaveConfirm}
+							onEarlyLeaveCancel={tapWorkflow.handleEarlyLeaveCancel}
 							onAgreementComplete={tapWorkflow.handleAgreementComplete}
 							onAgreementCancel={tapWorkflow.handleAgreementCancel}
 							onAgreementError={tapWorkflow.handleAgreementError}

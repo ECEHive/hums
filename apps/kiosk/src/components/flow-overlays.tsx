@@ -1,12 +1,14 @@
 import { Clock, LogOut, RefreshCw, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { AgreementFlow } from "@/components/agreement-flow";
+import { EarlyLeaveConfirmation } from "@/components/early-leave-confirmation";
 import { ErrorDialog } from "@/components/error-dialog";
 import type { SelectionOverlayOption } from "@/components/session-type-selector";
 import { SelectionOverlay } from "@/components/session-type-selector";
 import { SuspensionDialog } from "@/components/suspension-dialog";
 import { TapNotification } from "@/components/tap-notification";
 import type {
+	EarlyLeaveConfirmationState,
 	ErrorDialogState,
 	PendingAgreementState,
 	SessionTypeSelectionState,
@@ -20,6 +22,7 @@ interface FlowOverlaysProps {
 	errorDialog: ErrorDialogState;
 	sessionTypeSelection: SessionTypeSelectionState | null;
 	tapOutActionSelection: TapOutActionSelectionState | null;
+	earlyLeaveConfirmation: EarlyLeaveConfirmationState | null;
 	pendingAgreement: PendingAgreementState | null;
 	tapNotification: TapNotificationState;
 	suspension: SuspensionState | null;
@@ -29,6 +32,8 @@ interface FlowOverlaysProps {
 		action: "end_session" | "switch_to_staffing" | "switch_to_regular",
 	) => void;
 	onTapOutActionCancel: () => void;
+	onEarlyLeaveConfirm: () => void;
+	onEarlyLeaveCancel: () => void;
 	onAgreementComplete: () => void;
 	onAgreementCancel: () => void;
 	onAgreementError: (message: string) => void;
@@ -39,6 +44,7 @@ export function FlowOverlays({
 	errorDialog,
 	sessionTypeSelection,
 	tapOutActionSelection,
+	earlyLeaveConfirmation,
 	pendingAgreement,
 	tapNotification,
 	suspension,
@@ -46,6 +52,8 @@ export function FlowOverlays({
 	onSessionTypeCancel,
 	onTapOutActionSelect,
 	onTapOutActionCancel,
+	onEarlyLeaveConfirm,
+	onEarlyLeaveCancel,
 	onAgreementComplete,
 	onAgreementCancel,
 	onAgreementError,
@@ -56,6 +64,7 @@ export function FlowOverlays({
 		!!pendingAgreement ||
 		!!sessionTypeSelection ||
 		!!tapOutActionSelection ||
+		!!earlyLeaveConfirmation ||
 		!!suspension;
 
 	type OverlayConfig = {
@@ -188,6 +197,14 @@ export function FlowOverlays({
 					header={overlayConfig.header}
 					options={overlayConfig.options}
 					onCancel={overlayConfig.onCancel}
+				/>
+			)}
+
+			{earlyLeaveConfirmation && (
+				<EarlyLeaveConfirmation
+					userName={earlyLeaveConfirmation.userName}
+					onConfirm={onEarlyLeaveConfirm}
+					onCancel={onEarlyLeaveCancel}
 				/>
 			)}
 

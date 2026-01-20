@@ -35,6 +35,11 @@ export type TapOutActionSelectionState = {
 	currentSessionType: "regular" | "staffing";
 };
 
+export type EarlyLeaveConfirmationState = {
+	cardNumber: string;
+	userName: string;
+};
+
 export type ErrorDialogState = {
 	message: string;
 	isExiting: boolean;
@@ -62,6 +67,7 @@ type TapWorkflowState = {
 	pendingAgreement: PendingAgreementState | null;
 	sessionTypeSelection: SessionTypeSelectionState | null;
 	tapOutActionSelection: TapOutActionSelectionState | null;
+	earlyLeaveConfirmation: EarlyLeaveConfirmationState | null;
 	tapNotification: TapNotificationState;
 	errorDialog: ErrorDialogState;
 	oneTimeLogin: OneTimeLoginState | null;
@@ -77,6 +83,11 @@ type TapWorkflowAction =
 	| { type: "session_type_clear" }
 	| { type: "tap_out_action_set"; payload: TapOutActionSelectionState }
 	| { type: "tap_out_action_clear" }
+	| {
+			type: "early_leave_confirmation_set";
+			payload: EarlyLeaveConfirmationState;
+	  }
+	| { type: "early_leave_confirmation_clear" }
 	| { type: "tap_notification_set"; payload: TapEvent }
 	| { type: "tap_notification_clear" }
 	| { type: "tap_notification_exit_start" }
@@ -94,6 +105,7 @@ const INITIAL_STATE: TapWorkflowState = {
 	pendingAgreement: null,
 	sessionTypeSelection: null,
 	tapOutActionSelection: null,
+	earlyLeaveConfirmation: null,
 	tapNotification: {
 		event: null,
 		isExiting: false,
@@ -127,6 +139,10 @@ const tapWorkflowReducer = (
 			return { ...state, tapOutActionSelection: action.payload };
 		case "tap_out_action_clear":
 			return { ...state, tapOutActionSelection: null };
+		case "early_leave_confirmation_set":
+			return { ...state, earlyLeaveConfirmation: action.payload };
+		case "early_leave_confirmation_clear":
+			return { ...state, earlyLeaveConfirmation: null };
 		case "tap_notification_set":
 			return {
 				...state,
@@ -216,6 +232,7 @@ export function useTapWorkflow() {
 		pendingAgreement,
 		sessionTypeSelection,
 		tapOutActionSelection,
+		earlyLeaveConfirmation,
 		tapNotification,
 		errorDialog,
 		oneTimeLogin,
@@ -233,6 +250,7 @@ export function useTapWorkflow() {
 	const errorExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const sessionTypeSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const tapOutActionSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const earlyLeaveConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const agreementFlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -294,13 +312,16 @@ export function useTapWorkflow() {
 			cardNumber: string,
 			sessionType?: "regular" | "staffing",
 			tapAction?: "end_session" | "switch_to_staffing" | "switch_to_regular",
+			forceEarlyLeave?: boolean,
 		) => {
 			dismissTapNotification();
 			clearTimer(sessionTypeSelectorTimeoutRef);
 			clearTimer(tapOutActionSelectorTimeoutRef);
+			clearTimer(earlyLeaveConfirmationTimeoutRef);
 			clearTimer(agreementFlowTimeoutRef);
 			dispatch({ type: "session_type_clear" });
 			dispatch({ type: "tap_out_action_clear" });
+			dispatch({ type: "early_leave_confirmation_clear" });
 			dispatch({ type: "pending_agreement_clear" });
 			dispatch({ type: "processing_start" });
 
@@ -310,12 +331,14 @@ export function useTapWorkflow() {
 						cardId: cardNumber.slice(-6),
 						sessionType: sessionType || "auto",
 						action: tapAction || "none",
+						forceEarlyLeave: forceEarlyLeave || false,
 					}),
 				);
 				const result = await trpc.sessions.tapInOut.mutate({
 					cardNumber,
 					sessionType,
 					tapAction,
+					forceEarlyLeave,
 				});
 
 				if (result.status === "choose_session_type") {
@@ -346,6 +369,21 @@ export function useTapWorkflow() {
 					});
 					tapOutActionSelectorTimeoutRef.current = setTimeout(() => {
 						dispatch({ type: "tap_out_action_clear" });
+					}, TAP_OUT_ACTION_TIMEOUT_MS);
+					return;
+				}
+
+				if (result.status === "confirm_early_leave") {
+					dispatch({ type: "processing_end" });
+					dispatch({
+						type: "early_leave_confirmation_set",
+						payload: {
+							cardNumber,
+							userName: result.user.name,
+						},
+					});
+					earlyLeaveConfirmationTimeoutRef.current = setTimeout(() => {
+						dispatch({ type: "early_leave_confirmation_clear" });
 					}, TAP_OUT_ACTION_TIMEOUT_MS);
 					return;
 				}
@@ -521,6 +559,29 @@ export function useTapWorkflow() {
 		dispatch({ type: "tap_out_action_clear" });
 	}, [dispatch]);
 
+	const handleEarlyLeaveConfirm = useCallback(async () => {
+		const confirmation = earlyLeaveConfirmation;
+		if (!confirmation) return;
+
+		clearTimer(earlyLeaveConfirmationTimeoutRef);
+
+		try {
+			await handleTapInOut(
+				confirmation.cardNumber,
+				undefined,
+				undefined,
+				true, // forceEarlyLeave
+			);
+		} finally {
+			dispatch({ type: "early_leave_confirmation_clear" });
+		}
+	}, [dispatch, handleTapInOut, earlyLeaveConfirmation]);
+
+	const handleEarlyLeaveCancel = useCallback(() => {
+		clearTimer(earlyLeaveConfirmationTimeoutRef);
+		dispatch({ type: "early_leave_confirmation_clear" });
+	}, [dispatch]);
+
 	const handleLoginWithoutCard = useCallback(async () => {
 		dispatch({ type: "processing_start" });
 		try {
@@ -558,6 +619,7 @@ export function useTapWorkflow() {
 			clearTimer(errorExitTimeoutRef);
 			clearTimer(sessionTypeSelectorTimeoutRef);
 			clearTimer(tapOutActionSelectorTimeoutRef);
+			clearTimer(earlyLeaveConfirmationTimeoutRef);
 			clearTimer(agreementFlowTimeoutRef);
 			clearTimer(suspensionTimeoutRef);
 			clearTimer(suspensionExitTimeoutRef);
@@ -569,6 +631,7 @@ export function useTapWorkflow() {
 		pendingAgreement,
 		sessionTypeSelection,
 		tapOutActionSelection,
+		earlyLeaveConfirmation,
 		tapNotification,
 		errorDialog,
 		oneTimeLogin,
@@ -581,6 +644,8 @@ export function useTapWorkflow() {
 		handleSessionTypeCancel,
 		handleTapOutActionSelect,
 		handleTapOutActionCancel,
+		handleEarlyLeaveConfirm,
+		handleEarlyLeaveCancel,
 		handleLoginWithoutCard,
 		handleLoginWithoutCardCancel,
 		resetAgreementTimeout,

@@ -70,6 +70,22 @@ export type TapResponse =
 			};
 	  }
 	| {
+			status: "confirm_early_leave";
+			user: {
+				id: number;
+				name: string;
+				email: string;
+				username: string;
+			};
+			currentSession: {
+				id: number;
+				userId: number;
+				sessionType: "regular" | "staffing";
+				startedAt: Date;
+				endedAt: Date | null;
+			};
+	  }
+	| {
 			status: "agreements_required";
 			user: {
 				id: number;
