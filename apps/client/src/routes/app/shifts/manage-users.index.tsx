@@ -20,6 +20,10 @@ import {
 } from "@/components/layout";
 import { usePeriod } from "@/components/providers/period-provider";
 import {
+	type Role,
+	RoleMultiSelect,
+} from "@/components/roles/role-multiselect";
+import {
 	DataTable,
 	FilterField,
 	SearchInput,
@@ -28,6 +32,7 @@ import {
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -141,16 +146,38 @@ type NumericFilter = {
 	value: number;
 } | null;
 
+type RolesFilterMode =
+	| "has_any"
+	| "has_all"
+	| "has_none"
+	| "missing_any"
+	| "missing_all";
+
+type RolesFilter = {
+	roles: Role[];
+	mode: RolesFilterMode;
+} | null;
+
 type ShiftFilters = {
 	registeredShifts: NumericFilter;
 	droppedShifts: NumericFilter;
 	makeupShifts: NumericFilter;
+	roles: RolesFilter;
 };
 
 const DEFAULT_FILTERS: ShiftFilters = {
 	registeredShifts: null,
 	droppedShifts: null,
 	makeupShifts: null,
+	roles: null,
+};
+
+const ROLES_FILTER_MODE_LABELS: Record<RolesFilterMode, string> = {
+	has_any: "Has any of",
+	has_all: "Has all of",
+	has_none: "Has none of",
+	missing_any: "Missing any of",
+	missing_all: "Missing all of",
 };
 
 const OPERATOR_LABELS: Record<NumericFilterOperator, string> = {
@@ -229,6 +256,71 @@ function NumericFilterInput({
 	);
 }
 
+function RolesFilterInput({
+	value,
+	onChange,
+}: {
+	value: RolesFilter;
+	onChange: (value: RolesFilter) => void;
+}) {
+	const [mode, setMode] = useState<RolesFilterMode>(value?.mode ?? "has_any");
+	const [selectedRoles, setSelectedRoles] = useState<Role[]>(
+		value?.roles ?? [],
+	);
+
+	const handleApply = () => {
+		if (selectedRoles.length > 0) {
+			onChange({ roles: selectedRoles, mode });
+		}
+	};
+
+	const handleClear = () => {
+		setSelectedRoles([]);
+		onChange(null);
+	};
+
+	return (
+		<div className="space-y-3">
+			<div className="space-y-2">
+				<Label className="text-sm font-medium">Filter mode</Label>
+				<Select
+					value={mode}
+					onValueChange={(val) => setMode(val as RolesFilterMode)}
+				>
+					<SelectTrigger className="w-full">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{Object.entries(ROLES_FILTER_MODE_LABELS).map(([m, label]) => (
+							<SelectItem key={m} value={m}>
+								{label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+			<div className="space-y-2">
+				<Label className="text-sm font-medium">Roles</Label>
+				<RoleMultiSelect
+					value={selectedRoles}
+					onChange={setSelectedRoles}
+					placeholder="Select roles..."
+				/>
+			</div>
+			<div className="flex gap-2">
+				<Button size="sm" variant="secondary" onClick={handleApply}>
+					Apply
+				</Button>
+				{value && (
+					<Button size="sm" variant="ghost" onClick={handleClear}>
+						Clear
+					</Button>
+				)}
+			</div>
+		</div>
+	);
+}
+
 function ManageUsersPage() {
 	const { period: selectedPeriodId } = usePeriod();
 	const [filters, setFilters] = useState<ShiftFilters>(DEFAULT_FILTERS);
@@ -249,6 +341,7 @@ function ManageUsersPage() {
 		filters.registeredShifts,
 		filters.droppedShifts,
 		filters.makeupShifts,
+		filters.roles,
 	].filter(Boolean).length;
 
 	const hasActiveFilters =
@@ -264,6 +357,12 @@ function ManageUsersPage() {
 			registeredShiftsFilter: filters.registeredShifts ?? undefined,
 			droppedShiftsFilter: filters.droppedShifts ?? undefined,
 			makeupShiftsFilter: filters.makeupShifts ?? undefined,
+			rolesFilter: filters.roles
+				? {
+						roleIds: filters.roles.roles.map((r) => r.id),
+						mode: filters.roles.mode,
+					}
+				: undefined,
 		};
 	}, [selectedPeriodId, debouncedSearch, offset, pageSize, filters]);
 
@@ -384,6 +483,18 @@ function ManageUsersPage() {
 										setFilters((prev) => ({
 											...prev,
 											makeupShifts: value,
+										}));
+										resetToFirstPage();
+									}}
+								/>
+							</FilterField>
+							<FilterField label="Roles" description="Filter by user roles">
+								<RolesFilterInput
+									value={filters.roles}
+									onChange={(value) => {
+										setFilters((prev) => ({
+											...prev,
+											roles: value,
 										}));
 										resetToFirstPage();
 									}}

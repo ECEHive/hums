@@ -16,6 +16,15 @@ const numericFilterSchema = z
 	})
 	.optional();
 
+// Schema for roles filter
+const rolesFilterModeSchema = z.enum([
+	"has_any",
+	"has_all",
+	"has_none",
+	"missing_any",
+	"missing_all",
+]);
+
 export const ZListAllUsersWithStatsSchema = z.object({
 	periodId: z.number().min(1),
 	search: z.string().max(100).optional(),
@@ -25,6 +34,13 @@ export const ZListAllUsersWithStatsSchema = z.object({
 	registeredShiftsFilter: numericFilterSchema,
 	droppedShiftsFilter: numericFilterSchema,
 	makeupShiftsFilter: numericFilterSchema,
+	// Roles filter
+	rolesFilter: z
+		.object({
+			roleIds: z.array(z.number().min(1)),
+			mode: rolesFilterModeSchema,
+		})
+		.optional(),
 });
 
 export type TListAllUsersWithStatsSchema = z.infer<
@@ -83,6 +99,7 @@ export async function listAllUsersWithStatsHandler(
 		registeredShiftsFilter,
 		droppedShiftsFilter,
 		makeupShiftsFilter,
+		rolesFilter,
 	} = options.input;
 
 	const actor = await getUserWithRoles(prisma, options.ctx.user.id);
@@ -118,6 +135,19 @@ export async function listAllUsersWithStatsHandler(
 
 	const periodRoleIds = period.roles.map((role) => role.id);
 
+	// Determine if we need to fetch all users for in-memory filtering
+	// (numeric filters and some roles filter modes require post-processing)
+	const hasNumericFilters =
+		registeredShiftsFilter || droppedShiftsFilter || makeupShiftsFilter;
+
+	// Roles filter modes that can be done at the database level
+	const canApplyRolesFilterInDb =
+		!rolesFilter ||
+		rolesFilter.mode === "has_any" ||
+		rolesFilter.mode === "has_all";
+
+	const needsInMemoryFiltering = hasNumericFilters || !canApplyRolesFilterInDb;
+
 	// Build user where clause
 	const where: Prisma.UserWhereInput = {};
 	const andFilters: Prisma.UserWhereInput[] = [];
@@ -145,23 +175,48 @@ export async function listAllUsersWithStatsHandler(
 		});
 	}
 
+	// Database-level roles filter (has_any, has_all)
+	if (
+		rolesFilter &&
+		canApplyRolesFilterInDb &&
+		rolesFilter.roleIds.length > 0
+	) {
+		if (rolesFilter.mode === "has_any") {
+			// User has at least one of the selected roles
+			andFilters.push({
+				roles: {
+					some: {
+						id: { in: rolesFilter.roleIds },
+					},
+				},
+			});
+		} else if (rolesFilter.mode === "has_all") {
+			// User has all of the selected roles
+			for (const roleId of rolesFilter.roleIds) {
+				andFilters.push({
+					roles: {
+						some: {
+							id: roleId,
+						},
+					},
+				});
+			}
+		}
+	}
+
 	if (andFilters.length > 0) {
 		where.AND = andFilters;
 	}
 
-	// Determine if we need to fetch all users for numeric filtering
-	const hasNumericFilters =
-		registeredShiftsFilter || droppedShiftsFilter || makeupShiftsFilter;
-
 	// Get total count and users
-	// When numeric filters are active, we need all users to compute stats first
+	// When in-memory filtering is needed, we must fetch all users first
 	const [total, users] = await Promise.all([
 		prisma.user.count({ where }),
 		prisma.user.findMany({
 			where,
 			orderBy: [{ name: "asc" }, { username: "asc" }],
-			// Only apply pagination here if no numeric filters
-			...(hasNumericFilters ? {} : { skip: offset, take: limit }),
+			// Only apply pagination here if no in-memory filtering needed
+			...(needsInMemoryFiltering ? {} : { skip: offset, take: limit }),
 			select: {
 				id: true,
 				name: true,
@@ -278,10 +333,11 @@ export async function listAllUsersWithStatsHandler(
 		makeupShifts: makeupByUser.get(user.id) ?? 0,
 	}));
 
-	// Apply numeric filters
+	// Apply in-memory filters (numeric filters and roles filter modes that can't be done in DB)
 	let filteredUsers = allUsersWithStats;
-	if (hasNumericFilters) {
+	if (needsInMemoryFiltering) {
 		filteredUsers = allUsersWithStats.filter((user) => {
+			// Numeric filters
 			if (!passesNumericFilter(user.registeredShifts, registeredShiftsFilter)) {
 				return false;
 			}
@@ -291,17 +347,50 @@ export async function listAllUsersWithStatsHandler(
 			if (!passesNumericFilter(user.makeupShifts, makeupShiftsFilter)) {
 				return false;
 			}
+
+			// Roles filter (modes that require in-memory filtering)
+			if (
+				rolesFilter &&
+				rolesFilter.roleIds.length > 0 &&
+				!canApplyRolesFilterInDb
+			) {
+				const userRoleIds = new Set(user.roles.map((r) => r.id));
+
+				switch (rolesFilter.mode) {
+					case "has_none":
+						// User has none of the selected roles
+						if (rolesFilter.roleIds.some((id) => userRoleIds.has(id))) {
+							return false;
+						}
+						break;
+					case "missing_any":
+						// User is missing at least one of the selected roles
+						if (rolesFilter.roleIds.every((id) => userRoleIds.has(id))) {
+							return false;
+						}
+						break;
+					case "missing_all":
+						// User is missing all of the selected roles (same as has_none)
+						if (rolesFilter.roleIds.some((id) => userRoleIds.has(id))) {
+							return false;
+						}
+						break;
+				}
+			}
+
 			return true;
 		});
 	}
 
-	// Apply pagination to filtered results
+	// Apply pagination to filtered results (only when in-memory filtering was needed)
 	const filteredTotal = filteredUsers.length;
-	const paginatedUsers = filteredUsers.slice(offset, offset + limit);
+	const paginatedUsers = needsInMemoryFiltering
+		? filteredUsers.slice(offset, offset + limit)
+		: filteredUsers; // Already paginated by DB query
 
 	return {
 		users: paginatedUsers,
-		total: hasNumericFilters ? filteredTotal : total,
+		total: needsInMemoryFiltering ? filteredTotal : total,
 		period: {
 			id: period.id,
 			name: period.name,
