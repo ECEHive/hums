@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { registerAuthGuard } from "./auth";
+import { openHoursRoutes } from "./routes/open-hours";
 import { rolesRoutes } from "./routes/roles";
 import { slackRoutes } from "./routes/slack";
 import { usersRoutes } from "./routes/users";
@@ -15,24 +16,34 @@ export const restApiRoute: FastifyPluginAsync = async (fastify) => {
 		},
 	);
 
-	registerAuthGuard(fastify);
-
 	// Root endpoint - API info
 	fastify.get("/", async () => ({
 		name: "REST API",
 		status: "ok",
 	}));
 
-	// Register route modules
-	fastify.register(usersRoutes, {
-		prefix: "/users",
+	// ===== Public Routes (no authentication required) =====
+	// These routes are registered before the auth guard is applied
+	fastify.register(openHoursRoutes, {
+		prefix: "/open-hours",
 	});
 
-	fastify.register(rolesRoutes, {
-		prefix: "/roles",
-	});
+	// ===== Protected Routes (authentication required) =====
+	// Create a sub-context with auth guard for protected routes
+	fastify.register(async (protectedRoutes) => {
+		registerAuthGuard(protectedRoutes);
 
-	fastify.register(slackRoutes, {
-		prefix: "/slack",
+		// Register route modules
+		protectedRoutes.register(usersRoutes, {
+			prefix: "/users",
+		});
+
+		protectedRoutes.register(rolesRoutes, {
+			prefix: "/roles",
+		});
+
+		protectedRoutes.register(slackRoutes, {
+			prefix: "/slack",
+		});
 	});
 };
