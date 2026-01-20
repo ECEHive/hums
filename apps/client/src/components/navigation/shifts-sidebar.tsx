@@ -9,7 +9,6 @@ import {
 	ClipboardListIcon,
 	ClockIcon,
 	DoorOpenIcon,
-	FileDownIcon,
 	HomeIcon,
 	LayoutDashboardIcon,
 	ListIcon,
@@ -49,7 +48,6 @@ import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as attendancePagePermissions } from "@/routes/app/shifts/attendance";
-import { permissions as exportPagePermissions } from "@/routes/app/shifts/export";
 import { permissions as shiftsIndexPagePermissions } from "@/routes/app/shifts/index";
 import { permissions as manageUsersPagePermissions } from "@/routes/app/shifts/manage-users.index";
 import { permissions as myShiftsPagePermissions } from "@/routes/app/shifts/my-shifts";
@@ -133,12 +131,6 @@ export const items = [
 				url: "/app/shifts/reports",
 				icon: NotebookTextIcon,
 				permissions: reportsPagePermissions,
-			},
-			{
-				title: "Export Schedules",
-				url: "/app/shifts/export",
-				icon: FileDownIcon,
-				permissions: exportPagePermissions,
 			},
 		],
 	},

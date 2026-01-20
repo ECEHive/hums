@@ -1,265 +1,684 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { CircleAlert, DownloadIcon, NotebookTextIcon } from "lucide-react";
-import React from "react";
-import { RequirePermissions } from "@/auth";
-import { MissingPermissions } from "@/components/guards/missing-permissions";
+import {
+	AlertTriangle,
+	Calendar,
+	ChevronRight,
+	DownloadIcon,
+	Filter,
+	Loader2,
+	Printer,
+	RefreshCwIcon,
+} from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { useCurrentUser } from "@/auth/AuthProvider";
+import { RequirePermissions } from "@/components/guards/require-permissions";
 import {
 	Page,
-	PageActions,
 	PageContent,
+	PageDescription,
 	PageHeader,
 	PageTitle,
 	TableContainer,
 } from "@/components/layout";
 import { usePeriod } from "@/components/providers/period-provider";
-import { generateColumns } from "@/components/reports/columns";
 import { DataTable } from "@/components/shared";
 import DateRangeSelector from "@/components/shared/date-range-selector";
+import {
+	type ShiftType,
+	ShiftTypeMultiselect,
+} from "@/components/shift-types/shift-type-multiselect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+import { reportConfigs } from "@/lib/reports/configs";
+import { columnsToExportFormat, exportReport } from "@/lib/reports/export";
+import type { ReportConfig } from "@/lib/reports/types";
+import {
+	compareTimeSlots,
+	DAYS_OF_WEEK,
+	formatTimeSlot,
+	getStandardDatePresets,
+} from "@/lib/reports/utils";
 
 export const Route = createFileRoute("/app/shifts/reports")({
-	component: () =>
-		RequirePermissions({
-			permissions,
-			children: <Reports />,
-			forbiddenFallback: <MissingPermissions />,
-		}),
+	component: () => (
+		<RequirePermissions permissions={permissions}>
+			<ReportsPage />
+		</RequirePermissions>
+	),
 });
 
-export const permissions = ["reports.generate"];
+export const permissions = ["reports.generate"] as RequiredPermissions;
 
-function Reports() {
-	const [start, setStart] = React.useState<Date | null>(null);
-	const [end, setEnd] = React.useState<Date | null>(null);
-	const [selectedRange, setSelectedRange] =
-		React.useState<string>("fullperiod");
-	const [staffingRoles, setStaffingRoles] = React.useState<number[] | null>(
-		null,
+/**
+ * Transform schedule export data into a flat table format for display
+ */
+function transformScheduleExportData(
+	exportData: {
+		schedules: Array<{
+			dayOfWeek: number;
+			startTime: string;
+			endTime: string;
+			shiftType: { id: number; name: string; location: string | null };
+			users: Array<{ id: number; name: string }>;
+		}>;
+		shiftTypes: Array<{ id: number; name: string; location: string | null }>;
+		period: { id: number; name: string };
+	},
+	selectedShiftTypeIds: number[],
+): Record<string, unknown>[] {
+	const { schedules, shiftTypes } = exportData;
+
+	// Get the shift types to display
+	const displayShiftTypes =
+		selectedShiftTypeIds.length > 0
+			? shiftTypes.filter((st) => selectedShiftTypeIds.includes(st.id))
+			: shiftTypes;
+
+	// Group schedules by time slot
+	const timeSlotMap = new Map<
+		string,
+		{
+			dayOfWeek: number;
+			startTime: string;
+			data: Map<number, { users: { id: number; name: string }[] }>;
+		}
+	>();
+
+	for (const schedule of schedules) {
+		const timeKey = formatTimeSlot(
+			schedule.dayOfWeek,
+			schedule.startTime,
+			schedule.endTime,
+		);
+
+		if (!timeSlotMap.has(timeKey)) {
+			timeSlotMap.set(timeKey, {
+				dayOfWeek: schedule.dayOfWeek,
+				startTime: schedule.startTime,
+				data: new Map(),
+			});
+		}
+
+		const slot = timeSlotMap.get(timeKey);
+		if (slot) {
+			if (!slot.data.has(schedule.shiftType.id)) {
+				slot.data.set(schedule.shiftType.id, { users: [] });
+			}
+			const entry = slot.data.get(schedule.shiftType.id);
+			if (entry) {
+				entry.users.push(...schedule.users);
+			}
+		}
+	}
+
+	// Sort time slots and build rows
+	const sortedEntries = Array.from(timeSlotMap.entries()).sort(([, a], [, b]) =>
+		compareTimeSlots(a, b),
 	);
-	const { period: periodId } = usePeriod();
 
-	const reportParams = {
-		startDate: start?.toISOString() ?? undefined,
-		endDate: end?.toISOString() ?? undefined,
-		// use the period-provided staffing roles
-		staffingRoleIds: staffingRoles ?? undefined,
-		periodId: Number(periodId),
-	};
+	return sortedEntries.map(([timeSlot, slot]) => {
+		const row: Record<string, unknown> = {
+			timeSlot,
+			dayOfWeek: slot.dayOfWeek,
+			startTime: slot.startTime,
+		};
 
+		// Add columns for each shift type
+		for (const st of displayShiftTypes) {
+			const users = slot.data.get(st.id)?.users ?? [];
+			row[`shiftType_${st.id}`] = users.map((u) => u.name).join(", ") || "";
+		}
+
+		return row;
+	});
+}
+
+function ReportsPage() {
+	const { period: selectedPeriodId } = usePeriod();
+	const currentUser = useCurrentUser();
+
+	// Report type selection
+	const [selectedReportId, setSelectedReportId] =
+		useState<string>("user-attendance");
+
+	// Date range state
+	const [startDate, setStartDate] = useState<Date | null>(null);
+	const [endDate, setEndDate] = useState<Date | null>(null);
+	const [selectedRange, setSelectedRange] = useState<string>("fullperiod");
+
+	// Filter states
+	const [selectedShiftTypes, setSelectedShiftTypes] = useState<ShiftType[]>([]);
+	const [selectedDays, setSelectedDays] = useState<number[]>([
+		0, 1, 2, 3, 4, 5, 6,
+	]);
+
+	// Track if report has been generated
+	const [hasGenerated, setHasGenerated] = useState(false);
+
+	// Get period data
 	const { data: periodData, isLoading: periodLoading } = useQuery({
-		queryKey: ["period", Number(periodId)],
+		queryKey: ["period", Number(selectedPeriodId)],
 		queryFn: async () => {
-			if (!periodId) return null;
-			const res = await trpc.periods.get.query({ id: Number(periodId) });
-			setStart(res?.period?.start ?? null);
-			setEnd(res?.period?.end ?? null);
-			setStaffingRoles(res?.period?.roles.map((role) => role.id) ?? null);
+			if (!selectedPeriodId) return null;
+			const res = await trpc.periods.get.query({
+				id: Number(selectedPeriodId),
+			});
+			// Initialize dates from period
+			if (res?.period) {
+				setStartDate(res.period.start);
+				setEndDate(res.period.end);
+			}
 			return res;
 		},
+		enabled: selectedPeriodId !== null,
 	});
 
+	// Get the current report config
+	const currentReportConfig = reportConfigs.find(
+		(r) => r.id === selectedReportId,
+	);
+
+	// Check permissions for each report
+	const canViewReport = useCallback(
+		(config: ReportConfig<Record<string, unknown>>) => {
+			return checkPermissions(currentUser, config.permissions);
+		},
+		[currentUser],
+	);
+
+	// Available reports for this user
+	const availableReports = useMemo(
+		() => reportConfigs.filter((config) => canViewReport(config)),
+		[canViewReport],
+	);
+
+	// Date presets
+	const datePresets = useMemo(() => {
+		return getStandardDatePresets(
+			periodData?.period?.start,
+			periodData?.period?.end,
+			periodData?.period?.name,
+		);
+	}, [periodData?.period]);
+
+	// Staffing roles from period
+	const staffingRoles = useMemo(
+		() => periodData?.period?.roles?.map((role) => role.id) ?? null,
+		[periodData?.period?.roles],
+	);
+
+	// Build query params based on report type
+	const reportParams = useMemo(() => {
+		const base = {
+			startDate: startDate?.toISOString(),
+			endDate: endDate?.toISOString(),
+			periodId: Number(selectedPeriodId),
+		};
+
+		switch (selectedReportId) {
+			case "user-attendance":
+				return {
+					...base,
+					staffingRoleIds: staffingRoles ?? undefined,
+				};
+			case "session-activity":
+				return {
+					startDate: startDate?.toISOString(),
+					endDate: endDate?.toISOString(),
+				};
+			case "shift-coverage":
+			case "schedule-export":
+				return {
+					periodId: Number(selectedPeriodId),
+					shiftTypeIds:
+						selectedShiftTypes.length > 0
+							? selectedShiftTypes.map((st) => st.id)
+							: undefined,
+					daysOfWeek: selectedDays.length < 7 ? selectedDays : undefined,
+				};
+			case "user-schedule-summary":
+				return {
+					periodId: Number(selectedPeriodId),
+					shiftTypeIds:
+						selectedShiftTypes.length > 0
+							? selectedShiftTypes.map((st) => st.id)
+							: undefined,
+				};
+			default:
+				return base;
+		}
+	}, [
+		selectedReportId,
+		startDate,
+		endDate,
+		selectedPeriodId,
+		staffingRoles,
+		selectedShiftTypes,
+		selectedDays,
+	]);
+
+	// User Attendance Report query
 	const {
-		data: reportData,
-		isLoading: reportLoading,
-		refetch: refetchReport,
+		data: attendanceData,
+		isLoading: attendanceLoading,
+		refetch: refetchAttendance,
 	} = useQuery({
 		queryKey: ["reports.generate", reportParams],
-		queryFn: async () => {
-			// If `staffingRoles` is null or an empty array, reportParams may
-			// contain `staffingRoleIds` as `undefined` or `[]`. The server treats
-			// both cases as no role filter and will return all users.
-			return trpc.reports.generate.query(reportParams);
-		},
-		retry: false,
-		// don't auto-run the query on mount or when params change; only run when the user presses Generate
+		queryFn: () =>
+			trpc.reports.generate.query(
+				reportParams as Parameters<typeof trpc.reports.generate.query>[0],
+			),
 		enabled: false,
 	});
 
-	// Track the params for which a report was last generated so the button
-	// can show "Regenerate Report" when the current params match the last generated ones.
-	const [lastGeneratedKey, setLastGeneratedKey] = React.useState<string | null>(
-		null,
+	// Session Activity Report query
+	const {
+		data: sessionData,
+		isLoading: sessionLoading,
+		refetch: refetchSession,
+	} = useQuery({
+		queryKey: ["reports.sessionActivity", reportParams],
+		queryFn: () =>
+			trpc.reports.sessionActivity.query(
+				reportParams as Parameters<
+					typeof trpc.reports.sessionActivity.query
+				>[0],
+			),
+		enabled: false,
+	});
+
+	// Shift Coverage Report query
+	const {
+		data: coverageData,
+		isLoading: coverageLoading,
+		refetch: refetchCoverage,
+	} = useQuery({
+		queryKey: ["reports.shiftCoverage", reportParams],
+		queryFn: () =>
+			trpc.reports.shiftCoverage.query(
+				reportParams as Parameters<typeof trpc.reports.shiftCoverage.query>[0],
+			),
+		enabled: false,
+	});
+
+	// User Schedule Summary Report query
+	const {
+		data: summaryData,
+		isLoading: summaryLoading,
+		refetch: refetchSummary,
+	} = useQuery({
+		queryKey: ["reports.userScheduleSummary", reportParams],
+		queryFn: () =>
+			trpc.reports.userScheduleSummary.query(
+				reportParams as Parameters<
+					typeof trpc.reports.userScheduleSummary.query
+				>[0],
+			),
+		enabled: false,
+	});
+
+	// Schedule Export query
+	const {
+		data: exportData,
+		isLoading: exportLoading,
+		refetch: refetchExport,
+	} = useQuery({
+		queryKey: ["shiftSchedules.listForExport", reportParams],
+		queryFn: () =>
+			trpc.shiftSchedules.listForExport.query(
+				reportParams as Parameters<
+					typeof trpc.shiftSchedules.listForExport.query
+				>[0],
+			),
+		enabled: false,
+	});
+
+	// Determine current loading state
+	const isLoading = useMemo(() => {
+		switch (selectedReportId) {
+			case "user-attendance":
+				return attendanceLoading;
+			case "session-activity":
+				return sessionLoading;
+			case "shift-coverage":
+				return coverageLoading;
+			case "user-schedule-summary":
+				return summaryLoading;
+			case "schedule-export":
+				return exportLoading;
+			default:
+				return false;
+		}
+	}, [
+		selectedReportId,
+		attendanceLoading,
+		sessionLoading,
+		coverageLoading,
+		summaryLoading,
+		exportLoading,
+	]);
+
+	// Get current report data
+	const reportData = useMemo(() => {
+		switch (selectedReportId) {
+			case "user-attendance":
+				return attendanceData?.reports ?? [];
+			case "session-activity":
+				return sessionData?.reports ?? [];
+			case "shift-coverage":
+				return coverageData?.reports ?? [];
+			case "user-schedule-summary":
+				return summaryData?.reports ?? [];
+			case "schedule-export":
+				// Transform schedule export data into table rows
+				if (!exportData) return [];
+				return transformScheduleExportData(
+					exportData,
+					selectedShiftTypes.map((st) => st.id),
+				);
+			default:
+				return [];
+		}
+	}, [
+		selectedReportId,
+		attendanceData,
+		sessionData,
+		coverageData,
+		summaryData,
+		exportData,
+		selectedShiftTypes,
+	]);
+
+	// Get display shift types for schedule export
+	const displayShiftTypes = useMemo(() => {
+		if (!exportData) return [];
+		const selectedIds = selectedShiftTypes.map((st) => st.id);
+		return selectedIds.length > 0
+			? exportData.shiftTypes.filter((st) => selectedIds.includes(st.id))
+			: exportData.shiftTypes;
+	}, [exportData, selectedShiftTypes]);
+
+	// Dynamic columns for schedule export
+	const scheduleExportColumns = useMemo(() => {
+		const baseColumns = [
+			{
+				accessorKey: "timeSlot" as const,
+				header: "Day & Time",
+				cell: ({
+					row,
+				}: { row: { original: Record<string, unknown> } }) =>
+					row.original.timeSlot as string,
+			},
+		];
+		const shiftTypeColumns = displayShiftTypes.map((st) => ({
+			accessorKey: `shiftType_${st.id}` as string,
+			header: st.location ? `${st.name} (${st.location})` : st.name,
+			cell: ({ row }: { row: { original: Record<string, unknown> } }) => {
+				const users = row.original[`shiftType_${st.id}`] as string;
+				return users || "—";
+			},
+		}));
+		return [...baseColumns, ...shiftTypeColumns];
+	}, [displayShiftTypes]);
+
+	// Get columns for current report type (cast to the expected type for DataTable)
+	const currentColumns = useMemo(() => {
+		if (selectedReportId === "schedule-export") {
+			return scheduleExportColumns as unknown as ReturnType<
+				ReportConfig<Record<string, unknown>>["getColumns"]
+			>;
+		}
+		return currentReportConfig?.getColumns() ?? [];
+	}, [selectedReportId, scheduleExportColumns, currentReportConfig]);
+
+	// Handle report generation
+	const handleGenerateReport = useCallback(async () => {
+		setHasGenerated(true);
+
+		switch (selectedReportId) {
+			case "user-attendance":
+				await refetchAttendance();
+				break;
+			case "session-activity":
+				await refetchSession();
+				break;
+			case "shift-coverage":
+				await refetchCoverage();
+				break;
+			case "user-schedule-summary":
+				await refetchSummary();
+				break;
+			case "schedule-export":
+				await refetchExport();
+				break;
+		}
+	}, [
+		selectedReportId,
+		refetchAttendance,
+		refetchSession,
+		refetchCoverage,
+		refetchSummary,
+		refetchExport,
+	]);
+
+	// Handle CSV export (unified for all reports)
+	const handleExportCSV = useCallback(() => {
+		if (!reportData || reportData.length === 0) return;
+
+		const columns = columnsToExportFormat(currentColumns);
+		const filename =
+			selectedReportId === "schedule-export"
+				? `schedule-export-${exportData?.period.name ?? "export"}`
+				: (currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ??
+					"report");
+
+		exportReport("csv", reportData as Record<string, unknown>[], {
+			filename,
+			title:
+				selectedReportId === "schedule-export"
+					? `Schedule Export - ${exportData?.period.name ?? "Export"}`
+					: (currentReportConfig?.name ?? "Report"),
+			subtitle: periodData?.period?.name ?? "Report",
+			columns,
+		});
+	}, [
+		reportData,
+		currentColumns,
+		currentReportConfig,
+		periodData?.period?.name,
+		selectedReportId,
+		exportData?.period.name,
+	]);
+
+	// Handle HTML/Print export (unified for all reports)
+	const handleExportHTML = useCallback(() => {
+		if (!reportData || reportData.length === 0) return;
+
+		const columns = columnsToExportFormat(currentColumns);
+		const filename =
+			selectedReportId === "schedule-export"
+				? `schedule-export-${exportData?.period.name ?? "export"}`
+				: (currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ??
+					"report");
+
+		exportReport("html", reportData as Record<string, unknown>[], {
+			filename,
+			title:
+				selectedReportId === "schedule-export"
+					? `Schedule Export - ${exportData?.period.name ?? "Export"}`
+					: (currentReportConfig?.name ?? "Report"),
+			subtitle: periodData?.period?.name ?? "Report",
+			columns,
+		});
+	}, [
+		reportData,
+		currentColumns,
+		currentReportConfig,
+		periodData?.period?.name,
+		selectedReportId,
+		exportData?.period.name,
+	]);
+
+	// Toggle day selection
+	const toggleDay = useCallback((day: number) => {
+		setSelectedDays((prev) =>
+			prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+		);
+	}, []);
+
+	// Apply date preset
+	const applyPreset = useCallback(
+		(presetId: string) => {
+			const preset = datePresets.find((p) => p.id === presetId);
+			if (preset) {
+				const range = preset.getRange();
+				setStartDate(range.start);
+				setEndDate(range.end);
+				setSelectedRange(presetId);
+			}
+		},
+		[datePresets],
 	);
-	const currentReportKey = JSON.stringify(reportParams);
 
-	const exportCsv = React.useCallback(() => {
-		const rows = (reportData?.reports ?? []) as Record<string, unknown>[];
-		if (!rows || rows.length === 0) return;
-
-		const headers = Object.keys(rows[0]);
-		const csvEscape = (v: unknown) => {
-			if (v === null || v === undefined) return "";
-			if (typeof v === "number" || typeof v === "boolean") return String(v);
-			const s = String(v);
-			return `"${s.replace(/"/g, '""')}"`;
-		};
-
-		const csv = [
-			headers.join(","),
-			...rows.map((r) => headers.map((h) => csvEscape(r[h])).join(",")),
-		].join("\n");
-
-		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		// Format current date/time in the local timezone as YYYY-MM-DD_HH-MM-SS±HHMM
-		const now = new Date();
-		const pad = (n: number) => String(n).padStart(2, "0");
-		const year = now.getFullYear();
-		const month = pad(now.getMonth() + 1);
-		const day = pad(now.getDate());
-		const hours = pad(now.getHours());
-		const minutes = pad(now.getMinutes());
-		const seconds = pad(now.getSeconds());
-		// timezone offset in minutes (getTimezoneOffset returns minutes behind UTC)
-		const offsetMin = -now.getTimezoneOffset();
-		const offsetSign = offsetMin >= 0 ? "+" : "-";
-		const absOffset = Math.abs(offsetMin);
-		const offsetHours = pad(Math.floor(absOffset / 60));
-		const offsetMinutes = pad(absOffset % 60);
-		const tz = `${offsetSign}${offsetHours}${offsetMinutes}`;
-		const filename = `report-${year}-${month}-${day}_${hours}-${minutes}-${seconds}${tz}.csv`;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		setTimeout(() => {
-			URL.revokeObjectURL(url);
-			document.body.removeChild(a);
-		}, 0);
-	}, [reportData?.reports]);
-
-	// roles list no longer needed; staffing roles come from the period
+	// No period selected (for reports that require it)
+	const requiresPeriod = currentReportConfig?.requiresPeriod ?? false;
+	if (requiresPeriod && selectedPeriodId === null) {
+		return (
+			<Page>
+				<PageHeader>
+					<div>
+						<PageTitle>Reports</PageTitle>
+						<PageDescription>
+							Generate and export various reports for your organization
+						</PageDescription>
+					</div>
+				</PageHeader>
+				<PageContent>
+					<Card>
+						<CardContent className="flex flex-col items-center justify-center py-12">
+							<Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+							<p className="text-muted-foreground text-center">
+								Please select a period from the sidebar to generate reports
+							</p>
+						</CardContent>
+					</Card>
+				</PageContent>
+			</Page>
+		);
+	}
 
 	return (
 		<Page>
 			<PageHeader>
-				<PageTitle>Reports</PageTitle>
-				<PageActions>
-					<Button
-						variant="outline"
-						onClick={exportCsv}
-						disabled={reportLoading || (reportData?.reports ?? []).length === 0}
-					>
-						<DownloadIcon className="mr-2 h-4 w-4" />
-						Download CSV
-					</Button>
-				</PageActions>
+				<div>
+					<PageTitle>Reports</PageTitle>
+					<PageDescription>
+						Generate and export various reports for your organization
+					</PageDescription>
+				</div>
 			</PageHeader>
 
 			<PageContent>
+				{/* Report Selection Card */}
 				<Card>
 					<CardHeader>
-						<div className="flex items-center justify-between">
-							<CardTitle className="flex items-center gap-2">
-								<NotebookTextIcon className="h-5 w-5" />
-								Report Parameters
-							</CardTitle>
-						</div>
+						<CardTitle className="flex items-center gap-2 text-base">
+							<Filter className="h-4 w-4" />
+							Report Configuration
+						</CardTitle>
+						<CardDescription>
+							Select a report type and configure the parameters
+						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-6">
-						<div className="inline-flex flex-col w-max gap-4">
-							<div>
-								<div className="text-sm font-medium mb-3">
-									Preset Date Ranges
-								</div>
-								{/* Buttons for common date ranges (last full 2 weeks, last full month, full period) */}
-								<div className="flex flex-wrap gap-2">
+						{/* Report Type Selection */}
+						<div className="space-y-2">
+							<Label>Report Type</Label>
+							<Select
+								value={selectedReportId}
+								onValueChange={(value) => {
+									setSelectedReportId(value);
+									setHasGenerated(false);
+								}}
+							>
+								<SelectTrigger className="w-full md:w-[400px]">
+									<SelectValue placeholder="Select a report type" />
+								</SelectTrigger>
+								<SelectContent>
+									{availableReports.map((config) => (
+										<SelectItem key={config.id} value={config.id}>
+											<div className="flex items-center gap-2">
+												<config.icon className="h-4 w-4" />
+												<span>{config.name}</span>
+											</div>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							{currentReportConfig && (
+								<p className="text-sm text-muted-foreground">
+									{currentReportConfig.description}
+								</p>
+							)}
+						</div>
+
+						{/* Date Range Selection (for reports that need it) */}
+						{(selectedReportId === "user-attendance" ||
+							selectedReportId === "session-activity") && (
+							<div className="space-y-4">
+								<div className="space-y-2">
+									<Label>Preset Date Ranges</Label>
 									<ToggleGroup
 										variant="outline"
 										type="single"
 										value={selectedRange}
-										aria-label="Date Ranges"
+										onValueChange={(value) => value && applyPreset(value)}
 									>
-										<ToggleGroupItem
-											value="last2weeks"
-											onClick={() => {
-												// Calculate last 2 full weeks
-												const now = new Date();
-												const dayOfWeek = now.getDay(); // 0 (Sun) to 6 (Sat)
-												const lastSunday = new Date(
-													now.getFullYear(),
-													now.getMonth(),
-													now.getDate() - dayOfWeek,
-												);
-												const startOfLast2Weeks = new Date(
-													lastSunday.getFullYear(),
-													lastSunday.getMonth(),
-													lastSunday.getDate() - 14,
-												);
-												setStart(startOfLast2Weeks);
-												setEnd(
-													new Date(
-														lastSunday.getFullYear(),
-														lastSunday.getMonth(),
-														lastSunday.getDate() - 1,
-													),
-												);
-												setSelectedRange("last2weeks");
-											}}
-										>
-											Last 2 Full Weeks
-										</ToggleGroupItem>
-										<ToggleGroupItem
-											value="lastmonth"
-											onClick={() => {
-												const now = new Date();
-												const lastDayOfLastMonth = new Date(
-													now.getFullYear(),
-													now.getMonth(),
-													0,
-												);
-												const firstDayOfLastMonth = new Date(
-													now.getFullYear(),
-													now.getMonth() - 1,
-													1,
-												);
-												setStart(firstDayOfLastMonth);
-												setEnd(lastDayOfLastMonth);
-												setSelectedRange("lastmonth");
-											}}
-										>
-											Last Full Month
-										</ToggleGroupItem>
-										<ToggleGroupItem
-											value="fullperiod"
-											onClick={() => {
-												setSelectedRange("fullperiod");
-												if (periodData?.period) {
-													setStart(periodData.period.start);
-													setEnd(periodData.period.end);
-												}
-											}}
-										>
-											{periodLoading || !periodData?.period ? (
-												<Spinner />
-											) : (
-												periodData.period.name
-											)}
-										</ToggleGroupItem>
+										{datePresets.map((preset) => (
+											<ToggleGroupItem key={preset.id} value={preset.id}>
+												{preset.label}
+											</ToggleGroupItem>
+										))}
 									</ToggleGroup>
 								</div>
-							</div>
-							<div>
 								<DateRangeSelector
-									value={[start ?? undefined, end ?? undefined]}
+									value={[startDate ?? undefined, endDate ?? undefined]}
 									onChange={([s, e]) => {
-										setStart(s ?? null);
-										setEnd(e ?? null);
+										setStartDate(s ?? null);
+										setEndDate(e ?? null);
 										setSelectedRange("custom");
 									}}
 									withTime={false}
-									label={"Date Range"}
+									label="Date Range"
 								/>
 							</div>
-							<div>
-								<div className="text-sm font-medium mb-1">Staffing Roles</div>
+						)}
+
+						{/* Staffing Roles Display (for user attendance) */}
+						{selectedReportId === "user-attendance" && (
+							<div className="space-y-2">
+								<Label>Staffing Roles</Label>
 								{periodLoading ? (
 									<Spinner />
 								) : staffingRoles && staffingRoles.length > 0 ? (
@@ -269,64 +688,134 @@ function Reports() {
 												periodData?.period?.roles?.find((r) => r.id === id)
 													?.name ?? `Role ${id}`;
 											return (
-												<Badge
-													key={id}
-													variant="secondary"
-													className="flex items-center gap-1"
-												>
-													<span>{roleName}</span>
+												<Badge key={id} variant="secondary">
+													{roleName}
 												</Badge>
 											);
 										})}
 									</div>
 								) : (
-									<div className="text-sm text-muted-foreground">
-										<CircleAlert className="inline-block mr-1 h-4 w-4" />
-										No staffing roles defined for this period! Returning all
+									<p className="text-sm text-muted-foreground flex items-center gap-1">
+										<AlertTriangle className="h-4 w-4" />
+										No staffing roles defined for this period. Returning all
 										users.
-									</div>
+									</p>
 								)}
 							</div>
-							<div className="pt-2">
-								<Button
-									variant="default"
-									onClick={async () => {
-										const result = await refetchReport();
-										// mark generated if query succeeded
-										if (result?.error == null) {
-											setLastGeneratedKey(currentReportKey);
-										}
-									}}
-									disabled={reportLoading}
-								>
-									{reportLoading
-										? "Generating..."
-										: lastGeneratedKey === currentReportKey
-											? "Regenerate Report"
-											: "Generate Report"}
-								</Button>
+						)}
+
+						{/* Shift Type Selection (for shift-related reports) */}
+						{(selectedReportId === "shift-coverage" ||
+							selectedReportId === "user-schedule-summary" ||
+							selectedReportId === "schedule-export") &&
+							selectedPeriodId && (
+								<div className="space-y-2">
+									<Label>Shift Types</Label>
+									<ShiftTypeMultiselect
+										periodId={selectedPeriodId}
+										value={selectedShiftTypes}
+										onChange={setSelectedShiftTypes}
+										placeholder="All shift types (click to filter)"
+									/>
+									<p className="text-sm text-muted-foreground">
+										{selectedShiftTypes.length === 0
+											? "All shift types will be included"
+											: `${selectedShiftTypes.length} shift type${selectedShiftTypes.length === 1 ? "" : "s"} selected`}
+									</p>
+								</div>
+							)}
+
+						{/* Day Selection (for schedule-related reports) */}
+						{(selectedReportId === "shift-coverage" ||
+							selectedReportId === "schedule-export") && (
+							<div className="space-y-3">
+								<Label>Days of Week</Label>
+								<div className="flex flex-wrap gap-3">
+									{DAYS_OF_WEEK.map((day) => (
+										<div
+											key={day.value}
+											className="flex items-center space-x-2"
+										>
+											<Checkbox
+												id={`day-${day.value}`}
+												checked={selectedDays.includes(day.value)}
+												onCheckedChange={() => toggleDay(day.value)}
+											/>
+											<Label
+												htmlFor={`day-${day.value}`}
+												className="text-sm font-normal cursor-pointer"
+											>
+												{day.label}
+											</Label>
+										</div>
+									))}
+								</div>
 							</div>
+						)}
+
+						{/* Generate and Export Buttons */}
+						<div className="flex flex-wrap gap-3 pt-4 border-t">
+							<Button
+								onClick={handleGenerateReport}
+								disabled={isLoading}
+								className="gap-2"
+							>
+								{isLoading ? (
+									<Loader2 className="h-4 w-4 animate-spin" />
+								) : hasGenerated ? (
+									<RefreshCwIcon className="h-4 w-4" />
+								) : (
+									<ChevronRight className="h-4 w-4" />
+								)}
+								{hasGenerated ? "Regenerate Report" : "Generate Report"}
+							</Button>
+
+							{/* Export buttons - only shown after report is generated */}
+							{hasGenerated && reportData.length > 0 && (
+								<>
+									<Button
+										variant="outline"
+										onClick={handleExportCSV}
+										disabled={isLoading}
+										className="gap-2"
+									>
+										<DownloadIcon className="h-4 w-4" />
+										Export CSV
+									</Button>
+									<Button
+										variant="outline"
+										onClick={handleExportHTML}
+										disabled={isLoading}
+										className="gap-2"
+									>
+										<Printer className="h-4 w-4" />
+										Print / PDF
+									</Button>
+								</>
+							)}
 						</div>
 					</CardContent>
 				</Card>
 
-				<TableContainer>
-					<DataTable
-						columns={generateColumns()}
-						data={reportData?.reports ?? []}
-						isLoading={reportLoading}
-						emptyMessage="No report data"
-						emptyDescription="Generate a report to see results"
-					/>
-
-					{(reportData?.total ?? 0) > 0 && (
-						<div className="flex justify-center py-4">
-							<p className="text-sm text-muted-foreground">
-								Showing {reportData?.total ?? 0} records
-							</p>
-						</div>
-					)}
-				</TableContainer>
+				{/* Results Table - shown for all report types */}
+				{hasGenerated && (
+					<TableContainer>
+						<DataTable
+							columns={currentColumns}
+							data={reportData}
+							isLoading={isLoading}
+							emptyMessage="No data found"
+							emptyDescription="Try adjusting your filters or date range"
+						/>
+						{reportData.length > 0 && (
+							<div className="flex justify-center py-4">
+								<p className="text-sm text-muted-foreground">
+									Showing {reportData.length} records
+								</p>
+							</div>
+						)}
+					</TableContainer>
+				)}
 			</PageContent>
 		</Page>
 	);
