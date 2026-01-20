@@ -37,7 +37,7 @@
 		"@tanstack/react-router": "^1.140.0",
 		"@tanstack/react-table": "^8.21.3",
 		"@trpc/client": "11.7.2",
-		"@trpc/tanstack-react-query": "11.7.2",
+		"@trpc/tanstack-react-query": "11.8.1",
 		"@vitejs/plugin-basic-ssl": "^2.1.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
