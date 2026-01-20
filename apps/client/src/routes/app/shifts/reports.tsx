@@ -68,7 +68,7 @@ export const Route = createFileRoute("/app/shifts/reports")({
 	),
 });
 
-export const permissions = ["reports.generate"] as RequiredPermissions;
+export const permissions = ["period.reports"] as RequiredPermissions;
 
 /**
  * Transform schedule export data into a flat table format for display
@@ -172,6 +172,12 @@ function ReportsPage() {
 	const [selectedDays, setSelectedDays] = useState<number[]>([
 		0, 1, 2, 3, 4, 5, 6,
 	]);
+	// Shift Users specific filters
+	const [selectedDayOfWeek, setSelectedDayOfWeek] = useState<number | null>(
+		null,
+	);
+	const [filterStartTime, setFilterStartTime] = useState<string>("");
+	const [filterEndTime, setFilterEndTime] = useState<string>("");
 
 	// Track if report has been generated
 	const [hasGenerated, setHasGenerated] = useState(false);
@@ -265,6 +271,20 @@ function ReportsPage() {
 							? selectedShiftTypes.map((st) => st.id)
 							: undefined,
 				};
+			case "shift-users":
+				return {
+					periodId: Number(selectedPeriodId),
+					shiftTypeIds:
+						selectedShiftTypes.length > 0
+							? selectedShiftTypes.map((st) => st.id)
+							: undefined,
+					dayOfWeek:
+						selectedDayOfWeek !== null && selectedDayOfWeek >= 0
+							? selectedDayOfWeek
+							: undefined,
+					startTime: filterStartTime || undefined,
+					endTime: filterEndTime || undefined,
+				};
 			default:
 				return base;
 		}
@@ -276,6 +296,9 @@ function ReportsPage() {
 		staffingRoles,
 		selectedShiftTypes,
 		selectedDays,
+		selectedDayOfWeek,
+		filterStartTime,
+		filterEndTime,
 	]);
 
 	// User Attendance Report query
@@ -354,6 +377,20 @@ function ReportsPage() {
 		enabled: false,
 	});
 
+	// Shift Users Report query
+	const {
+		data: shiftUsersData,
+		isLoading: shiftUsersLoading,
+		refetch: refetchShiftUsers,
+	} = useQuery({
+		queryKey: ["reports.shiftUsers", reportParams],
+		queryFn: () =>
+			trpc.reports.shiftUsers.query(
+				reportParams as Parameters<typeof trpc.reports.shiftUsers.query>[0],
+			),
+		enabled: false,
+	});
+
 	// Determine current loading state
 	const isLoading = useMemo(() => {
 		switch (selectedReportId) {
@@ -367,6 +404,8 @@ function ReportsPage() {
 				return summaryLoading;
 			case "schedule-export":
 				return exportLoading;
+			case "shift-users":
+				return shiftUsersLoading;
 			default:
 				return false;
 		}
@@ -377,6 +416,7 @@ function ReportsPage() {
 		coverageLoading,
 		summaryLoading,
 		exportLoading,
+		shiftUsersLoading,
 	]);
 
 	// Get current report data
@@ -390,6 +430,8 @@ function ReportsPage() {
 				return coverageData?.reports ?? [];
 			case "user-schedule-summary":
 				return summaryData?.reports ?? [];
+			case "shift-users":
+				return shiftUsersData?.reports ?? [];
 			case "schedule-export":
 				// Transform schedule export data into table rows
 				if (!exportData) return [];
@@ -406,6 +448,7 @@ function ReportsPage() {
 		sessionData,
 		coverageData,
 		summaryData,
+		shiftUsersData,
 		exportData,
 		selectedShiftTypes,
 	]);
@@ -472,6 +515,9 @@ function ReportsPage() {
 			case "schedule-export":
 				await refetchExport();
 				break;
+			case "shift-users":
+				await refetchShiftUsers();
+				break;
 		}
 	}, [
 		selectedReportId,
@@ -480,6 +526,7 @@ function ReportsPage() {
 		refetchCoverage,
 		refetchSummary,
 		refetchExport,
+		refetchShiftUsers,
 	]);
 
 	// Handle CSV export (unified for all reports)
@@ -707,7 +754,8 @@ function ReportsPage() {
 						{/* Shift Type Selection (for shift-related reports) */}
 						{(selectedReportId === "shift-coverage" ||
 							selectedReportId === "user-schedule-summary" ||
-							selectedReportId === "schedule-export") &&
+							selectedReportId === "schedule-export" ||
+							selectedReportId === "shift-users") &&
 							selectedPeriodId && (
 								<div className="space-y-2">
 									<Label>Shift Types</Label>
@@ -724,6 +772,75 @@ function ReportsPage() {
 									</p>
 								</div>
 							)}
+
+						{/* Single Day Selection (for shift-users report) */}
+						{selectedReportId === "shift-users" && (
+							<div className="space-y-2">
+								<Label>Day of Week</Label>
+								<Select
+									value={
+										selectedDayOfWeek !== null
+											? String(selectedDayOfWeek)
+											: "-1"
+									}
+									onValueChange={(value) => {
+										const v = Number(value);
+										setSelectedDayOfWeek(v === -1 ? null : v);
+									}}
+								>
+									<SelectTrigger className="w-full md:w-[200px]">
+										<SelectValue placeholder="All Days" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="-1">All Days</SelectItem>
+										{DAYS_OF_WEEK.map((day) => (
+											<SelectItem key={day.value} value={String(day.value)}>
+												{day.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						)}
+
+						{/* Time Range Filter (for shift-users report) */}
+						{selectedReportId === "shift-users" && (
+							<div className="space-y-2">
+								<Label>Time Range (optional)</Label>
+								<div className="flex items-center gap-2">
+									<input
+										type="time"
+										value={filterStartTime}
+										onChange={(e) => setFilterStartTime(e.target.value)}
+										className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+										placeholder="Start"
+									/>
+									<span className="text-muted-foreground">to</span>
+									<input
+										type="time"
+										value={filterEndTime}
+										onChange={(e) => setFilterEndTime(e.target.value)}
+										className="flex h-10 w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+										placeholder="End"
+									/>
+									{(filterStartTime || filterEndTime) && (
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												setFilterStartTime("");
+												setFilterEndTime("");
+											}}
+										>
+											Clear
+										</Button>
+									)}
+								</div>
+								<p className="text-sm text-muted-foreground">
+									Leave empty to include all times
+								</p>
+							</div>
+						)}
 
 						{/* Day Selection (for schedule-related reports) */}
 						{(selectedReportId === "shift-coverage" ||

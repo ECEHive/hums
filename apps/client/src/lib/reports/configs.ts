@@ -4,12 +4,14 @@ import {
 	ClipboardListIcon,
 	ClockIcon,
 	FileSpreadsheetIcon,
+	UserSearchIcon,
 	UsersIcon,
 } from "lucide-react";
 import type {
 	ReportConfig,
 	SessionActivityReport,
 	ShiftCoverageReport,
+	ShiftUsersReport,
 	UserAttendanceReport,
 	UserScheduleSummary,
 } from "./types";
@@ -30,7 +32,7 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 	description:
 		"Track user attendance, scheduled hours, and attendance percentages over a date range",
 	icon: ClipboardListIcon,
-	permissions: ["reports.generate"],
+	permissions: ["period.reports"],
 	requiresPeriod: true,
 	filters: [
 		{
@@ -91,7 +93,7 @@ export const sessionActivityReportConfig: ReportConfig<SessionActivityReport> =
 		name: "Session Activity Report",
 		description: "Analyze user session patterns, duration, and frequency",
 		icon: ClockIcon,
-		permissions: ["reports.generate", "sessions.list"],
+		permissions: ["period.reports"],
 		requiresPeriod: false,
 		filters: [
 			{
@@ -146,7 +148,7 @@ export const shiftCoverageReportConfig: ReportConfig<ShiftCoverageReport> = {
 	description:
 		"View shift type coverage with filled vs total slots per time period",
 	icon: CalendarIcon,
-	permissions: ["reports.generate", "shift_schedules.list"],
+	permissions: ["period.reports"],
 	requiresPeriod: true,
 	filters: [
 		{
@@ -209,7 +211,7 @@ export const userScheduleSummaryConfig: ReportConfig<UserScheduleSummary> = {
 	description:
 		"Overview of user weekly schedules with total hours and shift types",
 	icon: UsersIcon,
-	permissions: ["reports.generate", "shift_schedules.list"],
+	permissions: ["period.reports"],
 	requiresPeriod: true,
 	filters: [
 		{
@@ -261,6 +263,75 @@ export const userScheduleSummaryConfig: ReportConfig<UserScheduleSummary> = {
 };
 
 /**
+ * Shift Users Report Configuration
+ * Lists unique users who have shifts during a specific time period
+ */
+export const shiftUsersReportConfig: ReportConfig<ShiftUsersReport> = {
+	id: "shift-users",
+	name: "Shift Users Report",
+	description:
+		"List of unique users with shifts during a specific day/time range",
+	icon: UserSearchIcon,
+	permissions: ["period.reports"],
+	requiresPeriod: true,
+	filters: [
+		{
+			id: "shiftTypes",
+			type: "multi-select",
+			label: "Shift Types",
+			description: "Filter by specific shift types (leave empty for all)",
+			required: false,
+		},
+		{
+			id: "dayOfWeek",
+			type: "select",
+			label: "Day of Week",
+			description: "Filter by a specific day (optional)",
+			required: false,
+			options: [
+				{ value: -1, label: "All Days" },
+				...DAYS_OF_WEEK.map((d) => ({ value: d.value, label: d.label })),
+			],
+		},
+		{
+			id: "timeRange",
+			type: "date-range",
+			label: "Time Range",
+			description: "Filter by time of day (optional)",
+			required: false,
+		},
+	],
+	getColumns: (): ColumnDef<ShiftUsersReport, unknown>[] => [
+		{
+			accessorKey: "name",
+			header: "Full Name",
+			cell: ({ row }) => row.original.name,
+		},
+		{
+			accessorKey: "username",
+			header: "Username",
+			cell: ({ row }) => row.original.username,
+		},
+		{
+			accessorKey: "email",
+			header: "Email",
+			cell: ({ row }) => row.original.email,
+		},
+		{
+			accessorKey: "shiftCount",
+			header: "Shift Count",
+			cell: ({ row }) => row.original.shiftCount,
+		},
+		{
+			accessorKey: "shiftTypes",
+			header: "Shift Types",
+			cell: ({ row }) => row.original.shiftTypes || "—",
+		},
+	],
+	exportFormats: ["csv", "html"],
+};
+
+/**
  * Schedule Export Report Configuration (replaces old export page)
  */
 export interface ScheduleExportReport {
@@ -276,7 +347,7 @@ export const scheduleExportReportConfig: ReportConfig<ScheduleExportReport> = {
 	description:
 		"Generate a printable PDF of shift schedules with user assignments",
 	icon: FileSpreadsheetIcon,
-	permissions: ["shift_schedules.list", "shift_types.list"],
+	permissions: ["period.reports"],
 	requiresPeriod: true,
 	filters: [
 		{
@@ -319,6 +390,7 @@ export const reportConfigs: ReportConfig<Record<string, unknown>>[] = [
 	>,
 	shiftCoverageReportConfig as unknown as ReportConfig<Record<string, unknown>>,
 	userScheduleSummaryConfig as unknown as ReportConfig<Record<string, unknown>>,
+	shiftUsersReportConfig as unknown as ReportConfig<Record<string, unknown>>,
 	scheduleExportReportConfig as unknown as ReportConfig<
 		Record<string, unknown>
 	>,

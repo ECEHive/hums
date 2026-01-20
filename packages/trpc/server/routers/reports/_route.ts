@@ -8,6 +8,7 @@ import {
 	shiftCoverageHandler,
 	ZShiftCoverageSchema,
 } from "./shiftCoverage.route";
+import { shiftUsersHandler, ZShiftUsersSchema } from "./shiftUsers.route";
 import {
 	userScheduleSummaryHandler,
 	ZUserScheduleSummarySchema,
@@ -15,22 +16,27 @@ import {
 
 export const reportsRouter = router({
 	// User attendance report (original)
-	generate: permissionProtectedProcedure("reports.generate")
+	generate: permissionProtectedProcedure("period.reports")
 		.input(ZGenerateSchema)
 		.query(generateHandler),
 
 	// Session activity report
-	sessionActivity: permissionProtectedProcedure("reports.generate")
+	sessionActivity: permissionProtectedProcedure("period.reports")
 		.input(ZSessionActivitySchema)
 		.query(sessionActivityHandler),
 
 	// Shift coverage report
-	shiftCoverage: permissionProtectedProcedure("reports.generate")
+	shiftCoverage: permissionProtectedProcedure("period.reports")
 		.input(ZShiftCoverageSchema)
 		.query(shiftCoverageHandler),
 
 	// User schedule summary report
-	userScheduleSummary: permissionProtectedProcedure("reports.generate")
+	userScheduleSummary: permissionProtectedProcedure("period.reports")
 		.input(ZUserScheduleSummarySchema)
 		.query(userScheduleSummaryHandler),
+
+	// Shift users report
+	shiftUsers: permissionProtectedProcedure("period.reports")
+		.input(ZShiftUsersSchema)
+		.query(shiftUsersHandler),
 });

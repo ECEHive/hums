@@ -150,3 +150,15 @@ export interface UserScheduleSummary {
 	shiftTypes: string[];
 	daysScheduled: string[];
 }
+
+/**
+ * Shift users report data
+ */
+export interface ShiftUsersReport {
+	id: number;
+	name: string;
+	username: string;
+	email: string;
+	shiftCount: number;
+	shiftTypes: string;
+}
