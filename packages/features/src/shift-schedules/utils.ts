@@ -146,6 +146,25 @@ export function compareTimestamps(
 }
 
 /**
+ * Filter out timestamps that are in the past.
+ *
+ * @param timestamps - Array of timestamps to filter
+ * @param referenceTime - The reference time to compare against (defaults to now)
+ * @returns Array of timestamps that are in the future (strictly after referenceTime)
+ */
+export function filterPastTimestamps(
+	timestamps: Date[],
+	referenceTime: Date = new Date(),
+): Date[] {
+	const referenceInstant = instantFromDate(referenceTime);
+
+	return timestamps.filter((timestamp) => {
+		const tsInstant = instantFromDate(timestamp);
+		return Temporal.Instant.compare(tsInstant, referenceInstant) > 0;
+	});
+}
+
+/**
  * Exception period for filtering occurrences.
  */
 export interface ExceptionPeriod {
