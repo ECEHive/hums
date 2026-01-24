@@ -24,6 +24,13 @@ export type TGrantExcuseOptions = {
  *
  * For dropped shifts, excusing gives the user credit as if they had attended
  * the shift they dropped (without requiring a makeup).
+ *
+ * Implementation note: We use the `isExcused` flag rather than changing the
+ * `status` to "excused" so that the original attendance status (absent, dropped,
+ * present with late/early issues, etc.) is preserved for historical records and
+ * reporting purposes. The "excused" status enum value exists for edge cases where
+ * an attendance record is created directly as excused, but the flag approach is
+ * preferred for excusing existing records.
  */
 export async function grantExcuseHandler(options: TGrantExcuseOptions) {
 	const { attendanceId, notes } = options.input;

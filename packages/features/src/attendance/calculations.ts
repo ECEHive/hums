@@ -6,7 +6,9 @@ import { computeOccurrenceEnd, computeOccurrenceStart } from "../time-utils";
  * - dropped: User dropped the shift without a makeup
  * - dropped_makeup: User dropped and selected a makeup (evaluated separately)
  * - upcoming: Shift hasn't occurred yet
- * - excused: User was excused (counts as full credit, not toward eligible count)
+ *
+ * Note: "excused" status is NOT excluded - excused shifts count toward the
+ * eligible count and receive full attendance credit.
  */
 export const ATTENDANCE_EXCLUDED_STATUSES: ShiftAttendanceStatus[] = [
 	"dropped",
