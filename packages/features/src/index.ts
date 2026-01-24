@@ -15,4 +15,5 @@ export * from "./shift-schedules/validation";
 export * from "./suspensions";
 export * from "./time-utils";
 export * from "./timezone";
+export * from "./types/transaction";
 export * from "./users";

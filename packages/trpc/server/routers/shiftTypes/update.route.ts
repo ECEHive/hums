@@ -1,5 +1,8 @@
-import { generateOccurrenceTimestamps } from "@ecehive/features";
-import { type Prisma, prisma } from "@ecehive/prisma";
+import {
+	generateShiftScheduleShiftOccurrences,
+	type Transaction,
+} from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
@@ -27,11 +30,6 @@ export type TUpdateOptions = {
 	input: TUpdateSchema;
 };
 
-type TransactionClient = Omit<
-	typeof prisma,
-	"$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
->;
-
 export async function updateHandler(options: TUpdateOptions) {
 	const {
 		id,
@@ -57,8 +55,7 @@ export async function updateHandler(options: TUpdateOptions) {
 		return { shiftType: undefined };
 	}
 
-	let targetPeriod: Prisma.PeriodGetPayload<object> | undefined;
-
+	// Verify the new period exists if changing periods
 	if (periodId !== undefined && periodId !== existing.periodId) {
 		const period = await prisma.period.findUnique({
 			where: { id: periodId },
@@ -70,8 +67,6 @@ export async function updateHandler(options: TUpdateOptions) {
 				message: "Period not found",
 			});
 		}
-
-		targetPeriod = period;
 	}
 
 	return await prisma.$transaction(async (tx) => {
@@ -111,69 +106,35 @@ export async function updateHandler(options: TUpdateOptions) {
 		}
 
 		if (periodId !== undefined && periodId !== existing.periodId) {
-			const period = targetPeriod ?? (await getPeriod(tx, updated.periodId));
-
-			if (!period) {
-				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: "Updated period not found",
-				});
-			}
-
-			await syncShiftTypeSchedules(tx, updated.id, period);
+			// ShiftType moved to a different period, regenerate all occurrences
+			// Use skipPastOccurrences to only create future occurrences in the new period
+			await syncShiftTypeSchedules(tx, updated.id);
 		}
 
 		return { shiftType: updated };
 	});
 }
 
-async function getPeriod(
-	tx: TransactionClient,
-	periodId: number,
-): Promise<Prisma.PeriodGetPayload<object> | null> {
-	return await tx.period.findUnique({
-		where: { id: periodId },
-	});
-}
-
-async function syncShiftTypeSchedules(
-	tx: TransactionClient,
-	shiftTypeId: number,
-	period: Prisma.PeriodGetPayload<object>,
-) {
+/**
+ * Regenerate shift occurrences for all schedules of a shift type.
+ * This is used when a shift type is moved to a different period.
+ * The function uses generateShiftScheduleShiftOccurrences which respects
+ * period exceptions and properly handles slot counts.
+ */
+async function syncShiftTypeSchedules(tx: Transaction, shiftTypeId: number) {
 	const schedules = await tx.shiftSchedule.findMany({
 		where: { shiftTypeId },
 		select: {
 			id: true,
-			dayOfWeek: true,
-			startTime: true,
 		},
 	});
 
 	for (const schedule of schedules) {
-		await tx.shiftOccurrence.deleteMany({
-			where: { shiftScheduleId: schedule.id },
-		});
-
-		const occurrences = generateOccurrenceTimestamps(
-			period.start,
-			period.end,
-			schedule.dayOfWeek,
-			schedule.startTime,
-		);
-
-		if (occurrences.length === 0) {
-			await tx.shiftSchedule.delete({
-				where: { id: schedule.id },
-			});
-			continue;
-		}
-
-		await tx.shiftOccurrence.createMany({
-			data: occurrences.map((timestamp) => ({
-				shiftScheduleId: schedule.id,
-				timestamp,
-			})),
+		// Use the proper generation function that respects period exceptions
+		// and handles slot counts correctly. Use skipPastOccurrences since
+		// we're moving to a new period and shouldn't create past occurrences.
+		await generateShiftScheduleShiftOccurrences(tx, schedule.id, {
+			skipPastOccurrences: true,
 		});
 	}
 }
