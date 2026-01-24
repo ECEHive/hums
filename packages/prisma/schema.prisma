@@ -25,6 +25,7 @@ enum ShiftAttendanceStatus {
   absent
   dropped
   dropped_makeup
+  excused // Full credit granted due to approved excuse
 }
 
 enum SessionType {
@@ -73,6 +74,7 @@ model User {
   // One-to-many
   sessions    Session[]
   attendances ShiftAttendance[]
+  excusedAttendances ShiftAttendance[] @relation("ShiftAttendanceExcusedBy")
   suspensions Suspension[]
   createdSuspensions Suspension[] @relation("SuspensionCreatedBy")
   
@@ -244,7 +246,11 @@ model ShiftAttendance {
   isMakeup          Boolean             @default(false)
   didArriveLate     Boolean             @default(false)
   didLeaveEarly     Boolean             @default(false)
+  isExcused         Boolean             @default(false)
   droppedNotes      String?
+  excuseNotes       String?
+  excusedById       Int?
+  excusedAt         DateTime?
   timeIn            DateTime?
   timeOut           DateTime?
 
@@ -255,6 +261,7 @@ model ShiftAttendance {
   // relations
   shiftOccurrence ShiftOccurrence @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  excusedBy       User?           @relation("ShiftAttendanceExcusedBy", fields: [excusedById], references: [id], onDelete: SetNull)
 
   // constraints
   @@unique([shiftOccurrenceId, userId])

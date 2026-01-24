@@ -2,9 +2,11 @@ import {
 	computeOccurrenceEnd,
 	computeOccurrenceStart,
 	isArrivalLate,
+	isProtectedAttendanceStatus,
+	PROTECTED_ATTENDANCE_STATUSES,
 } from "@ecehive/features";
 import { getLogger } from "@ecehive/logger";
-import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
+import type { Prisma } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
 
@@ -13,17 +15,6 @@ const logger = getLogger("workers:shift-attendance");
 interface ActiveSession {
 	userId: number;
 	startedAt: Date;
-}
-
-const PROTECTED_ATTENDANCE_STATUSES: ShiftAttendanceStatus[] = [
-	"dropped",
-	"dropped_makeup",
-];
-
-function isProtectedAttendanceStatus(
-	status?: ShiftAttendanceStatus | null,
-): boolean {
-	return status ? PROTECTED_ATTENDANCE_STATUSES.includes(status) : false;
 }
 
 /**
