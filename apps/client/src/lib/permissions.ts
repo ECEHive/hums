@@ -55,14 +55,33 @@ export async function getAllPermissions(): Promise<
 	const data = await trpc.permissions.list.query({});
 
 	data?.permissions?.forEach((perm) => {
-		const [type] = perm.name.split(".");
+		const parts = perm.name.split(".");
+		// Group most permissions by their top-level namespace (e.g., "users").
+		// Special-case `inventory` to group by its sub-directories (e.g., "inventory.items").
+		const type =
+			parts[0] === "inventory" && parts.length >= 2
+				? `${parts[0]}.${parts[1]}`
+				: parts[0];
 		if (!permissionsMap.has(type)) {
 			permissionsMap.set(type, []);
 		}
 		permissionsMap.get(type)?.push(perm);
 	});
 
-	return permissionsMap;
+	// Sort permissions within each type and return a map whose keys are
+	// inserted in sorted order for a stable UI ordering.
+	const sortedTypes = Array.from(permissionsMap.keys()).sort();
+	const sortedMap = new Map<string, { id: number; name: string }[]>();
+	for (const type of sortedTypes) {
+		sortedMap.set(
+			type,
+			(permissionsMap.get(type) ?? []).sort((a, b) =>
+				a.name.localeCompare(b.name),
+			),
+		);
+	}
+
+	return sortedMap;
 }
 
 /**
@@ -85,7 +104,16 @@ export function humanizeIdentifier(input: string): string {
  * Format a permission type key (the prefix before the dot) for display.
  */
 export function formatPermissionType(type: string): string {
-	return humanizeIdentifier(type);
+	// If we grouped by namespace.subnamespace (e.g., "inventory.items"),
+	// show the subnamespace as the section title ("Items"). Otherwise show
+	// the top-level namespace ("Users", "Devices", etc.).
+	const parts = type.split(".");
+	if (parts[0] === "inventory" && parts.length >= 2) {
+		// Show the full context for inventory sub-sections to avoid ambiguity
+		// (e.g., "Inventory Items", "Inventory Requests").
+		return humanizeIdentifier(`${parts[0]} ${parts[1]}`);
+	}
+	return humanizeIdentifier(parts[0]);
 }
 
 /**

@@ -44,6 +44,19 @@ enum AuditLogSource {
   slack
 }
 
+enum InventoryAction {
+  CHECK_IN
+  CHECK_OUT
+}
+
+enum ItemRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FULFILLED
+  CANCELLED
+}
+
 //
 // Models
 //
@@ -79,6 +92,11 @@ model User {
   // Many-to-many (explicit)
   userAgreements UserAgreement[]
   apiTokens     ApiToken[]
+
+  // Inventory
+  inventoryTransactions InventoryTransaction[]
+  itemRequests          ItemRequest[]         @relation("ItemRequestUser")
+  reviewedItemRequests  ItemRequest[]         @relation("ItemRequestReviewer")
 }
 
 model Role {
@@ -430,4 +448,84 @@ model Suspension {
   @@index([userId])
   @@index([startDate, endDate])
   @@index([emailSentAt, startDate])
+}
+
+model Item {
+  id String @id @default(uuid())
+
+  // fields
+  name        String
+  description String?
+  sku         String?  @unique
+  location    String?
+  minQuantity Int?     // minimum quantity threshold for alerts
+  isActive    Boolean  @default(true)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  transactions InventoryTransaction[]
+  snapshot     InventorySnapshot?
+  requests     ItemRequest[]
+}
+
+model InventoryTransaction {
+  id String @id @default(uuid())
+
+  // fields
+  itemId   String
+  userId   Int
+  action   InventoryAction
+  quantity Int             // positive or negative depending on action
+  notes    String?
+
+  // timestamps
+  createdAt DateTime @default(now())
+
+  // relations
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // indexes
+  @@index([itemId, createdAt])
+}
+
+model InventorySnapshot {
+  // fields
+  itemId   String   @id
+  quantity Int      // authoritative quantity at snapshot time
+  takenAt  DateTime @default(now())
+
+  // relations
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model ItemRequest {
+  id String @id @default(uuid())
+
+  // fields
+  itemId          String?
+  requestedItemName String?           // For items that don't exist yet
+  quantity        Int
+  reason          String?
+  status          ItemRequestStatus @default(PENDING)
+  reviewNotes     String?
+  requestedById   Int
+  reviewedById    Int?
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  reviewedAt DateTime?
+
+  // relations
+  item       Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  requestedBy User @relation("ItemRequestUser", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy  User? @relation("ItemRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  // indexes
+  @@index([requestedById])
+  @@index([status, createdAt])
 }

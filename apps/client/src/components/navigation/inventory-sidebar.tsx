@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/sidebar";
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { checkPermissions } from "@/lib/permissions";
+import { permissions as itemRequestsPagePermissions } from "@/routes/app/inventory/item-requests";
+import { permissions as transactionsPagePermissions } from "@/routes/app/inventory/transactions";
 
 // Sidebar menu items, grouped by section
 export const items = [
@@ -78,13 +80,13 @@ export const items = [
 				title: "Transactions",
 				url: "/app/inventory/transactions",
 				icon: HistoryIcon,
-				permissions: [],
+				permissions: transactionsPagePermissions,
 			},
 			{
 				title: "Item Requests",
 				url: "/app/inventory/item-requests",
 				icon: CirclePlusIcon,
-				permissions: [],
+				permissions: itemRequestsPagePermissions,
 			},
 		],
 	},

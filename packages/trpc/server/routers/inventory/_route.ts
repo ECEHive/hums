@@ -1,0 +1,88 @@
+import {
+	permissionProtectedProcedure,
+	protectedProcedure,
+	publicProcedure,
+	router,
+} from "../../trpc";
+import { createItemHandler, ZCreateItemSchema } from "./items/create.route";
+import { deleteItemHandler, ZDeleteItemSchema } from "./items/delete.route";
+import { getItemHandler, ZGetItemSchema } from "./items/get.route";
+import { listItemsHandler, ZListItemsSchema } from "./items/list.route";
+import { updateItemHandler, ZUpdateItemSchema } from "./items/update.route";
+import {
+	createHandler as createRequestHandler,
+	ZCreateSchema as ZCreateRequestSchema,
+} from "./requests/create.route";
+import {
+	listHandler as listRequestHandler,
+	ZListSchema as ZListRequestSchema,
+} from "./requests/list.route";
+import {
+	updateHandler as updateRequestHandler,
+	ZUpdateSchema as ZUpdateRequestSchema,
+} from "./requests/update.route";
+import {
+	createSnapshotHandler,
+	ZCreateSnapshotSchema,
+} from "./snapshots/createSnapshot.route";
+import { checkInHandler, ZCheckInSchema } from "./transactions/checkIn.route";
+import {
+	checkOutHandler,
+	ZCheckOutSchema,
+} from "./transactions/checkOut.route";
+import {
+	listHandler as listTransactionsHandler,
+	ZListSchema as ZListTransactionsSchema,
+} from "./transactions/list.route";
+import { listMyHandler, ZListMySchema } from "./transactions/listMy.route";
+
+export const inventoryRouter = router({
+	// Item Management
+	items: router({
+		list: publicProcedure.input(ZListItemsSchema).query(listItemsHandler),
+		get: publicProcedure.input(ZGetItemSchema).query(getItemHandler),
+		create: permissionProtectedProcedure("inventory.items.create")
+			.input(ZCreateItemSchema)
+			.mutation(createItemHandler),
+		update: permissionProtectedProcedure("inventory.items.update")
+			.input(ZUpdateItemSchema)
+			.mutation(updateItemHandler),
+		delete: permissionProtectedProcedure("inventory.items.delete")
+			.input(ZDeleteItemSchema)
+			.mutation(deleteItemHandler),
+	}),
+
+	// Transactions
+	transactions: router({
+		checkIn: permissionProtectedProcedure("inventory.transactions.checkIn")
+			.input(ZCheckInSchema)
+			.mutation(checkInHandler),
+		checkOut: permissionProtectedProcedure("inventory.transactions.checkOut")
+			.input(ZCheckOutSchema)
+			.mutation(checkOutHandler),
+		list: permissionProtectedProcedure("inventory.transactions.list")
+			.input(ZListTransactionsSchema)
+			.query(listTransactionsHandler),
+		listMy: protectedProcedure.input(ZListMySchema).query(listMyHandler),
+	}),
+
+	// Snapshots
+	snapshots: router({
+		create: permissionProtectedProcedure("inventory.snapshots.create")
+			.input(ZCreateSnapshotSchema)
+			.mutation(createSnapshotHandler),
+	}),
+
+	// Requests
+	requests: router({
+		list: permissionProtectedProcedure("inventory.requests.list")
+			.input(ZListRequestSchema)
+			.query(listRequestHandler),
+		create: protectedProcedure
+			.input(ZCreateRequestSchema)
+			.mutation(createRequestHandler),
+		update: permissionProtectedProcedure("inventory.requests.update")
+			.input(ZUpdateRequestSchema)
+			.mutation(updateRequestHandler),
+	}),
+});
