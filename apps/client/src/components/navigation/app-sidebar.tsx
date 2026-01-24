@@ -104,6 +104,13 @@ export const items: AppSidebarGroup[] = [
 				hasChildren: true,
 			},
 			{
+				title: "Inventory",
+				url: "/app/inventory",
+				icon: LaptopMinimalCheckIcon,
+				permissions: [], // Available to all authenticated users
+				hasChildren: true,
+			},
+			{
 				title: "My Profile",
 				url: "/app/me",
 				icon: User2Icon,
