@@ -87,6 +87,32 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		breadcrumb: "Configuration",
 	},
 
+	// Inventory Routes
+	"/app/inventory": {
+		title: "Inventory",
+		breadcrumb: "Inventory",
+	},
+	"/app/inventory/items": {
+		title: "Items",
+		breadcrumb: "Items",
+	},
+	"/app/inventory/request-item": {
+		title: "Request Item",
+		breadcrumb: "Request Item",
+	},
+	"/app/inventory/transactions": {
+		title: "Transactions",
+		breadcrumb: "Transactions",
+	},
+	"/app/inventory/my-transactions": {
+		title: "My Transactions",
+		breadcrumb: "My Transactions",
+	},
+	"/app/inventory/item-requests": {
+		title: "Item Requests",
+		breadcrumb: "Item Requests",
+	},
+
 	// Shifts Routes
 	"/app/shifts": {
 		title: "Shifts",

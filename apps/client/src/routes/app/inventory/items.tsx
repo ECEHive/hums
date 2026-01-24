@@ -1,24 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
 
-export const Route = createFileRoute("/app/inventory/transactions")({
-	component: () => <Transactions />,
+export const Route = createFileRoute("/app/inventory/items")({
+	component: () => <MyTransactions />,
 });
 
-export const permissions = {
-	any: [],
-};
-
-function Transactions() {
+function MyTransactions() {
 	return (
 		<Page>
 			<PageHeader>
-				<PageTitle>Transactions</PageTitle>
+				<PageTitle>Items</PageTitle>
 			</PageHeader>
 
 			<PageContent>
 				<div className="prose">
-					<p>Transactions placeholder page for inventory.</p>
+					<p>Items placeholder page for inventory.</p>
 				</div>
 			</PageContent>
 		</Page>

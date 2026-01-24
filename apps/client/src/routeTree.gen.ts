@@ -29,6 +29,10 @@ import { Route as AppShiftsMyShiftsRouteImport } from './routes/app/shifts/my-sh
 import { Route as AppShiftsManageUsersRouteImport } from './routes/app/shifts/manage-users'
 import { Route as AppShiftsAttendanceRouteImport } from './routes/app/shifts/attendance'
 import { Route as AppInventoryTransactionsRouteImport } from './routes/app/inventory/transactions'
+import { Route as AppInventoryRequestItemRouteImport } from './routes/app/inventory/request-item'
+import { Route as AppInventoryMyTransactionsRouteImport } from './routes/app/inventory/my-transactions'
+import { Route as AppInventoryItemsRouteImport } from './routes/app/inventory/items'
+import { Route as AppInventoryItemRequestsRouteImport } from './routes/app/inventory/item-requests'
 import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
@@ -145,6 +149,28 @@ const AppInventoryTransactionsRoute =
     path: '/transactions',
     getParentRoute: () => AppInventoryRoute,
   } as any)
+const AppInventoryRequestItemRoute = AppInventoryRequestItemRouteImport.update({
+  id: '/request-item',
+  path: '/request-item',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryMyTransactionsRoute =
+  AppInventoryMyTransactionsRouteImport.update({
+    id: '/my-transactions',
+    path: '/my-transactions',
+    getParentRoute: () => AppInventoryRoute,
+  } as any)
+const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppInventoryItemRequestsRoute =
+  AppInventoryItemRequestsRouteImport.update({
+    id: '/item-requests',
+    path: '/item-requests',
+    getParentRoute: () => AppInventoryRoute,
+  } as any)
 const AppAppUsersRoute = AppAppUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -235,6 +261,10 @@ export interface FileRoutesByFullPath {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/inventory/item-requests': typeof AppInventoryItemRequestsRoute
+  '/app/inventory/items': typeof AppInventoryItemsRoute
+  '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
+  '/app/inventory/request-item': typeof AppInventoryRequestItemRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
   '/app/shifts/manage-users': typeof AppShiftsManageUsersRouteWithChildren
@@ -268,6 +298,10 @@ export interface FileRoutesByTo {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/inventory/item-requests': typeof AppInventoryItemRequestsRoute
+  '/app/inventory/items': typeof AppInventoryItemsRoute
+  '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
+  '/app/inventory/request-item': typeof AppInventoryRequestItemRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
   '/app/shifts/my-shifts': typeof AppShiftsMyShiftsRoute
@@ -303,6 +337,10 @@ export interface FileRoutesById {
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
   '/app/_app/users': typeof AppAppUsersRoute
+  '/app/inventory/item-requests': typeof AppInventoryItemRequestsRoute
+  '/app/inventory/items': typeof AppInventoryItemsRoute
+  '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
+  '/app/inventory/request-item': typeof AppInventoryRequestItemRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
   '/app/shifts/manage-users': typeof AppShiftsManageUsersRouteWithChildren
@@ -340,6 +378,10 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/inventory/item-requests'
+    | '/app/inventory/items'
+    | '/app/inventory/my-transactions'
+    | '/app/inventory/request-item'
     | '/app/inventory/transactions'
     | '/app/shifts/attendance'
     | '/app/shifts/manage-users'
@@ -373,6 +415,10 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/inventory/item-requests'
+    | '/app/inventory/items'
+    | '/app/inventory/my-transactions'
+    | '/app/inventory/request-item'
     | '/app/inventory/transactions'
     | '/app/shifts/attendance'
     | '/app/shifts/my-shifts'
@@ -407,6 +453,10 @@ export interface FileRouteTypes {
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
     | '/app/_app/users'
+    | '/app/inventory/item-requests'
+    | '/app/inventory/items'
+    | '/app/inventory/my-transactions'
+    | '/app/inventory/request-item'
     | '/app/inventory/transactions'
     | '/app/shifts/attendance'
     | '/app/shifts/manage-users'
@@ -575,6 +625,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInventoryTransactionsRouteImport
       parentRoute: typeof AppInventoryRoute
     }
+    '/app/inventory/request-item': {
+      id: '/app/inventory/request-item'
+      path: '/request-item'
+      fullPath: '/app/inventory/request-item'
+      preLoaderRoute: typeof AppInventoryRequestItemRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/app/inventory/my-transactions': {
+      id: '/app/inventory/my-transactions'
+      path: '/my-transactions'
+      fullPath: '/app/inventory/my-transactions'
+      preLoaderRoute: typeof AppInventoryMyTransactionsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/app/inventory/items': {
+      id: '/app/inventory/items'
+      path: '/items'
+      fullPath: '/app/inventory/items'
+      preLoaderRoute: typeof AppInventoryItemsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/app/inventory/item-requests': {
+      id: '/app/inventory/item-requests'
+      path: '/item-requests'
+      fullPath: '/app/inventory/item-requests'
+      preLoaderRoute: typeof AppInventoryItemRequestsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
     '/app/_app/users': {
       id: '/app/_app/users'
       path: '/users'
@@ -712,11 +790,19 @@ const AppAppRouteWithChildren =
   AppAppRoute._addFileChildren(AppAppRouteChildren)
 
 interface AppInventoryRouteChildren {
+  AppInventoryItemRequestsRoute: typeof AppInventoryItemRequestsRoute
+  AppInventoryItemsRoute: typeof AppInventoryItemsRoute
+  AppInventoryMyTransactionsRoute: typeof AppInventoryMyTransactionsRoute
+  AppInventoryRequestItemRoute: typeof AppInventoryRequestItemRoute
   AppInventoryTransactionsRoute: typeof AppInventoryTransactionsRoute
   AppInventoryIndexRoute: typeof AppInventoryIndexRoute
 }
 
 const AppInventoryRouteChildren: AppInventoryRouteChildren = {
+  AppInventoryItemRequestsRoute: AppInventoryItemRequestsRoute,
+  AppInventoryItemsRoute: AppInventoryItemsRoute,
+  AppInventoryMyTransactionsRoute: AppInventoryMyTransactionsRoute,
+  AppInventoryRequestItemRoute: AppInventoryRequestItemRoute,
   AppInventoryTransactionsRoute: AppInventoryTransactionsRoute,
   AppInventoryIndexRoute: AppInventoryIndexRoute,
 }

@@ -4,14 +4,14 @@ import { AppShell } from "@/components/layout";
 import { InventorySidebar } from "@/components/navigation/inventory-sidebar";
 
 export const Route = createFileRoute("/app/inventory")({
-  component: AppLayout,
+	component: AppLayout,
 });
 
 function AppLayout() {
-  return (
-    <AppShell
-      sidebar={<InventorySidebar />}
-      banners={<ImpersonationBanner />}
-    />
-  );
+	return (
+		<AppShell
+			sidebar={<InventorySidebar />}
+			banners={<ImpersonationBanner />}
+		/>
+	);
 }
