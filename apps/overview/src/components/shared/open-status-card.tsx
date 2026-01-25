@@ -119,6 +119,27 @@ function isInException(
 	return null;
 }
 
+/**
+ * Check if a specific date falls within any exception period
+ * Used when calculating future opening times to skip exception days
+ */
+function isDateInException(date: Date, exceptions: PeriodException[]): boolean {
+	const dateStart = new Date(date);
+	dateStart.setHours(0, 0, 0, 0);
+
+	for (const exception of exceptions) {
+		const exStart = new Date(exception.start);
+		const exEnd = new Date(exception.end);
+		exStart.setHours(0, 0, 0, 0);
+		exEnd.setHours(23, 59, 59, 999);
+
+		if (dateStart >= exStart && dateStart <= exEnd) {
+			return true;
+		}
+	}
+	return false;
+}
+
 interface TransitionInfo {
 	minutesUntil: number;
 	type: "opening" | "closing";
@@ -162,8 +183,8 @@ function findNextTransition(
 			const periodStartMinutes =
 				periodStart.getHours() * 60 + periodStart.getMinutes();
 
-			// Check each day starting from period start day
-			for (let dayOffset = 0; dayOffset <= 7; dayOffset++) {
+			// Check each day starting from period start day (extend to 14 days to handle longer exceptions)
+			for (let dayOffset = 0; dayOffset <= 14; dayOffset++) {
 				const checkDayOfWeek = (periodStartDay + dayOffset) % 7;
 				const daySchedule = period.schedule.find(
 					(s) => s.dayOfWeek === checkDayOfWeek,
@@ -185,6 +206,11 @@ function findNextTransition(
 						// Skip if this opening is before the period actually starts
 						if (dayOffset === 0 && openMinutes < periodStartMinutes) {
 							continue;
+						}
+
+						// Skip if this day falls within an exception
+						if (isDateInException(openingDate, period.exceptions)) {
+							break; // Move to next day
 						}
 
 						const minutesUntilOpen = Math.floor(
@@ -223,8 +249,8 @@ function findNextTransition(
 		);
 
 		if (!todaySchedule || todaySchedule.ranges.length === 0) {
-			// Closed today, find next opening day
-			for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
+			// Closed today, find next opening day (extend to 14 days to handle longer exceptions)
+			for (let dayOffset = 1; dayOffset <= 14; dayOffset++) {
 				const nextDayOfWeek = (currentDayOfWeek + dayOffset) % 7;
 				const nextDaySchedule = period.schedule.find(
 					(s) => s.dayOfWeek === nextDayOfWeek,
@@ -232,8 +258,6 @@ function findNextTransition(
 				if (nextDaySchedule && nextDaySchedule.ranges.length > 0) {
 					const firstRange = nextDaySchedule.ranges[0];
 					const openMinutes = timeToMinutes(firstRange.start);
-					const minutesUntil =
-						dayOffset * 24 * 60 - currentMinutes + openMinutes;
 
 					// Calculate the actual opening date
 					const openingDate = new Date(now);
@@ -243,6 +267,15 @@ function findNextTransition(
 						openMinutes % 60,
 						0,
 						0,
+					);
+
+					// Skip if this day falls within an exception
+					if (isDateInException(openingDate, period.exceptions)) {
+						continue; // Check next day
+					}
+
+					const minutesUntil = Math.floor(
+						(openingDate.getTime() - now.getTime()) / (1000 * 60),
 					);
 
 					if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
@@ -335,9 +368,9 @@ function findNextTransition(
 				}
 			}
 
-			// All today's ranges have passed, check tomorrow and following days
+			// All today's ranges have passed, check tomorrow and following days (extend to 14 days to handle longer exceptions)
 			if (!foundToday) {
-				for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
+				for (let dayOffset = 1; dayOffset <= 14; dayOffset++) {
 					const nextDayOfWeek = (currentDayOfWeek + dayOffset) % 7;
 					const nextDaySchedule = period.schedule.find(
 						(s) => s.dayOfWeek === nextDayOfWeek,
@@ -345,19 +378,27 @@ function findNextTransition(
 					if (nextDaySchedule && nextDaySchedule.ranges.length > 0) {
 						const firstRange = nextDaySchedule.ranges[0];
 						const openMinutes = timeToMinutes(firstRange.start);
-						const minutesUntil =
-							dayOffset * 24 * 60 - currentMinutes + openMinutes;
+
+						// Calculate the actual opening date
+						const openingDate = new Date(now);
+						openingDate.setDate(now.getDate() + dayOffset);
+						openingDate.setHours(
+							Math.floor(openMinutes / 60),
+							openMinutes % 60,
+							0,
+							0,
+						);
+
+						// Skip if this day falls within an exception
+						if (isDateInException(openingDate, period.exceptions)) {
+							continue; // Check next day
+						}
+
+						const minutesUntil = Math.floor(
+							(openingDate.getTime() - now.getTime()) / (1000 * 60),
+						);
 
 						if (!bestTransition || minutesUntil < bestTransition.minutesUntil) {
-							const openingDate = new Date(now);
-							openingDate.setDate(now.getDate() + dayOffset);
-							openingDate.setHours(
-								Math.floor(openMinutes / 60),
-								openMinutes % 60,
-								0,
-								0,
-							);
-
 							bestTransition = {
 								minutesUntil,
 								type: "opening",

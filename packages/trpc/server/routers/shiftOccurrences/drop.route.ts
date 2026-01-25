@@ -12,7 +12,7 @@ import { isWithinModifyWindow, upsertAttendanceStatus } from "./utils";
 
 export const ZDropSchema = z.object({
 	shiftOccurrenceId: z.number().min(1),
-	notes: z.string().max(500).optional(),
+	notes: z.string().min(1, "A reason is required").max(500),
 });
 
 export type TDropSchema = z.infer<typeof ZDropSchema>;
