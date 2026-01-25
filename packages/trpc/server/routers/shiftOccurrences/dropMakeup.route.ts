@@ -15,7 +15,7 @@ export const ZDropMakeupSchema = z
 	.object({
 		shiftOccurrenceId: z.number().min(1),
 		makeupShiftOccurrenceId: z.number().min(1),
-		notes: z.string().max(500).optional(),
+		notes: z.string().min(1, "A reason is required").max(500),
 	})
 	.superRefine((value, ctx) => {
 		if (value.shiftOccurrenceId === value.makeupShiftOccurrenceId) {
