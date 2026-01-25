@@ -60,6 +60,15 @@ export async function listMyHandler(options: TListMyOptions) {
 				didArriveLate: true,
 				didLeaveEarly: true,
 				isMakeup: true,
+				isExcused: true,
+				excuseNotes: true,
+				excusedAt: true,
+				excusedBy: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
 				createdAt: true,
 				shiftOccurrence: {
 					select: {

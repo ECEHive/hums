@@ -3,8 +3,19 @@ import type { Transaction } from "../types/transaction";
 import {
 	compareTimestamps,
 	filterExceptionPeriods,
+	filterPastTimestamps,
 	generateOccurrenceTimestamps,
 } from "./utils";
+
+export interface GenerateShiftOccurrencesOptions {
+	/**
+	 * When true, only future occurrences will be created.
+	 * Past occurrences will not be created but existing past occurrences will be preserved.
+	 * Useful when re-generating occurrences after removing a period exception.
+	 * @default false
+	 */
+	skipPastOccurrences?: boolean;
+}
 
 /**
  * Generate all the shift occurrences for a shift schedule.
@@ -17,12 +28,15 @@ import {
  *
  * @param tx - The database transaction to use.
  * @param shiftScheduleId - The ID of the shift schedule to generate shift occurrences for.
+ * @param options - Optional settings for occurrence generation.
  * @throws Error if the shift schedule doesn't exist or if occurrence generation fails
  */
 export async function generateShiftScheduleShiftOccurrences(
 	tx: Transaction,
 	shiftScheduleId: number,
+	options: GenerateShiftOccurrencesOptions = {},
 ) {
+	const { skipPastOccurrences = false } = options;
 	// Get the shift schedule with its shift type and period
 	const schedule = await tx.shiftSchedule.findUnique({
 		where: { id: shiftScheduleId },
@@ -67,10 +81,17 @@ export async function generateShiftScheduleShiftOccurrences(
 	});
 
 	// Determine which occurrences to create and which to delete
-	const { timestampsToCreate, timestampsToDelete } = compareTimestamps(
+	let { timestampsToCreate, timestampsToDelete } = compareTimestamps(
 		expectedTimestamps,
 		existingOccurrences.map((occ) => occ.timestamp),
 	);
+
+	// If skipPastOccurrences is true, filter out past timestamps from creation
+	// This prevents recreating past occurrences when a period exception is removed
+	// or when a period's date range is expanded into the past
+	if (skipPastOccurrences) {
+		timestampsToCreate = filterPastTimestamps(timestampsToCreate);
+	}
 
 	// Also check for slot count changes - need to delete/create occurrences
 	// when the slot count has changed

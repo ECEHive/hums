@@ -235,12 +235,21 @@ export async function updateHandler(options: TUpdateOptions) {
 			});
 		}
 
-		if (
-			updated.start.getTime() !== existing.start.getTime() ||
-			updated.end.getTime() !== existing.end.getTime()
-		) {
+		const startChanged = updated.start.getTime() !== existing.start.getTime();
+		const endChanged = updated.end.getTime() !== existing.end.getTime();
+
+		if (startChanged || endChanged) {
+			// Determine if the period is expanding (which would add new occurrences)
+			// If the start moved earlier or end moved later, we're expanding
+			const isExpanding =
+				updated.start < existing.start || updated.end > existing.end;
+
 			// Re-generate occurrences for all schedules in this period
-			await generatePeriodShiftOccurrences(tx, updated.id);
+			// Use skipPastOccurrences when expanding to avoid creating past occurrences
+			// that didn't exist before
+			await generatePeriodShiftOccurrences(tx, updated.id, {
+				skipPastOccurrences: isExpanding,
+			});
 		}
 
 		return { period: updated };

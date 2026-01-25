@@ -106,7 +106,7 @@ function AttendancePage() {
 								{statsData?.totalShifts ?? 0}
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{statsData?.upcomingShiftsCount ?? 0} upcoming makeups
+								{statsData?.upcomingShiftsCount ?? 0} upcoming
 							</p>
 						</CardContent>
 					</Card>

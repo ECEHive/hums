@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+	AlertCircleIcon,
 	BugIcon,
 	CalendarCheckIcon,
 	CalendarIcon,
@@ -48,6 +49,7 @@ import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as attendancePagePermissions } from "@/routes/app/shifts/attendance";
+import { permissions as attendanceIssuesPagePermissions } from "@/routes/app/shifts/attendance-issues";
 import { permissions as shiftsIndexPagePermissions } from "@/routes/app/shifts/index";
 import { permissions as manageUsersPagePermissions } from "@/routes/app/shifts/manage-users.index";
 import { permissions as myShiftsPagePermissions } from "@/routes/app/shifts/my-shifts";
@@ -125,6 +127,12 @@ export const items = [
 				url: "/app/shifts/manage-users",
 				icon: ShieldCheckIcon,
 				permissions: manageUsersPagePermissions,
+			},
+			{
+				title: "Attendance Issues",
+				url: "/app/shifts/attendance-issues",
+				icon: AlertCircleIcon,
+				permissions: attendanceIssuesPagePermissions,
 			},
 			{
 				title: "Reports",
