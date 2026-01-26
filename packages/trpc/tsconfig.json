@@ -4,5 +4,5 @@
 		"declaration": false,
 		"declarationMap": false
 	},
-	"include": ["server"]
+	"include": ["server", "../config/types/**/*.d.ts"]
 }
