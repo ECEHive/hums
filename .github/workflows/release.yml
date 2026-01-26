@@ -205,12 +205,6 @@ jobs:
               sections.push('_No changes were detected in this release window._');
             }
 
-            sections.push(
-              '',
-              '---',
-              `Release PR: [#${prNumber}](${prUrl})`
-            );
-
             const releaseBody = sections.join('\n');
 
             try {
@@ -434,35 +428,6 @@ jobs:
             });
 
             console.log('✅ Release updated with Docker image information');
-
-      - name: Comment on PR with Docker images
-        uses: actions/github-script@v7
-        env:
-          TAG: ${{ needs.create-release.outputs.tag }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO_OWNER: ${{ github.repository_owner }}
-        with:
-          script: |
-            const tag = process.env.TAG;
-            const prNumber = Number(process.env.PR_NUMBER);
-            const repoOwner = process.env.REPO_OWNER;
-
-            const body = [
-              `Docker images for **${tag}** have been published!`,
-              '',
-              '```bash',
-              `docker pull ghcr.io/${repoOwner}/hums-server:${tag}`,
-              `docker pull ghcr.io/${repoOwner}/hums-migrate:${tag}`,
-              `docker pull ghcr.io/${repoOwner}/hums-web:${tag}`,
-              '```'
-            ].join('\n');
-
-            await github.rest.issues.createComment({
-              issue_number: prNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body
-            });
 
       - name: Generate image summary
         run: |
