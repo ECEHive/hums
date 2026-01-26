@@ -77,7 +77,8 @@ function App() {
 		};
 	}, []);
 
-	const logoUrl = new URL("./assets/logo_dark.svg", import.meta.url).href;
+	// Use API-served logo for runtime configurability
+	const logoUrl = "/api/branding/logo-dark.svg";
 
 	// Determine the client base URL for one-time login
 	// Use runtime config clientBaseUrl, otherwise fall back to current page's origin

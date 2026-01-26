@@ -2,6 +2,7 @@ import { agreementsRouter } from "./routers/agreements/_route";
 import { apiTokensRouter } from "./routers/apiTokens/_route";
 import { auditLogsRouter } from "./routers/auditLogs/_route";
 import { authRouter } from "./routers/auth/_route";
+import { brandingRouter } from "./routers/branding/_route";
 import { configRouter } from "./routers/config/_route";
 import { devicesRouter } from "./routers/devices/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
@@ -24,6 +25,7 @@ export const appRouter = router({
 	auth: authRouter,
 	apiTokens: apiTokensRouter,
 	auditLogs: auditLogsRouter,
+	branding: brandingRouter,
 	config: configRouter,
 	overview: overviewRouter,
 	users: usersRouter,

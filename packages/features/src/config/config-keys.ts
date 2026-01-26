@@ -6,6 +6,7 @@
  * when accessing configuration values.
  */
 
+import type { BrandingConfigType } from "./definitions/branding";
 import type { EmailConfigType } from "./definitions/email";
 import type { SessionConfigType } from "./definitions/sessions";
 
@@ -13,7 +14,9 @@ import type { SessionConfigType } from "./definitions/sessions";
  * Configuration key to type mapping
  * Automatically derived from all registered configuration definitions
  */
-export type ConfigKeyMap = SessionConfigType & EmailConfigType;
+export type ConfigKeyMap = SessionConfigType &
+	EmailConfigType &
+	BrandingConfigType;
 
 /**
  * Union type of all valid configuration keys

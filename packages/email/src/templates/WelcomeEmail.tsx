@@ -1,21 +1,28 @@
 import { env } from "@ecehive/env";
 import { EmailLayout } from "./EmailLayout";
 
+interface EmailLogos {
+	light: string;
+	dark: string;
+}
+
 export interface WelcomeEmailProps {
 	userName: string;
 	username: string;
 	email: string;
+	logos: EmailLogos;
 }
 
 export const WelcomeEmailSubject = "Welcome to The Hive!";
 
-export function WelcomeEmail({ userName }: WelcomeEmailProps) {
+export function WelcomeEmail({ userName, logos }: WelcomeEmailProps) {
 	const websiteUrl = env.CLIENT_BASE_URL;
 
 	return (
 		<EmailLayout
 			title="Welcome to The Hive!"
 			preheader="Your account has been created successfully."
+			logos={logos}
 		>
 			<p>
 				Hello <strong>{userName}</strong>,

@@ -1,17 +1,24 @@
 import type { ReactNode } from "react";
-import { getEmailLogos } from "../logo-loader.js";
+
+interface EmailLogos {
+	light: string;
+	dark: string;
+}
 
 interface EmailLayoutProps {
 	title: string;
 	preheader: string;
 	children: ReactNode;
+	logos: EmailLogos;
 }
 
-export function EmailLayout({ title, preheader, children }: EmailLayoutProps) {
+export function EmailLayout({
+	title,
+	preheader,
+	children,
+	logos,
+}: EmailLayoutProps) {
 	const currentYear = new Date().getFullYear();
-
-	// Load logos dynamically from client assets
-	const logos = getEmailLogos();
 
 	return (
 		<html lang="en">

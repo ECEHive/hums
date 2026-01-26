@@ -12,3 +12,4 @@ export * from "./types";
 import "./definitions/sessions";
 import "./definitions/email";
 import "./definitions/slack";
+import "./definitions/branding";

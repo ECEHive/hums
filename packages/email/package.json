@@ -9,6 +9,7 @@
 	"dependencies": {
 		"@aws-sdk/client-ses": "^3.966.0",
 		"@ecehive/env": "workspace:*",
+		"@ecehive/features": "workspace:*",
 		"@ecehive/logger": "workspace:*",
 		"nodemailer": "^7.0.12",
 		"react": "^19.2.3",

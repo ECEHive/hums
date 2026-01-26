@@ -12,6 +12,10 @@ const cache = new Map<string, unknown>();
 let cacheTimestamp = 0;
 const CACHE_TTL = 60000; // 1 minute
 
+// Hooks for when config values change
+type ConfigChangeHook = (key: string, value: unknown) => void | Promise<void>;
+const changeHooks: ConfigChangeHook[] = [];
+
 function isCacheValid(): boolean {
 	return Date.now() - cacheTimestamp < CACHE_TTL;
 }
@@ -152,6 +156,11 @@ async function set(key: string, value: unknown): Promise<void> {
 	// Update cache
 	cache.set(key, value);
 	cacheTimestamp = Date.now();
+
+	// Run change hooks
+	for (const hook of changeHooks) {
+		await hook(key, value);
+	}
 }
 
 /**
@@ -185,6 +194,13 @@ async function setMany(values: Record<string, unknown>): Promise<void> {
 	// Clear cache to avoid serving stale data for other keys in multi-process scenarios
 	cache.clear();
 	cacheTimestamp = 0;
+
+	// Run change hooks for each key
+	for (const [key, value] of Object.entries(values)) {
+		for (const hook of changeHooks) {
+			await hook(key, value);
+		}
+	}
 }
 
 /**
@@ -198,6 +214,12 @@ async function reset(key: string): Promise<void> {
 	});
 
 	cache.delete(key);
+
+	// Run change hooks with default value
+	const defaultValue = ConfigRegistry.getDefault(key);
+	for (const hook of changeHooks) {
+		await hook(key, defaultValue);
+	}
 }
 
 /**
@@ -208,6 +230,20 @@ function clearCache(): void {
 	cacheTimestamp = 0;
 }
 
+/**
+ * Register a hook to be called when configuration values change
+ * Returns a function to unregister the hook
+ */
+function onConfigChange(hook: ConfigChangeHook): () => void {
+	changeHooks.push(hook);
+	return () => {
+		const index = changeHooks.indexOf(hook);
+		if (index !== -1) {
+			changeHooks.splice(index, 1);
+		}
+	};
+}
+
 export const ConfigService = {
 	get,
 	getMany,
@@ -216,4 +252,5 @@ export const ConfigService = {
 	setMany,
 	reset,
 	clearCache,
+	onConfigChange,
 };

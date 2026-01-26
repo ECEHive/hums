@@ -1,20 +1,48 @@
-import LogoDark from "@/assets/logo_dark.svg";
-import LogoLight from "@/assets/logo_light.svg";
 import { cn } from "@/lib/utils";
 
-export function Logo({ className = "" }) {
+/**
+ * Logo component that fetches logos from the branding API
+ * Supports both light and dark themes with automatic switching
+ */
+export function Logo({ className = "" }: { className?: string }) {
 	return (
 		<>
 			<img
-				src={LogoLight}
-				alt="HUMS Logo"
+				src="/api/branding/logo-light.svg"
+				alt="Logo"
 				className={cn("h-10 w-auto dark:hidden", className)}
 			/>
 			<img
-				src={LogoDark}
-				alt="HUMS Logo"
+				src="/api/branding/logo-dark.svg"
+				alt="Logo"
 				className={cn("h-10 w-auto hidden dark:block", className)}
 			/>
 		</>
+	);
+}
+
+/**
+ * Logo component that only shows the light version
+ */
+export function LogoLight({ className = "" }: { className?: string }) {
+	return (
+		<img
+			src="/api/branding/logo-light.svg"
+			alt="Logo"
+			className={cn("h-10 w-auto", className)}
+		/>
+	);
+}
+
+/**
+ * Logo component that only shows the dark version
+ */
+export function LogoDark({ className = "" }: { className?: string }) {
+	return (
+		<img
+			src="/api/branding/logo-dark.svg"
+			alt="Logo"
+			className={cn("h-10 w-auto", className)}
+		/>
 	);
 }

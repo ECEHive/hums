@@ -1,5 +1,6 @@
 import {
 	Clock as ClockIcon,
+	Palette as PaletteIcon,
 	Settings as SettingsIcon,
 	Slack as SlackIcon,
 } from "lucide-react";
@@ -14,6 +15,7 @@ import { ConfigField } from "./config-field";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 	Clock: ClockIcon,
+	Palette: PaletteIcon,
 	Settings: SettingsIcon,
 	Slack: SlackIcon,
 };
@@ -30,6 +32,7 @@ interface ConfigFieldDef {
 	max?: number;
 	step?: number;
 	required?: boolean;
+	darkPreview?: boolean;
 }
 
 interface ConfigGroupDef {

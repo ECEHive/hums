@@ -1,5 +1,6 @@
 import { getLogger } from "@ecehive/logger";
 import { renderToStaticMarkup } from "react-dom/server";
+import { getEmailLogos } from "./logo-loader";
 import {
 	getSessionAutoLogoutSubject,
 	SessionAutoLogoutEmail,
@@ -19,25 +20,30 @@ import { htmlToPlainText } from "./text-generator";
 
 const logger = getLogger("email:renderer");
 
-// Re-export template props for external use
+// Re-export template props for external use (without logos - they're added internally)
 export type {
 	SessionAutoLogoutEmailProps,
 	SuspensionNoticeEmailProps,
 	WelcomeEmailProps,
 };
 
+// Internal types that omit the logos prop (added by renderEmail)
+type WelcomeEmailData = Omit<WelcomeEmailProps, "logos">;
+type SessionAutoLogoutEmailData = Omit<SessionAutoLogoutEmailProps, "logos">;
+type SuspensionNoticeEmailData = Omit<SuspensionNoticeEmailProps, "logos">;
+
 export type RenderEmailOptions =
 	| {
 			template: "welcome";
-			data: WelcomeEmailProps;
+			data: WelcomeEmailData;
 	  }
 	| {
 			template: "session-auto-logout";
-			data: SessionAutoLogoutEmailProps;
+			data: SessionAutoLogoutEmailData;
 	  }
 	| {
 			template: "suspension-notice";
-			data: SuspensionNoticeEmailProps;
+			data: SuspensionNoticeEmailData;
 	  };
 
 export interface RenderedEmail {
@@ -55,19 +61,24 @@ export async function renderEmail(
 	options: RenderEmailOptions,
 ): Promise<RenderedEmail> {
 	try {
+		// Load logos from the branding system
+		const logos = await getEmailLogos();
+
 		let html: string;
 		let subject: string;
 
 		switch (options.template) {
 			case "welcome": {
-				html = renderToStaticMarkup(<WelcomeEmail {...options.data} />);
+				html = renderToStaticMarkup(
+					<WelcomeEmail {...options.data} logos={logos} />,
+				);
 				subject = WelcomeEmailSubject;
 				break;
 			}
 
 			case "session-auto-logout": {
 				html = renderToStaticMarkup(
-					<SessionAutoLogoutEmail {...options.data} />,
+					<SessionAutoLogoutEmail {...options.data} logos={logos} />,
 				);
 				subject = getSessionAutoLogoutSubject(options.data.sessionType);
 				break;
@@ -75,7 +86,7 @@ export async function renderEmail(
 
 			case "suspension-notice": {
 				html = renderToStaticMarkup(
-					<SuspensionNoticeEmail {...options.data} />,
+					<SuspensionNoticeEmail {...options.data} logos={logos} />,
 				);
 				subject = SuspensionNoticeEmailSubject;
 				break;

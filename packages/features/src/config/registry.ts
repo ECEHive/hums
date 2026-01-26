@@ -170,6 +170,44 @@ export const ConfigRegistry = {
 				return z.array(itemSchema);
 			}
 
+			case "svg-upload": {
+				// SVG content validation
+				return z.string().refine(
+					(content) => {
+						const trimmed = content.trim();
+						// Must start with SVG or XML declaration
+						if (!trimmed.startsWith("<svg") && !trimmed.startsWith("<?xml")) {
+							return false;
+						}
+						// Must contain an SVG element
+						if (!trimmed.includes("<svg")) {
+							return false;
+						}
+						// No script tags
+						if (/<script/i.test(trimmed)) {
+							return false;
+						}
+						// No event handlers
+						if (/\son\w+=/i.test(trimmed)) {
+							return false;
+						}
+						// No javascript URLs
+						if (/javascript:/i.test(trimmed)) {
+							return false;
+						}
+						// Max 500KB
+						if (trimmed.length > 500 * 1024) {
+							return false;
+						}
+						return true;
+					},
+					{
+						message:
+							"Invalid SVG: Must be valid SVG without scripts or event handlers (max 500KB)",
+					},
+				);
+			}
+
 			default:
 				return z.unknown();
 		}

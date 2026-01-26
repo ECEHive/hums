@@ -1,10 +1,19 @@
 import { env } from "@ecehive/env";
-import { updateSystemUsers } from "@ecehive/features";
+import {
+	BrandingService,
+	ConfigService,
+	updateSystemUsers,
+} from "@ecehive/features";
 import { getLogger } from "@ecehive/logger";
 import * as workers from "@ecehive/workers";
 import { server } from "./fastify";
 
 const logger = getLogger("server:startup");
+
+// Register config change hooks for branding cache invalidation
+ConfigService.onConfigChange((key, value) => {
+	BrandingService.handleConfigChange(key, value);
+});
 
 Promise.resolve()
 	.then(() => {

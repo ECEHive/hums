@@ -10,7 +10,8 @@ export type ConfigFieldType =
 	| "select"
 	| "multiselect"
 	| "textarea"
-	| "secret";
+	| "secret"
+	| "svg-upload";
 
 export interface ConfigFieldOption {
 	value: string;
@@ -29,6 +30,8 @@ export interface ConfigField<K extends string = string, T = unknown> {
 	max?: number; // For number types
 	step?: number; // For number types
 	required?: boolean;
+	// For svg-upload: preview on dark background
+	darkPreview?: boolean;
 	// Conditional rendering: only show if this function returns true
 	showWhen?: (values: Record<string, unknown>) => boolean;
 }
