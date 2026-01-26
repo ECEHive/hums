@@ -1,8 +1,8 @@
 {
-	"extends": "@ecehive/config/tsconfig/base.json",
+	"extends": "@ecehive/config/tsconfig/node.json",
 	"compilerOptions": {
 		"outDir": "dist",
 		"rootDir": "src"
 	},
-	"include": ["src/**/*"]
+	"include": ["src/**/*", "../config/types/**/*.d.ts"]
 }
