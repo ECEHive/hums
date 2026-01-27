@@ -1,11 +1,12 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
+import { BarcodeIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 // Items listing is public
 import { generateColumns } from "@/components/inventory/columns";
 import { CreateDialog } from "@/components/inventory/create-dialog";
+import type { ItemRow } from "@/components/inventory/types";
 import {
 	Page,
 	PageActions,
@@ -24,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
+import { printBarcodeLabels } from "@/lib/inventory/barcode-labels";
 
 export const Route = createFileRoute("/app/inventory/items")({
 	component: () => <Items />,
@@ -70,6 +72,22 @@ export function Items() {
 		currentCount: data.items.length,
 	});
 
+	const handlePrintBarcodes = React.useCallback(() => {
+		// Convert items to ItemRow format for barcode generation
+		const itemRows: ItemRow[] = data.items.map((item) => ({
+			...item,
+			createdAt: item.createdAt.toISOString(),
+			updatedAt: item.updatedAt.toISOString(),
+			snapshot: item.snapshot
+				? {
+						quantity: item.snapshot.quantity,
+					}
+				: null,
+		}));
+
+		printBarcodeLabels(itemRows);
+	}, [data.items]);
+
 	return (
 		<Page>
 			<PageHeader>
@@ -86,10 +104,17 @@ export function Items() {
 							<RefreshCcwIcon className="size-4" />
 						)}
 					</Button>
+					<Button
+						variant="outline"
+						onClick={handlePrintBarcodes}
+						disabled={data.items.length === 0}
+					>
+						<BarcodeIcon className="size-4" />
+						Print Labels
+					</Button>
 					<CreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
-			</PageHeader>
-
+			</PageHeader>{" "}
 			<PageContent>
 				<TableContainer>
 					<TableToolbar>

@@ -7,6 +7,7 @@ export type ItemRow = {
 	minQuantity?: number | null;
 	isActive: boolean;
 	snapshot?: { quantity: number } | null;
+	currentQuantity?: number | null;
 	createdAt?: string | null;
 	updatedAt?: string | null;
 };

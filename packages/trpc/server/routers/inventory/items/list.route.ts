@@ -50,8 +50,59 @@ export async function listItemsHandler(options: TListItemsOptions) {
 		prisma.item.count({ where }),
 	]);
 
+	// Get all transactions after snapshots for items that have snapshots
+	const itemsWithSnapshots = items.filter((item) => item.snapshot);
+
+	if (itemsWithSnapshots.length > 0) {
+		// Use raw SQL to efficiently calculate net quantities
+		// This query sums transactions only after each item's snapshot
+		const netQuantitiesRaw = await prisma.$queryRaw<
+			Array<{ itemId: string; netQuantity: bigint }>
+		>`
+			SELECT 
+				t."itemId",
+				COALESCE(SUM(t.quantity), 0) as "netQuantity"
+			FROM "InventoryTransaction" t
+			INNER JOIN "InventorySnapshot" s ON t."itemId" = s."itemId"
+			WHERE t."itemId" = ANY(${itemsWithSnapshots.map((item) => item.id)})
+				AND t."createdAt" > s."takenAt"
+			GROUP BY t."itemId"
+		`;
+
+		// Convert bigint to number and create a map
+		const netQuantities = new Map<string, number>(
+			netQuantitiesRaw.map((row) => [row.itemId, Number(row.netQuantity)]),
+		);
+
+		// Add currentQuantity to each item
+		const itemsWithNetQuantity = items.map((item) => {
+			let currentQuantity = item.snapshot?.quantity ?? null;
+
+			if (item.snapshot) {
+				const netTransactionQuantity = netQuantities.get(item.id) ?? 0;
+				currentQuantity = item.snapshot.quantity + netTransactionQuantity;
+			}
+
+			return {
+				...item,
+				currentQuantity,
+			};
+		});
+
+		return {
+			items: itemsWithNetQuantity,
+			count,
+		};
+	}
+
+	// If no items have snapshots, just return items with null currentQuantity
+	const itemsWithNetQuantity = items.map((item) => ({
+		...item,
+		currentQuantity: null,
+	}));
+
 	return {
-		items,
+		items: itemsWithNetQuantity,
 		count,
 	};
 }

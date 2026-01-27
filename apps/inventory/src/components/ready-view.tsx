@@ -32,8 +32,8 @@ export function ReadyView({
 
 			<div className="flex flex-col items-center justify-center gap-16">
 				<div className="w-full flex flex-row items-center justify-center gap-4">
-					<p className="text-6xl font-semibold">Hi, welcome to</p>
 					<img src={logoUrl} alt="HUMS" className="h-12 w-auto" />
+					<p className="text-6xl font-semibold">Inventory Kiosk</p>
 				</div>
 
 				<KioskClock className="text-[10rem]" />
@@ -42,7 +42,9 @@ export function ReadyView({
 					{isProcessing ? (
 						<LoadingIndicator message="Processing..." />
 					) : (
-						<p className="text-2xl text-muted-foreground">Tap your BuzzCard</p>
+						<p className="text-2xl text-muted-foreground">
+							Scan your BuzzCard to check out or return items
+						</p>
 					)}
 				</div>
 			</div>

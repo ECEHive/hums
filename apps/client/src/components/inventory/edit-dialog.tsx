@@ -7,6 +7,7 @@ import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogClose,
@@ -54,18 +55,14 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 	type UpdateItemInput = {
 		id: string;
 		name?: string;
-		description?: string | null;
-		sku?: string | null;
-		location?: string | null;
-		minQuantity?: number | null;
+		description?: string;
+		sku?: string;
+		location?: string;
+		minQuantity?: number;
 		isActive?: boolean;
 	};
 
-	const updateItemMutation = useMutation<
-		UpdateItemInput,
-		unknown,
-		UpdateItemInput
-	>({
+	const updateItemMutation = useMutation({
 		mutationFn: (input: UpdateItemInput) =>
 			trpc.inventory.items.update.mutate(input),
 		onSuccess: () => {
@@ -73,12 +70,9 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		},
 	});
 
-	const createSnapshotMutation = useMutation<
-		{ itemId: string; quantity: number },
-		unknown,
-		{ itemId: string; quantity: number }
-	>({
-		mutationFn: (input) => trpc.inventory.snapshots.create.mutate(input),
+	const createSnapshotMutation = useMutation({
+		mutationFn: (input: { itemId: string; quantity: number }) =>
+			trpc.inventory.snapshots.create.mutate(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
 		},
@@ -104,7 +98,16 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 			try {
 				const { quantity, ...updateData } = value;
 
-				await updateItemMutation.mutateAsync(updateData as UpdateItemInput);
+				// Convert empty strings and null to undefined for optional fields
+				const cleanedData: UpdateItemInput = {
+					...updateData,
+					description: updateData.description || undefined,
+					sku: updateData.sku || undefined,
+					location: updateData.location || undefined,
+					minQuantity: updateData.minQuantity ?? undefined,
+				};
+
+				await updateItemMutation.mutateAsync(cleanedData);
 
 				if (quantity !== undefined && quantity !== null) {
 					if (user && checkPermissions(user, ["inventory.snapshots.create"])) {
@@ -197,7 +200,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 								<Input
 									id={field.name}
 									name={field.name}
-									value={field.state.value}
+									value={field.state.value ?? ""}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
 									placeholder="Enter SKU"
@@ -217,10 +220,30 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 								<Input
 									id={field.name}
 									name={field.name}
-									value={field.state.value}
+									value={field.state.value ?? ""}
 									onChange={(e) => field.handleChange(e.target.value)}
 									onBlur={field.handleBlur}
 									placeholder="Enter short description"
+								/>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
+					<form.Field name="location">
+						{(field) => (
+							<Field>
+								<FieldLabel htmlFor={field.name}>
+									Location{" "}
+									<span className="text-muted-foreground">(optional)</span>
+								</FieldLabel>
+								<Input
+									id={field.name}
+									name={field.name}
+									value={field.state.value ?? ""}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									placeholder="Enter location"
 								/>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>
@@ -269,6 +292,28 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 								<p className="text-xs text-muted-foreground">
 									Provide a quantity to create an authoritative snapshot for
 									this item.
+								</p>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
+					<form.Field name="isActive">
+						{(field) => (
+							<Field>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(checked) => field.handleChange(!!checked)}
+										onBlur={field.handleBlur}
+									/>
+									<FieldLabel htmlFor={field.name} className="!mt-0">
+										Active
+									</FieldLabel>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									Inactive items will be hidden by default.
 								</p>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>

@@ -1,4 +1,5 @@
 import {
+	inventoryProtectedProcedure,
 	permissionProtectedProcedure,
 	protectedProcedure,
 	publicProcedure,
@@ -7,6 +8,10 @@ import {
 import { createItemHandler, ZCreateItemSchema } from "./items/create.route";
 import { deleteItemHandler, ZDeleteItemSchema } from "./items/delete.route";
 import { getItemHandler, ZGetItemSchema } from "./items/get.route";
+import {
+	getBySkuItemHandler,
+	ZGetBySkuItemSchema,
+} from "./items/getBySku.route";
 import { listItemsHandler, ZListItemsSchema } from "./items/list.route";
 import { updateItemHandler, ZUpdateItemSchema } from "./items/update.route";
 import {
@@ -25,11 +30,24 @@ import {
 	createSnapshotHandler,
 	ZCreateSnapshotSchema,
 } from "./snapshots/createSnapshot.route";
+import { scanUserHandler, ZScanUserSchema } from "./scanUser.route";
 import { checkInHandler, ZCheckInSchema } from "./transactions/checkIn.route";
 import {
 	checkOutHandler,
 	ZCheckOutSchema,
 } from "./transactions/checkOut.route";
+import {
+	checkUserBalanceHandler,
+	ZCheckUserBalanceSchema,
+} from "./transactions/checkUserBalance.route";
+import {
+	getMyNetBalanceHandler,
+	ZGetMyNetBalanceSchema,
+} from "./transactions/getMyNetBalance.route";
+import {
+	getNetBalanceHandler,
+	ZGetNetBalanceSchema,
+} from "./transactions/getNetBalance.route";
 import {
 	listHandler as listTransactionsHandler,
 	ZListSchema as ZListTransactionsSchema,
@@ -37,10 +55,18 @@ import {
 import { listMyHandler, ZListMySchema } from "./transactions/listMy.route";
 
 export const inventoryRouter = router({
+	// User Scanning (for inventory kiosks)
+	scanUser: inventoryProtectedProcedure
+		.input(ZScanUserSchema)
+		.mutation(scanUserHandler),
+
 	// Item Management
 	items: router({
 		list: publicProcedure.input(ZListItemsSchema).query(listItemsHandler),
 		get: publicProcedure.input(ZGetItemSchema).query(getItemHandler),
+		getBySku: publicProcedure
+			.input(ZGetBySkuItemSchema)
+			.query(getBySkuItemHandler),
 		create: permissionProtectedProcedure("inventory.items.create")
 			.input(ZCreateItemSchema)
 			.mutation(createItemHandler),
@@ -54,16 +80,25 @@ export const inventoryRouter = router({
 
 	// Transactions
 	transactions: router({
-		checkIn: permissionProtectedProcedure("inventory.transactions.checkIn")
+		checkIn: inventoryProtectedProcedure
 			.input(ZCheckInSchema)
 			.mutation(checkInHandler),
-		checkOut: permissionProtectedProcedure("inventory.transactions.checkOut")
+		checkOut: inventoryProtectedProcedure
 			.input(ZCheckOutSchema)
 			.mutation(checkOutHandler),
+		checkUserBalance: inventoryProtectedProcedure
+			.input(ZCheckUserBalanceSchema)
+			.query(checkUserBalanceHandler),
 		list: permissionProtectedProcedure("inventory.transactions.list")
 			.input(ZListTransactionsSchema)
 			.query(listTransactionsHandler),
 		listMy: protectedProcedure.input(ZListMySchema).query(listMyHandler),
+		getNetBalance: permissionProtectedProcedure("inventory.transactions.list")
+			.input(ZGetNetBalanceSchema)
+			.query(getNetBalanceHandler),
+		getMyNetBalance: protectedProcedure
+			.input(ZGetMyNetBalanceSchema)
+			.query(getMyNetBalanceHandler),
 	}),
 
 	// Snapshots

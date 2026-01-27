@@ -93,12 +93,12 @@ export function KioskHeader({
 							{kioskStatus.isKiosk ? (
 								<>
 									<CheckCircle2 className="h-4 w-4" />
-									Kiosk Registered
+									Inventory Enabled
 								</>
 							) : (
 								<>
 									<XCircle className="h-4 w-4" />
-									Not Registered
+									No Inventory Access
 								</>
 							)}
 						</Badge>

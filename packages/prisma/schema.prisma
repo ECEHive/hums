@@ -303,8 +303,9 @@ model Device {
   isActive  Boolean @default(true)
 
   // Device access permissions
-  hasKioskAccess     Boolean @default(true)
-  hasDashboardAccess Boolean @default(false)
+  hasKioskAccess      Boolean @default(true)
+  hasDashboardAccess  Boolean @default(false)
+  hasInventoryAccess  Boolean @default(false)
 
   // timestamps
   createdAt DateTime @default(now())

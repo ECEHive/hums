@@ -30,12 +30,12 @@ export function SetupView({
 							</div>
 							<div className="text-center gap-3 flex flex-col">
 								<h2 className="text-4xl font-bold text-destructive">
-									Kiosk Not Registered
+									Inventory Access Not Enabled
 								</h2>
 								<p className="text-lg text-muted-foreground max-w-md mx-auto">
-									This device is not registered as a kiosk. Please contact an
-									administrator to register this kiosk before using
-									tap-in/tap-out functionality.
+									This device is not registered for inventory access. Please
+									contact an administrator to enable inventory access for this
+									device.
 								</p>
 								{kioskStatus.ip && (
 									<div className="flex justify-center mt-2">
@@ -68,7 +68,7 @@ export function SetupView({
 		? "Connecting to card reader. Please wait..."
 		: hasError
 			? errorMessage
-			: "Connect a USB card reader to this device, then press Start to enable tap-in/tap-out functionality.";
+			: "Connect a USB card reader to this device, then press Start to enable inventory functionality.";
 
 	// Show card reader connection UI with redesigned interface
 	return (

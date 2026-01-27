@@ -6,6 +6,7 @@ import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogClose,
@@ -30,6 +31,22 @@ const formSchema = z.object({
 	isActive: z.boolean().optional(),
 	initialQuantity: z.number().int().min(0).optional(),
 });
+
+function generateSku(): string {
+	// 4 chars from current milliseconds timestamp in base36 (padded) + 4 random base36 chars
+	const tsPart = Date.now()
+		.toString(36)
+		.slice(-4)
+		.padStart(4, "0")
+		.toUpperCase();
+
+	const randPart = Array.from({ length: 4 })
+		.map(() => Math.floor(Math.random() * 36).toString(36))
+		.join("")
+		.toUpperCase();
+
+	return `${tsPart}${randPart}`;
+}
 
 type CreateDialogProps = {
 	onUpdate?: () => void;
@@ -65,7 +82,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		defaultValues: {
 			name: "",
 			description: "",
-			sku: "",
+			sku: generateSku(),
 			location: "",
 			minQuantity: undefined,
 			isActive: true,
@@ -102,10 +119,24 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 	const handleDialogChange = useCallback(
 		(nextOpen: boolean) => {
 			setOpen(nextOpen);
-			if (!nextOpen) {
-				form.reset();
+			// When opening the dialog, reset the form and give a fresh SKU.
+			if (nextOpen) {
+				form.reset({
+					name: "",
+					description: "",
+					sku: generateSku(),
+					location: "",
+					minQuantity: undefined,
+					isActive: true,
+					initialQuantity: undefined,
+				});
 				setServerError(null);
+				return;
 			}
+
+			// On close, clear form to defaults
+			form.reset();
+			setServerError(null);
 		},
 		[form],
 	);
@@ -192,6 +223,26 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 						)}
 					</form.Field>
 
+					<form.Field name="location">
+						{(field) => (
+							<Field>
+								<FieldLabel htmlFor={field.name}>
+									Location{" "}
+									<span className="text-muted-foreground">(optional)</span>
+								</FieldLabel>
+								<Input
+									id={field.name}
+									name={field.name}
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									placeholder="Enter location"
+								/>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
 					<form.Field name="minQuantity">
 						{(field) => (
 							<Field>
@@ -231,6 +282,28 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								<p className="text-xs text-muted-foreground">
 									Provide an initial quantity to create an authoritative
 									snapshot for this item.
+								</p>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
+					<form.Field name="isActive">
+						{(field) => (
+							<Field>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(checked) => field.handleChange(!!checked)}
+										onBlur={field.handleBlur}
+									/>
+									<FieldLabel htmlFor={field.name} className="!mt-0">
+										Active
+									</FieldLabel>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									Inactive items will be hidden by default.
 								</p>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>

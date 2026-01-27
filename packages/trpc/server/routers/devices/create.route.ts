@@ -8,6 +8,7 @@ export const ZCreateSchema = z.object({
 	isActive: z.boolean().optional().default(true),
 	hasKioskAccess: z.boolean().optional().default(true),
 	hasDashboardAccess: z.boolean().optional().default(false),
+	hasInventoryAccess: z.boolean().optional().default(false),
 });
 
 export type TCreateSchema = z.infer<typeof ZCreateSchema>;
@@ -18,8 +19,14 @@ export type TCreateOptions = {
 };
 
 export async function createHandler(options: TCreateOptions) {
-	const { name, ipAddress, isActive, hasKioskAccess, hasDashboardAccess } =
-		options.input;
+	const {
+		name,
+		ipAddress,
+		isActive,
+		hasKioskAccess,
+		hasDashboardAccess,
+		hasInventoryAccess,
+	} = options.input;
 
 	const newDevice = await prisma.device.create({
 		data: {
@@ -28,6 +35,7 @@ export async function createHandler(options: TCreateOptions) {
 			isActive,
 			hasKioskAccess,
 			hasDashboardAccess,
+			hasInventoryAccess,
 		},
 	});
 

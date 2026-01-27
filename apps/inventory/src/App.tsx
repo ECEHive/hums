@@ -3,20 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FlowOverlays } from "@/components/flow-overlays";
+import { InventoryTransactionView } from "@/components/inventory-transaction-view";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
-import { OneTimeLoginQR } from "@/components/one-time-login-qr";
 import { ReadyView } from "@/components/ready-view";
 import { SetupView } from "@/components/setup-view";
 import { useCardReader } from "@/hooks/use-card-reader";
-import { useTapWorkflow } from "@/hooks/use-tap-workflow";
-import { useConfig } from "@/hooks/useConfig";
+import { useInventoryWorkflow } from "@/hooks/use-inventory-workflow";
 import type { KioskStatus } from "@/types";
 
 function App() {
 	const [isFullscreen, setIsFullscreen] = useState(false);
-	const tapWorkflow = useTapWorkflow();
-	const { data: config } = useConfig();
+	const inventoryWorkflow = useInventoryWorkflow();
 
 	const { data: deviceStatusData, isLoading: deviceStatusLoading } = useQuery({
 		queryKey: ["deviceStatus"],
@@ -29,7 +27,8 @@ function App() {
 
 	const kioskStatus: KioskStatus = {
 		isKiosk: !!(
-			deviceStatusData?.status && deviceStatusData.device?.hasKioskAccess
+			deviceStatusData?.status &&
+			deviceStatusData.device?.hasInventoryAccess
 		),
 		ip: deviceStatusData?.status
 			? deviceStatusData.device?.ipAddress
@@ -38,10 +37,10 @@ function App() {
 	};
 
 	const { connectionStatus, connect } = useCardReader({
-		onScan: (cardNumber) => tapWorkflow.handleTap(cardNumber),
-		onFatalError: tapWorkflow.showError,
+		onScan: (cardNumber) => inventoryWorkflow.handleScan(cardNumber),
+		onFatalError: inventoryWorkflow.showError,
 		onInvalidScan: () =>
-			tapWorkflow.showError("Unable to read card. Please tap again."),
+			inventoryWorkflow.showError("Unable to read card. Please tap again."),
 	});
 
 	const toggleFullscreen = async () => {
@@ -79,9 +78,7 @@ function App() {
 
 	const logoUrl = new URL("./assets/logo_dark.svg", import.meta.url).href;
 
-	// Determine the client base URL for one-time login
-	// Use runtime config clientBaseUrl, otherwise fall back to current page's origin
-	const clientBaseUrl = config?.clientBaseUrl || window.location.origin;
+	// clientBaseUrl removed (one-time login removed)
 
 	const isPreConnection =
 		!kioskStatus.isKiosk ||
@@ -105,31 +102,28 @@ function App() {
 
 					<main className="min-w-full flex-1 overflow-hidden relative">
 						<FlowOverlays
-							errorDialog={tapWorkflow.errorDialog}
-							sessionTypeSelection={tapWorkflow.sessionTypeSelection}
-							tapOutActionSelection={tapWorkflow.tapOutActionSelection}
-							earlyLeaveConfirmation={tapWorkflow.earlyLeaveConfirmation}
-							pendingAgreement={tapWorkflow.pendingAgreement}
-							tapNotification={tapWorkflow.tapNotification}
-							suspension={tapWorkflow.suspension}
-							onSessionTypeSelect={tapWorkflow.handleSessionTypeSelect}
-							onSessionTypeCancel={tapWorkflow.handleSessionTypeCancel}
-							onTapOutActionSelect={tapWorkflow.handleTapOutActionSelect}
-							onTapOutActionCancel={tapWorkflow.handleTapOutActionCancel}
-							onEarlyLeaveConfirm={tapWorkflow.handleEarlyLeaveConfirm}
-							onEarlyLeaveCancel={tapWorkflow.handleEarlyLeaveCancel}
-							onAgreementComplete={tapWorkflow.handleAgreementComplete}
-							onAgreementCancel={tapWorkflow.handleAgreementCancel}
-							onAgreementError={tapWorkflow.handleAgreementError}
-							onAgreementProgress={tapWorkflow.resetAgreementTimeout}
+							errorDialog={inventoryWorkflow.errorDialog}
+							scanNotification={inventoryWorkflow.scanNotification}
+							successNotification={inventoryWorkflow.successNotification}
+							suspension={inventoryWorkflow.suspension}
 						/>
+
+						{inventoryWorkflow.transactionView && (
+							<InventoryTransactionView
+								userName={inventoryWorkflow.transactionView.userName}
+								canReturn={inventoryWorkflow.transactionView.canReturn}
+								onCheckout={inventoryWorkflow.handleCheckout}
+								onReturn={inventoryWorkflow.handleReturn}
+								onCancel={inventoryWorkflow.handleTransactionCancel}
+							/>
+						)}
 
 						<div className="min-w-full h-full flex items-center justify-center">
 							{connectionStatus !== "connected" ? (
 								<SetupView
 									connectionStatus={connectionStatus}
 									kioskStatus={kioskStatus}
-									errorMessage={tapWorkflow.errorDialog.message}
+									errorMessage={inventoryWorkflow.errorDialog.message}
 									onConnect={() => {
 										void connect();
 									}}
@@ -138,22 +132,14 @@ function App() {
 								<ReadyView
 									logoUrl={logoUrl}
 									isFullscreen={isFullscreen}
-									isProcessing={tapWorkflow.isProcessing}
+									isProcessing={inventoryWorkflow.isProcessing}
 									onToggleFullscreen={toggleFullscreen}
 								/>
 							)}
 						</div>
 					</main>
 
-					{connectionStatus === "connected" && (
-						<OneTimeLoginQR
-							code={tapWorkflow.oneTimeLogin?.code ?? null}
-							clientUrl={clientBaseUrl}
-							expiresAt={tapWorkflow.oneTimeLogin?.expiresAt ?? null}
-							onShow={tapWorkflow.handleLoginWithoutCard}
-							onHide={tapWorkflow.handleLoginWithoutCardCancel}
-						/>
-					)}
+					{/* One-time QR login removed for inventory kiosk */}
 				</div>
 			</KioskContainer>
 		</ErrorBoundary>

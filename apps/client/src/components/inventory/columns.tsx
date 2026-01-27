@@ -52,7 +52,19 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 			header: "Quantity",
 			cell: (info) => {
 				const row = info.row.original as ItemRow;
-				return row.snapshot?.quantity ?? "-";
+				if (row.currentQuantity !== undefined && row.currentQuantity !== null) {
+					return row.currentQuantity;
+				}
+				return "-";
+			},
+		},
+		{
+			id: "created",
+			header: "Created",
+			cell: (info) => {
+				const row = info.row.original as ItemRow;
+				if (!row.createdAt) return "-";
+				return `${formatDistanceToNow(new Date(row.createdAt))} ago`;
 			},
 		},
 		{
