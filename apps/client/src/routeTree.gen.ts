@@ -20,6 +20,7 @@ import { Route as AppAppIndexRouteImport } from './routes/app/_app/index'
 import { Route as AppShiftsShiftTypesRouteImport } from './routes/app/shifts/shift-types'
 import { Route as AppShiftsShiftSchedulesRouteImport } from './routes/app/shifts/shift-schedules'
 import { Route as AppShiftsSchedulingRouteImport } from './routes/app/shifts/scheduling'
+import { Route as AppShiftsScheduleOverviewRouteImport } from './routes/app/shifts/schedule-overview'
 import { Route as AppShiftsReportsRouteImport } from './routes/app/shifts/reports'
 import { Route as AppShiftsPeriodExceptionsRouteImport } from './routes/app/shifts/period-exceptions'
 import { Route as AppShiftsPeriodDetailsRouteImport } from './routes/app/shifts/period-details'
@@ -96,6 +97,12 @@ const AppShiftsSchedulingRoute = AppShiftsSchedulingRouteImport.update({
   path: '/scheduling',
   getParentRoute: () => AppShiftsRoute,
 } as any)
+const AppShiftsScheduleOverviewRoute =
+  AppShiftsScheduleOverviewRouteImport.update({
+    id: '/schedule-overview',
+    path: '/schedule-overview',
+    getParentRoute: () => AppShiftsRoute,
+  } as any)
 const AppShiftsReportsRoute = AppShiftsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -229,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
   '/app/shifts/reports': typeof AppShiftsReportsRoute
+  '/app/shifts/schedule-overview': typeof AppShiftsScheduleOverviewRoute
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
@@ -260,6 +268,7 @@ export interface FileRoutesByTo {
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
   '/app/shifts/reports': typeof AppShiftsReportsRoute
+  '/app/shifts/schedule-overview': typeof AppShiftsScheduleOverviewRoute
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
@@ -294,6 +303,7 @@ export interface FileRoutesById {
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
   '/app/shifts/reports': typeof AppShiftsReportsRoute
+  '/app/shifts/schedule-overview': typeof AppShiftsScheduleOverviewRoute
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/app/shifts/period-details'
     | '/app/shifts/period-exceptions'
     | '/app/shifts/reports'
+    | '/app/shifts/schedule-overview'
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/app/shifts/period-details'
     | '/app/shifts/period-exceptions'
     | '/app/shifts/reports'
+    | '/app/shifts/schedule-overview'
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
@@ -393,6 +405,7 @@ export interface FileRouteTypes {
     | '/app/shifts/period-details'
     | '/app/shifts/period-exceptions'
     | '/app/shifts/reports'
+    | '/app/shifts/schedule-overview'
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
@@ -488,6 +501,13 @@ declare module '@tanstack/react-router' {
       path: '/scheduling'
       fullPath: '/app/shifts/scheduling'
       preLoaderRoute: typeof AppShiftsSchedulingRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/schedule-overview': {
+      id: '/app/shifts/schedule-overview'
+      path: '/schedule-overview'
+      fullPath: '/app/shifts/schedule-overview'
+      preLoaderRoute: typeof AppShiftsScheduleOverviewRouteImport
       parentRoute: typeof AppShiftsRoute
     }
     '/app/shifts/reports': {
@@ -696,6 +716,7 @@ interface AppShiftsRouteChildren {
   AppShiftsPeriodDetailsRoute: typeof AppShiftsPeriodDetailsRoute
   AppShiftsPeriodExceptionsRoute: typeof AppShiftsPeriodExceptionsRoute
   AppShiftsReportsRoute: typeof AppShiftsReportsRoute
+  AppShiftsScheduleOverviewRoute: typeof AppShiftsScheduleOverviewRoute
   AppShiftsSchedulingRoute: typeof AppShiftsSchedulingRoute
   AppShiftsShiftSchedulesRoute: typeof AppShiftsShiftSchedulesRoute
   AppShiftsShiftTypesRoute: typeof AppShiftsShiftTypesRoute
@@ -710,6 +731,7 @@ const AppShiftsRouteChildren: AppShiftsRouteChildren = {
   AppShiftsPeriodDetailsRoute: AppShiftsPeriodDetailsRoute,
   AppShiftsPeriodExceptionsRoute: AppShiftsPeriodExceptionsRoute,
   AppShiftsReportsRoute: AppShiftsReportsRoute,
+  AppShiftsScheduleOverviewRoute: AppShiftsScheduleOverviewRoute,
   AppShiftsSchedulingRoute: AppShiftsSchedulingRoute,
   AppShiftsShiftSchedulesRoute: AppShiftsShiftSchedulesRoute,
   AppShiftsShiftTypesRoute: AppShiftsShiftTypesRoute,
