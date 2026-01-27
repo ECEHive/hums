@@ -46,6 +46,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
+import { getLastVisitedManageUser } from "@/hooks/use-manage-users-memory";
 import { useShiftAccess } from "@/hooks/use-shift-access";
 import { checkPermissions } from "@/lib/permissions";
 import { permissions as attendancePagePermissions } from "@/routes/app/shifts/attendance";
@@ -233,19 +234,29 @@ export function ShiftsSidebar() {
 							)}
 							<SidebarGroupContent>
 								<SidebarMenu>
-									{visibleItems.map((item) => (
-										<SidebarMenuItem key={item.title}>
-											<SidebarMenuButton
-												asChild
-												isActive={isPathActive(item.url)}
-											>
-												<Link to={item.url}>
-													<item.icon />
-													<span>{item.title}</span>
-												</Link>
-											</SidebarMenuButton>
-										</SidebarMenuItem>
-									))}
+									{visibleItems.map((item) => {
+										// For Manage Users, check if there's a remembered user to navigate to
+										let targetUrl = item.url;
+										if (item.url === "/app/shifts/manage-users") {
+											const lastUserId = getLastVisitedManageUser();
+											if (lastUserId) {
+												targetUrl = `/app/shifts/manage-users/${lastUserId}`;
+											}
+										}
+										return (
+											<SidebarMenuItem key={item.title}>
+												<SidebarMenuButton
+													asChild
+													isActive={isPathActive(item.url)}
+												>
+													<Link to={targetUrl}>
+														<item.icon />
+														<span>{item.title}</span>
+													</Link>
+												</SidebarMenuButton>
+											</SidebarMenuItem>
+										);
+									})}
 								</SidebarMenu>
 							</SidebarGroupContent>
 						</SidebarGroup>

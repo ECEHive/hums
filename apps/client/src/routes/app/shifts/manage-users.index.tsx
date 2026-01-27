@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2Icon, RefreshCcwIcon, UserIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RequirePermissions } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -40,6 +40,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { clearManageUsersMemory } from "@/hooks/use-manage-users-memory";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import type { RequiredPermissions } from "@/lib/permissions";
@@ -324,6 +325,12 @@ function RolesFilterInput({
 function ManageUsersPage() {
 	const { period: selectedPeriodId } = usePeriod();
 	const [filters, setFilters] = useState<ShiftFilters>(DEFAULT_FILTERS);
+
+	// Clear the "memory" when visiting the users list page
+	// This ensures clicking the sidebar will go to this page next time
+	useEffect(() => {
+		clearManageUsersMemory();
+	}, []);
 
 	const {
 		page,
