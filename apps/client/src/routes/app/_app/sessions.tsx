@@ -1,7 +1,13 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { ClockIcon, Loader2Icon, RefreshCcwIcon, UserCog } from "lucide-react";
+import {
+	ClockIcon,
+	Loader2Icon,
+	RefreshCcwIcon,
+	UserCog,
+	UsersIcon,
+} from "lucide-react";
 import React, { useState } from "react";
 import { RequirePermissions, useAuth } from "@/auth";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -17,6 +23,7 @@ import {
 } from "@/components/layout";
 import { AdminSessionManagementDialog } from "@/components/sessions/admin-session-management-dialog";
 import { generateColumns } from "@/components/sessions/columns";
+import { CurrentStaffingCard } from "@/components/sessions/current-staffing-card";
 import {
 	DataTable,
 	FilterField,
@@ -40,6 +47,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import { checkPermissions } from "@/lib/permissions";
@@ -72,6 +80,7 @@ function SessionsPage() {
 		"regular" | "staffing" | null
 	>(null);
 	const [manageDialogOpen, setManageDialogOpen] = useState(false);
+	const [activeTab, setActiveTab] = useState<"list" | "staffing">("list");
 
 	const canManageSessions = user && checkPermissions(user, ["sessions.manage"]);
 
@@ -162,146 +171,177 @@ function SessionsPage() {
 			</PageHeader>
 
 			<PageContent>
-				{/* Stats Cards */}
-				<div className="grid gap-4 md:grid-cols-3">
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">
-								Total Active Sessions
-							</CardTitle>
-							<ClockIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							{isStatsLoading ? (
-								<Spinner />
-							) : (
-								<div className="text-2xl font-bold">
-									{statsData?.totalActive ?? 0}
-								</div>
-							)}
-							<p className="text-xs text-muted-foreground">currently active</p>
-						</CardContent>
-					</Card>
+				<Tabs
+					value={activeTab}
+					onValueChange={(value) => setActiveTab(value as "list" | "staffing")}
+					className="space-y-4"
+				>
+					<TabsList>
+						<TabsTrigger value="list">
+							<ClockIcon className="mr-2 h-4 w-4" />
+							Sessions List
+						</TabsTrigger>
+						<TabsTrigger value="staffing">
+							<UsersIcon className="mr-2 h-4 w-4" />
+							Current Staffing
+						</TabsTrigger>
+					</TabsList>
 
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">
-								Active Regular Sessions
-							</CardTitle>
-							<ClockIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							{isStatsLoading ? (
-								<Spinner />
-							) : (
-								<div className="text-2xl font-bold">
-									{statsData?.activeRegular ?? 0}
-								</div>
-							)}
-							<p className="text-xs text-muted-foreground">regular sessions</p>
-						</CardContent>
-					</Card>
+					<TabsContent value="list" className="space-y-4">
+						{/* Stats Cards */}
+						<div className="grid gap-4 md:grid-cols-3">
+							<Card>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium">
+										Total Active Sessions
+									</CardTitle>
+									<ClockIcon className="h-4 w-4 text-muted-foreground" />
+								</CardHeader>
+								<CardContent>
+									{isStatsLoading ? (
+										<Spinner />
+									) : (
+										<div className="text-2xl font-bold">
+											{statsData?.totalActive ?? 0}
+										</div>
+									)}
+									<p className="text-xs text-muted-foreground">
+										currently active
+									</p>
+								</CardContent>
+							</Card>
 
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">
-								Active Staffing Sessions
-							</CardTitle>
-							<ClockIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							{isStatsLoading ? (
-								<Spinner />
-							) : (
-								<div className="text-2xl font-bold">
-									{statsData?.activeStaffing ?? 0}
-								</div>
-							)}
-							<p className="text-xs text-muted-foreground">staffing sessions</p>
-						</CardContent>
-					</Card>
-				</div>
+							<Card>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium">
+										Active Regular Sessions
+									</CardTitle>
+									<ClockIcon className="h-4 w-4 text-muted-foreground" />
+								</CardHeader>
+								<CardContent>
+									{isStatsLoading ? (
+										<Spinner />
+									) : (
+										<div className="text-2xl font-bold">
+											{statsData?.activeRegular ?? 0}
+										</div>
+									)}
+									<p className="text-xs text-muted-foreground">
+										regular sessions
+									</p>
+								</CardContent>
+							</Card>
 
-				{/* Sessions Table */}
-				<Card>
-					<CardHeader>
-						<CardTitle>All Sessions</CardTitle>
-						<CardDescription>View and filter all user sessions</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<TableContainer>
-							<TableToolbar>
-								<TableSearchInput className="max-w-md">
-									<SearchInput
-										placeholder="Search by user name, username, or email..."
-										value={search}
-										onChange={(value) => {
-											setSearch(value);
-											resetToFirstPage();
-										}}
-									/>
-								</TableSearchInput>
-								<TableFilters
-									activeFiltersCount={filterSessionType ? 1 : 0}
-									hasActiveFilters={!!filterSessionType}
-									onReset={() => {
-										setFilterSessionType(null);
-										resetToFirstPage();
-									}}
-								>
-									<FilterField label="Session Type">
-										<Select
-											value={filterSessionType || "all"}
-											onValueChange={(value) => {
-												setFilterSessionType(
-													value === "all"
-														? null
-														: (value as "regular" | "staffing"),
-												);
+							<Card>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium">
+										Active Staffing Sessions
+									</CardTitle>
+									<ClockIcon className="h-4 w-4 text-muted-foreground" />
+								</CardHeader>
+								<CardContent>
+									{isStatsLoading ? (
+										<Spinner />
+									) : (
+										<div className="text-2xl font-bold">
+											{statsData?.activeStaffing ?? 0}
+										</div>
+									)}
+									<p className="text-xs text-muted-foreground">
+										staffing sessions
+									</p>
+								</CardContent>
+							</Card>
+						</div>
+
+						{/* Sessions Table */}
+						<Card>
+							<CardHeader>
+								<CardTitle>All Sessions</CardTitle>
+								<CardDescription>
+									View and filter all user sessions
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<TableContainer>
+									<TableToolbar>
+										<TableSearchInput className="max-w-md">
+											<SearchInput
+												placeholder="Search by user name, username, or email..."
+												value={search}
+												onChange={(value) => {
+													setSearch(value);
+													resetToFirstPage();
+												}}
+											/>
+										</TableSearchInput>
+										<TableFilters
+											activeFiltersCount={filterSessionType ? 1 : 0}
+											hasActiveFilters={!!filterSessionType}
+											onReset={() => {
+												setFilterSessionType(null);
 												resetToFirstPage();
 											}}
 										>
-											<SelectTrigger>
-												<SelectValue placeholder="All types" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="all">All types</SelectItem>
-												<SelectItem value="regular">Regular</SelectItem>
-												<SelectItem value="staffing">Staffing</SelectItem>
-											</SelectContent>
-										</Select>
-									</FilterField>
-								</TableFilters>
-							</TableToolbar>
+											<FilterField label="Session Type">
+												<Select
+													value={filterSessionType || "all"}
+													onValueChange={(value) => {
+														setFilterSessionType(
+															value === "all"
+																? null
+																: (value as "regular" | "staffing"),
+														);
+														resetToFirstPage();
+													}}
+												>
+													<SelectTrigger>
+														<SelectValue placeholder="All types" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="all">All types</SelectItem>
+														<SelectItem value="regular">Regular</SelectItem>
+														<SelectItem value="staffing">Staffing</SelectItem>
+													</SelectContent>
+												</Select>
+											</FilterField>
+										</TableFilters>
+									</TableToolbar>
 
-							<DataTable
-								columns={columns}
-								data={sessions}
-								isLoading={isLoading}
-								emptyMessage="No sessions found"
-								emptyDescription="Try adjusting your search or filters"
-							/>
+									<DataTable
+										columns={columns}
+										data={sessions}
+										isLoading={isLoading}
+										emptyMessage="No sessions found"
+										emptyDescription="Try adjusting your search or filters"
+									/>
 
-							{sessionsData && sessionsData.total > 0 && (
-								<TablePaginationFooter
-									page={page}
-									totalPages={totalPages}
-									onPageChange={setPage}
-									offset={offset}
-									currentCount={sessions.length}
-									total={sessionsData.total}
-									itemName="sessions"
-									pageSize={pageSize}
-									onPageSizeChange={(size) => {
-										setPageSize(size);
-										resetToFirstPage();
-									}}
-									pageSizeOptions={[10, 20, 50, 100]}
-								/>
-							)}
-						</TableContainer>
-					</CardContent>
-				</Card>
+									{sessionsData && sessionsData.total > 0 && (
+										<TablePaginationFooter
+											page={page}
+											totalPages={totalPages}
+											onPageChange={setPage}
+											offset={offset}
+											currentCount={sessions.length}
+											total={sessionsData.total}
+											itemName="sessions"
+											pageSize={pageSize}
+											onPageSizeChange={(size) => {
+												setPageSize(size);
+												resetToFirstPage();
+											}}
+											pageSizeOptions={[10, 20, 50, 100]}
+										/>
+									)}
+								</TableContainer>
+							</CardContent>
+						</Card>
+					</TabsContent>
+
+					<TabsContent value="staffing">
+						<CurrentStaffingCard refetchInterval={10 * 1000} />
+					</TabsContent>
+				</Tabs>
 			</PageContent>
 
 			<AdminSessionManagementDialog

@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/prisma",
-	"version": "1.6.3",
+	"version": "1.7.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -13,7 +13,7 @@
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
 		"@prisma/adapter-pg": "^7.1.0",
-		"@prisma/client": "^7.1.0",
+		"@prisma/client": "^7.3.0",
 		"pg": "^8.16.3",
 		"prisma": "^7.2.0"
 	},

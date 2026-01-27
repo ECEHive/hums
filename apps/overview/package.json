@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/overview",
-	"version": "1.6.3",
+	"version": "1.7.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -27,11 +27,11 @@
 		"@tanstack/react-router": "^1.140.0",
 		"@trpc/client": "11.7.2",
 		"@trpc/tanstack-react-query": "11.8.1",
-		"@vitejs/plugin-basic-ssl": "^2.1.0",
+		"@vitejs/plugin-basic-ssl": "^2.1.4",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"dayjs": "^1.11.19",
-		"lucide-react": "^0.562.0",
+		"lucide-react": "^0.563.0",
 		"react": "^19.2.3",
 		"react-dom": "^19.2.3",
 		"recharts": "3.6.0",

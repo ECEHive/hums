@@ -12,6 +12,10 @@ import {
 	adminManageSessionHandler,
 	ZAdminManageSessionSchema,
 } from "./adminManageSession.route";
+import {
+	currentStaffingHandler,
+	ZCurrentStaffingSchema,
+} from "./currentStaffing.route";
 import { endMySessionHandler, ZEndMySessionSchema } from "./endMySession.route";
 import { listHandler, ZListSchema } from "./list.route";
 import { listMyHandler, ZListMySchema } from "./listMy.route";
@@ -26,6 +30,9 @@ export const sessionsRouter = router({
 	stats: permissionProtectedProcedure("sessions.list")
 		.input(ZStatsSchema)
 		.query(statsHandler),
+	currentStaffing: permissionProtectedProcedure("sessions.list")
+		.input(ZCurrentStaffingSchema)
+		.query(currentStaffingHandler),
 	listMy: protectedProcedure.input(ZListMySchema).query(listMyHandler),
 	myStats: protectedProcedure.input(ZMyStatsSchema).query(myStatsHandler),
 	endMySession: protectedProcedure

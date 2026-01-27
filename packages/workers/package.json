@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/workers",
-	"version": "1.6.3",
+	"version": "1.7.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -13,7 +13,7 @@
 		"@ecehive/features": "workspace:*",
 		"@ecehive/logger": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
-		"cron": "^4.3.4"
+		"cron": "^4.4.0"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
