@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useManageUsersMemory } from "@/hooks/use-manage-users-memory";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/shifts/manage-users/$userId")({
@@ -57,6 +58,9 @@ function ManageUserDetailPage() {
 	const canManageAssignments = checkPermissions(currentUser, permissions);
 	const canViewUpcoming = checkPermissions(currentUser, permissions);
 	const canViewAttendance = checkPermissions(currentUser, permissions);
+
+	// Remember this user visit for sidebar navigation
+	useManageUsersMemory(userId);
 
 	// Fetch user info
 	const userQuery = useQuery({
