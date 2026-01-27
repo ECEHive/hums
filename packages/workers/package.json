@@ -13,7 +13,7 @@
 		"@ecehive/features": "workspace:*",
 		"@ecehive/logger": "workspace:*",
 		"@ecehive/prisma": "workspace:*",
-		"cron": "^4.3.4"
+		"cron": "^4.4.0"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
