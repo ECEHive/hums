@@ -5,6 +5,7 @@ import {
 	findUserByCard,
 	getActiveSuspension,
 	getCurrentSession,
+	hasActiveAttendance,
 	startSession,
 	switchSessionType,
 } from "@ecehive/features";
@@ -21,6 +22,7 @@ export const ZTapInOutSchema = z.object({
 		.enum(["end_session", "switch_to_staffing", "switch_to_regular"])
 		.optional(),
 	forceEarlyLeave: z.boolean().optional(),
+	forceShiftEarlyLeave: z.boolean().optional(),
 });
 
 export type TTapInOutSchema = z.infer<typeof ZTapInOutSchema>;
@@ -31,7 +33,13 @@ export type TTapInOutOptions = {
 };
 
 export async function tapInOutHandler(options: TTapInOutOptions) {
-	const { cardNumber, sessionType, tapAction, forceEarlyLeave } = options.input;
+	const {
+		cardNumber,
+		sessionType,
+		tapAction,
+		forceEarlyLeave,
+		forceShiftEarlyLeave,
+	} = options.input;
 
 	const user = await findUserByCard(cardNumber);
 
@@ -150,6 +158,22 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				};
 			}
 
+			// Check if leaving staffing session early (has active attendance)
+			if (
+				mostRecentSession.sessionType === "staffing" &&
+				!forceShiftEarlyLeave
+			) {
+				const hasActive = await hasActiveAttendance(tx, user.id, now);
+				if (hasActive) {
+					return {
+						status: "confirm_shift_early_leave" as const,
+						user,
+						currentSession: mostRecentSession,
+						action: "switch_to_regular" as const,
+					};
+				}
+			}
+
 			const { endedSession, newSession } = await switchSessionType(
 				tx,
 				mostRecentSession.id,
@@ -175,6 +199,19 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 					status: "confirm_early_leave" as const,
 					user,
 					currentSession: mostRecentSession,
+				};
+			}
+		}
+
+		// For staff users leaving a staffing session, check if they have active attendance
+		if (mostRecentSession.sessionType === "staffing" && !forceShiftEarlyLeave) {
+			const hasActive = await hasActiveAttendance(tx, user.id, now);
+			if (hasActive) {
+				return {
+					status: "confirm_shift_early_leave" as const,
+					user,
+					currentSession: mostRecentSession,
+					action: "end_session" as const,
 				};
 			}
 		}

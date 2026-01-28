@@ -86,6 +86,23 @@ export type TapResponse =
 			};
 	  }
 	| {
+			status: "confirm_shift_early_leave";
+			user: {
+				id: number;
+				name: string;
+				email: string;
+				username: string;
+			};
+			currentSession: {
+				id: number;
+				userId: number;
+				sessionType: "regular" | "staffing";
+				startedAt: Date;
+				endedAt: Date | null;
+			};
+			action: "end_session" | "switch_to_regular";
+	  }
+	| {
 			status: "agreements_required";
 			user: {
 				id: number;

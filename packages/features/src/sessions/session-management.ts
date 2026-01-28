@@ -353,3 +353,56 @@ export async function getCurrentSession(
 		orderBy: { startedAt: "desc" },
 	});
 }
+
+/**
+ * Check if a user has an active attendance record (currently on a shift)
+ * An active attendance is one that has a timeIn but no timeOut,
+ * and the shift is still in progress
+ */
+export async function hasActiveAttendance(
+	tx: Prisma.TransactionClient,
+	userId: number,
+	now: Date = new Date(),
+): Promise<boolean> {
+	const activeAttendance = await tx.shiftAttendance.findFirst({
+		where: {
+			userId,
+			timeIn: { not: null },
+			timeOut: null,
+			status: { notIn: PROTECTED_ATTENDANCE_STATUSES },
+			shiftOccurrence: {
+				timestamp: { lte: now },
+			},
+		},
+		include: {
+			shiftOccurrence: {
+				include: {
+					shiftSchedule: {
+						select: {
+							startTime: true,
+							endTime: true,
+						},
+					},
+				},
+			},
+		},
+	});
+
+	if (!activeAttendance) {
+		return false;
+	}
+
+	// Check if the shift is still in progress
+	const scheduledStart = computeOccurrenceStart(
+		new Date(activeAttendance.shiftOccurrence.timestamp),
+		activeAttendance.shiftOccurrence.shiftSchedule.startTime,
+	);
+	const occEnd = computeOccurrenceEnd(
+		scheduledStart,
+		activeAttendance.shiftOccurrence.shiftSchedule.startTime,
+		activeAttendance.shiftOccurrence.shiftSchedule.endTime,
+	);
+
+	// Return true only if the shift hasn't ended yet
+	return now < occEnd;
+}
