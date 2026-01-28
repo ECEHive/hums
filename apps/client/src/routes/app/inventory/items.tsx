@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { BarcodeIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
-// Items listing is public
+import { useAuth } from "@/auth/AuthProvider";
 import { generateColumns } from "@/components/inventory/columns";
 import { CreateDialog } from "@/components/inventory/create-dialog";
 import { ImportCsvDialog } from "@/components/inventory/import-csv-dialog";
@@ -36,6 +36,7 @@ import {
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import { printBarcodeLabels } from "@/lib/inventory/barcode-labels";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/inventory/items")({
 	component: () => <Items />,
@@ -66,12 +67,7 @@ export function Items() {
 				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
 			offset,
 			limit: pageSize,
-			isActive:
-				activeFilter === "all"
-					? undefined
-					: activeFilter === "active"
-						? true
-						: false,
+			isActive: activeFilter === "all" ? undefined : activeFilter === "active",
 			lowQuantity: showLowQuantity || undefined,
 		};
 	}, [debouncedSearch, offset, pageSize, activeFilter, showLowQuantity]);
@@ -111,6 +107,11 @@ export function Items() {
 		printBarcodeLabels(itemRows);
 	}, [data.items]);
 
+	const user = useAuth().user;
+	// Require creation permission to print barcodes
+	const canPrintBarcodes =
+		user && checkPermissions(user, ["inventory.items.create"]);
+
 	return (
 		<Page>
 			<PageHeader>
@@ -131,6 +132,7 @@ export function Items() {
 						variant="outline"
 						onClick={handlePrintBarcodes}
 						disabled={data.items.length === 0}
+						hidden={!canPrintBarcodes}
 					>
 						<BarcodeIcon className="size-4" />
 						Print Labels

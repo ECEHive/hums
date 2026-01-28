@@ -18,7 +18,13 @@ export type TListItemsOptions = {
 };
 
 export async function listItemsHandler(options: TListItemsOptions) {
-	const { search, limit = 100, offset = 0, isActive, lowQuantity } = options.input;
+	const {
+		search,
+		limit = 100,
+		offset = 0,
+		isActive,
+		lowQuantity,
+	} = options.input;
 
 	const where: Prisma.ItemWhereInput = {
 		...(isActive !== undefined && { isActive }),

@@ -27,11 +27,11 @@ import {
 	updateHandler as updateRequestHandler,
 	ZUpdateSchema as ZUpdateRequestSchema,
 } from "./requests/update.route";
+import { scanUserHandler, ZScanUserSchema } from "./scanUser.route";
 import {
 	createSnapshotHandler,
 	ZCreateSnapshotSchema,
 } from "./snapshots/createSnapshot.route";
-import { scanUserHandler, ZScanUserSchema } from "./scanUser.route";
 import { checkInHandler, ZCheckInSchema } from "./transactions/checkIn.route";
 import {
 	checkOutHandler,

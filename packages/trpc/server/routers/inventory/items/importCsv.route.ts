@@ -89,10 +89,10 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 	);
 
 	// Find column indices
-	const nameIndex = headers.findIndex((h) => h === "name");
-	const descriptionIndex = headers.findIndex((h) => h === "description");
-	const skuIndex = headers.findIndex((h) => h === "sku");
-	const locationIndex = headers.findIndex((h) => h === "location");
+	const nameIndex = headers.indexOf("name");
+	const descriptionIndex = headers.indexOf("description");
+	const skuIndex = headers.indexOf("sku");
+	const locationIndex = headers.indexOf("location");
 	const minQuantityIndex = headers.findIndex((h) =>
 		["minquantity", "min_quantity", "minqty"].includes(h),
 	);

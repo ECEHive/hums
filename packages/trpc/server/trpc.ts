@@ -177,7 +177,9 @@ export const kioskProtectedProcedure = t.procedure.use(async (opts) => {
 });
 
 export type TInventoryProtectedProcedureContext =
-	inferProcedureBuilderResolverOptions<typeof inventoryProtectedProcedure>["ctx"];
+	inferProcedureBuilderResolverOptions<
+		typeof inventoryProtectedProcedure
+	>["ctx"];
 
 /**
  * A procedure that requires the request to come from a registered device IP address.

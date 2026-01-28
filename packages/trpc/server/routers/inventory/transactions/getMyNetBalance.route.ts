@@ -13,9 +13,7 @@ export type TGetMyNetBalanceOptions = {
 	input: TGetMyNetBalanceSchema;
 };
 
-export async function getMyNetBalanceHandler(
-	options: TGetMyNetBalanceOptions,
-) {
+export async function getMyNetBalanceHandler(options: TGetMyNetBalanceOptions) {
 	const { search } = options.input;
 	const userId = options.ctx.user.id;
 

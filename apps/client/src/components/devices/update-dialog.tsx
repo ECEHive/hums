@@ -147,7 +147,6 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
-
 					<form.Field name="ipAddress">
 						{(field) => (
 							<Field>
@@ -162,7 +161,6 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
-
 					<form.Field name="isActive">
 						{(field) => (
 							<Field>
@@ -179,7 +177,6 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
-
 					<div className="border-t pt-4 space-y-4">
 						<h4 className="text-sm font-medium">Access Permissions</h4>
 
@@ -203,48 +200,49 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 							)}
 						</form.Field>
 
-					<form.Field name="hasDashboardAccess">
-						{(field) => (
-							<Field>
-								<div className="flex items-center space-x-2">
-									<Checkbox
-										checked={field.state.value}
-										onCheckedChange={(checked: boolean) =>
-											field.handleChange(checked)
-										}
-									/>
-									<FieldLabel className="!mt-0">Dashboard Access</FieldLabel>
-								</div>
-								<p className="text-xs text-muted-foreground ml-6">
-									Allow this device to view staffing information on the
-									dashboard
-								</p>
-								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
-							</Field>
-						)}
-					</form.Field>
+						<form.Field name="hasDashboardAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Dashboard Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to view staffing information on the
+										dashboard
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
 
-					<form.Field name="hasInventoryAccess">
-						{(field) => (
-							<Field>
-								<div className="flex items-center space-x-2">
-									<Checkbox
-										checked={field.state.value}
-										onCheckedChange={(checked: boolean) =>
-											field.handleChange(checked)
-										}
-									/>
-									<FieldLabel className="!mt-0">Inventory Access</FieldLabel>
-								</div>
-								<p className="text-xs text-muted-foreground ml-6">
-									Allow this device to access the inventory kiosk for
-									check-in/check-out
-								</p>
-								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
-							</Field>
-						)}
-					</form.Field>
-				</div>					{serverError && (
+						<form.Field name="hasInventoryAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Inventory Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to access the inventory kiosk for
+										check-in/check-out
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+					</div>{" "}
+					{serverError && (
 						<div className="text-sm text-destructive">{serverError}</div>
 					)}
 				</form>

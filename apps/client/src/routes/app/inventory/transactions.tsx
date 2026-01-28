@@ -84,9 +84,7 @@ function Transactions() {
 	const { data: summaryData = [] } = useQuery({
 		queryKey: ["inventory", "transactions", "netBalance", summaryQueryParams],
 		queryFn: async () =>
-			await trpc.inventory.transactions.getNetBalance.query(
-				summaryQueryParams,
-			),
+			await trpc.inventory.transactions.getNetBalance.query(summaryQueryParams),
 		retry: false,
 	});
 

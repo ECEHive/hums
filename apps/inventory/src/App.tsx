@@ -27,8 +27,7 @@ function App() {
 
 	const kioskStatus: KioskStatus = {
 		isKiosk: !!(
-			deviceStatusData?.status &&
-			deviceStatusData.device?.hasInventoryAccess
+			deviceStatusData?.status && deviceStatusData.device?.hasInventoryAccess
 		),
 		ip: deviceStatusData?.status
 			? deviceStatusData.device?.ipAddress

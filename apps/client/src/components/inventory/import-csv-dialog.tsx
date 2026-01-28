@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileUpIcon, InfoIcon, Loader2Icon } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -14,6 +15,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { checkPermissions } from "@/lib/permissions";
 
 interface ImportCsvDialogProps {
 	onImportComplete?: () => void;
@@ -32,14 +34,14 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 		},
 		onSuccess: (data) => {
 			queryClient.invalidateQueries({ queryKey: ["inventory", "items"] });
-			
+
 			let message = `Successfully imported ${data.createdCount} item(s)`;
 			if (data.failedCount > 0) {
 				message += `. ${data.failedCount} item(s) failed.`;
 			}
-			
+
 			toast.success(message);
-			
+
 			if (data.failed.length > 0) {
 				const failedDetails = data.failed
 					.map((f) => `${f.name}: ${f.error}`)
@@ -48,7 +50,7 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 					duration: 10000,
 				});
 			}
-			
+
 			setOpen(false);
 			setFile(null);
 			onImportComplete?.();
@@ -75,7 +77,10 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 
 		if (e.dataTransfer.files?.[0]) {
 			const droppedFile = e.dataTransfer.files[0];
-			if (droppedFile.type === "text/csv" || droppedFile.name.endsWith(".csv")) {
+			if (
+				droppedFile.type === "text/csv" ||
+				droppedFile.name.endsWith(".csv")
+			) {
 				setFile(droppedFile);
 			} else {
 				toast.error("Please upload a CSV file");
@@ -106,10 +111,13 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 		reader.readAsText(file);
 	};
 
+	const user = useAuth().user;
+	const canCreate = user && checkPermissions(user, ["inventory.items.create"]);
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button variant="outline">
+				<Button variant="outline" hidden={!canCreate}>
 					<FileUpIcon className="size-4" />
 					Import CSV
 				</Button>
@@ -134,17 +142,18 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 										<strong>Required column:</strong> name (case-insensitive)
 									</li>
 									<li>
-										<strong>Optional columns:</strong> description, sku, location,
-										minQuantity, initialQuantity, isActive
+										<strong>Optional columns:</strong> description, sku,
+										location, minQuantity, initialQuantity, isActive
 									</li>
 									<li>Header row is required</li>
 									<li>Column names are case-insensitive</li>
 									<li>
-										If SKU is not provided, it will be auto-generated (8-character
-										alphanumeric code)
+										If SKU is not provided, it will be auto-generated
+										(8-character alphanumeric code)
 									</li>
 									<li>
-										initialQuantity sets the starting inventory snapshot quantity
+										initialQuantity sets the starting inventory snapshot
+										quantity
 									</li>
 									<li>
 										isActive accepts: true/false, 1/0, yes/no, y/n (defaults to
@@ -152,7 +161,8 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 									</li>
 								</ul>
 								<p className="mt-2 text-xs text-muted-foreground">
-									<strong>Example header:</strong> name,description,sku,location,minQuantity,initialQuantity,isActive
+									<strong>Example header:</strong>{" "}
+									name,description,sku,location,minQuantity,initialQuantity,isActive
 								</p>
 							</div>
 						</div>
