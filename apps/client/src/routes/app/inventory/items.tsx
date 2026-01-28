@@ -23,6 +23,15 @@ import {
 	TablePaginationFooter,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import { printBarcodeLabels } from "@/lib/inventory/barcode-labels";
@@ -44,14 +53,27 @@ export function Items() {
 		resetToFirstPage,
 	} = useTableState();
 
+	// Filter states
+	const [activeFilter, setActiveFilter] = React.useState<
+		"active" | "inactive" | "all"
+	>("active");
+	const [showLowQuantity, setShowLowQuantity] = React.useState(false);
+
 	const queryParams = React.useMemo(() => {
 		return {
 			search:
 				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
 			offset,
 			limit: pageSize,
+			isActive:
+				activeFilter === "all"
+					? undefined
+					: activeFilter === "active"
+						? true
+						: false,
+			lowQuantity: showLowQuantity || undefined,
 		};
-	}, [debouncedSearch, offset, pageSize]);
+	}, [debouncedSearch, offset, pageSize, activeFilter, showLowQuantity]);
 
 	const {
 		data = { items: [], count: 0 },
@@ -128,6 +150,45 @@ export function Items() {
 								}}
 							/>
 						</TableSearchInput>
+						<div className="flex items-center gap-4">
+							<div className="flex items-center gap-2">
+								<Label htmlFor="active-filter" className="text-sm font-medium">
+									Status:
+								</Label>
+								<Select
+									value={activeFilter}
+									onValueChange={(value: "active" | "inactive" | "all") => {
+										setActiveFilter(value);
+										resetToFirstPage();
+									}}
+								>
+									<SelectTrigger id="active-filter" className="w-[140px]">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="active">Active only</SelectItem>
+										<SelectItem value="inactive">Inactive only</SelectItem>
+										<SelectItem value="all">All items</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex items-center gap-2">
+								<Checkbox
+									id="low-quantity"
+									checked={showLowQuantity}
+									onCheckedChange={(checked) => {
+										setShowLowQuantity(checked === true);
+										resetToFirstPage();
+									}}
+								/>
+								<Label
+									htmlFor="low-quantity"
+									className="text-sm font-medium cursor-pointer"
+								>
+									Low quantity
+								</Label>
+							</div>
+						</div>
 					</TableToolbar>
 
 					<DataTable

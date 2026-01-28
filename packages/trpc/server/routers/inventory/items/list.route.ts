@@ -7,6 +7,7 @@ export const ZListItemsSchema = z.object({
 	offset: z.number().min(0).optional(),
 	search: z.string().min(1).max(100).optional(),
 	isActive: z.boolean().optional(),
+	lowQuantity: z.boolean().optional(),
 });
 
 export type TListItemsSchema = z.infer<typeof ZListItemsSchema>;
@@ -17,7 +18,7 @@ export type TListItemsOptions = {
 };
 
 export async function listItemsHandler(options: TListItemsOptions) {
-	const { search, limit = 100, offset = 0, isActive } = options.input;
+	const { search, limit = 100, offset = 0, isActive, lowQuantity } = options.input;
 
 	const where: Prisma.ItemWhereInput = {
 		...(isActive !== undefined && { isActive }),
@@ -89,9 +90,19 @@ export async function listItemsHandler(options: TListItemsOptions) {
 			};
 		});
 
+		// Filter by low quantity if requested
+		const filteredItems = lowQuantity
+			? itemsWithNetQuantity.filter(
+					(item) =>
+						item.minQuantity !== null &&
+						item.currentQuantity !== null &&
+						item.currentQuantity < item.minQuantity,
+				)
+			: itemsWithNetQuantity;
+
 		return {
-			items: itemsWithNetQuantity,
-			count,
+			items: filteredItems,
+			count: lowQuantity ? filteredItems.length : count,
 		};
 	}
 
@@ -101,8 +112,18 @@ export async function listItemsHandler(options: TListItemsOptions) {
 		currentQuantity: null,
 	}));
 
+	// Filter by low quantity if requested (but items without snapshots will have null currentQuantity)
+	const filteredItems = lowQuantity
+		? itemsWithNetQuantity.filter(
+				(item) =>
+					item.minQuantity !== null &&
+					item.currentQuantity !== null &&
+					item.currentQuantity < item.minQuantity,
+			)
+		: itemsWithNetQuantity;
+
 	return {
-		items: itemsWithNetQuantity,
-		count,
+		items: filteredItems,
+		count: lowQuantity ? filteredItems.length : count,
 	};
 }
