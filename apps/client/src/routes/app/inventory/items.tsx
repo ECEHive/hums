@@ -6,6 +6,7 @@ import React from "react";
 // Items listing is public
 import { generateColumns } from "@/components/inventory/columns";
 import { CreateDialog } from "@/components/inventory/create-dialog";
+import { ImportCsvDialog } from "@/components/inventory/import-csv-dialog";
 import type { ItemRow } from "@/components/inventory/types";
 import {
 	Page,
@@ -134,6 +135,7 @@ export function Items() {
 						<BarcodeIcon className="size-4" />
 						Print Labels
 					</Button>
+					<ImportCsvDialog onImportComplete={() => resetToFirstPage()} />
 					<CreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>
 			</PageHeader>{" "}

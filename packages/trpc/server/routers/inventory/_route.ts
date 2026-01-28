@@ -12,6 +12,7 @@ import {
 	getBySkuItemHandler,
 	ZGetBySkuItemSchema,
 } from "./items/getBySku.route";
+import { importCsvHandler, ZImportCsvSchema } from "./items/importCsv.route";
 import { listItemsHandler, ZListItemsSchema } from "./items/list.route";
 import { updateItemHandler, ZUpdateItemSchema } from "./items/update.route";
 import {
@@ -70,6 +71,9 @@ export const inventoryRouter = router({
 		create: permissionProtectedProcedure("inventory.items.create")
 			.input(ZCreateItemSchema)
 			.mutation(createItemHandler),
+		importCsv: permissionProtectedProcedure("inventory.items.create")
+			.input(ZImportCsvSchema)
+			.mutation(importCsvHandler),
 		update: permissionProtectedProcedure("inventory.items.update")
 			.input(ZUpdateItemSchema)
 			.mutation(updateItemHandler),
