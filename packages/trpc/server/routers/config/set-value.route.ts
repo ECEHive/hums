@@ -1,4 +1,9 @@
-import { ConfigRegistry, ConfigService } from "@ecehive/features";
+import {
+	BrandingService,
+	ConfigRegistry,
+	ConfigService,
+	clearEmailLogoCache,
+} from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
 import type { z } from "zod";
 import type { ZSetValueSchema } from "./schemas";
@@ -21,6 +26,12 @@ export async function setValueHandler({
 
 	try {
 		await ConfigService.set(input.key, input.value);
+
+		// Clear branding caches if a branding key was updated
+		if (input.key.startsWith("branding.")) {
+			BrandingService.clearCache();
+			clearEmailLogoCache();
+		}
 	} catch (error) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",

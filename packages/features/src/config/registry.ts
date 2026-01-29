@@ -127,6 +127,30 @@ export const ConfigRegistry = {
 				return schema;
 			}
 
+			case "color": {
+				// Validate hex color format (#RGB, #RRGGBB, or #RRGGBBAA)
+				return z
+					.string()
+					.regex(
+						/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/,
+						"Must be a valid hex color (e.g., #FF0000 or #F00)",
+					);
+			}
+
+			case "svg": {
+				// Validate SVG content - must contain <svg tag
+				return z
+					.string()
+					.refine(
+						(val) => val.includes("<svg") && val.includes("</svg>"),
+						"Must be valid SVG content",
+					);
+			}
+
+			case "secret": {
+				return z.string();
+			}
+
 			case "select": {
 				if (!field.options || field.options.length === 0) {
 					return z.string();

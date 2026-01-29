@@ -35,13 +35,6 @@ export const ZSetManySchema = z.object({
 });
 
 /**
- * Reset a configuration value to default
- */
-export const ZResetValueSchema = z.object({
-	key: z.string(),
-});
-
-/**
  * Search configurations (returns keys matching search term)
  */
 export const ZSearchSchema = z.object({

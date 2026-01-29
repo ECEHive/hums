@@ -1,17 +1,26 @@
 import type { ReactNode } from "react";
-import { getEmailLogos } from "../logo-loader.js";
 
 interface EmailLayoutProps {
 	title: string;
 	preheader: string;
 	children: ReactNode;
+	logos?: {
+		light: string;
+		dark: string;
+	};
 }
 
-export function EmailLayout({ title, preheader, children }: EmailLayoutProps) {
+export function EmailLayout({
+	title,
+	preheader,
+	children,
+	logos,
+}: EmailLayoutProps) {
 	const currentYear = new Date().getFullYear();
 
-	// Load logos dynamically from client assets
-	const logos = getEmailLogos();
+	// Use provided logos or empty strings as fallback
+	const logoLight = logos?.light ?? "";
+	const logoDark = logos?.dark ?? "";
 
 	return (
 		<html lang="en">
@@ -376,7 +385,7 @@ export function EmailLayout({ title, preheader, children }: EmailLayoutProps) {
 							>
 								{/* Logo - Light mode */}
 								<img
-									src={logos.light}
+									src={logoLight}
 									alt="HUMS Logo"
 									width="206"
 									height="44"
@@ -386,7 +395,7 @@ export function EmailLayout({ title, preheader, children }: EmailLayoutProps) {
 
 								{/* Logo - Dark mode */}
 								<img
-									src={logos.dark}
+									src={logoDark}
 									alt="HUMS Logo"
 									width="206"
 									height="44"

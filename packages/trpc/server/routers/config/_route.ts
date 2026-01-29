@@ -1,11 +1,9 @@
 import { permissionProtectedProcedure, router } from "../../trpc";
 import { getAllHandler } from "./get-all.route";
 import { getValueHandler } from "./get-value.route";
-import { resetValueHandler } from "./reset-value.route";
 import {
 	ZGetAllSchema,
 	ZGetValueSchema,
-	ZResetValueSchema,
 	ZSetManySchema,
 	ZSetValueSchema,
 } from "./schemas";
@@ -25,7 +23,4 @@ export const configRouter = router({
 	setMany: permissionProtectedProcedure("config.write")
 		.input(ZSetManySchema)
 		.mutation(setManyHandler),
-	resetValue: permissionProtectedProcedure("config.write")
-		.input(ZResetValueSchema)
-		.mutation(resetValueHandler),
 });

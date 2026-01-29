@@ -1,4 +1,3 @@
-import { ConfigRegistry } from "../registry";
 import { defineConfig, type ExtractConfigType } from "../types";
 
 /**
@@ -51,6 +50,3 @@ export const emailConfig = defineConfig({
 } as const);
 
 export type EmailConfigType = ExtractConfigType<typeof emailConfig>;
-
-// Register the configuration
-ConfigRegistry.register("emails", emailConfig);

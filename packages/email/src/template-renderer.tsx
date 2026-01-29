@@ -1,5 +1,6 @@
 import { getLogger } from "@ecehive/logger";
 import { renderToStaticMarkup } from "react-dom/server";
+import { getEmailLogosAsync } from "./logo-loader";
 import {
 	getSessionAutoLogoutSubject,
 	SessionAutoLogoutEmail,
@@ -55,19 +56,24 @@ export async function renderEmail(
 	options: RenderEmailOptions,
 ): Promise<RenderedEmail> {
 	try {
+		// Load logos from branding config
+		const logos = await getEmailLogosAsync();
+
 		let html: string;
 		let subject: string;
 
 		switch (options.template) {
 			case "welcome": {
-				html = renderToStaticMarkup(<WelcomeEmail {...options.data} />);
+				html = renderToStaticMarkup(
+					<WelcomeEmail {...options.data} logos={logos} />,
+				);
 				subject = WelcomeEmailSubject;
 				break;
 			}
 
 			case "session-auto-logout": {
 				html = renderToStaticMarkup(
-					<SessionAutoLogoutEmail {...options.data} />,
+					<SessionAutoLogoutEmail {...options.data} logos={logos} />,
 				);
 				subject = getSessionAutoLogoutSubject(options.data.sessionType);
 				break;
@@ -75,7 +81,7 @@ export async function renderEmail(
 
 			case "suspension-notice": {
 				html = renderToStaticMarkup(
-					<SuspensionNoticeEmail {...options.data} />,
+					<SuspensionNoticeEmail {...options.data} logos={logos} />,
 				);
 				subject = SuspensionNoticeEmailSubject;
 				break;

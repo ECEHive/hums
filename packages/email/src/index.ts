@@ -1,3 +1,4 @@
+export { clearEmailLogoCache, getEmailLogosAsync } from "./logo-loader";
 export { getEmailProvider } from "./providers";
 export type { QueueEmailParams } from "./queue";
 export { clearQueue, getQueueStatus, queueEmail, queueEmails } from "./queue";

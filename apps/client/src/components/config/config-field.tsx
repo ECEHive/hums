@@ -12,6 +12,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ColorPicker } from "./color-picker";
+import { SvgUpload } from "./svg-upload";
 
 interface ConfigFieldDef {
 	key: string;
@@ -31,7 +33,6 @@ interface ConfigFieldProps {
 	field: ConfigFieldDef;
 	value: unknown;
 	canWrite: boolean;
-	isSaving: boolean;
 	onChange: (value: unknown) => void;
 	onReset: () => void;
 }
@@ -40,7 +41,6 @@ export function ConfigField({
 	field,
 	value,
 	canWrite,
-	isSaving,
 	onChange,
 	onReset,
 }: ConfigFieldProps) {
@@ -100,7 +100,7 @@ export function ConfigField({
 							id={field.key}
 							checked={inputValue as boolean}
 							onCheckedChange={handleChange}
-							disabled={!canWrite || isSaving}
+							disabled={!canWrite}
 						/>
 						<label
 							htmlFor={field.key}
@@ -121,7 +121,7 @@ export function ConfigField({
 						min={field.min}
 						max={field.max}
 						step={field.step}
-						disabled={!canWrite || isSaving}
+						disabled={!canWrite}
 					/>
 				);
 
@@ -130,7 +130,7 @@ export function ConfigField({
 					<Select
 						value={String(inputValue)}
 						onValueChange={handleChange}
-						disabled={!canWrite || isSaving}
+						disabled={!canWrite}
 					>
 						<SelectTrigger>
 							<SelectValue placeholder={field.placeholder || "Select..."} />
@@ -151,7 +151,7 @@ export function ConfigField({
 						value={inputValue as string}
 						onChange={(e) => handleChange(e.target.value)}
 						placeholder={field.placeholder}
-						disabled={!canWrite || isSaving}
+						disabled={!canWrite}
 						rows={4}
 					/>
 				);
@@ -163,7 +163,25 @@ export function ConfigField({
 						value={inputValue as string}
 						onChange={(e) => handleChange(e.target.value)}
 						placeholder={field.placeholder}
-						disabled={!canWrite || isSaving}
+						disabled={!canWrite}
+					/>
+				);
+
+			case "color":
+				return (
+					<ColorPicker
+						value={inputValue as string}
+						onChange={handleChange}
+						disabled={!canWrite}
+					/>
+				);
+
+			case "svg":
+				return (
+					<SvgUpload
+						value={inputValue as string}
+						onChange={handleChange}
+						disabled={!canWrite}
 					/>
 				);
 
@@ -174,7 +192,7 @@ export function ConfigField({
 						value={inputValue as string}
 						onChange={(e) => handleChange(e.target.value)}
 						placeholder={field.placeholder}
-						disabled={!canWrite || isSaving}
+						disabled={!canWrite}
 					/>
 				);
 		}
@@ -197,7 +215,6 @@ export function ConfigField({
 						size="sm"
 						variant="ghost"
 						onClick={handleReset}
-						disabled={isSaving}
 						title="Reset to default"
 					>
 						<RotateCcwIcon className="h-4 w-4" />
@@ -220,7 +237,6 @@ export function ConfigField({
 						size="sm"
 						variant="ghost"
 						onClick={handleReset}
-						disabled={isSaving}
 						title="Reset to default"
 					>
 						<RotateCcwIcon className="h-4 w-4" />
