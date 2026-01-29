@@ -1,8 +1,8 @@
 import { trpc } from "@ecehive/trpc/client";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { formatLog, getLogger } from "@/lib/logging";
 import type { RestrictedItem } from "@/components/approval-dialog";
+import { formatLog, getLogger } from "@/lib/logging";
 
 // Agreements are not used in the inventory kiosk
 const NOTIFICATION_DISPLAY_DURATION_MS = 1500;
@@ -313,7 +313,9 @@ export function useInventoryWorkflow() {
 
 				if (result.status === "unauthorized") {
 					// Build error message from unauthorized items
-					const itemNames = result.unauthorizedItems.map((item) => item.name).join(", ");
+					const itemNames = result.unauthorizedItems
+						.map((item) => item.name)
+						.join(", ");
 					const errorMessage = `You do not have permission to approve: ${itemNames}`;
 					dispatch({
 						type: "approval_dialog_update",
@@ -349,7 +351,9 @@ export function useInventoryWorkflow() {
 				);
 			} catch (error: unknown) {
 				const message =
-					error instanceof Error ? error.message : "Approval verification failed";
+					error instanceof Error
+						? error.message
+						: "Approval verification failed";
 				log.error(formatLog("Approval scan failed", { error: message }));
 				dispatch({
 					type: "approval_dialog_update",
@@ -444,7 +448,14 @@ export function useInventoryWorkflow() {
 				showError(message);
 			}
 		},
-		[approvalDialog, dismissScanNotification, handleApprovalScan, log, scheduleScanHide, showError],
+		[
+			approvalDialog,
+			dismissScanNotification,
+			handleApprovalScan,
+			log,
+			scheduleScanHide,
+			showError,
+		],
 	);
 
 	const handleCheckout = useCallback(

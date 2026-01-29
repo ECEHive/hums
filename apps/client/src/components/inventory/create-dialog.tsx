@@ -5,8 +5,14 @@ import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+	type Role,
+	RoleMultiSelect,
+} from "@/components/roles/role-multiselect";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
 	Sheet,
 	SheetClose,
@@ -17,11 +23,8 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions } from "@/lib/permissions";
-import { RoleMultiSelect, type Role } from "@/components/roles/role-multiselect";
 
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),

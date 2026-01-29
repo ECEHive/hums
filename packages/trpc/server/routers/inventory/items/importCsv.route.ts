@@ -105,7 +105,12 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 	);
 	// approvalRoles column: pipe-delimited list of role names (e.g., "Admin|Manager|Supervisor")
 	const approvalRolesIndex = headers.findIndex((h) =>
-		["approvalroles", "approval_roles", "requiredroles", "required_roles"].includes(h),
+		[
+			"approvalroles",
+			"approval_roles",
+			"requiredroles",
+			"required_roles",
+		].includes(h),
 	);
 
 	if (nameIndex === -1) {
@@ -245,7 +250,10 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 					?.replace(/^["']|["']$/g, "")
 					.trim();
 				if (approvalRolesStr) {
-					const roleNames = approvalRolesStr.split("|").map((r) => r.trim()).filter(Boolean);
+					const roleNames = approvalRolesStr
+						.split("|")
+						.map((r) => r.trim())
+						.filter(Boolean);
 					const resolvedIds: number[] = [];
 					const unrecognizedRoles: string[] = [];
 

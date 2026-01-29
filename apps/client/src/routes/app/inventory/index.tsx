@@ -1,9 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	HistoryIcon,
-	LaptopMinimalCheckIcon,
-	PlusCircleIcon,
-} from "lucide-react";
+import { HistoryIcon, LaptopMinimalCheckIcon } from "lucide-react";
 import { useCurrentUser } from "@/auth/AuthProvider";
 import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
 import { Button } from "@/components/ui/button";

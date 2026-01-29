@@ -111,9 +111,7 @@ export function ApprovalDialog({
 						<div className="w-full">
 							<div className="text-center mb-4">
 								<p className="text-xl font-semibold">
-									{isProcessing
-										? "Verifying..."
-										: "Scan approver's BuzzCard"}
+									{isProcessing ? "Verifying..." : "Scan approver's BuzzCard"}
 								</p>
 								<p className="text-sm text-muted-foreground mt-1">
 									Authorized roles: {Array.from(allRoles).join(", ")}

@@ -71,17 +71,17 @@ export function PrintBarcodeDialog({
 							<SelectTrigger id="template">
 								<SelectValue />
 							</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="94200">
-								Presta 94200 (1" × 2-5/8", 30/sheet)
-							</SelectItem>
-							<SelectItem value="94203">
-								Presta 94203 (1/2" × 1-3/4", 80/sheet)
-							</SelectItem>
-							<SelectItem value="94270">
-								Presta 94270 (1/2" × 1", 84/sheet)
-							</SelectItem>
-						</SelectContent>
+							<SelectContent>
+								<SelectItem value="94200">
+									Presta 94200 (1" × 2-5/8", 30/sheet)
+								</SelectItem>
+								<SelectItem value="94203">
+									Presta 94203 (1/2" × 1-3/4", 80/sheet)
+								</SelectItem>
+								<SelectItem value="94270">
+									Presta 94270 (1/2" × 1", 84/sheet)
+								</SelectItem>
+							</SelectContent>
 						</Select>
 						<p className="text-xs text-muted-foreground">
 							Select your label sheet template

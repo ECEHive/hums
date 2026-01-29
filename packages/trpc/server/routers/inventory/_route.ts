@@ -15,23 +15,7 @@ import {
 import { importCsvHandler, ZImportCsvSchema } from "./items/importCsv.route";
 import { listItemsHandler, ZListItemsSchema } from "./items/list.route";
 import { updateItemHandler, ZUpdateItemSchema } from "./items/update.route";
-import {
-	createHandler as createRequestHandler,
-	ZCreateSchema as ZCreateRequestSchema,
-} from "./requests/create.route";
-import {
-	listHandler as listRequestHandler,
-	ZListSchema as ZListRequestSchema,
-} from "./requests/list.route";
-import {
-	updateHandler as updateRequestHandler,
-	ZUpdateSchema as ZUpdateRequestSchema,
-} from "./requests/update.route";
 import { scanUserHandler, ZScanUserSchema } from "./scanUser.route";
-import {
-	verifyApproverHandler,
-	ZVerifyApproverSchema,
-} from "./verifyApprover.route";
 import {
 	createSnapshotHandler,
 	ZCreateSnapshotSchema,
@@ -58,6 +42,10 @@ import {
 	ZListSchema as ZListTransactionsSchema,
 } from "./transactions/list.route";
 import { listMyHandler, ZListMySchema } from "./transactions/listMy.route";
+import {
+	verifyApproverHandler,
+	ZVerifyApproverSchema,
+} from "./verifyApprover.route";
 
 export const inventoryRouter = router({
 	// User Scanning (for inventory kiosks)
@@ -119,18 +107,5 @@ export const inventoryRouter = router({
 		create: permissionProtectedProcedure("inventory.snapshots.create")
 			.input(ZCreateSnapshotSchema)
 			.mutation(createSnapshotHandler),
-	}),
-
-	// Requests
-	requests: router({
-		list: permissionProtectedProcedure("inventory.requests.list")
-			.input(ZListRequestSchema)
-			.query(listRequestHandler),
-		create: protectedProcedure
-			.input(ZCreateRequestSchema)
-			.mutation(createRequestHandler),
-		update: permissionProtectedProcedure("inventory.requests.update")
-			.input(ZUpdateRequestSchema)
-			.mutation(updateRequestHandler),
 	}),
 });

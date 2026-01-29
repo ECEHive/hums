@@ -110,23 +110,29 @@ function App() {
 
 						{inventoryWorkflow.approvalDialog && (
 							<ApprovalDialog
-								restrictedItems={inventoryWorkflow.approvalDialog.restrictedItems}
-								transactionType={inventoryWorkflow.approvalDialog.pendingTransaction?.type ?? "checkout"}
+								restrictedItems={
+									inventoryWorkflow.approvalDialog.restrictedItems
+								}
+								transactionType={
+									inventoryWorkflow.approvalDialog.pendingTransaction?.type ??
+									"checkout"
+								}
 								isProcessing={inventoryWorkflow.approvalDialog.isProcessing}
 								error={inventoryWorkflow.approvalDialog.error}
 								onCancel={inventoryWorkflow.handleApprovalCancel}
 							/>
 						)}
 
-						{inventoryWorkflow.transactionView && !inventoryWorkflow.approvalDialog && (
-							<InventoryTransactionView
-								userName={inventoryWorkflow.transactionView.userName}
-								canReturn={inventoryWorkflow.transactionView.canReturn}
-								onCheckout={inventoryWorkflow.handleCheckout}
-								onReturn={inventoryWorkflow.handleReturn}
-								onCancel={inventoryWorkflow.handleTransactionCancel}
-							/>
-						)}
+						{inventoryWorkflow.transactionView &&
+							!inventoryWorkflow.approvalDialog && (
+								<InventoryTransactionView
+									userName={inventoryWorkflow.transactionView.userName}
+									canReturn={inventoryWorkflow.transactionView.canReturn}
+									onCheckout={inventoryWorkflow.handleCheckout}
+									onReturn={inventoryWorkflow.handleReturn}
+									onCancel={inventoryWorkflow.handleTransactionCancel}
+								/>
+							)}
 
 						<div className="min-w-full h-full flex items-center justify-center">
 							{connectionStatus !== "connected" ? (
