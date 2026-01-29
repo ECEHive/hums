@@ -10,8 +10,6 @@ bun dev
 
 ## Environment Variables
 
-All environment variables for the kiosk are prefixed with `VITE_` to be exposed to the client-side code.
-
 ### General Configuration
 
 | Variable | Required | Default | Description |
@@ -27,11 +25,14 @@ These variables are only used during development:
 | `VITE_DEV_PORT` | No | `44834` | Port to host the development kiosk on |
 | `VITE_DEV_SERVER_URL` | No | `http://localhost:44830` | URL of the development server (no trailing slash) |
 
-### Optional: Monitoring & Error Tracking
+### Monitoring & Error Tracking
 
-| Variable | Required | Default | Description |
-| - | - | - | - |
-| `VITE_KIOSK_SENTRY_DSN` | No | `""` | Sentry DSN for error tracking (leave blank to disable) |
+Sentry for the inventory kiosk is configured at runtime via the server's `/api/config`
+endpoint (for example: DSN, environment, and release are provided by the backend).
+
+No additional `VITE_*` environment variables are required for Sentry in production.
+During development, the kiosk will use whatever Sentry configuration the development
+server exposes via `/api/config`.
 
 ### Example Configurations
 

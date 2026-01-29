@@ -9,26 +9,25 @@ interface Props {
 interface State {
 	hasError: boolean;
 	error: Error | null;
-	errorInfo: ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
 	constructor(props: Props) {
 		super(props);
-		this.state = { hasError: false, error: null, errorInfo: null };
+		this.state = { hasError: false, error: null };
 	}
 
 	static getDerivedStateFromError(error: Error): State {
-		return { hasError: true, error, errorInfo: null };
+		return { hasError: true, error };
 	}
 
 	componentDidCatch(error: Error, errorInfo: ErrorInfo) {
 		console.error("ErrorBoundary caught an error:", error, errorInfo);
-		this.setState({ error, errorInfo });
+		this.setState({ error });
 	}
 
 	handleReset = () => {
-		this.setState({ hasError: false, error: null, errorInfo: null });
+		this.setState({ hasError: false, error: null });
 		window.location.reload();
 	};
 

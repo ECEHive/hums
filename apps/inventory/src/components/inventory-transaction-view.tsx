@@ -75,18 +75,25 @@ export function InventoryTransactionView({
 	const handleAddItem = () => {
 		if (!currentSku.trim()) return;
 
-		const existingItem = items.find((item) => item.sku === currentSku.trim());
-		if (existingItem) {
-			setItems(
-				items.map((item) =>
-					item.sku === currentSku.trim()
-						? { ...item, quantity: item.quantity + 1 }
-						: item,
-				),
-			);
-		} else {
-			// Fetch name of item
-			const sku = currentSku.trim().toUpperCase();
+		const sku = currentSku.trim().toUpperCase();
+
+		// Check if item already exists using functional state check
+		setItems((prevItems) => {
+			const existingItem = prevItems.find((item) => item.sku === sku);
+			if (existingItem) {
+				// Item exists, increment quantity
+				return prevItems.map((item) =>
+					item.sku === sku ? { ...item, quantity: item.quantity + 1 } : item,
+				);
+			}
+			// Item doesn't exist, we'll fetch it asynchronously
+			return prevItems;
+		});
+
+		// Check if we need to fetch a new item
+		// We need to check outside the state setter for the async operation
+		const existingItem = items.find((item) => item.sku === sku);
+		if (!existingItem) {
 			const id = crypto.randomUUID();
 
 			// Fetch the item name via the tRPC route
@@ -102,16 +109,24 @@ export function InventoryTransactionView({
 						return;
 					}
 					if (item.name) {
-						// Add the item
-						setItems([
-							...items,
-							{
-								id,
-								name: item.name,
-								sku,
-								quantity: 1,
-							},
-						]);
+						// Use functional update to avoid stale closure
+						setItems((prevItems) => {
+							// Double-check the item wasn't added while we were fetching
+							if (prevItems.some((i) => i.sku === sku)) {
+								return prevItems.map((i) =>
+									i.sku === sku ? { ...i, quantity: i.quantity + 1 } : i,
+								);
+							}
+							return [
+								...prevItems,
+								{
+									id,
+									name: item.name,
+									sku,
+									quantity: 1,
+								},
+							];
+						});
 						setSkuError(null);
 					}
 				} catch (err) {

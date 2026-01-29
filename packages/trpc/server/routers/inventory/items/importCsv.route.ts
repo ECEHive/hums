@@ -1,4 +1,4 @@
-import { prisma } from "@ecehive/prisma";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../../trpc";
@@ -46,13 +46,15 @@ function generateSku(): string {
 	return sku;
 }
 
-async function generateUniqueSku(): Promise<string> {
+async function generateUniqueSku(
+	tx: Prisma.TransactionClient,
+): Promise<string> {
 	let sku = generateSku();
 	let attempts = 0;
 	const maxAttempts = 10;
 
 	while (attempts < maxAttempts) {
-		const existing = await prisma.item.findUnique({
+		const existing = await tx.item.findUnique({
 			where: { sku },
 			select: { id: true },
 		});
@@ -321,7 +323,7 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 				// Generate SKU if not provided
 				let sku = itemData.sku;
 				if (!sku) {
-					sku = await generateUniqueSku();
+					sku = await generateUniqueSku(tx);
 				}
 
 				// Check if SKU already exists

@@ -13,7 +13,6 @@ import type { ReactNode } from "react";
 interface KioskCardProps {
 	children: ReactNode;
 	className?: string;
-	style?: React.CSSProperties;
 	onClick?: () => void;
 }
 

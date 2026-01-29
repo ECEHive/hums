@@ -22,27 +22,22 @@ export async function checkUserBalanceHandler(
 ) {
 	const { userId } = options.input;
 
-	// Get all transactions for this user
-	const transactions = await prisma.inventoryTransaction.findMany({
-		where: { userId },
-		select: {
-			itemId: true,
-			quantity: true,
-		},
-	});
+	// Use aggregate query to efficiently check if any item has negative balance
+	// This lets the DB do the work instead of loading all transactions into memory
+	const result = await prisma.$queryRaw<Array<{ has_checked_out: boolean }>>`
+		SELECT EXISTS (
+			SELECT 1
+			FROM (
+				SELECT "itemId", SUM(quantity) as net_quantity
+				FROM "InventoryTransaction"
+				WHERE "userId" = ${userId}
+				GROUP BY "itemId"
+				HAVING SUM(quantity) < 0
+			) AS items_with_negative_balance
+		) AS has_checked_out
+	`;
 
-	// Calculate net balance per item
-	// quantity is negative for CHECK_OUT and positive for CHECK_IN
-	const itemBalances = new Map<string, number>();
-	for (const transaction of transactions) {
-		const currentBalance = itemBalances.get(transaction.itemId) || 0;
-		itemBalances.set(transaction.itemId, currentBalance + transaction.quantity);
-	}
-
-	// If any item has a negative balance, user has items checked out
-	const hasCheckedOutItems = Array.from(itemBalances.values()).some(
-		(balance) => balance < 0,
-	);
+	const hasCheckedOutItems = result[0]?.has_checked_out ?? false;
 
 	return { hasCheckedOutItems };
 }

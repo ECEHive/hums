@@ -9,7 +9,9 @@ export const ZUserSessionsReportSchema = z.object({
 	filterRoleIds: z.array(z.number()).optional(),
 });
 
-export type TUserSessionsReportSchema = z.infer<typeof ZUserSessionsReportSchema>;
+export type TUserSessionsReportSchema = z.infer<
+	typeof ZUserSessionsReportSchema
+>;
 
 export type TUserSessionsReportOptions = {
 	ctx?: TPermissionProtectedProcedureContext;
@@ -149,7 +151,10 @@ export async function userSessionsReportHandler(
 	const filteredReports = reports.filter((r) => r.totalSessions > 0);
 
 	// Calculate summary statistics
-	const totalHoursAll = filteredReports.reduce((sum, r) => sum + r.totalHours, 0);
+	const totalHoursAll = filteredReports.reduce(
+		(sum, r) => sum + r.totalHours,
+		0,
+	);
 	const totalSessionsAll = filteredReports.reduce(
 		(sum, r) => sum + r.totalSessions,
 		0,

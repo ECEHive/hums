@@ -25,7 +25,7 @@ export function ReadyView({
 						onClick={onToggleFullscreen}
 						title="Enter Fullscreen"
 					>
-						<Maximize className="w-15 h-15" />
+						<Maximize className="w-6 h-6" />
 					</Button>
 				</div>
 			)}

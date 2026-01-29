@@ -1,4 +1,4 @@
-import { prisma } from "@ecehive/prisma";
+import { Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../../trpc";
@@ -37,23 +37,31 @@ export async function updateItemHandler(options: TUpdateItemOptions) {
 		};
 	}
 
-	const item = await prisma.item.update({
-		where: { id },
-		data: updateData,
-		include: {
-			snapshot: true,
-			approvalRoles: {
-				select: { id: true, name: true },
+	try {
+		const item = await prisma.item.update({
+			where: { id },
+			data: updateData,
+			include: {
+				snapshot: true,
+				approvalRoles: {
+					select: { id: true, name: true },
+				},
 			},
-		},
-	});
-
-	if (!item) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "Item not found",
 		});
-	}
 
-	return item;
+		return item;
+	} catch (error) {
+		// Handle Prisma "record not found" error (P2025)
+		if (
+			error instanceof Prisma.PrismaClientKnownRequestError &&
+			error.code === "P2025"
+		) {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message: "Item not found",
+			});
+		}
+		// Re-throw other errors
+		throw error;
+	}
 }

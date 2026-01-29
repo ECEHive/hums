@@ -1,4 +1,4 @@
-import { type Prisma, prisma } from "@ecehive/prisma";
+import { Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { Context } from "../../../context";
 
@@ -25,6 +25,17 @@ export async function listItemsHandler(options: TListItemsOptions) {
 		isActive,
 		lowQuantity,
 	} = options.input;
+
+	// If lowQuantity filter is enabled, we need a different approach
+	// to ensure proper pagination
+	if (lowQuantity) {
+		return await listLowQuantityItems({
+			search,
+			limit,
+			offset,
+			isActive,
+		});
+	}
 
 	const where: Prisma.ItemWhereInput = {
 		...(isActive !== undefined && { isActive }),
@@ -98,19 +109,9 @@ export async function listItemsHandler(options: TListItemsOptions) {
 			};
 		});
 
-		// Filter by low quantity if requested
-		const filteredItems = lowQuantity
-			? itemsWithNetQuantity.filter(
-					(item) =>
-						item.minQuantity !== null &&
-						item.currentQuantity !== null &&
-						item.currentQuantity < item.minQuantity,
-				)
-			: itemsWithNetQuantity;
-
 		return {
-			items: filteredItems,
-			count: lowQuantity ? filteredItems.length : count,
+			items: itemsWithNetQuantity,
+			count,
 		};
 	}
 
@@ -120,18 +121,106 @@ export async function listItemsHandler(options: TListItemsOptions) {
 		currentQuantity: null,
 	}));
 
-	// Filter by low quantity if requested (but items without snapshots will have null currentQuantity)
-	const filteredItems = lowQuantity
-		? itemsWithNetQuantity.filter(
-				(item) =>
-					item.minQuantity !== null &&
-					item.currentQuantity !== null &&
-					item.currentQuantity < item.minQuantity,
-			)
-		: itemsWithNetQuantity;
+	return {
+		items: itemsWithNetQuantity,
+		count,
+	};
+}
+
+/**
+ * Separate function to handle low quantity filtering with proper pagination.
+ * This computes the low-quantity item IDs in the database first, then paginates.
+ */
+async function listLowQuantityItems(options: {
+	search?: string;
+	limit: number;
+	offset: number;
+	isActive?: boolean;
+}) {
+	const { search, limit, offset, isActive } = options;
+
+	// Build search conditions for raw SQL
+	const searchCondition = search
+		? `AND (i.name ILIKE '%${search.replace(/'/g, "''")}%' 
+		    OR i.description ILIKE '%${search.replace(/'/g, "''")}%' 
+		    OR i.sku ILIKE '%${search.replace(/'/g, "''")}%' 
+		    OR i.location ILIKE '%${search.replace(/'/g, "''")}%')`
+		: "";
+
+	const isActiveCondition =
+		isActive !== undefined ? `AND i."isActive" = ${isActive}` : "";
+
+	// Get IDs of items that are below minQuantity threshold
+	// This computes current quantity = snapshot + sum of transactions after snapshot
+	const lowQuantityItemsRaw = await prisma.$queryRaw<
+		Array<{ id: string; currentQuantity: bigint }>
+	>`
+		SELECT 
+			i.id,
+			(s.quantity + COALESCE(
+				(SELECT SUM(t.quantity) 
+				 FROM "InventoryTransaction" t 
+				 WHERE t."itemId" = i.id AND t."createdAt" > s."takenAt"),
+				0
+			)) as "currentQuantity"
+		FROM "Item" i
+		INNER JOIN "InventorySnapshot" s ON i.id = s."itemId"
+		WHERE i."minQuantity" IS NOT NULL
+			${Prisma.raw(searchCondition)}
+			${Prisma.raw(isActiveCondition)}
+		HAVING (s.quantity + COALESCE(
+			(SELECT SUM(t.quantity) 
+			 FROM "InventoryTransaction" t 
+			 WHERE t."itemId" = i.id AND t."createdAt" > s."takenAt"),
+			0
+		)) < i."minQuantity"
+		ORDER BY i."createdAt" DESC
+	`;
+
+	const totalCount = lowQuantityItemsRaw.length;
+
+	// Apply pagination to the IDs
+	const paginatedIds = lowQuantityItemsRaw
+		.slice(offset, offset + limit)
+		.map((row) => row.id);
+
+	if (paginatedIds.length === 0) {
+		return {
+			items: [],
+			count: totalCount,
+		};
+	}
+
+	// Create a map of current quantities
+	const currentQuantityMap = new Map<string, number>(
+		lowQuantityItemsRaw.map((row) => [row.id, Number(row.currentQuantity)]),
+	);
+
+	// Fetch full item data for the paginated results
+	const items = await prisma.item.findMany({
+		where: { id: { in: paginatedIds } },
+		orderBy: { createdAt: "desc" },
+		include: {
+			snapshot: true,
+			approvalRoles: {
+				select: { id: true, name: true },
+			},
+			_count: {
+				select: {
+					transactions: true,
+				},
+			},
+		},
+	});
+
+	// Add currentQuantity to each item
+	const itemsWithQuantity = items.map((item) => ({
+		...item,
+		currentQuantity: currentQuantityMap.get(item.id) ?? null,
+	}));
 
 	return {
-		items: filteredItems,
-		count: lowQuantity ? filteredItems.length : count,
+		items: itemsWithQuantity,
+		count: totalCount,
 	};
 }

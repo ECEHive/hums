@@ -176,11 +176,6 @@ export const kioskProtectedProcedure = t.procedure.use(async (opts) => {
 	});
 });
 
-export type TInventoryProtectedProcedureContext =
-	inferProcedureBuilderResolverOptions<
-		typeof inventoryProtectedProcedure
-	>["ctx"];
-
 /**
  * A procedure that requires the request to come from a registered device IP address.
  * Checks for inventory access permission.
@@ -212,6 +207,11 @@ export const inventoryProtectedProcedure = t.procedure.use(async (opts) => {
 		},
 	});
 });
+
+export type TInventoryProtectedProcedureContext =
+	inferProcedureBuilderResolverOptions<
+		typeof inventoryProtectedProcedure
+	>["ctx"];
 
 export type TKioskProtectedProcedureContext =
 	inferProcedureBuilderResolverOptions<typeof kioskProtectedProcedure>["ctx"];
