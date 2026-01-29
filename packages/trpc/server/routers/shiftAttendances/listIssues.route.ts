@@ -4,14 +4,28 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
+/**
+ * Excuse status values:
+ * - pending: Issue has not been reviewed (reviewedAt is null, isExcused is false)
+ * - excused: Issue has been excused (isExcused is true)
+ * - unexcused: Issue has been reviewed and marked as unexcused (reviewedAt is set, isExcused is false)
+ */
+export const excuseStatusValues = ["pending", "excused", "unexcused"] as const;
+export type ExcuseStatus = (typeof excuseStatusValues)[number];
+
 export const ZListIssuesSchema = z.object({
 	periodId: z.number().min(1),
 	/** Filter by issue type */
 	issueType: z
 		.enum(["dropped", "absent", "late", "left_early", "all"])
 		.default("all"),
-	/** Only show unexcused issues */
-	unexcusedOnly: z.boolean().default(true),
+	/**
+	 * Filter by excuse status (multi-select).
+	 * - pending: Not yet reviewed (reviewedAt is null, isExcused is false)
+	 * - excused: Has been excused (isExcused is true)
+	 * - unexcused: Reviewed but not excused (reviewedAt is set, isExcused is false)
+	 */
+	excuseStatus: z.array(z.enum(excuseStatusValues)).default(["pending"]),
 	/** Search by user name or username */
 	search: z.string().max(100).optional(),
 	limit: z.number().min(1).max(100).default(50),
@@ -30,7 +44,7 @@ export type TListIssuesOptions = {
  * Issues include: dropped shifts, absences, late arrivals, and early departures.
  */
 export async function listIssuesHandler(options: TListIssuesOptions) {
-	const { periodId, issueType, unexcusedOnly, search, limit, offset } =
+	const { periodId, issueType, excuseStatus, search, limit, offset } =
 		options.input;
 
 	const actor = await getUserWithRoles(prisma, options.ctx.user.id);
@@ -78,6 +92,12 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 			didArriveLate?: boolean;
 			didLeaveEarly?: boolean;
 		}>;
+		AND?: Array<{
+			OR?: Array<{
+				isExcused?: boolean;
+				reviewedAt?: null | { not: null };
+			}>;
+		}>;
 		status?: ShiftAttendanceStatus;
 		didArriveLate?: boolean;
 		didLeaveEarly?: boolean;
@@ -118,10 +138,40 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 		where.didLeaveEarly = true;
 	}
 
-	// Filter to only unexcused if requested
-	if (unexcusedOnly) {
-		where.isExcused = false;
+	// Filter by excuse status (multi-select)
+	// Build OR conditions for each selected status
+	if (excuseStatus.length > 0 && excuseStatus.length < 3) {
+		const excuseStatusConditions: Array<{
+			isExcused?: boolean;
+			reviewedAt?: null | { not: null };
+		}> = [];
+
+		for (const status of excuseStatus) {
+			if (status === "pending") {
+				// Pending: not excused AND not reviewed
+				excuseStatusConditions.push({
+					isExcused: false,
+					reviewedAt: null,
+				});
+			} else if (status === "excused") {
+				// Excused: isExcused is true
+				excuseStatusConditions.push({
+					isExcused: true,
+				});
+			} else if (status === "unexcused") {
+				// Unexcused: not excused AND has been reviewed
+				excuseStatusConditions.push({
+					isExcused: false,
+					reviewedAt: { not: null },
+				});
+			}
+		}
+
+		if (excuseStatusConditions.length > 0) {
+			where.AND = [{ OR: excuseStatusConditions }];
+		}
 	}
+	// If all 3 statuses are selected, no filter needed
 
 	// Search filter
 	if (search?.trim()) {
@@ -165,7 +215,7 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 						},
 					},
 				},
-				excusedBy: {
+				reviewedBy: {
 					select: {
 						id: true,
 						name: true,
@@ -187,8 +237,8 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 		didLeaveEarly: issue.didLeaveEarly,
 		droppedNotes: issue.droppedNotes,
 		excuseNotes: issue.excuseNotes,
-		excusedBy: issue.excusedBy,
-		excusedAt: issue.excusedAt,
+		reviewedBy: issue.reviewedBy,
+		reviewedAt: issue.reviewedAt,
 		timeIn: issue.timeIn,
 		timeOut: issue.timeOut,
 		isMakeup: issue.isMakeup,

@@ -7,6 +7,7 @@ import { grantExcuseHandler, ZGrantExcuseSchema } from "./grantExcuse.route";
 import { listForUserHandler, ZListForUserSchema } from "./listForUser.route";
 import { listIssuesHandler, ZListIssuesSchema } from "./listIssues.route";
 import { listMyHandler, ZListMySchema } from "./listMy.route";
+import { markReviewedHandler, ZMarkReviewedSchema } from "./markReviewed.route";
 import { myStatsHandler, ZMyStatsSchema } from "./myStats.route";
 import { revokeExcuseHandler, ZRevokeExcuseSchema } from "./revokeExcuse.route";
 
@@ -26,4 +27,7 @@ export const shiftAttendancesRouter = router({
 	revokeExcuse: permissionProtectedProcedure("shift_attendances.excuse")
 		.input(ZRevokeExcuseSchema)
 		.mutation(revokeExcuseHandler),
+	markReviewed: permissionProtectedProcedure("shift_attendances.excuse")
+		.input(ZMarkReviewedSchema)
+		.mutation(markReviewedHandler),
 });

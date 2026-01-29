@@ -9,6 +9,7 @@ import {
 	Clock,
 	Eye,
 	LogOut,
+	ShieldAlert,
 	ShieldCheck,
 	XCircle,
 } from "lucide-react";
@@ -63,8 +64,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	Tooltip,
 	TooltipContent,
@@ -85,6 +86,14 @@ export const Route = createFileRoute("/app/shifts/attendance-issues")({
 
 export const permissions = ["shift_attendances.excuse"] as RequiredPermissions;
 
+/**
+ * Excuse status values for attendance issues:
+ * - pending: Issue has not been reviewed (reviewedAt is null, isExcused is false)
+ * - excused: Issue has been excused (isExcused is true)
+ * - unexcused: Issue has been reviewed and marked as unexcused (reviewedAt is set, isExcused is false)
+ */
+type ExcuseStatus = "pending" | "excused" | "unexcused";
+
 type Issue = {
 	id: number;
 	userId: number;
@@ -95,8 +104,8 @@ type Issue = {
 	didLeaveEarly: boolean;
 	droppedNotes: string | null;
 	excuseNotes: string | null;
-	excusedBy: { id: number; name: string; username: string } | null;
-	excusedAt: Date | null;
+	reviewedBy: { id: number; name: string; username: string } | null;
+	reviewedAt: Date | null;
 	timeIn: Date | null;
 	timeOut: Date | null;
 	isMakeup: boolean;
@@ -112,6 +121,15 @@ type Issue = {
 		};
 	};
 };
+
+/**
+ * Get the excuse status of an issue based on its review state.
+ */
+function getExcuseStatus(issue: Issue): ExcuseStatus {
+	if (issue.isExcused) return "excused";
+	if (issue.reviewedAt) return "unexcused";
+	return "pending";
+}
 
 function getIssueType(issue: Issue): string {
 	if (issue.status === "dropped") return "Dropped";
@@ -142,12 +160,12 @@ const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 type AttendanceIssuesFilters = {
 	issueType: "all" | "dropped" | "absent" | "late" | "left_early";
-	unexcusedOnly: boolean;
+	excuseStatus: ExcuseStatus[];
 };
 
 const DEFAULT_FILTERS: AttendanceIssuesFilters = {
 	issueType: "all",
-	unexcusedOnly: true,
+	excuseStatus: ["pending"],
 };
 
 function AttendanceIssuesPage() {
@@ -176,18 +194,20 @@ function AttendanceIssuesPage() {
 
 	// Extract filter values with defaults
 	const issueType = filters?.issueType ?? DEFAULT_FILTERS.issueType;
-	const unexcusedOnly = filters?.unexcusedOnly ?? DEFAULT_FILTERS.unexcusedOnly;
+	const excuseStatus = filters?.excuseStatus ?? DEFAULT_FILTERS.excuseStatus;
 
 	// Helper to update individual filter fields
 	const setIssueType = (value: AttendanceIssuesFilters["issueType"]) => {
 		setFilters((prev) => ({ ...DEFAULT_FILTERS, ...prev, issueType: value }));
 	};
 
-	const setUnexcusedOnly = (value: boolean) => {
+	const setExcuseStatus = (value: ExcuseStatus[]) => {
+		// Ensure at least one status is always selected
+		if (value.length === 0) return;
 		setFilters((prev) => ({
 			...DEFAULT_FILTERS,
 			...prev,
-			unexcusedOnly: value,
+			excuseStatus: value,
 		}));
 	};
 
@@ -198,17 +218,20 @@ function AttendanceIssuesPage() {
 	const [excuseNotes, setExcuseNotes] = useState("");
 
 	const hasPermission =
-		currentUser && checkPermissions(currentUser, permissions);
+		!!currentUser && checkPermissions(currentUser, permissions);
 
+	// Count active filters (issueType !== all counts as 1, non-default excuseStatus counts as 1)
+	const isDefaultExcuseStatus =
+		excuseStatus.length === 1 && excuseStatus[0] === "pending";
 	const activeFiltersCount =
-		(issueType !== "all" ? 1 : 0) + (unexcusedOnly ? 0 : 1);
+		(issueType !== "all" ? 1 : 0) + (isDefaultExcuseStatus ? 0 : 1);
 
 	const { data: issuesData, isLoading } = useQuery({
 		queryKey: [
 			"attendanceIssues",
 			selectedPeriodId,
 			issueType,
-			unexcusedOnly,
+			excuseStatus,
 			debouncedSearch,
 			page,
 			pageSize,
@@ -218,7 +241,7 @@ function AttendanceIssuesPage() {
 			return trpc.shiftAttendances.listIssues.query({
 				periodId: selectedPeriodId,
 				issueType,
-				unexcusedOnly,
+				excuseStatus,
 				search: debouncedSearch || undefined,
 				limit: pageSize,
 				offset,
@@ -254,11 +277,24 @@ function AttendanceIssuesPage() {
 			return trpc.shiftAttendances.revokeExcuse.mutate({ attendanceId });
 		},
 		onSuccess: () => {
-			toast.success("The excuse has been revoked.");
+			toast.success("The excuse has been revoked. Issue is now pending.");
 			queryClient.invalidateQueries({ queryKey: ["attendanceIssues"] });
 		},
 		onError: (error) => {
 			toast.error(error.message || "Failed to revoke excuse");
+		},
+	});
+
+	const markReviewedMutation = useMutation({
+		mutationFn: async (attendanceId: number) => {
+			return trpc.shiftAttendances.markReviewed.mutate({ attendanceId });
+		},
+		onSuccess: () => {
+			toast.success("The issue has been marked as unexcused.");
+			queryClient.invalidateQueries({ queryKey: ["attendanceIssues"] });
+		},
+		onError: (error) => {
+			toast.error(error.message || "Failed to mark as reviewed");
 		},
 	});
 
@@ -349,22 +385,36 @@ function AttendanceIssuesPage() {
 			),
 		},
 		{
-			accessorKey: "status",
-			header: "Status",
+			accessorKey: "excuseStatus",
+			header: "Review Status",
 			cell: ({ row }) => {
 				const issue = row.original;
-				if (issue.isExcused) {
+				const status = getExcuseStatus(issue);
+
+				if (status === "excused") {
 					return (
-						<Badge>
+						<Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-100">
 							<CheckCircle className="h-3 w-3 mr-1" />
 							Excused
 						</Badge>
 					);
 				}
+				if (status === "unexcused") {
+					return (
+						<Badge variant="destructive">
+							<XCircle className="h-3 w-3 mr-1" />
+							Unexcused
+						</Badge>
+					);
+				}
+				// pending
 				return (
-					<Badge variant="outline">
+					<Badge
+						variant="outline"
+						className="border-amber-500 text-amber-600 dark:text-amber-400"
+					>
 						<AlertCircle className="h-3 w-3 mr-1" />
-						Unexcused
+						Pending Review
 					</Badge>
 				);
 			},
@@ -374,6 +424,7 @@ function AttendanceIssuesPage() {
 			header: "Actions",
 			cell: ({ row }) => {
 				const issue = row.original;
+				const status = getExcuseStatus(issue);
 				return (
 					<div className="flex items-center gap-1">
 						<Tooltip>
@@ -389,7 +440,8 @@ function AttendanceIssuesPage() {
 							<TooltipContent>View details</TooltipContent>
 						</Tooltip>
 
-						{issue.isExcused ? (
+						{status === "excused" ? (
+							// Excused: Can revoke
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -401,9 +453,41 @@ function AttendanceIssuesPage() {
 										<XCircle className="h-4 w-4" />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>Revoke excuse</TooltipContent>
+								<TooltipContent>
+									Revoke excuse (returns to pending)
+								</TooltipContent>
 							</Tooltip>
+						) : status === "pending" ? (
+							// Pending: Can excuse or mark as unexcused
+							<>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => openExcuseDialog(issue)}
+										>
+											<ShieldCheck className="h-4 w-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Grant excuse</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => markReviewedMutation.mutate(issue.id)}
+											disabled={markReviewedMutation.isPending}
+										>
+											<ShieldAlert className="h-4 w-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Mark as unexcused</TooltipContent>
+								</Tooltip>
+							</>
 						) : (
+							// Unexcused: Can grant excuse
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
@@ -468,7 +552,7 @@ function AttendanceIssuesPage() {
 								<TableFilters
 									activeFiltersCount={activeFiltersCount}
 									hasActiveFilters={
-										issueType !== "all" || unexcusedOnly === false
+										issueType !== "all" || !isDefaultExcuseStatus
 									}
 									onReset={resetFilters}
 								>
@@ -504,23 +588,32 @@ function AttendanceIssuesPage() {
 									</FilterField>
 
 									<FilterField
-										label="Show Excused"
-										description="Include already excused attendance records"
+										label="Review Status"
+										description="Filter by review/excuse status"
 									>
-										<div className="flex items-center gap-2">
-											<Switch
-												checked={!unexcusedOnly}
-												onCheckedChange={(checked) => {
-													setUnexcusedOnly(!checked);
-													resetToFirstPage();
-												}}
-											/>
-											<span className="text-sm text-muted-foreground">
-												{unexcusedOnly
-													? "Showing unexcused only"
-													: "Showing all"}
-											</span>
-										</div>
+										<ToggleGroup
+											type="multiple"
+											variant="outline"
+											value={excuseStatus}
+											onValueChange={(value) => {
+												setExcuseStatus(value as ExcuseStatus[]);
+												resetToFirstPage();
+											}}
+											className="justify-start"
+										>
+											<ToggleGroupItem value="pending" className="text-xs">
+												<AlertCircle className="h-3 w-3 mr-1" />
+												Pending
+											</ToggleGroupItem>
+											<ToggleGroupItem value="excused" className="text-xs">
+												<CheckCircle className="h-3 w-3 mr-1" />
+												Excused
+											</ToggleGroupItem>
+											<ToggleGroupItem value="unexcused" className="text-xs">
+												<XCircle className="h-3 w-3 mr-1" />
+												Unexcused
+											</ToggleGroupItem>
+										</ToggleGroup>
 									</FilterField>
 								</TableFilters>
 							</TableToolbar>
@@ -620,24 +713,41 @@ function AttendanceIssuesPage() {
 									<h4 className="text-sm font-medium text-muted-foreground mb-1">
 										Issue
 									</h4>
-									<div className="flex items-center gap-2">
+									<div className="flex items-center gap-2 flex-wrap">
 										<Badge variant={getIssueBadgeVariant(selectedIssue)}>
 											<span className="flex items-center gap-1">
 												{getIssueIcon(selectedIssue)}
 												{getIssueType(selectedIssue)}
 											</span>
 										</Badge>
-										{selectedIssue.isExcused ? (
-											<Badge>
-												<CheckCircle className="h-3 w-3 mr-1" />
-												Excused
-											</Badge>
-										) : (
-											<Badge variant="outline">
-												<AlertCircle className="h-3 w-3 mr-1" />
-												Unexcused
-											</Badge>
-										)}
+										{(() => {
+											const status = getExcuseStatus(selectedIssue);
+											if (status === "excused") {
+												return (
+													<Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-100">
+														<CheckCircle className="h-3 w-3 mr-1" />
+														Excused
+													</Badge>
+												);
+											}
+											if (status === "unexcused") {
+												return (
+													<Badge variant="destructive">
+														<XCircle className="h-3 w-3 mr-1" />
+														Unexcused
+													</Badge>
+												);
+											}
+											return (
+												<Badge
+													variant="outline"
+													className="border-amber-500 text-amber-600 dark:text-amber-400"
+												>
+													<AlertCircle className="h-3 w-3 mr-1" />
+													Pending Review
+												</Badge>
+											);
+										})()}
 									</div>
 								</div>
 
@@ -704,7 +814,7 @@ function AttendanceIssuesPage() {
 									</>
 								)}
 
-								{/* Excuse Info */}
+								{/* Excuse Info - Show when excused */}
 								{selectedIssue.isExcused && (
 									<>
 										<Separator />
@@ -712,25 +822,25 @@ function AttendanceIssuesPage() {
 											<h4 className="text-sm font-medium text-muted-foreground mb-1">
 												Excuse Information
 											</h4>
-											{selectedIssue.excusedBy && (
+											{selectedIssue.reviewedBy && (
 												<div className="text-sm">
 													<span className="text-muted-foreground">
 														Excused by:{" "}
 													</span>
-													{selectedIssue.excusedBy.name}
+													{selectedIssue.reviewedBy.name}
 												</div>
 											)}
-											{selectedIssue.excusedAt && (
+											{selectedIssue.reviewedAt && (
 												<div className="text-sm">
 													<span className="text-muted-foreground">
 														Excused on:{" "}
 													</span>
 													{new Date(
-														selectedIssue.excusedAt,
+														selectedIssue.reviewedAt,
 													).toLocaleDateString()}{" "}
 													at{" "}
 													{new Date(
-														selectedIssue.excusedAt,
+														selectedIssue.reviewedAt,
 													).toLocaleTimeString()}
 												</div>
 											)}
@@ -747,21 +857,81 @@ function AttendanceIssuesPage() {
 										</div>
 									</>
 								)}
+
+								{/* Review Info - Show when reviewed but not excused (unexcused) */}
+								{!selectedIssue.isExcused && selectedIssue.reviewedAt && (
+									<>
+										<Separator />
+										<div>
+											<h4 className="text-sm font-medium text-muted-foreground mb-1">
+												Review Information
+											</h4>
+											{selectedIssue.reviewedBy && (
+												<div className="text-sm">
+													<span className="text-muted-foreground">
+														Marked unexcused by:{" "}
+													</span>
+													{selectedIssue.reviewedBy.name}
+												</div>
+											)}
+											{selectedIssue.reviewedAt && (
+												<div className="text-sm">
+													<span className="text-muted-foreground">
+														Reviewed on:{" "}
+													</span>
+													{new Date(
+														selectedIssue.reviewedAt,
+													).toLocaleDateString()}{" "}
+													at{" "}
+													{new Date(
+														selectedIssue.reviewedAt,
+													).toLocaleTimeString()}
+												</div>
+											)}
+										</div>
+									</>
+								)}
 							</div>
 						)}
 
 						<DialogFooter>
-							{selectedIssue && !selectedIssue.isExcused && (
-								<Button
-									onClick={() => {
-										setDetailsDialogOpen(false);
-										openExcuseDialog(selectedIssue);
-									}}
-								>
-									<ShieldCheck className="h-4 w-4 mr-2" />
-									Grant Excuse
-								</Button>
-							)}
+							{selectedIssue &&
+								getExcuseStatus(selectedIssue) === "pending" && (
+									<>
+										<Button
+											variant="outline"
+											onClick={() => {
+												markReviewedMutation.mutate(selectedIssue.id);
+												setDetailsDialogOpen(false);
+											}}
+											disabled={markReviewedMutation.isPending}
+										>
+											<ShieldAlert className="h-4 w-4 mr-2" />
+											Mark Unexcused
+										</Button>
+										<Button
+											onClick={() => {
+												setDetailsDialogOpen(false);
+												openExcuseDialog(selectedIssue);
+											}}
+										>
+											<ShieldCheck className="h-4 w-4 mr-2" />
+											Grant Excuse
+										</Button>
+									</>
+								)}
+							{selectedIssue &&
+								getExcuseStatus(selectedIssue) === "unexcused" && (
+									<Button
+										onClick={() => {
+											setDetailsDialogOpen(false);
+											openExcuseDialog(selectedIssue);
+										}}
+									>
+										<ShieldCheck className="h-4 w-4 mr-2" />
+										Grant Excuse
+									</Button>
+								)}
 							<Button
 								variant="outline"
 								onClick={() => setDetailsDialogOpen(false)}

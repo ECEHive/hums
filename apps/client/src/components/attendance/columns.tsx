@@ -13,8 +13,8 @@ type AttendanceRecord = {
 	isMakeup: boolean | null;
 	isExcused: boolean;
 	excuseNotes: string | null;
-	excusedBy: { id: number; name: string } | null;
-	excusedAt: Date | null;
+	reviewedBy: { id: number; name: string } | null;
+	reviewedAt: Date | null;
 	droppedNotes: string | null;
 	shiftOccurrence: {
 		timestamp: Date;

@@ -87,13 +87,14 @@ export async function revokeExcuseHandler(options: TRevokeExcuseOptions) {
 	}
 
 	// Update the attendance record
+	// Clear excuse info and review info so it goes back to pending
 	const updatedAttendance = await prisma.shiftAttendance.update({
 		where: { id: attendanceId },
 		data: {
 			isExcused: false,
 			excuseNotes: null,
-			excusedById: null,
-			excusedAt: null,
+			reviewedAt: null,
+			reviewedById: null,
 		},
 		include: {
 			user: {

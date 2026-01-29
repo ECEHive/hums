@@ -4,36 +4,29 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
-export const ZGrantExcuseSchema = z.object({
+export const ZMarkReviewedSchema = z.object({
 	attendanceId: z.number().min(1),
-	notes: z.string().max(500).optional(),
 });
 
-export type TGrantExcuseSchema = z.infer<typeof ZGrantExcuseSchema>;
+export type TMarkReviewedSchema = z.infer<typeof ZMarkReviewedSchema>;
 
-export type TGrantExcuseOptions = {
+export type TMarkReviewedOptions = {
 	ctx: TPermissionProtectedProcedureContext;
-	input: TGrantExcuseSchema;
+	input: TMarkReviewedSchema;
 };
 
 /**
- * Grants an excuse for an attendance record.
+ * Marks an attendance issue as reviewed without excusing it.
  *
- * An excused attendance counts as full credit for attendance calculations,
- * regardless of whether the user was present, absent, late, or left early.
+ * This transitions an issue from "pending" to "unexcused" status.
+ * The issue will still count against the user's attendance record,
+ * but it will be marked as having been reviewed by staff.
  *
- * For dropped shifts, excusing gives the user credit as if they had attended
- * the shift they dropped (without requiring a makeup).
- *
- * Implementation note: We use the `isExcused` flag rather than changing the
- * `status` to "excused" so that the original attendance status (absent, dropped,
- * present with late/early issues, etc.) is preserved for historical records and
- * reporting purposes. The "excused" status enum value exists for edge cases where
- * an attendance record is created directly as excused, but the flag approach is
- * preferred for excusing existing records.
+ * Use this when a staff member has reviewed an issue and determined
+ * that it should not be excused (e.g., no valid reason provided).
  */
-export async function grantExcuseHandler(options: TGrantExcuseOptions) {
-	const { attendanceId, notes } = options.input;
+export async function markReviewedHandler(options: TMarkReviewedOptions) {
+	const { attendanceId } = options.input;
 	const actorId = options.ctx.user.id;
 
 	const actor = await getUserWithRoles(prisma, actorId);
@@ -91,31 +84,36 @@ export async function grantExcuseHandler(options: TGrantExcuseOptions) {
 		isSystemUser: options.ctx.user.isSystemUser,
 	});
 
-	// Check if already excused
+	// Check if already excused - can't mark as unexcused
 	if (attendance.isExcused) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
-			message: "This attendance is already excused",
+			message:
+				"This attendance is already excused. Revoke the excuse first to mark it as unexcused.",
 		});
 	}
 
-	// Can't excuse upcoming shifts - they haven't happened yet
+	// Check if already reviewed
+	if (attendance.reviewedAt) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "This attendance has already been reviewed",
+		});
+	}
+
+	// Can't review upcoming shifts - they haven't happened yet
 	if (attendance.status === "upcoming") {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
-			message: "Cannot excuse an upcoming shift that hasn't occurred yet",
+			message: "Cannot review an upcoming shift that hasn't occurred yet",
 		});
 	}
 
-	// Update the attendance record
-	// Set reviewedAt/reviewedById to track who excused this and when
-	const now = new Date();
+	// Update the attendance record to mark it as reviewed (unexcused)
 	const updatedAttendance = await prisma.shiftAttendance.update({
 		where: { id: attendanceId },
 		data: {
-			isExcused: true,
-			excuseNotes: notes?.trim() || null,
-			reviewedAt: now,
+			reviewedAt: new Date(),
 			reviewedById: actorId,
 		},
 		include: {
@@ -142,9 +140,8 @@ export async function grantExcuseHandler(options: TGrantExcuseOptions) {
 			id: updatedAttendance.id,
 			user: updatedAttendance.user,
 			isExcused: updatedAttendance.isExcused,
-			excuseNotes: updatedAttendance.excuseNotes,
-			reviewedBy: updatedAttendance.reviewedBy,
 			reviewedAt: updatedAttendance.reviewedAt,
+			reviewedBy: updatedAttendance.reviewedBy,
 		},
 	};
 }
