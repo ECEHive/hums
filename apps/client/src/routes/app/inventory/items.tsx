@@ -1,12 +1,12 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { BarcodeIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
+import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
-import { useAuth } from "@/auth/AuthProvider";
 import { generateColumns } from "@/components/inventory/columns";
 import { CreateDialog } from "@/components/inventory/create-dialog";
 import { ImportCsvDialog } from "@/components/inventory/import-csv-dialog";
+import { PrintBarcodeDialog } from "@/components/inventory/print-barcode-dialog";
 import type { ItemRow } from "@/components/inventory/types";
 import {
 	Page,
@@ -35,8 +35,6 @@ import {
 } from "@/components/ui/select";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
-import { printBarcodeLabels } from "@/lib/inventory/barcode-labels";
-import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/inventory/items")({
 	component: () => <Items />,
@@ -91,26 +89,21 @@ export function Items() {
 		currentCount: data.items.length,
 	});
 
-	const handlePrintBarcodes = React.useCallback(() => {
-		// Convert items to ItemRow format for barcode generation
-		const itemRows: ItemRow[] = data.items.map((item) => ({
-			...item,
-			createdAt: item.createdAt.toISOString(),
-			updatedAt: item.updatedAt.toISOString(),
-			snapshot: item.snapshot
-				? {
-						quantity: item.snapshot.quantity,
-					}
-				: null,
-		}));
-
-		printBarcodeLabels(itemRows);
-	}, [data.items]);
-
-	const user = useAuth().user;
-	// Require creation permission to print barcodes
-	const canPrintBarcodes =
-		user && checkPermissions(user, ["inventory.items.create"]);
+	// Convert items to ItemRow format for barcode generation
+	const itemRows: ItemRow[] = React.useMemo(
+		() =>
+			data.items.map((item) => ({
+				...item,
+				createdAt: item.createdAt.toISOString(),
+				updatedAt: item.updatedAt.toISOString(),
+				snapshot: item.snapshot
+					? {
+							quantity: item.snapshot.quantity,
+						}
+					: null,
+			})),
+		[data.items],
+	);
 
 	return (
 		<Page>
@@ -128,15 +121,10 @@ export function Items() {
 							<RefreshCcwIcon className="size-4" />
 						)}
 					</Button>
-					<Button
-						variant="outline"
-						onClick={handlePrintBarcodes}
+					<PrintBarcodeDialog
+						items={itemRows}
 						disabled={data.items.length === 0}
-						hidden={!canPrintBarcodes}
-					>
-						<BarcodeIcon className="size-4" />
-						Print Labels
-					</Button>
+					/>
 					<ImportCsvDialog onImportComplete={() => resetToFirstPage()} />
 					<CreateDialog onUpdate={() => resetToFirstPage()} />
 				</PageActions>

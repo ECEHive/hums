@@ -9,19 +9,20 @@ import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+	Sheet,
+	SheetClose,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions } from "@/lib/permissions";
+import { RoleMultiSelect, type Role } from "@/components/roles/role-multiselect";
 
 const formSchema = z.object({
 	id: z.string().uuid(),
@@ -30,6 +31,7 @@ const formSchema = z.object({
 	sku: z.string().max(100).optional(),
 	location: z.string().max(255).optional(),
 	minQuantity: z.number().int().min(0).optional(),
+	link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
 });
 
@@ -41,7 +43,9 @@ type EditDialogProps = {
 		sku?: string | null;
 		location?: string | null;
 		minQuantity?: number | null;
+		link?: string | null;
 		isActive: boolean;
+		approvalRoles?: { id: number; name: string }[];
 	};
 	onUpdate?: () => void;
 };
@@ -49,6 +53,9 @@ type EditDialogProps = {
 export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 	const [open, setOpen] = useState(false);
 	const [serverError, setServerError] = useState<string | null>(null);
+	const [approvalRoles, setApprovalRoles] = useState<Role[]>(
+		item.approvalRoles ?? [],
+	);
 	const queryClient = useQueryClient();
 	const formId = useId();
 
@@ -59,7 +66,9 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		sku?: string;
 		location?: string;
 		minQuantity?: number;
+		link?: string;
 		isActive?: boolean;
+		approvalRoleIds?: number[];
 	};
 
 	const updateItemMutation = useMutation({
@@ -88,6 +97,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 			sku: item.sku ?? "",
 			location: item.location ?? "",
 			minQuantity: item.minQuantity ?? undefined,
+			link: item.link ?? "",
 			quantity: undefined,
 			isActive: item.isActive,
 		},
@@ -105,6 +115,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 					sku: updateData.sku || undefined,
 					location: updateData.location || undefined,
 					minQuantity: updateData.minQuantity ?? undefined,
+					approvalRoleIds: approvalRoles.map((r) => r.id),
 				};
 
 				await updateItemMutation.mutateAsync(cleanedData);
@@ -140,18 +151,23 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 			setOpen(nextOpen);
 			if (!nextOpen) {
 				form.reset();
+				setApprovalRoles(item.approvalRoles ?? []);
+				setServerError(null);
+			} else {
+				// When opening, reset to current item values
+				setApprovalRoles(item.approvalRoles ?? []);
 				setServerError(null);
 			}
 		},
-		[form],
+		[form, item.approvalRoles],
 	);
 
 	const user = useAuth().user;
 	const canEdit = user && checkPermissions(user, ["inventory.items.update"]);
 
 	return (
-		<Dialog open={open} onOpenChange={handleDialogChange}>
-			<DialogTrigger asChild>
+		<Sheet open={open} onOpenChange={handleDialogChange}>
+			<SheetTrigger asChild>
 				<Button
 					variant="ghost"
 					size="icon"
@@ -160,15 +176,18 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 				>
 					<PencilIcon className="h-4 w-4" />
 				</Button>
-			</DialogTrigger>
-			<DialogContent className="sm:max-w-[600px]">
-				<DialogHeader>
-					<DialogTitle>Edit Item</DialogTitle>
-					<DialogDescription>Update item details.</DialogDescription>
-				</DialogHeader>
+			</SheetTrigger>
+			<SheetContent
+				side="right"
+				className="w-full sm:max-w-[600px] overflow-y-auto max-h-full"
+			>
+				<SheetHeader>
+					<SheetTitle>Edit Item</SheetTitle>
+					<SheetDescription>Update item details.</SheetDescription>
+				</SheetHeader>
 				<form
 					id={formId}
-					className="space-y-4"
+					className="space-y-4 px-4 sm:px-6 mt-4"
 					onSubmit={(e) => {
 						e.preventDefault();
 						form.handleSubmit();
@@ -250,6 +269,25 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 						)}
 					</form.Field>
 
+					<form.Field name="link">
+						{(field) => (
+							<Field>
+								<FieldLabel htmlFor={field.name}>
+									Link <span className="text-muted-foreground">(optional)</span>
+								</FieldLabel>
+								<Input
+									id={field.name}
+									name={field.name}
+									value={field.state.value ?? ""}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									placeholder="Enter ordering/product URL"
+								/>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
 					<form.Field name="minQuantity">
 						{(field) => (
 							<Field>
@@ -320,25 +358,48 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 						)}
 					</form.Field>
 
+					<Field>
+						<FieldLabel>
+							Checkout/Return Approval Roles{" "}
+							<span className="text-muted-foreground">(optional)</span>
+						</FieldLabel>
+						<RoleMultiSelect
+							value={approvalRoles}
+							onChange={setApprovalRoles}
+							placeholder="Select roles that can approve..."
+						/>
+						<p className="text-xs text-muted-foreground">
+							If set, checkout or return of this item will require approval from
+							a user with any of the selected roles.
+						</p>
+					</Field>
+
 					{serverError && (
 						<div className="text-sm text-destructive">{serverError}</div>
 					)}
 				</form>
-				<DialogFooter>
-					<DialogClose asChild>
+				<SheetFooter className="mt-4">
+					<SheetClose asChild>
 						<Button variant="outline" disabled={isSubmitting}>
 							Cancel
 						</Button>
-					</DialogClose>
+					</SheetClose>
 					<Button
 						form={formId}
 						type="submit"
 						disabled={!canSubmit || isSubmitting}
 					>
-						{isSubmitting ? <Spinner /> : "Save"}
+						{isSubmitting ? (
+							<>
+								<Spinner className="mr-2 size-4" />
+								Saving...
+							</>
+						) : (
+							"Save"
+						)}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 }

@@ -1,6 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { ApprovalDialog } from "@/components/approval-dialog";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { InventoryTransactionView } from "@/components/inventory-transaction-view";
@@ -107,7 +108,17 @@ function App() {
 							suspension={inventoryWorkflow.suspension}
 						/>
 
-						{inventoryWorkflow.transactionView && (
+						{inventoryWorkflow.approvalDialog && (
+							<ApprovalDialog
+								restrictedItems={inventoryWorkflow.approvalDialog.restrictedItems}
+								transactionType={inventoryWorkflow.approvalDialog.pendingTransaction?.type ?? "checkout"}
+								isProcessing={inventoryWorkflow.approvalDialog.isProcessing}
+								error={inventoryWorkflow.approvalDialog.error}
+								onCancel={inventoryWorkflow.handleApprovalCancel}
+							/>
+						)}
+
+						{inventoryWorkflow.transactionView && !inventoryWorkflow.approvalDialog && (
 							<InventoryTransactionView
 								userName={inventoryWorkflow.transactionView.userName}
 								canReturn={inventoryWorkflow.transactionView.canReturn}

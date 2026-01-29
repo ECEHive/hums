@@ -49,14 +49,6 @@ enum InventoryAction {
   CHECK_OUT
 }
 
-enum ItemRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  FULFILLED
-  CANCELLED
-}
-
 //
 // Models
 //
@@ -95,8 +87,6 @@ model User {
 
   // Inventory
   inventoryTransactions InventoryTransaction[]
-  itemRequests          ItemRequest[]         @relation("ItemRequestUser")
-  reviewedItemRequests  ItemRequest[]         @relation("ItemRequestReviewer")
 }
 
 model Role {
@@ -114,6 +104,9 @@ model Role {
   users       User[]
   shiftTypes ShiftType[]
   periods    Period[]   @relation("PeriodRoles")
+  
+  // Inventory approval roles (items that require this role to approve checkout/checkin)
+  approvalItems Item[] @relation("ItemApprovalRoles")
 }
 
 model Permission {
@@ -460,6 +453,7 @@ model Item {
   sku         String?  @unique
   location    String?
   minQuantity Int?     // minimum quantity threshold for alerts
+  link        String?  // ordering/product link
   isActive    Boolean  @default(true)
 
   // timestamps
@@ -469,7 +463,9 @@ model Item {
   // relations
   transactions InventoryTransaction[]
   snapshot     InventorySnapshot?
-  requests     ItemRequest[]
+  
+  // Roles required to approve checkout/checkin for this item (any role in the list can approve)
+  approvalRoles Role[] @relation("ItemApprovalRoles")
 }
 
 model InventoryTransaction {
@@ -501,32 +497,4 @@ model InventorySnapshot {
 
   // relations
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
-}
-
-model ItemRequest {
-  id String @id @default(uuid())
-
-  // fields
-  itemId          String?
-  requestedItemName String?           // For items that don't exist yet
-  quantity        Int
-  reason          String?
-  status          ItemRequestStatus @default(PENDING)
-  reviewNotes     String?
-  requestedById   Int
-  reviewedById    Int?
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  reviewedAt DateTime?
-
-  // relations
-  item       Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
-  requestedBy User @relation("ItemRequestUser", fields: [requestedById], references: [id], onDelete: Cascade)
-  reviewedBy  User? @relation("ItemRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-
-  // indexes
-  @@index([requestedById])
-  @@index([status, createdAt])
 }

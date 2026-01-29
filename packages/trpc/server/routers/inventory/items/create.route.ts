@@ -8,8 +8,10 @@ export const ZCreateItemSchema = z.object({
 	sku: z.string().max(100).optional(),
 	location: z.string().max(255).optional(),
 	minQuantity: z.number().int().min(0).optional(),
+	link: z.string().url().optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
 	initialQuantity: z.number().int().min(0).optional(),
+	approvalRoleIds: z.array(z.number().int()).optional(),
 });
 
 export type TCreateItemSchema = z.infer<typeof ZCreateItemSchema>;
@@ -20,11 +22,16 @@ export type TCreateItemOptions = {
 };
 
 export async function createItemHandler(options: TCreateItemOptions) {
-	const { initialQuantity, ...itemData } = options.input;
+	const { initialQuantity, approvalRoleIds, ...itemData } = options.input;
 
 	const item = await prisma.$transaction(async (tx) => {
 		const newItem = await tx.item.create({
-			data: itemData,
+			data: {
+				...itemData,
+				approvalRoles: approvalRoleIds?.length
+					? { connect: approvalRoleIds.map((id) => ({ id })) }
+					: undefined,
+			},
 		});
 
 		// Create initial snapshot if quantity provided
@@ -41,6 +48,9 @@ export async function createItemHandler(options: TCreateItemOptions) {
 			where: { id: newItem.id },
 			include: {
 				snapshot: true,
+				approvalRoles: {
+					select: { id: true, name: true },
+				},
 			},
 		});
 	});

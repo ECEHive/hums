@@ -29,6 +29,10 @@ import {
 } from "./requests/update.route";
 import { scanUserHandler, ZScanUserSchema } from "./scanUser.route";
 import {
+	verifyApproverHandler,
+	ZVerifyApproverSchema,
+} from "./verifyApprover.route";
+import {
 	createSnapshotHandler,
 	ZCreateSnapshotSchema,
 } from "./snapshots/createSnapshot.route";
@@ -60,6 +64,11 @@ export const inventoryRouter = router({
 	scanUser: inventoryProtectedProcedure
 		.input(ZScanUserSchema)
 		.mutation(scanUserHandler),
+
+	// Approval verification (for restricted item checkout/checkin)
+	verifyApprover: inventoryProtectedProcedure
+		.input(ZVerifyApproverSchema)
+		.mutation(verifyApproverHandler),
 
 	// Item Management
 	items: router({

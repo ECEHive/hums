@@ -1,34 +1,8 @@
-/*
-  Warnings:
-
-  - You are about to drop the `Checkout` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `InventoryItem` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `ItemInstance` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateEnum
 CREATE TYPE "InventoryAction" AS ENUM ('CHECK_IN', 'CHECK_OUT');
 
--- DropForeignKey
-ALTER TABLE "Checkout" DROP CONSTRAINT "Checkout_itemId_fkey";
-
--- DropForeignKey
-ALTER TABLE "Checkout" DROP CONSTRAINT "Checkout_itemInstanceId_fkey";
-
--- DropForeignKey
-ALTER TABLE "Checkout" DROP CONSTRAINT "Checkout_userId_fkey";
-
--- DropForeignKey
-ALTER TABLE "ItemInstance" DROP CONSTRAINT "ItemInstance_itemId_fkey";
-
--- DropTable
-DROP TABLE "Checkout";
-
--- DropTable
-DROP TABLE "InventoryItem";
-
--- DropTable
-DROP TABLE "ItemInstance";
+-- AlterTable
+ALTER TABLE "Device" ADD COLUMN     "hasInventoryAccess" BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateTable
 CREATE TABLE "Item" (
@@ -81,3 +55,20 @@ ALTER TABLE "InventoryTransaction" ADD CONSTRAINT "InventoryTransaction_userId_f
 
 -- AddForeignKey
 ALTER TABLE "InventorySnapshot" ADD CONSTRAINT "InventorySnapshot_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "Item"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Add inventory permissions for access control
+INSERT INTO "Permission" (name) VALUES
+    -- Item management permissions
+    ('inventory.items.create'),
+    ('inventory.items.update'),
+    ('inventory.items.delete'),
+    
+    -- Transaction permissions
+    ('inventory.transactions.checkIn'),
+    ('inventory.transactions.checkOut'),
+    ('inventory.transactions.list'),
+    
+    -- Snapshot permissions (admin only)
+    ('inventory.snapshots.create')
+    
+ON CONFLICT (name) DO NOTHING;

@@ -3,7 +3,6 @@ import {
 	BugIcon,
 	ChevronLeft,
 	ChevronUpIcon,
-	CirclePlusIcon,
 	DoorOpenIcon,
 	HistoryIcon,
 	HomeIcon,
@@ -38,9 +37,12 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
-import { checkPermissions } from "@/lib/permissions";
-import { permissions as itemRequestsPagePermissions } from "@/routes/app/inventory/item-requests";
-import { permissions as transactionsPagePermissions } from "@/routes/app/inventory/transactions";
+import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+
+// Permissions for admin pages - defined here to avoid circular dependencies with route files
+const transactionsPagePermissions = [
+	"inventory.transactions.list",
+] as RequiredPermissions;
 
 // Sidebar menu items, grouped by section
 export const items = [
@@ -65,12 +67,6 @@ export const items = [
 				icon: HistoryIcon,
 				permissions: [],
 			},
-			{
-				title: "Request Item",
-				url: "/app/inventory/request-item",
-				icon: CirclePlusIcon,
-				permissions: [],
-			},
 		],
 	},
 	{
@@ -81,12 +77,6 @@ export const items = [
 				url: "/app/inventory/transactions",
 				icon: HistoryIcon,
 				permissions: transactionsPagePermissions,
-			},
-			{
-				title: "Item Requests",
-				url: "/app/inventory/item-requests",
-				icon: CirclePlusIcon,
-				permissions: itemRequestsPagePermissions,
 			},
 		],
 	},

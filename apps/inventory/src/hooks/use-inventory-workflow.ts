@@ -2,6 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { formatLog, getLogger } from "@/lib/logging";
+import type { RestrictedItem } from "@/components/approval-dialog";
 
 // Agreements are not used in the inventory kiosk
 const NOTIFICATION_DISPLAY_DURATION_MS = 1500;
@@ -41,6 +42,18 @@ export type TransactionViewState = {
 	userId: number;
 };
 
+export type ApprovalDialogState = {
+	restrictedItems: RestrictedItem[];
+	pendingTransaction: {
+		type: "checkout" | "return";
+		items: { itemId: string; quantity: number }[];
+		userId: number;
+	};
+	isProcessing: boolean;
+	approverName?: string;
+	error?: string;
+};
+
 type InventoryWorkflowState = {
 	isProcessing: boolean;
 	scanNotification: ScanNotificationState | null;
@@ -48,6 +61,7 @@ type InventoryWorkflowState = {
 	errorDialog: ErrorDialogState;
 	suspension: SuspensionState | null;
 	transactionView: TransactionViewState | null;
+	approvalDialog: ApprovalDialogState | null;
 };
 
 type InventoryWorkflowAction =
@@ -66,7 +80,10 @@ type InventoryWorkflowAction =
 	| { type: "suspension_clear" }
 	| { type: "suspension_exit_start" }
 	| { type: "transaction_view_set"; payload: TransactionViewState }
-	| { type: "transaction_view_clear" };
+	| { type: "transaction_view_clear" }
+	| { type: "approval_dialog_set"; payload: ApprovalDialogState }
+	| { type: "approval_dialog_update"; payload: Partial<ApprovalDialogState> }
+	| { type: "approval_dialog_clear" };
 
 const INITIAL_STATE: InventoryWorkflowState = {
 	isProcessing: false,
@@ -78,6 +95,7 @@ const INITIAL_STATE: InventoryWorkflowState = {
 	},
 	suspension: null,
 	transactionView: null,
+	approvalDialog: null,
 };
 
 const inventoryWorkflowReducer = (
@@ -168,6 +186,17 @@ const inventoryWorkflowReducer = (
 			return { ...state, transactionView: action.payload };
 		case "transaction_view_clear":
 			return { ...state, transactionView: null };
+		case "approval_dialog_set":
+			return { ...state, approvalDialog: action.payload };
+		case "approval_dialog_update":
+			return {
+				...state,
+				approvalDialog: state.approvalDialog
+					? { ...state.approvalDialog, ...action.payload }
+					: null,
+			};
+		case "approval_dialog_clear":
+			return { ...state, approvalDialog: null };
 		default:
 			return state;
 	}
@@ -190,6 +219,7 @@ export function useInventoryWorkflow() {
 		errorDialog,
 		suspension,
 		transactionView,
+		approvalDialog,
 	} = state;
 
 	const scanNotificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -257,8 +287,92 @@ export function useInventoryWorkflow() {
 		[errorDialog.message, scheduleErrorHide],
 	);
 
+	const handleApprovalScan = useCallback(
+		async (cardNumber: string) => {
+			if (!approvalDialog?.pendingTransaction) return;
+
+			dispatch({
+				type: "approval_dialog_update",
+				payload: { isProcessing: true },
+			});
+
+			try {
+				log.info(
+					formatLog("Approval scan received", {
+						cardId: cardNumber.slice(-6),
+						transactionType: approvalDialog.pendingTransaction.type,
+						restrictedItemCount: approvalDialog.restrictedItems.length,
+					}),
+				);
+
+				// Verify the approver has permission
+				const result = await trpc.inventory.verifyApprover.mutate({
+					cardNumber,
+					itemIds: approvalDialog.restrictedItems.map((item) => item.id),
+				});
+
+				if (result.status === "unauthorized") {
+					// Build error message from unauthorized items
+					const itemNames = result.unauthorizedItems.map((item) => item.name).join(", ");
+					const errorMessage = `You do not have permission to approve: ${itemNames}`;
+					dispatch({
+						type: "approval_dialog_update",
+						payload: {
+							isProcessing: false,
+							error: errorMessage,
+						},
+					});
+					return;
+				}
+
+				// Approver verified, complete the transaction
+				const { type, items, userId } = approvalDialog.pendingTransaction;
+
+				if (type === "checkout") {
+					await trpc.inventory.transactions.checkOut.mutate({
+						userId,
+						items,
+					});
+				} else {
+					await trpc.inventory.transactions.checkIn.mutate({
+						userId,
+						items,
+					});
+				}
+
+				dispatch({ type: "approval_dialog_clear" });
+				dispatch({ type: "transaction_view_clear" });
+				showSuccess(
+					type === "checkout"
+						? "Items checked out successfully!"
+						: "Items returned successfully!",
+				);
+			} catch (error: unknown) {
+				const message =
+					error instanceof Error ? error.message : "Approval verification failed";
+				log.error(formatLog("Approval scan failed", { error: message }));
+				dispatch({
+					type: "approval_dialog_update",
+					payload: { isProcessing: false, error: message },
+				});
+			}
+		},
+		[approvalDialog, log, showSuccess],
+	);
+
+	const handleApprovalCancel = useCallback(() => {
+		dispatch({ type: "approval_dialog_clear" });
+		log.info(formatLog("Approval cancelled"));
+	}, [log]);
+
 	const handleScan = useCallback(
 		async (cardNumber: string) => {
+			// If approval dialog is active, route to approval scan
+			if (approvalDialog) {
+				await handleApprovalScan(cardNumber);
+				return;
+			}
+
 			dismissScanNotification();
 			dispatch({ type: "processing_start" });
 
@@ -330,7 +444,7 @@ export function useInventoryWorkflow() {
 				showError(message);
 			}
 		},
-		[dismissScanNotification, log, scheduleScanHide, showError],
+		[approvalDialog, dismissScanNotification, handleApprovalScan, log, scheduleScanHide, showError],
 	);
 
 	const handleCheckout = useCallback(
@@ -347,20 +461,62 @@ export function useInventoryWorkflow() {
 					}),
 				);
 
-				// Resolve SKUs to item IDs and perform checkout via TRPC
-				const resolved = await Promise.all(
+				// Resolve SKUs to item IDs and get approval requirements
+				const resolvedItems = await Promise.all(
 					items.map(async (it) => {
 						const item = await trpc.inventory.items.getBySku.query({
 							sku: it.sku,
 						});
 						if (!item?.id) throw new Error(`Item not found: ${it.sku}`);
-						return { itemId: item.id, quantity: it.quantity };
+						return {
+							itemId: item.id,
+							quantity: it.quantity,
+							name: item.name,
+							sku: item.sku ?? it.sku,
+							approvalRoles: item.approvalRoles ?? [],
+						};
 					}),
 				);
 
+				// Check if any items require approval
+				const restrictedItems = resolvedItems.filter(
+					(item) => item.approvalRoles.length > 0,
+				);
+
+				if (restrictedItems.length > 0) {
+					// Show approval dialog
+					dispatch({
+						type: "approval_dialog_set",
+						payload: {
+							restrictedItems: restrictedItems.map((item) => ({
+								id: item.itemId,
+								name: item.name,
+								sku: item.sku,
+								quantity: item.quantity,
+								approvalRoles: item.approvalRoles,
+							})),
+							pendingTransaction: {
+								type: "checkout",
+								items: resolvedItems.map((item) => ({
+									itemId: item.itemId,
+									quantity: item.quantity,
+								})),
+								userId: transactionView.userId,
+							},
+							isProcessing: false,
+						},
+					});
+					dispatch({ type: "processing_end" });
+					return;
+				}
+
+				// No approval needed, proceed with checkout
 				await trpc.inventory.transactions.checkOut.mutate({
 					userId: transactionView.userId,
-					items: resolved,
+					items: resolvedItems.map((item) => ({
+						itemId: item.itemId,
+						quantity: item.quantity,
+					})),
 				});
 
 				dispatch({ type: "transaction_view_clear" });
@@ -391,20 +547,62 @@ export function useInventoryWorkflow() {
 					}),
 				);
 
-				// Resolve SKUs to item IDs and perform check-in via TRPC
-				const resolved = await Promise.all(
+				// Resolve SKUs to item IDs and get approval requirements
+				const resolvedItems = await Promise.all(
 					items.map(async (it) => {
 						const item = await trpc.inventory.items.getBySku.query({
 							sku: it.sku,
 						});
 						if (!item?.id) throw new Error(`Item not found: ${it.sku}`);
-						return { itemId: item.id, quantity: it.quantity };
+						return {
+							itemId: item.id,
+							quantity: it.quantity,
+							name: item.name,
+							sku: item.sku ?? it.sku,
+							approvalRoles: item.approvalRoles ?? [],
+						};
 					}),
 				);
 
+				// Check if any items require approval
+				const restrictedItems = resolvedItems.filter(
+					(item) => item.approvalRoles.length > 0,
+				);
+
+				if (restrictedItems.length > 0) {
+					// Show approval dialog
+					dispatch({
+						type: "approval_dialog_set",
+						payload: {
+							restrictedItems: restrictedItems.map((item) => ({
+								id: item.itemId,
+								name: item.name,
+								sku: item.sku,
+								quantity: item.quantity,
+								approvalRoles: item.approvalRoles,
+							})),
+							pendingTransaction: {
+								type: "return",
+								items: resolvedItems.map((item) => ({
+									itemId: item.itemId,
+									quantity: item.quantity,
+								})),
+								userId: transactionView.userId,
+							},
+							isProcessing: false,
+						},
+					});
+					dispatch({ type: "processing_end" });
+					return;
+				}
+
+				// No approval needed, proceed with return
 				await trpc.inventory.transactions.checkIn.mutate({
 					userId: transactionView.userId,
-					items: resolved,
+					items: resolvedItems.map((item) => ({
+						itemId: item.itemId,
+						quantity: item.quantity,
+					})),
 				});
 
 				dispatch({ type: "transaction_view_clear" });
@@ -445,9 +643,12 @@ export function useInventoryWorkflow() {
 		errorDialog,
 		suspension,
 		transactionView,
+		approvalDialog,
 		handleScan,
 		handleCheckout,
 		handleReturn,
+		handleApprovalScan,
+		handleApprovalCancel,
 		handleTransactionCancel,
 		showError,
 		dismissScanNotification,

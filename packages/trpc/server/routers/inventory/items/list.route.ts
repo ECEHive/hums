@@ -46,10 +46,12 @@ export async function listItemsHandler(options: TListItemsOptions) {
 			take: limit,
 			include: {
 				snapshot: true,
+				approvalRoles: {
+					select: { id: true, name: true },
+				},
 				_count: {
 					select: {
 						transactions: true,
-						requests: true,
 					},
 				},
 			},

@@ -39,12 +39,6 @@ function InventoryIndex() {
 								View Items
 							</Button>
 						</Link>
-						<Link to="/app/inventory/request-item">
-							<Button variant="outline" className="w-full justify-start">
-								<PlusCircleIcon className="mr-2 h-4 w-4" />
-								Request an Item
-							</Button>
-						</Link>
 						{canViewTransactions ? (
 							<Link to="/app/inventory/transactions">
 								<Button variant="outline" className="w-full justify-start">

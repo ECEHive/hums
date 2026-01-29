@@ -10,7 +10,9 @@ export const ZUpdateItemSchema = z.object({
 	sku: z.string().max(100).optional(),
 	location: z.string().max(255).optional(),
 	minQuantity: z.number().int().min(0).optional(),
+	link: z.string().url().optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
+	approvalRoleIds: z.array(z.number().int()).optional(),
 });
 
 export type TUpdateItemSchema = z.infer<typeof ZUpdateItemSchema>;
@@ -21,13 +23,28 @@ export type TUpdateItemOptions = {
 };
 
 export async function updateItemHandler(options: TUpdateItemOptions) {
-	const { id, ...data } = options.input;
+	const { id, approvalRoleIds, ...data } = options.input;
+
+	// Build the update data with approval roles if provided
+	const updateData: Parameters<typeof prisma.item.update>[0]["data"] = {
+		...data,
+	};
+
+	// Only update approval roles if the field was explicitly provided
+	if (approvalRoleIds !== undefined) {
+		updateData.approvalRoles = {
+			set: approvalRoleIds.map((roleId) => ({ id: roleId })),
+		};
+	}
 
 	const item = await prisma.item.update({
 		where: { id },
-		data,
+		data: updateData,
 		include: {
 			snapshot: true,
+			approvalRoles: {
+				select: { id: true, name: true },
+			},
 		},
 	});
 

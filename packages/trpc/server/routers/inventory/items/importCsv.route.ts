@@ -96,11 +96,16 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 	const minQuantityIndex = headers.findIndex((h) =>
 		["minquantity", "min_quantity", "minqty"].includes(h),
 	);
+	const linkIndex = headers.indexOf("link");
 	const isActiveIndex = headers.findIndex((h) =>
 		["isactive", "is_active", "active"].includes(h),
 	);
 	const initialQuantityIndex = headers.findIndex((h) =>
 		["initialquantity", "initial_quantity", "quantity", "qty"].includes(h),
+	);
+	// approvalRoles column: pipe-delimited list of role names (e.g., "Admin|Manager|Supervisor")
+	const approvalRolesIndex = headers.findIndex((h) =>
+		["approvalroles", "approval_roles", "requiredroles", "required_roles"].includes(h),
 	);
 
 	if (nameIndex === -1) {
@@ -110,6 +115,15 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 		});
 	}
 
+	// If approvalRoles column exists, fetch all roles upfront to validate
+	let roleMap: Map<string, number> = new Map();
+	if (approvalRolesIndex !== -1) {
+		const allRoles = await prisma.role.findMany({
+			select: { id: true, name: true },
+		});
+		roleMap = new Map(allRoles.map((r) => [r.name.toLowerCase(), r.id]));
+	}
+
 	// Parse rows
 	const itemsToCreate: Array<{
 		name: string;
@@ -117,8 +131,10 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 		sku?: string;
 		location?: string;
 		minQuantity?: number;
+		link?: string;
 		isActive?: boolean;
 		initialQuantity?: number;
+		approvalRoleIds?: number[];
 	}> = [];
 
 	const errors: string[] = [];
@@ -161,6 +177,11 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 				locationIndex !== -1
 					? values[locationIndex]?.replace(/^["']|["']$/g, "").trim() ||
 						undefined
+					: undefined;
+
+			const link =
+				linkIndex !== -1
+					? values[linkIndex]?.replace(/^["']|["']$/g, "").trim() || undefined
 					: undefined;
 
 			let minQuantity: number | undefined;
@@ -217,14 +238,49 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 				}
 			}
 
+			// Parse approval roles (pipe-delimited list of role names)
+			let approvalRoleIds: number[] | undefined;
+			if (approvalRolesIndex !== -1) {
+				const approvalRolesStr = values[approvalRolesIndex]
+					?.replace(/^["']|["']$/g, "")
+					.trim();
+				if (approvalRolesStr) {
+					const roleNames = approvalRolesStr.split("|").map((r) => r.trim()).filter(Boolean);
+					const resolvedIds: number[] = [];
+					const unrecognizedRoles: string[] = [];
+
+					for (const roleName of roleNames) {
+						const roleId = roleMap.get(roleName.toLowerCase());
+						if (roleId !== undefined) {
+							resolvedIds.push(roleId);
+						} else {
+							unrecognizedRoles.push(roleName);
+						}
+					}
+
+					if (unrecognizedRoles.length > 0) {
+						errors.push(
+							`Row ${rowNum}: Unrecognized role(s): ${unrecognizedRoles.join(", ")}. Available roles: ${Array.from(roleMap.keys()).join(", ")}`,
+						);
+						continue;
+					}
+
+					if (resolvedIds.length > 0) {
+						approvalRoleIds = resolvedIds;
+					}
+				}
+			}
+
 			itemsToCreate.push({
 				name,
 				description,
 				sku,
 				location,
 				minQuantity,
+				link,
 				isActive,
 				initialQuantity,
+				approvalRoleIds,
 			});
 		} catch (error) {
 			errors.push(
@@ -274,13 +330,16 @@ export async function importCsvHandler(options: TImportCsvOptions) {
 					continue;
 				}
 
-				const { initialQuantity, ...itemFields } = itemData;
+				const { initialQuantity, approvalRoleIds, ...itemFields } = itemData;
 
-				// Create the item
+				// Create the item with approval roles if provided
 				const item = await tx.item.create({
 					data: {
 						...itemFields,
 						sku,
+						approvalRoles: approvalRoleIds?.length
+							? { connect: approvalRoleIds.map((id) => ({ id })) }
+							: undefined,
 					},
 				});
 

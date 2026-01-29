@@ -130,12 +130,12 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4">
+				<div className="space-y-4 overflow-hidden">
 					{/* Information Section */}
 					<div className="rounded-lg border bg-muted/50 p-4">
 						<div className="flex gap-2">
 							<InfoIcon className="size-5 shrink-0 text-muted-foreground mt-0.5" />
-							<div className="space-y-2 text-sm">
+							<div className="space-y-2 text-sm min-w-0 flex-1">
 								<p className="font-semibold">CSV Format Requirements:</p>
 								<ul className="space-y-1 list-disc list-inside text-muted-foreground">
 									<li>
@@ -143,7 +143,8 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 									</li>
 									<li>
 										<strong>Optional columns:</strong> description, sku,
-										location, minQuantity, initialQuantity, isActive
+										location, minQuantity, link, initialQuantity, isActive,
+										approvalRoles
 									</li>
 									<li>Header row is required</li>
 									<li>Column names are case-insensitive</li>
@@ -151,6 +152,7 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 										If SKU is not provided, it will be auto-generated
 										(8-character alphanumeric code)
 									</li>
+									<li>link can contain an ordering/product URL</li>
 									<li>
 										initialQuantity sets the starting inventory snapshot
 										quantity
@@ -159,10 +161,15 @@ export function ImportCsvDialog({ onImportComplete }: ImportCsvDialogProps) {
 										isActive accepts: true/false, 1/0, yes/no, y/n (defaults to
 										true)
 									</li>
+									<li>
+										approvalRoles accepts pipe-delimited role names (e.g.,
+										"Admin|Manager|Supervisor"). If set, checkout/return
+										requires approval from a user with any of these roles.
+									</li>
 								</ul>
-								<p className="mt-2 text-xs text-muted-foreground">
+								<p className="mt-2 text-xs text-muted-foreground break-all">
 									<strong>Example header:</strong>{" "}
-									name,description,sku,location,minQuantity,initialQuantity,isActive
+									name,description,sku,location,minQuantity,link,initialQuantity,isActive,approvalRoles
 								</p>
 							</div>
 						</div>

@@ -1,6 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
-import { EllipsisIcon } from "lucide-react";
+import { EllipsisIcon, LinkIcon, LockIcon } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
 	TooltipContent,
@@ -17,9 +19,57 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 			header: "Name",
 			cell: (info) => {
 				const row = info.row.original as ItemRow;
+				const handleCopyLink = async () => {
+					if (row.link) {
+						try {
+							await navigator.clipboard.writeText(row.link);
+							toast.success("Link copied to clipboard");
+						} catch {
+							toast.error("Failed to copy link");
+						}
+					}
+				};
+
 				return (
 					<div className="flex items-center gap-2">
 						<span>{info.getValue() as string}</span>
+						{row.link ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-6 w-6"
+										onClick={handleCopyLink}
+									>
+										<LinkIcon className="h-4 w-4 text-muted-foreground" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Copy link to clipboard</TooltipContent>
+							</Tooltip>
+						) : null}
+						{row.approvalRoles && row.approvalRoles.length > 0 ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<div className="flex items-center">
+										<LockIcon className="h-4 w-4 text-amber-500" />
+									</div>
+								</TooltipTrigger>
+								<TooltipContent>
+									<div className="text-sm">
+										<div className="font-semibold mb-1">Restricted Item</div>
+										<div className="text-muted-foreground">
+											Requires approval from:
+										</div>
+										<ul className="mt-1 list-disc list-inside">
+											{row.approvalRoles.map((role) => (
+												<li key={role.id}>{role.name}</li>
+											))}
+										</ul>
+									</div>
+								</TooltipContent>
+							</Tooltip>
+						) : null}
 						{row.description ? (
 							<Tooltip>
 								<TooltipTrigger>

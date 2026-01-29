@@ -5,16 +5,16 @@
 Create a file named `sample_items.csv` with the following content:
 
 ```csv
-name,description,sku,location,minQuantity,initialQuantity,isActive
-Arduino Uno,Microcontroller board based on ATmega328P,ARDUINO-UNO,Shelf A1,5,20,true
-Raspberry Pi 4,Single-board computer with 4GB RAM,RPI4-4GB,Shelf A2,3,15,true
-Breadboard,830-point solderless breadboard,,Shelf B1,10,50,true
-Resistor Pack,100-pack of 220Ω resistors,,Shelf C1,5,200,yes
-LED Pack,50-pack of red 5mm LEDs,,Shelf C2,10,100,1
-Jumper Wires,40-pack of male-to-male jumper wires,,Shelf B2,8,75,y
-Multimeter,Digital multimeter with auto-ranging,DMM-001,Equipment Room,2,5,true
-Soldering Iron,Temperature-controlled soldering station,SOLD-60W,Workbench 1,1,3,true
-Old Component,Deprecated component for testing,OLD-001,Storage,0,0,false
+name,description,sku,location,minQuantity,link,initialQuantity,isActive
+Arduino Uno,Microcontroller board based on ATmega328P,ARDUINO-UNO,Shelf A1,5,https://store.arduino.cc/products/arduino-uno-rev3,20,true
+Raspberry Pi 4,Single-board computer with 4GB RAM,RPI4-4GB,Shelf A2,3,https://www.raspberrypi.com/products/raspberry-pi-4-model-b/,15,true
+Breadboard,830-point solderless breadboard,,Shelf B1,10,,50,true
+Resistor Pack,100-pack of 220Ω resistors,,Shelf C1,5,https://example.com/resistors,200,yes
+LED Pack,50-pack of red 5mm LEDs,,Shelf C2,10,,100,1
+Jumper Wires,40-pack of male-to-male jumper wires,,Shelf B2,8,,75,y
+Multimeter,Digital multimeter with auto-ranging,DMM-001,Equipment Room,2,https://example.com/multimeter,5,true
+Soldering Iron,Temperature-controlled soldering station,SOLD-60W,Workbench 1,1,,3,true
+Old Component,Deprecated component for testing,OLD-001,Storage,0,,0,false
 ```
 
 ## Column Descriptions
@@ -24,6 +24,7 @@ Old Component,Deprecated component for testing,OLD-001,Storage,0,0,false
 - **sku** (optional): Stock Keeping Unit - if not provided, will be auto-generated (8-character alphanumeric)
 - **location** (optional): Physical location of the item
 - **minQuantity** (optional): Minimum quantity threshold for low stock alerts
+- **link** (optional): Ordering or product URL
 - **initialQuantity** (optional): Starting inventory count - creates a snapshot
 - **isActive** (optional): Whether the item is active (true/false, 1/0, yes/no, y/n) - defaults to true
 

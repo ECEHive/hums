@@ -96,10 +96,6 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Items",
 		breadcrumb: "Items",
 	},
-	"/app/inventory/request-item": {
-		title: "Request Item",
-		breadcrumb: "Request Item",
-	},
 	"/app/inventory/transactions": {
 		title: "Transactions",
 		breadcrumb: "Transactions",
@@ -107,10 +103,6 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 	"/app/inventory/my-transactions": {
 		title: "My Transactions",
 		breadcrumb: "My Transactions",
-	},
-	"/app/inventory/item-requests": {
-		title: "Item Requests",
-		breadcrumb: "Item Requests",
 	},
 
 	// Shifts Routes
