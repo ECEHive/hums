@@ -10,10 +10,13 @@ import { ReadyView } from "@/components/ready-view";
 import { SetupView } from "@/components/setup-view";
 import { useCardReader } from "@/hooks/use-card-reader";
 import { useTapWorkflow } from "@/hooks/use-tap-workflow";
+import { useBranding } from "@/hooks/useBranding";
 import { useConfig } from "@/hooks/useConfig";
 import type { KioskStatus } from "@/types";
 
 function App() {
+	// Load and apply branding
+	useBranding();
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const tapWorkflow = useTapWorkflow();
 	const { data: config } = useConfig();
@@ -77,8 +80,6 @@ function App() {
 		};
 	}, []);
 
-	const logoUrl = new URL("./assets/logo_dark.svg", import.meta.url).href;
-
 	// Determine the client base URL for one-time login
 	// Use runtime config clientBaseUrl, otherwise fall back to current page's origin
 	const clientBaseUrl = config?.clientBaseUrl || window.location.origin;
@@ -95,7 +96,6 @@ function App() {
 				<div className="h-full min-w-full overflow-hidden dark flex flex-col">
 					{isPreConnection && (
 						<KioskHeader
-							logoUrl={logoUrl}
 							connectionStatus={connectionStatus}
 							kioskStatus={kioskStatus}
 							isFullscreen={isFullscreen}
@@ -143,7 +143,6 @@ function App() {
 								/>
 							) : (
 								<ReadyView
-									logoUrl={logoUrl}
 									isFullscreen={isFullscreen}
 									isProcessing={tapWorkflow.isProcessing}
 									onToggleFullscreen={toggleFullscreen}

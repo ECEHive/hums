@@ -6,12 +6,12 @@ import {
 	XCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { getLogoDataUrl, useBranding } from "@/hooks/useBranding";
 import type { ConnectionStatus, KioskStatus } from "@/types";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 
 interface KioskHeaderProps {
-	logoUrl: string;
 	connectionStatus: ConnectionStatus;
 	kioskStatus: KioskStatus;
 	isFullscreen: boolean;
@@ -19,12 +19,12 @@ interface KioskHeaderProps {
 }
 
 export function KioskHeader({
-	logoUrl,
 	connectionStatus,
 	kioskStatus,
 	isFullscreen,
 	onToggleFullscreen,
 }: KioskHeaderProps) {
+	const { data: branding } = useBranding();
 	const getStatusConfig = () => {
 		switch (connectionStatus) {
 			case "connected":
@@ -69,10 +69,13 @@ export function KioskHeader({
 	const statusConfig = getStatusConfig();
 	const StatusIcon = statusConfig.icon;
 
+	// Dark mode kiosks use dark logo
+	const logoSrc = branding ? getLogoDataUrl(branding.logos.dark) : undefined;
+
 	return (
 		<div className="flex-none">
 			<div className="flex items-center justify-between gap-4">
-				<img src={logoUrl} alt="HUMS" className="w-24 h-auto" />
+				{logoSrc && <img src={logoSrc} alt="Logo" className="w-24 h-auto" />}
 				<div className="flex items-center gap-3">
 					<Button
 						variant="ghost"

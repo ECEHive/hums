@@ -1,21 +1,23 @@
 import { Maximize } from "lucide-react";
 import { KioskClock } from "@/components/kiosk-clock";
 import { LoadingIndicator } from "@/components/loading-indicator";
+import { getLogoDataUrl, useBranding } from "@/hooks/useBranding";
 import { Button } from "./ui/button";
 
 interface ReadyViewProps {
-	logoUrl: string;
 	isFullscreen: boolean;
 	isProcessing?: boolean;
 	onToggleFullscreen: () => void;
 }
 
 export function ReadyView({
-	logoUrl,
 	isFullscreen,
 	isProcessing = false,
 	onToggleFullscreen,
 }: ReadyViewProps) {
+	const { data: branding } = useBranding();
+	const logoSrc = branding ? getLogoDataUrl(branding.logos.dark) : undefined;
+
 	return (
 		<div className="min-w-full h-full flex items-center justify-center overflow-hidden relative">
 			{!isFullscreen && (
@@ -32,7 +34,7 @@ export function ReadyView({
 
 			<div className="flex flex-col items-center justify-center gap-16">
 				<div className="w-full flex flex-row items-center justify-center gap-4">
-					<img src={logoUrl} alt="HUMS" className="h-12 w-auto" />
+					{logoSrc && <img src={logoSrc} alt="Logo" className="h-12 w-auto" />}
 					<p className="text-6xl font-semibold">Inventory Kiosk</p>
 				</div>
 

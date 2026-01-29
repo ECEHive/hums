@@ -25,8 +25,12 @@ export default defineConfig(({ mode }) => {
 					target: env.VITE_DEV_SERVER_URL,
 					changeOrigin: true,
 				},
-				// If more server endpoints are added,
-				// they can be proxied here.
+				// Proxy favicon to branding endpoint
+				"/kiosk/favicon.svg": {
+					target: env.VITE_DEV_SERVER_URL,
+					changeOrigin: true,
+					rewrite: () => "/api/branding/favicon.svg",
+				},
 			},
 		},
 		plugins: [

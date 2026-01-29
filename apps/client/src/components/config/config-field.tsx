@@ -12,6 +12,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ColorPicker } from "./color-picker";
+import { SvgUpload } from "./svg-upload";
 
 interface ConfigFieldDef {
 	key: string;
@@ -163,6 +165,24 @@ export function ConfigField({
 						value={inputValue as string}
 						onChange={(e) => handleChange(e.target.value)}
 						placeholder={field.placeholder}
+						disabled={!canWrite || isSaving}
+					/>
+				);
+
+			case "color":
+				return (
+					<ColorPicker
+						value={inputValue as string}
+						onChange={handleChange}
+						disabled={!canWrite || isSaving}
+					/>
+				);
+
+			case "svg":
+				return (
+					<SvgUpload
+						value={inputValue as string}
+						onChange={handleChange}
 						disabled={!canWrite || isSaving}
 					/>
 				);

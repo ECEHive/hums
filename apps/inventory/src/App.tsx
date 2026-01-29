@@ -11,9 +11,13 @@ import { ReadyView } from "@/components/ready-view";
 import { SetupView } from "@/components/setup-view";
 import { useCardReader } from "@/hooks/use-card-reader";
 import { useInventoryWorkflow } from "@/hooks/use-inventory-workflow";
+import { useBranding } from "@/hooks/useBranding";
 import type { KioskStatus } from "@/types";
 
 function App() {
+	// Load and apply branding
+	useBranding();
+
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const inventoryWorkflow = useInventoryWorkflow();
 
@@ -76,10 +80,6 @@ function App() {
 		};
 	}, []);
 
-	const logoUrl = new URL("./assets/logo_dark.svg", import.meta.url).href;
-
-	// clientBaseUrl removed (one-time login removed)
-
 	const isPreConnection =
 		!kioskStatus.isKiosk ||
 		connectionStatus === "disconnected" ||
@@ -92,7 +92,6 @@ function App() {
 				<div className="h-full min-w-full overflow-hidden dark flex flex-col">
 					{isPreConnection && (
 						<KioskHeader
-							logoUrl={logoUrl}
 							connectionStatus={connectionStatus}
 							kioskStatus={kioskStatus}
 							isFullscreen={isFullscreen}
@@ -146,7 +145,6 @@ function App() {
 								/>
 							) : (
 								<ReadyView
-									logoUrl={logoUrl}
 									isFullscreen={isFullscreen}
 									isProcessing={inventoryWorkflow.isProcessing}
 									onToggleFullscreen={toggleFullscreen}
