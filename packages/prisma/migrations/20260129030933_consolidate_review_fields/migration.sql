@@ -11,9 +11,10 @@ ALTER TABLE "ShiftAttendance" ADD COLUMN "reviewedById" INTEGER;
 
 -- Copy existing data from excusedBy/excusedAt to reviewedBy/reviewedAt
 -- This preserves the history of who excused records
+-- Handle edge cases where excusedAt might be set without excusedById
 UPDATE "ShiftAttendance" 
 SET "reviewedAt" = "excusedAt", "reviewedById" = "excusedById" 
-WHERE "excusedById" IS NOT NULL;
+WHERE "excusedById" IS NOT NULL OR "excusedAt" IS NOT NULL;
 
 -- DropForeignKey
 ALTER TABLE "ShiftAttendance" DROP CONSTRAINT "ShiftAttendance_excusedById_fkey";

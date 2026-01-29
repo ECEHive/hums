@@ -25,7 +25,18 @@ export const ZListIssuesSchema = z.object({
 	 * - excused: Has been excused (isExcused is true)
 	 * - unexcused: Reviewed but not excused (reviewedAt is set, isExcused is false)
 	 */
-	excuseStatus: z.array(z.enum(excuseStatusValues)).default(["pending"]),
+	excuseStatus: z
+		.array(z.enum(excuseStatusValues))
+		.min(1)
+		.max(3)
+		.refine((values) => new Set(values).size === values.length, {
+			message: "excuseStatus values must be unique",
+		})
+		.default(["pending"]),
+	/** Filter by start date (inclusive) - filters by shift occurrence timestamp */
+	startDate: z.coerce.date().optional(),
+	/** Filter by end date (inclusive) - filters by shift occurrence timestamp */
+	endDate: z.coerce.date().optional(),
 	/** Search by user name or username */
 	search: z.string().max(100).optional(),
 	limit: z.number().min(1).max(100).default(50),
@@ -44,8 +55,16 @@ export type TListIssuesOptions = {
  * Issues include: dropped shifts, absences, late arrivals, and early departures.
  */
 export async function listIssuesHandler(options: TListIssuesOptions) {
-	const { periodId, issueType, excuseStatus, search, limit, offset } =
-		options.input;
+	const {
+		periodId,
+		issueType,
+		excuseStatus,
+		startDate,
+		endDate,
+		search,
+		limit,
+		offset,
+	} = options.input;
 
 	const actor = await getUserWithRoles(prisma, options.ctx.user.id);
 
@@ -86,6 +105,10 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 					periodId: number;
 				};
 			};
+			timestamp?: {
+				gte?: Date;
+				lte?: Date;
+			};
 		};
 		OR?: Array<{
 			status?: ShiftAttendanceStatus;
@@ -120,6 +143,20 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 		},
 	};
 
+	// Filter by date range
+	if (startDate || endDate) {
+		where.shiftOccurrence.timestamp = {};
+		if (startDate) {
+			where.shiftOccurrence.timestamp.gte = startDate;
+		}
+		if (endDate) {
+			// Set end date to end of day
+			const endOfDay = new Date(endDate);
+			endOfDay.setHours(23, 59, 59, 999);
+			where.shiftOccurrence.timestamp.lte = endOfDay;
+		}
+	}
+
 	// Filter by issue type
 	if (issueType === "all") {
 		where.OR = [
@@ -140,13 +177,18 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 
 	// Filter by excuse status (multi-select)
 	// Build OR conditions for each selected status
-	if (excuseStatus.length > 0 && excuseStatus.length < 3) {
+	// Dedupe to handle any edge cases (schema validates uniqueness but be defensive)
+	const uniqueExcuseStatus = Array.from(new Set(excuseStatus));
+	if (
+		uniqueExcuseStatus.length > 0 &&
+		uniqueExcuseStatus.length < excuseStatusValues.length
+	) {
 		const excuseStatusConditions: Array<{
 			isExcused?: boolean;
 			reviewedAt?: null | { not: null };
 		}> = [];
 
-		for (const status of excuseStatus) {
+		for (const status of uniqueExcuseStatus) {
 			if (status === "pending") {
 				// Pending: not excused AND not reviewed
 				excuseStatusConditions.push({

@@ -32,6 +32,7 @@ import {
 import { usePeriod } from "@/components/providers/period-provider";
 import {
 	DataTable,
+	DateRangeSelector,
 	FilterField,
 	SearchInput,
 	TableFilters,
@@ -161,11 +162,13 @@ const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 type AttendanceIssuesFilters = {
 	issueType: "all" | "dropped" | "absent" | "late" | "left_early";
 	excuseStatus: ExcuseStatus[];
+	dateRange: [Date | undefined, Date | undefined];
 };
 
 const DEFAULT_FILTERS: AttendanceIssuesFilters = {
 	issueType: "all",
 	excuseStatus: ["pending"],
+	dateRange: [undefined, undefined],
 };
 
 function AttendanceIssuesPage() {
@@ -195,6 +198,12 @@ function AttendanceIssuesPage() {
 	// Extract filter values with defaults
 	const issueType = filters?.issueType ?? DEFAULT_FILTERS.issueType;
 	const excuseStatus = filters?.excuseStatus ?? DEFAULT_FILTERS.excuseStatus;
+	// dateRange needs special handling: when restored from localStorage, dates are serialized as strings
+	const rawDateRange = filters?.dateRange ?? DEFAULT_FILTERS.dateRange;
+	const dateRange: [Date | undefined, Date | undefined] = [
+		rawDateRange[0] ? new Date(rawDateRange[0]) : undefined,
+		rawDateRange[1] ? new Date(rawDateRange[1]) : undefined,
+	];
 
 	// Helper to update individual filter fields
 	const setIssueType = (value: AttendanceIssuesFilters["issueType"]) => {
@@ -211,6 +220,14 @@ function AttendanceIssuesPage() {
 		}));
 	};
 
+	const setDateRange = (value: [Date | undefined, Date | undefined]) => {
+		setFilters((prev) => ({
+			...DEFAULT_FILTERS,
+			...prev,
+			dateRange: value,
+		}));
+	};
+
 	// Dialog state
 	const [excuseDialogOpen, setExcuseDialogOpen] = useState(false);
 	const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -220,11 +237,15 @@ function AttendanceIssuesPage() {
 	const hasPermission =
 		!!currentUser && checkPermissions(currentUser, permissions);
 
-	// Count active filters (issueType !== all counts as 1, non-default excuseStatus counts as 1)
+	// Count active filters (issueType !== all counts as 1, non-default excuseStatus counts as 1, date range counts as 1)
 	const isDefaultExcuseStatus =
 		excuseStatus.length === 1 && excuseStatus[0] === "pending";
+	const hasDateFilter =
+		dateRange[0] !== undefined || dateRange[1] !== undefined;
 	const activeFiltersCount =
-		(issueType !== "all" ? 1 : 0) + (isDefaultExcuseStatus ? 0 : 1);
+		(issueType !== "all" ? 1 : 0) +
+		(isDefaultExcuseStatus ? 0 : 1) +
+		(hasDateFilter ? 1 : 0);
 
 	const { data: issuesData, isLoading } = useQuery({
 		queryKey: [
@@ -232,6 +253,7 @@ function AttendanceIssuesPage() {
 			selectedPeriodId,
 			issueType,
 			excuseStatus,
+			dateRange,
 			debouncedSearch,
 			page,
 			pageSize,
@@ -242,6 +264,8 @@ function AttendanceIssuesPage() {
 				periodId: selectedPeriodId,
 				issueType,
 				excuseStatus,
+				startDate: dateRange[0],
+				endDate: dateRange[1],
 				search: debouncedSearch || undefined,
 				limit: pageSize,
 				offset,
@@ -552,7 +576,9 @@ function AttendanceIssuesPage() {
 								<TableFilters
 									activeFiltersCount={activeFiltersCount}
 									hasActiveFilters={
-										issueType !== "all" || !isDefaultExcuseStatus
+										issueType !== "all" ||
+										!isDefaultExcuseStatus ||
+										hasDateFilter
 									}
 									onReset={resetFilters}
 								>
@@ -614,6 +640,21 @@ function AttendanceIssuesPage() {
 												Unexcused
 											</ToggleGroupItem>
 										</ToggleGroup>
+									</FilterField>
+
+									<FilterField
+										label="Date Range"
+										description="Filter by shift occurrence date"
+									>
+										<DateRangeSelector
+											value={dateRange}
+											onChange={(
+												value: [Date | undefined, Date | undefined],
+											) => {
+												setDateRange(value);
+												resetToFirstPage();
+											}}
+										/>
 									</FilterField>
 								</TableFilters>
 							</TableToolbar>

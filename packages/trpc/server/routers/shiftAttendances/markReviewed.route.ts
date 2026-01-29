@@ -93,14 +93,6 @@ export async function markReviewedHandler(options: TMarkReviewedOptions) {
 		});
 	}
 
-	// Check if already reviewed
-	if (attendance.reviewedAt) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: "This attendance has already been reviewed",
-		});
-	}
-
 	// Can't review upcoming shifts - they haven't happened yet
 	if (attendance.status === "upcoming") {
 		throw new TRPCError({
@@ -109,13 +101,32 @@ export async function markReviewedHandler(options: TMarkReviewedOptions) {
 		});
 	}
 
-	// Update the attendance record to mark it as reviewed (unexcused)
-	const updatedAttendance = await prisma.shiftAttendance.update({
-		where: { id: attendanceId },
+	// Use conditional update to handle race conditions:
+	// Only update if the record hasn't been reviewed yet (reviewedAt is null)
+	// This ensures the first reviewer "wins" in case of concurrent requests
+	const updateResult = await prisma.shiftAttendance.updateMany({
+		where: {
+			id: attendanceId,
+			reviewedAt: null,
+			isExcused: false,
+		},
 		data: {
 			reviewedAt: new Date(),
 			reviewedById: actorId,
 		},
+	});
+
+	// If no rows were updated, it means the record was already reviewed
+	if (updateResult.count === 0) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "This attendance has already been reviewed",
+		});
+	}
+
+	// Fetch the updated record for the response
+	const updatedAttendance = await prisma.shiftAttendance.findUniqueOrThrow({
+		where: { id: attendanceId },
 		include: {
 			user: {
 				select: {
