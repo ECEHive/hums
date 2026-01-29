@@ -57,7 +57,7 @@ function ShiftTypesPage() {
 		setSearch,
 		debouncedSearch,
 		resetToFirstPage,
-	} = useTableState();
+	} = useTableState({ persistKey: "shift-types" });
 
 	const queryParams = React.useMemo(() => {
 		return {

@@ -4,14 +4,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertTriangle,
 	Calendar,
+	CheckIcon,
 	ChevronRight,
+	ChevronsUpDownIcon,
 	DownloadIcon,
 	Filter,
 	Loader2,
 	Printer,
 	RefreshCwIcon,
+	XIcon,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from "@/auth/AuthProvider";
 import { RequirePermissions } from "@/components/guards/require-permissions";
 import {
@@ -23,6 +26,7 @@ import {
 	TableContainer,
 } from "@/components/layout";
 import { usePeriod } from "@/components/providers/period-provider";
+import type { Role } from "@/components/roles/role-multiselect";
 import { DataTable } from "@/components/shared";
 import DateRangeSelector from "@/components/shared/date-range-selector";
 import {
@@ -39,7 +43,19 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Command,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -169,6 +185,9 @@ function ReportsPage() {
 
 	// Filter states
 	const [selectedShiftTypes, setSelectedShiftTypes] = useState<ShiftType[]>([]);
+	const [selectedStaffingRoles, setSelectedStaffingRoles] = useState<Role[]>(
+		[],
+	);
 	const [selectedDays, setSelectedDays] = useState<number[]>([
 		0, 1, 2, 3, 4, 5, 6,
 	]);
@@ -200,6 +219,15 @@ function ReportsPage() {
 		enabled: selectedPeriodId !== null,
 	});
 
+	// Initialize selected staffing roles from period data
+	useEffect(() => {
+		if (periodData?.period?.roles) {
+			setSelectedStaffingRoles(
+				periodData.period.roles.map((r) => ({ id: r.id, name: r.name })),
+			);
+		}
+	}, [periodData?.period?.roles]);
+
 	// Get the current report config
 	const currentReportConfig = reportConfigs.find(
 		(r) => r.id === selectedReportId,
@@ -228,12 +256,6 @@ function ReportsPage() {
 		);
 	}, [periodData?.period]);
 
-	// Staffing roles from period
-	const staffingRoles = useMemo(
-		() => periodData?.period?.roles?.map((role) => role.id) ?? null,
-		[periodData?.period?.roles],
-	);
-
 	// Build query params based on report type
 	const reportParams = useMemo(() => {
 		const base = {
@@ -246,7 +268,11 @@ function ReportsPage() {
 			case "user-attendance":
 				return {
 					...base,
-					staffingRoleIds: staffingRoles ?? undefined,
+					// If no roles selected, pass undefined to include all roles
+					staffingRoleIds:
+						selectedStaffingRoles.length > 0
+							? selectedStaffingRoles.map((r) => r.id)
+							: undefined,
 				};
 			case "session-activity":
 				return {
@@ -293,7 +319,7 @@ function ReportsPage() {
 		startDate,
 		endDate,
 		selectedPeriodId,
-		staffingRoles,
+		selectedStaffingRoles,
 		selectedShiftTypes,
 		selectedDays,
 		selectedDayOfWeek,
@@ -720,30 +746,111 @@ function ReportsPage() {
 							</div>
 						)}
 
-						{/* Staffing Roles Display (for user attendance) */}
+						{/* Staffing Roles Selection (for user attendance) */}
 						{selectedReportId === "user-attendance" && (
 							<div className="space-y-2">
 								<Label>Staffing Roles</Label>
 								{periodLoading ? (
 									<Spinner />
-								) : staffingRoles && staffingRoles.length > 0 ? (
-									<div className="flex flex-wrap gap-2">
-										{staffingRoles.map((id) => {
-											const roleName =
-												periodData?.period?.roles?.find((r) => r.id === id)
-													?.name ?? `Role ${id}`;
-											return (
-												<Badge key={id} variant="secondary">
-													{roleName}
-												</Badge>
-											);
-										})}
-									</div>
+								) : periodData?.period?.roles &&
+									periodData.period.roles.length > 0 ? (
+									<>
+										<Popover>
+											<PopoverTrigger asChild>
+												<Button
+													variant="outline"
+													role="combobox"
+													className="flex-grow justify-between whitespace-normal h-auto w-full"
+												>
+													<div className="flex items-center gap-2 flex-wrap">
+														{selectedStaffingRoles.length === 0 ? (
+															<span className="text-muted-foreground">
+																Select roles to include...
+															</span>
+														) : null}
+														{selectedStaffingRoles.map((r) => (
+															<Badge
+																key={r.id}
+																variant="secondary"
+																className="flex items-center gap-1"
+															>
+																<span>{r.name}</span>
+																<button
+																	type="button"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		setSelectedStaffingRoles(
+																			selectedStaffingRoles.filter(
+																				(role) => role.id !== r.id,
+																			),
+																		);
+																	}}
+																	aria-label={`Remove ${r.name}`}
+																	className="-mr-1"
+																>
+																	<XIcon className="size-3" />
+																</button>
+															</Badge>
+														))}
+													</div>
+													<ChevronsUpDownIcon className="ml-2 size-4" />
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent className="w-[300px] p-0">
+												<Command>
+													<CommandInput placeholder="Search roles..." />
+													<CommandList>
+														<CommandGroup>
+															{periodData.period.roles.map((role) => {
+																const selected = Boolean(
+																	selectedStaffingRoles.find(
+																		(r) => r.id === role.id,
+																	),
+																);
+																return (
+																	<CommandItem
+																		key={role.id}
+																		value={String(role.id)}
+																		onSelect={() => {
+																			if (selected) {
+																				setSelectedStaffingRoles(
+																					selectedStaffingRoles.filter(
+																						(r) => r.id !== role.id,
+																					),
+																				);
+																			} else {
+																				setSelectedStaffingRoles([
+																					...selectedStaffingRoles,
+																					{ id: role.id, name: role.name },
+																				]);
+																			}
+																		}}
+																	>
+																		<CheckIcon
+																			className={`mr-2 size-4 ${
+																				selected ? "opacity-100" : "opacity-0"
+																			}`}
+																		/>
+																		{role.name}
+																	</CommandItem>
+																);
+															})}
+														</CommandGroup>
+													</CommandList>
+												</Command>
+											</PopoverContent>
+										</Popover>
+										<p className="text-sm text-muted-foreground">
+											{selectedStaffingRoles.length === 0
+												? "All users will be included"
+												: `${selectedStaffingRoles.length} role${selectedStaffingRoles.length === 1 ? "" : "s"} selected`}
+										</p>
+									</>
 								) : (
 									<p className="text-sm text-muted-foreground flex items-center gap-1">
 										<AlertTriangle className="h-4 w-4" />
-										No staffing roles defined for this period. Returning all
-										users.
+										No staffing roles defined for this period. All users will be
+										included.
 									</p>
 								)}
 							</div>

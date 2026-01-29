@@ -48,7 +48,7 @@ function Devices() {
 		setSearch,
 		debouncedSearch,
 		resetToFirstPage,
-	} = useTableState();
+	} = useTableState({ persistKey: "devices" });
 
 	const queryParams = React.useMemo(() => {
 		return {

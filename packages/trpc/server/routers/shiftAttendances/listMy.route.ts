@@ -62,8 +62,8 @@ export async function listMyHandler(options: TListMyOptions) {
 				isMakeup: true,
 				isExcused: true,
 				excuseNotes: true,
-				excusedAt: true,
-				excusedBy: {
+				reviewedAt: true,
+				reviewedBy: {
 					select: {
 						id: true,
 						name: true,

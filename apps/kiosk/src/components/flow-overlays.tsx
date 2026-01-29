@@ -5,6 +5,7 @@ import { EarlyLeaveConfirmation } from "@/components/early-leave-confirmation";
 import { ErrorDialog } from "@/components/error-dialog";
 import type { SelectionOverlayOption } from "@/components/session-type-selector";
 import { SelectionOverlay } from "@/components/session-type-selector";
+import { ShiftEarlyLeaveConfirmation } from "@/components/shift-early-leave-confirmation";
 import { SuspensionDialog } from "@/components/suspension-dialog";
 import { TapNotification } from "@/components/tap-notification";
 import type {
@@ -12,6 +13,7 @@ import type {
 	ErrorDialogState,
 	PendingAgreementState,
 	SessionTypeSelectionState,
+	ShiftEarlyLeaveConfirmationState,
 	SuspensionState,
 	TapNotificationState,
 	TapOutActionSelectionState,
@@ -23,6 +25,7 @@ interface FlowOverlaysProps {
 	sessionTypeSelection: SessionTypeSelectionState | null;
 	tapOutActionSelection: TapOutActionSelectionState | null;
 	earlyLeaveConfirmation: EarlyLeaveConfirmationState | null;
+	shiftEarlyLeaveConfirmation: ShiftEarlyLeaveConfirmationState | null;
 	pendingAgreement: PendingAgreementState | null;
 	tapNotification: TapNotificationState;
 	suspension: SuspensionState | null;
@@ -34,6 +37,8 @@ interface FlowOverlaysProps {
 	onTapOutActionCancel: () => void;
 	onEarlyLeaveConfirm: () => void;
 	onEarlyLeaveCancel: () => void;
+	onShiftEarlyLeaveConfirm: () => void;
+	onShiftEarlyLeaveCancel: () => void;
 	onAgreementComplete: () => void;
 	onAgreementCancel: () => void;
 	onAgreementError: (message: string) => void;
@@ -45,6 +50,7 @@ export function FlowOverlays({
 	sessionTypeSelection,
 	tapOutActionSelection,
 	earlyLeaveConfirmation,
+	shiftEarlyLeaveConfirmation,
 	pendingAgreement,
 	tapNotification,
 	suspension,
@@ -54,6 +60,8 @@ export function FlowOverlays({
 	onTapOutActionCancel,
 	onEarlyLeaveConfirm,
 	onEarlyLeaveCancel,
+	onShiftEarlyLeaveConfirm,
+	onShiftEarlyLeaveCancel,
 	onAgreementComplete,
 	onAgreementCancel,
 	onAgreementError,
@@ -65,6 +73,7 @@ export function FlowOverlays({
 		!!sessionTypeSelection ||
 		!!tapOutActionSelection ||
 		!!earlyLeaveConfirmation ||
+		!!shiftEarlyLeaveConfirmation ||
 		!!suspension;
 
 	type OverlayConfig = {
@@ -205,6 +214,15 @@ export function FlowOverlays({
 					userName={earlyLeaveConfirmation.userName}
 					onConfirm={onEarlyLeaveConfirm}
 					onCancel={onEarlyLeaveCancel}
+				/>
+			)}
+
+			{shiftEarlyLeaveConfirmation && (
+				<ShiftEarlyLeaveConfirmation
+					userName={shiftEarlyLeaveConfirmation.userName}
+					action={shiftEarlyLeaveConfirmation.action}
+					onConfirm={onShiftEarlyLeaveConfirm}
+					onCancel={onShiftEarlyLeaveCancel}
 				/>
 			)}
 

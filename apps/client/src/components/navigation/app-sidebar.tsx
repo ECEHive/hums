@@ -8,6 +8,7 @@ import {
 	ChevronsDownIcon,
 	ChevronsUpIcon,
 	ChevronUpIcon,
+	ClipboardListIcon,
 	ClockIcon,
 	DoorOpenIcon,
 	ExternalLink,
@@ -66,6 +67,7 @@ import { permissions as auditLogsPagePermissions } from "@/routes/app/_app/audit
 import { permissions as configurationPagePermissions } from "@/routes/app/_app/configuration";
 import { permissions as devicesPagePermissions } from "@/routes/app/_app/devices";
 import { permissions as appIndexPagePermissions } from "@/routes/app/_app/index";
+import { permissions as reportsPagePermissions } from "@/routes/app/_app/reports";
 import { permissions as rolesPagePermissions } from "@/routes/app/_app/roles";
 import { permissions as sessionsPagePermissions } from "@/routes/app/_app/sessions";
 import { permissions as suspensionsPagePermissions } from "@/routes/app/_app/suspensions";
@@ -162,6 +164,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app/sessions",
 				icon: FileClockIcon,
 				permissions: sessionsPagePermissions,
+			},
+			{
+				title: "Reports",
+				url: "/app/reports",
+				icon: ClipboardListIcon,
+				permissions: reportsPagePermissions,
 			},
 			{
 				title: "Configuration",

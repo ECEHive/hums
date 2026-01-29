@@ -49,7 +49,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
-import { useTableState } from "@/hooks/use-table-state";
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
 import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/_app/sessions")({
@@ -63,6 +63,14 @@ export const Route = createFileRoute("/app/_app/sessions")({
 
 export const permissions = ["sessions.list"];
 
+type SessionsFilters = {
+	sessionType: "regular" | "staffing" | null;
+};
+
+const DEFAULT_FILTERS: SessionsFilters = {
+	sessionType: null,
+};
+
 function SessionsPage() {
 	const { user } = useAuth();
 	const {
@@ -74,11 +82,16 @@ function SessionsPage() {
 		search,
 		setSearch,
 		debouncedSearch,
+		filters,
+		setFilters,
 		resetToFirstPage,
-	} = useTableState({ initialPageSize: 20 });
-	const [filterSessionType, setFilterSessionType] = React.useState<
-		"regular" | "staffing" | null
-	>(null);
+	} = usePersistedTableState<SessionsFilters>({
+		pageKey: "sessions",
+		defaultFilters: DEFAULT_FILTERS,
+		initialPageSize: 20,
+	});
+
+	const filterSessionType = filters?.sessionType ?? null;
 	const [manageDialogOpen, setManageDialogOpen] = useState(false);
 	const [activeTab, setActiveTab] = useState<"list" | "staffing">("list");
 
@@ -279,7 +292,7 @@ function SessionsPage() {
 											activeFiltersCount={filterSessionType ? 1 : 0}
 											hasActiveFilters={!!filterSessionType}
 											onReset={() => {
-												setFilterSessionType(null);
+												setFilters(DEFAULT_FILTERS);
 												resetToFirstPage();
 											}}
 										>
@@ -287,11 +300,14 @@ function SessionsPage() {
 												<Select
 													value={filterSessionType || "all"}
 													onValueChange={(value) => {
-														setFilterSessionType(
-															value === "all"
-																? null
-																: (value as "regular" | "staffing"),
-														);
+														setFilters((prev) => ({
+															...DEFAULT_FILTERS,
+															...prev,
+															sessionType:
+																value === "all"
+																	? null
+																	: (value as "regular" | "staffing"),
+														}));
 														resetToFirstPage();
 													}}
 												>

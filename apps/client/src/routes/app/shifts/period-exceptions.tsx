@@ -55,7 +55,7 @@ function PeriodExceptionsPage() {
 		setSearch,
 		debouncedSearch,
 		resetToFirstPage,
-	} = useTableState();
+	} = useTableState({ persistKey: "period-exceptions" });
 
 	React.useEffect(() => {
 		resetToFirstPage();

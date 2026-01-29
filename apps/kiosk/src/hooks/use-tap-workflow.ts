@@ -40,6 +40,12 @@ export type EarlyLeaveConfirmationState = {
 	userName: string;
 };
 
+export type ShiftEarlyLeaveConfirmationState = {
+	cardNumber: string;
+	userName: string;
+	action: "end_session" | "switch_to_regular";
+};
+
 export type ErrorDialogState = {
 	message: string;
 	isExiting: boolean;
@@ -68,6 +74,7 @@ type TapWorkflowState = {
 	sessionTypeSelection: SessionTypeSelectionState | null;
 	tapOutActionSelection: TapOutActionSelectionState | null;
 	earlyLeaveConfirmation: EarlyLeaveConfirmationState | null;
+	shiftEarlyLeaveConfirmation: ShiftEarlyLeaveConfirmationState | null;
 	tapNotification: TapNotificationState;
 	errorDialog: ErrorDialogState;
 	oneTimeLogin: OneTimeLoginState | null;
@@ -88,6 +95,11 @@ type TapWorkflowAction =
 			payload: EarlyLeaveConfirmationState;
 	  }
 	| { type: "early_leave_confirmation_clear" }
+	| {
+			type: "shift_early_leave_confirmation_set";
+			payload: ShiftEarlyLeaveConfirmationState;
+	  }
+	| { type: "shift_early_leave_confirmation_clear" }
 	| { type: "tap_notification_set"; payload: TapEvent }
 	| { type: "tap_notification_clear" }
 	| { type: "tap_notification_exit_start" }
@@ -106,6 +118,7 @@ const INITIAL_STATE: TapWorkflowState = {
 	sessionTypeSelection: null,
 	tapOutActionSelection: null,
 	earlyLeaveConfirmation: null,
+	shiftEarlyLeaveConfirmation: null,
 	tapNotification: {
 		event: null,
 		isExiting: false,
@@ -143,6 +156,10 @@ const tapWorkflowReducer = (
 			return { ...state, earlyLeaveConfirmation: action.payload };
 		case "early_leave_confirmation_clear":
 			return { ...state, earlyLeaveConfirmation: null };
+		case "shift_early_leave_confirmation_set":
+			return { ...state, shiftEarlyLeaveConfirmation: action.payload };
+		case "shift_early_leave_confirmation_clear":
+			return { ...state, shiftEarlyLeaveConfirmation: null };
 		case "tap_notification_set":
 			return {
 				...state,
@@ -233,6 +250,7 @@ export function useTapWorkflow() {
 		sessionTypeSelection,
 		tapOutActionSelection,
 		earlyLeaveConfirmation,
+		shiftEarlyLeaveConfirmation,
 		tapNotification,
 		errorDialog,
 		oneTimeLogin,
@@ -251,6 +269,9 @@ export function useTapWorkflow() {
 	const sessionTypeSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const tapOutActionSelectorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const earlyLeaveConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const shiftEarlyLeaveConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(
+		null,
+	);
 	const agreementFlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -313,15 +334,18 @@ export function useTapWorkflow() {
 			sessionType?: "regular" | "staffing",
 			tapAction?: "end_session" | "switch_to_staffing" | "switch_to_regular",
 			forceEarlyLeave?: boolean,
+			forceShiftEarlyLeave?: boolean,
 		) => {
 			dismissTapNotification();
 			clearTimer(sessionTypeSelectorTimeoutRef);
 			clearTimer(tapOutActionSelectorTimeoutRef);
 			clearTimer(earlyLeaveConfirmationTimeoutRef);
+			clearTimer(shiftEarlyLeaveConfirmationTimeoutRef);
 			clearTimer(agreementFlowTimeoutRef);
 			dispatch({ type: "session_type_clear" });
 			dispatch({ type: "tap_out_action_clear" });
 			dispatch({ type: "early_leave_confirmation_clear" });
+			dispatch({ type: "shift_early_leave_confirmation_clear" });
 			dispatch({ type: "pending_agreement_clear" });
 			dispatch({ type: "processing_start" });
 
@@ -332,6 +356,7 @@ export function useTapWorkflow() {
 						sessionType: sessionType || "auto",
 						action: tapAction || "none",
 						forceEarlyLeave: forceEarlyLeave || false,
+						forceShiftEarlyLeave: forceShiftEarlyLeave || false,
 					}),
 				);
 				const result = await trpc.sessions.tapInOut.mutate({
@@ -339,6 +364,7 @@ export function useTapWorkflow() {
 					sessionType,
 					tapAction,
 					forceEarlyLeave,
+					forceShiftEarlyLeave,
 				});
 
 				if (result.status === "choose_session_type") {
@@ -384,6 +410,22 @@ export function useTapWorkflow() {
 					});
 					earlyLeaveConfirmationTimeoutRef.current = setTimeout(() => {
 						dispatch({ type: "early_leave_confirmation_clear" });
+					}, TAP_OUT_ACTION_TIMEOUT_MS);
+					return;
+				}
+
+				if (result.status === "confirm_shift_early_leave") {
+					dispatch({ type: "processing_end" });
+					dispatch({
+						type: "shift_early_leave_confirmation_set",
+						payload: {
+							cardNumber,
+							userName: result.user.name,
+							action: result.action,
+						},
+					});
+					shiftEarlyLeaveConfirmationTimeoutRef.current = setTimeout(() => {
+						dispatch({ type: "shift_early_leave_confirmation_clear" });
 					}, TAP_OUT_ACTION_TIMEOUT_MS);
 					return;
 				}
@@ -582,6 +624,30 @@ export function useTapWorkflow() {
 		dispatch({ type: "early_leave_confirmation_clear" });
 	}, [dispatch]);
 
+	const handleShiftEarlyLeaveConfirm = useCallback(async () => {
+		const confirmation = shiftEarlyLeaveConfirmation;
+		if (!confirmation) return;
+
+		clearTimer(shiftEarlyLeaveConfirmationTimeoutRef);
+
+		try {
+			await handleTapInOut(
+				confirmation.cardNumber,
+				undefined,
+				confirmation.action,
+				undefined,
+				true, // forceShiftEarlyLeave
+			);
+		} finally {
+			dispatch({ type: "shift_early_leave_confirmation_clear" });
+		}
+	}, [dispatch, handleTapInOut, shiftEarlyLeaveConfirmation]);
+
+	const handleShiftEarlyLeaveCancel = useCallback(() => {
+		clearTimer(shiftEarlyLeaveConfirmationTimeoutRef);
+		dispatch({ type: "shift_early_leave_confirmation_clear" });
+	}, [dispatch]);
+
 	const handleLoginWithoutCard = useCallback(async () => {
 		dispatch({ type: "processing_start" });
 		try {
@@ -620,6 +686,7 @@ export function useTapWorkflow() {
 			clearTimer(sessionTypeSelectorTimeoutRef);
 			clearTimer(tapOutActionSelectorTimeoutRef);
 			clearTimer(earlyLeaveConfirmationTimeoutRef);
+			clearTimer(shiftEarlyLeaveConfirmationTimeoutRef);
 			clearTimer(agreementFlowTimeoutRef);
 			clearTimer(suspensionTimeoutRef);
 			clearTimer(suspensionExitTimeoutRef);
@@ -632,6 +699,7 @@ export function useTapWorkflow() {
 		sessionTypeSelection,
 		tapOutActionSelection,
 		earlyLeaveConfirmation,
+		shiftEarlyLeaveConfirmation,
 		tapNotification,
 		errorDialog,
 		oneTimeLogin,
@@ -646,6 +714,8 @@ export function useTapWorkflow() {
 		handleTapOutActionCancel,
 		handleEarlyLeaveConfirm,
 		handleEarlyLeaveCancel,
+		handleShiftEarlyLeaveConfirm,
+		handleShiftEarlyLeaveCancel,
 		handleLoginWithoutCard,
 		handleLoginWithoutCardCancel,
 		resetAgreementTimeout,

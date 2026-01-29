@@ -109,6 +109,9 @@ function App() {
 							sessionTypeSelection={tapWorkflow.sessionTypeSelection}
 							tapOutActionSelection={tapWorkflow.tapOutActionSelection}
 							earlyLeaveConfirmation={tapWorkflow.earlyLeaveConfirmation}
+							shiftEarlyLeaveConfirmation={
+								tapWorkflow.shiftEarlyLeaveConfirmation
+							}
 							pendingAgreement={tapWorkflow.pendingAgreement}
 							tapNotification={tapWorkflow.tapNotification}
 							suspension={tapWorkflow.suspension}
@@ -118,6 +121,10 @@ function App() {
 							onTapOutActionCancel={tapWorkflow.handleTapOutActionCancel}
 							onEarlyLeaveConfirm={tapWorkflow.handleEarlyLeaveConfirm}
 							onEarlyLeaveCancel={tapWorkflow.handleEarlyLeaveCancel}
+							onShiftEarlyLeaveConfirm={
+								tapWorkflow.handleShiftEarlyLeaveConfirm
+							}
+							onShiftEarlyLeaveCancel={tapWorkflow.handleShiftEarlyLeaveCancel}
 							onAgreementComplete={tapWorkflow.handleAgreementComplete}
 							onAgreementCancel={tapWorkflow.handleAgreementCancel}
 							onAgreementError={tapWorkflow.handleAgreementError}
