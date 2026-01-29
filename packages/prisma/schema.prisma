@@ -74,7 +74,7 @@ model User {
   // One-to-many
   sessions    Session[]
   attendances ShiftAttendance[]
-  excusedAttendances ShiftAttendance[] @relation("ShiftAttendanceExcusedBy")
+  reviewedAttendances ShiftAttendance[] @relation("ShiftAttendanceReviewedBy")
   suspensions Suspension[]
   createdSuspensions Suspension[] @relation("SuspensionCreatedBy")
   
@@ -248,11 +248,15 @@ model ShiftAttendance {
   didLeaveEarly     Boolean             @default(false)
   isExcused         Boolean             @default(false)
   droppedNotes      String?
-  excuseNotes       String?
-  excusedById       Int?
-  excusedAt         DateTime?
+  excuseNotes       String?             // Notes provided when excusing (only relevant when isExcused=true)
   timeIn            DateTime?
   timeOut           DateTime?
+  // Review tracking:
+  // - When null: issue is "pending review" (not yet reviewed by staff)
+  // - When set with isExcused=true: issue was reviewed and excused
+  // - When set with isExcused=false: issue was reviewed and marked as unexcused
+  reviewedAt        DateTime?
+  reviewedById      Int?
 
   // timestamps
   createdAt DateTime @default(now())
@@ -261,7 +265,7 @@ model ShiftAttendance {
   // relations
   shiftOccurrence ShiftOccurrence @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  excusedBy       User?           @relation("ShiftAttendanceExcusedBy", fields: [excusedById], references: [id], onDelete: SetNull)
+  reviewedBy      User?           @relation("ShiftAttendanceReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   // constraints
   @@unique([shiftOccurrenceId, userId])
