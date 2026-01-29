@@ -6,6 +6,12 @@ on:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+  SERVER_IMAGE_NAME: ${{ github.repository_owner }}/hums-server
+  MIGRATE_IMAGE_NAME: ${{ github.repository_owner }}/hums-migrate
+  WEB_IMAGE_NAME: ${{ github.repository_owner }}/hums-web
+
 jobs:
   create-release:
     # Only run if PR was merged (not just closed)
@@ -15,6 +21,11 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+    outputs:
+      tag: ${{ steps.extract_version.outputs.tag }}
+      version: ${{ steps.extract_version.outputs.version }}
+      release_id: ${{ steps.create_release.outputs.release_id }}
+      release_created: ${{ steps.create_release.outputs.release_created }}
     
     steps:
       - name: Checkout code
@@ -119,6 +130,7 @@ jobs:
       
       - name: Create Release
         if: steps.check_tag.outputs.exists == 'false'
+        id: create_release
         uses: actions/github-script@v7
         env:
           TAG: ${{ steps.extract_version.outputs.tag }}
@@ -193,12 +205,6 @@ jobs:
               sections.push('_No changes were detected in this release window._');
             }
 
-            sections.push(
-              '',
-              '---',
-              `Release PR: [#${prNumber}](${prUrl})`
-            );
-
             const releaseBody = sections.join('\n');
 
             try {
@@ -214,12 +220,14 @@ jobs:
               });
 
               console.log(`✅ Release created: ${release.data.html_url}`);
+              core.setOutput('release_id', release.data.id);
+              core.setOutput('release_created', 'true');
 
               await github.rest.issues.createComment({
                 issue_number: prNumber,
                 owner,
                 repo,
-                body: `🎉 Release [${tag}](${release.data.html_url}) has been created!`
+                body: `🎉 Release [${tag}](${release.data.html_url}) has been created!\n\n🐳 Docker images are now being built and will be available shortly.`
               });
             } catch (error) {
               console.error('❌ Error creating release:', error);
@@ -240,3 +248,206 @@ jobs:
               repo: context.repo.repo,
               body: `⚠️ Release ${tag} already exists. No new release was created.`
             });
+
+  # Build and publish Docker images after release is created
+  build-and-push-docker:
+    needs: create-release
+    if: needs.create-release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.tag }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for server image
+        id: meta-server
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.create-release.outputs.tag }},priority=900
+            type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
+            type=raw,value=latest,priority=600
+
+      - name: Extract metadata for migrate image
+        id: meta-migrate
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.create-release.outputs.tag }},priority=900
+            type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
+            type=raw,value=latest,priority=600
+
+      - name: Extract metadata for web image
+        id: meta-web
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.create-release.outputs.tag }},priority=900
+            type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
+            type=raw,value=latest,priority=600
+
+      - name: Build and push server image
+        id: build-server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.server
+          target: server
+          push: true
+          tags: ${{ steps.meta-server.outputs.tags }}
+          labels: ${{ steps.meta-server.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push prisma-migrate image
+        id: build-migrate
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.server
+          target: prisma-migrate
+          push: true
+          tags: ${{ steps.meta-migrate.outputs.tags }}
+          labels: ${{ steps.meta-migrate.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push web image
+        id: build-web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.web
+          target: web
+          push: true
+          tags: ${{ steps.meta-web.outputs.tags }}
+          labels: ${{ steps.meta-web.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Make images public
+        run: |
+          # Set packages to public visibility using organization packages API
+          gh api --method PATCH /orgs/${{ github.repository_owner }}/packages/container/hums-server \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f visibility=public || true
+          gh api --method PATCH /orgs/${{ github.repository_owner }}/packages/container/hums-migrate \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f visibility=public || true
+          gh api --method PATCH /orgs/${{ github.repository_owner }}/packages/container/hums-web \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f visibility=public || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Update release with Docker image information
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          TAG: ${{ needs.create-release.outputs.tag }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+          SERVER_DIGEST: ${{ steps.build-server.outputs.digest }}
+          MIGRATE_DIGEST: ${{ steps.build-migrate.outputs.digest }}
+          WEB_DIGEST: ${{ steps.build-web.outputs.digest }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        with:
+          script: |
+            const releaseId = Number(process.env.RELEASE_ID);
+            const tag = process.env.TAG;
+            const version = process.env.VERSION;
+            const serverDigest = process.env.SERVER_DIGEST;
+            const migrateDigest = process.env.MIGRATE_DIGEST;
+            const webDigest = process.env.WEB_DIGEST;
+            const repoOwner = process.env.REPO_OWNER;
+
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId
+            });
+
+            const dockerSection = [
+              '',
+              '## Docker Images',
+              '',
+              'All images are published to GitHub Container Registry.',
+              '',
+              '### Pull Commands',
+              '',
+              '```bash',
+              '# Server',
+              `docker pull ghcr.io/${repoOwner}/hums-server:${tag}`,
+              '',
+              '# Database Migration',
+              `docker pull ghcr.io/${repoOwner}/hums-migrate:${tag}`,
+              '',
+              '# Web (Nginx + Client Apps)',
+              `docker pull ghcr.io/${repoOwner}/hums-web:${tag}`,
+              '```',
+              '',
+              '### Image Digests',
+              '',
+              '| Image | Digest |',
+              '|-------|--------|',
+              `| hums-server | \`${serverDigest.substring(0, 19)}...\` |`,
+              `| hums-migrate | \`${migrateDigest.substring(0, 19)}...\` |`,
+              `| hums-web | \`${webDigest.substring(0, 19)}...\` |`,
+              '',
+              '### Available Tags',
+              '',
+              `- \`${tag}\` - This release`,
+              '- `latest` - Latest stable release'
+            ].join('\n');
+
+            const updatedBody = release.body + dockerSection;
+
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              body: updatedBody
+            });
+
+            console.log('✅ Release updated with Docker image information');
+
+      - name: Generate image summary
+        run: |
+          TAG="${{ needs.create-release.outputs.tag }}"
+          echo "## Docker Images Published 🐳" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Server Image" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta-server.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${{ steps.build-server.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Migrate Image" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta-migrate.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${{ steps.build-migrate.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Web Image" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta-web.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${{ steps.build-web.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY

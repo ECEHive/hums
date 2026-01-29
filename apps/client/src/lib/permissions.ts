@@ -6,6 +6,7 @@ import type { AuthUser } from "@/auth";
  * - passing a plain string[] keeps the existing "all" behavior (every permission required)
  * - passing { any: [...] } will return true if the user has any of the listed permissions
  * - passing { all: [...] } will return true only if the user has all of the listed permissions
+ * - passing { any: [...], all: [...] } will return true only if both conditions are satisfied
  */
 export type RequiredPermissions = string[] | { any?: string[]; all?: string[] };
 
@@ -15,6 +16,8 @@ export type RequiredPermissions = string[] | { any?: string[]; all?: string[] };
  * System users bypass permission checks.
  *
  * Backwards compatible: passing a string[] behaves as "all" (every permission required).
+ *
+ * When both `any` and `all` are provided, both conditions must be satisfied.
  */
 export function checkPermissions(
 	user: AuthUser | null,
@@ -33,18 +36,20 @@ export function checkPermissions(
 		all = requiredPermissions.all;
 	}
 
-	// If `any` provided, require at least one match
-	if (any && any.length > 0) {
-		return any.some((perm) => user?.permissions.includes(perm));
-	}
+	// Check `all` condition - user must have ALL listed permissions
+	const allSatisfied =
+		!all ||
+		all.length === 0 ||
+		all.every((perm) => user?.permissions.includes(perm));
 
-	// Default to `all` behaviour (including when passed as plain array)
-	if (all && all.length > 0) {
-		return all.every((perm) => user?.permissions.includes(perm));
-	}
+	// Check `any` condition - user must have at least ONE listed permission
+	const anySatisfied =
+		!any ||
+		any.length === 0 ||
+		any.some((perm) => user?.permissions.includes(perm));
 
-	// No permissions required
-	return true;
+	// Both conditions must be satisfied
+	return allSatisfied && anySatisfied;
 }
 
 export async function getAllPermissions(): Promise<

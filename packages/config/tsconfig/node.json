@@ -3,10 +3,11 @@
 	"display": "Node",
 	"extends": "./base.json",
 	"compilerOptions": {
-		"types": ["@types/node"],
-		"lib": ["DOM"],
+		"types": ["@types/node", "@types/bun"],
+		"lib": ["ESNext", "DOM"],
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"jsx": "react-jsx"
-	}
+	},
+	"include": ["../types/**/*.d.ts"]
 }

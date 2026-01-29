@@ -30,6 +30,10 @@ import {
 	ZListForExportSchema,
 } from "./listForExport.route";
 import {
+	listForOverviewHandler,
+	ZListForOverviewSchema,
+} from "./listForOverview.route";
+import {
 	listForRegistrationHandler,
 	ZListForRegistrationSchema,
 } from "./listForRegistration.route";
@@ -60,6 +64,9 @@ export const shiftSchedulesRouter = router({
 	listForExport: permissionProtectedProcedure("shift_schedules.list")
 		.input(ZListForExportSchema)
 		.query(listForExportHandler),
+	listForOverview: permissionProtectedProcedure("shift_schedules.list")
+		.input(ZListForOverviewSchema)
+		.query(listForOverviewHandler),
 	listForRegistration: protectedProcedure
 		.input(ZListForRegistrationSchema)
 		.query(listForRegistrationHandler),

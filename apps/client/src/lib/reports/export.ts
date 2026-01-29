@@ -6,11 +6,29 @@ import { escapeHtml, generateTimestampForFilename } from "./utils";
  * Uses selective quoting (RFC 4180 compliant): only quotes values that contain
  * special characters (comma, newline, quote). This produces smaller, more readable
  * CSV files while maintaining compatibility with spreadsheet software.
+ *
+ * Date objects and ISO date strings are formatted as raw ISO strings for
+ * maximum compatibility and precision.
  */
 function csvEscape(value: unknown): string {
 	if (value === null || value === undefined) return "";
 	if (typeof value === "number" || typeof value === "boolean")
 		return String(value);
+
+	// Handle Date objects - format as ISO string
+	if (value instanceof Date) {
+		return value.toISOString();
+	}
+
+	// Check if it's an ISO date string and pass through as-is
+	if (typeof value === "string") {
+		// ISO 8601 date pattern (e.g., 2024-01-15T10:30:00.000Z)
+		const isoDatePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
+		if (isoDatePattern.test(value)) {
+			return value;
+		}
+	}
+
 	const s = String(value);
 	// Escape quotes and wrap in quotes if contains comma, newline, or quote
 	if (s.includes(",") || s.includes("\n") || s.includes('"')) {

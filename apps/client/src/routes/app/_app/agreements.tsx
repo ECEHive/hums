@@ -48,7 +48,7 @@ function Agreements() {
 		setSearch,
 		debouncedSearch,
 		resetToFirstPage,
-	} = useTableState();
+	} = useTableState({ persistKey: "agreements" });
 
 	const queryParams = React.useMemo(() => {
 		return {

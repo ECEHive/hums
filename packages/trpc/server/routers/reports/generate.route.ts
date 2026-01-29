@@ -1,8 +1,13 @@
 import {
 	computeOccurrenceEnd,
 	computeOccurrenceStart,
+	isExcludedFromAttendanceRate,
 } from "@ecehive/features";
-import { type Prisma, prisma } from "@ecehive/prisma";
+import {
+	type Prisma,
+	prisma,
+	type ShiftAttendanceStatus,
+} from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
@@ -136,6 +141,7 @@ export async function generateHandler(options: TGenerateOptions) {
 		name: string;
 		attendances?: Array<{
 			status: string;
+			isExcused: boolean;
 			timeIn: Date | null;
 			timeOut: Date | null;
 			shiftOccurrence: {
@@ -190,12 +196,26 @@ export async function generateHandler(options: TGenerateOptions) {
 		let pastMissedTime = 0;
 
 		for (const attendance of u.attendances ?? []) {
+			const status = attendance.status as ShiftAttendanceStatus;
+
+			// Skip dropped shifts - they don't count toward scheduled or attended time
+			if (isExcludedFromAttendanceRate(status)) {
+				continue;
+			}
+
 			const scheduledHours =
 				(convert24HourToMS(attendance.shiftOccurrence.shiftSchedule.endTime) -
 					convert24HourToMS(
 						attendance.shiftOccurrence.shiftSchedule.startTime,
 					)) /
 				3600000;
+
+			// Handle excused shifts - count as full credit
+			if (attendance.isExcused || status === "excused") {
+				pastScheduledTime += scheduledHours;
+				pastAttendedTime += scheduledHours; // Full credit
+				continue;
+			}
 
 			const attendedHours =
 				attendance.status === "present" &&

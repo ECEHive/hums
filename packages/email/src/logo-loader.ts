@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { getLogger } from "@ecehive/logger";
+import LogoDark from "../assets/logo_dark.svg" with { type: "text" };
+import LogoLight from "../assets/logo_light.svg" with { type: "text" };
 
 const logger = getLogger("email:logo-loader");
 
@@ -24,20 +23,9 @@ export function getEmailLogos(): EmailLogos {
 	}
 
 	try {
-		// Get the directory of this file
-		const __filename = fileURLToPath(import.meta.url);
-		const __dirname = dirname(__filename);
-
-		// Path to the logo files in the client assets
-		const assetsPath = join(__dirname, "..", "assets");
-
-		// Read the SVG files synchronously (at module load time)
-		const lightSvg = readFileSync(join(assetsPath, "logo_light.svg"), "utf-8");
-		const darkSvg = readFileSync(join(assetsPath, "logo_dark.svg"), "utf-8");
-
 		// Convert to base64 data URLs
-		const lightBase64 = Buffer.from(lightSvg).toString("base64");
-		const darkBase64 = Buffer.from(darkSvg).toString("base64");
+		const lightBase64 = Buffer.from(LogoLight).toString("base64");
+		const darkBase64 = Buffer.from(LogoDark).toString("base64");
 
 		const lightDataUrl = `data:image/svg+xml;base64,${lightBase64}`;
 		const darkDataUrl = `data:image/svg+xml;base64,${darkBase64}`;

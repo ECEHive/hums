@@ -70,6 +70,11 @@ export async function updateHandler(options: TUpdateOptions) {
 			});
 		}
 
+		// Determine if the exception range is shrinking (which would reveal previously excepted dates)
+		// If shrinking, we need to use skipPastOccurrences to avoid recreating past occurrences
+		const isExceptionShrinking =
+			nextStart > existing.start || nextEnd < existing.end;
+
 		const updated = await tx.periodException.update({
 			where: { id },
 			data: {
@@ -84,7 +89,11 @@ export async function updateHandler(options: TUpdateOptions) {
 		}
 
 		// Regenerate shift occurrences for the period to apply changes
-		await generatePeriodShiftOccurrences(tx, updated.periodId);
+		// Use skipPastOccurrences when the exception range is shrinking to avoid
+		// recreating past occurrences that were previously excepted
+		await generatePeriodShiftOccurrences(tx, updated.periodId, {
+			skipPastOccurrences: isExceptionShrinking,
+		});
 
 		return { periodException: updated };
 	});

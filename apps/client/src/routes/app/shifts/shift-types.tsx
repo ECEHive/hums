@@ -39,7 +39,10 @@ export const Route = createFileRoute("/app/shifts/shift-types")({
 		}),
 });
 
-export const permissions = ["shift_types.list"] as RequiredPermissions;
+export const permissions = {
+	all: ["shift_types.list"],
+	any: ["shift_types.create", "shift_types.update", "shift_types.delete"],
+} as RequiredPermissions;
 
 function ShiftTypesPage() {
 	const { period: periodId } = usePeriod();
@@ -54,7 +57,7 @@ function ShiftTypesPage() {
 		setSearch,
 		debouncedSearch,
 		resetToFirstPage,
-	} = useTableState();
+	} = useTableState({ persistKey: "shift-types" });
 
 	const queryParams = React.useMemo(() => {
 		return {

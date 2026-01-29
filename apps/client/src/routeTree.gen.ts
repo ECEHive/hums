@@ -22,11 +22,13 @@ import { Route as AppAppIndexRouteImport } from './routes/app/_app/index'
 import { Route as AppShiftsShiftTypesRouteImport } from './routes/app/shifts/shift-types'
 import { Route as AppShiftsShiftSchedulesRouteImport } from './routes/app/shifts/shift-schedules'
 import { Route as AppShiftsSchedulingRouteImport } from './routes/app/shifts/scheduling'
+import { Route as AppShiftsScheduleOverviewRouteImport } from './routes/app/shifts/schedule-overview'
 import { Route as AppShiftsReportsRouteImport } from './routes/app/shifts/reports'
 import { Route as AppShiftsPeriodExceptionsRouteImport } from './routes/app/shifts/period-exceptions'
 import { Route as AppShiftsPeriodDetailsRouteImport } from './routes/app/shifts/period-details'
 import { Route as AppShiftsMyShiftsRouteImport } from './routes/app/shifts/my-shifts'
 import { Route as AppShiftsManageUsersRouteImport } from './routes/app/shifts/manage-users'
+import { Route as AppShiftsAttendanceIssuesRouteImport } from './routes/app/shifts/attendance-issues'
 import { Route as AppShiftsAttendanceRouteImport } from './routes/app/shifts/attendance'
 import { Route as AppInventoryTransactionsRouteImport } from './routes/app/inventory/transactions'
 import { Route as AppInventoryMyTransactionsRouteImport } from './routes/app/inventory/my-transactions'
@@ -35,6 +37,7 @@ import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
 import { Route as AppAppRolesRouteImport } from './routes/app/_app/roles'
+import { Route as AppAppReportsRouteImport } from './routes/app/_app/reports'
 import { Route as AppAppMyAgreementsRouteImport } from './routes/app/_app/my-agreements'
 import { Route as AppAppDevicesRouteImport } from './routes/app/_app/devices'
 import { Route as AppAppConfigurationRouteImport } from './routes/app/_app/configuration'
@@ -110,6 +113,12 @@ const AppShiftsSchedulingRoute = AppShiftsSchedulingRouteImport.update({
   path: '/scheduling',
   getParentRoute: () => AppShiftsRoute,
 } as any)
+const AppShiftsScheduleOverviewRoute =
+  AppShiftsScheduleOverviewRouteImport.update({
+    id: '/schedule-overview',
+    path: '/schedule-overview',
+    getParentRoute: () => AppShiftsRoute,
+  } as any)
 const AppShiftsReportsRoute = AppShiftsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -136,6 +145,12 @@ const AppShiftsManageUsersRoute = AppShiftsManageUsersRouteImport.update({
   path: '/manage-users',
   getParentRoute: () => AppShiftsRoute,
 } as any)
+const AppShiftsAttendanceIssuesRoute =
+  AppShiftsAttendanceIssuesRouteImport.update({
+    id: '/attendance-issues',
+    path: '/attendance-issues',
+    getParentRoute: () => AppShiftsRoute,
+  } as any)
 const AppShiftsAttendanceRoute = AppShiftsAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -176,6 +191,11 @@ const AppAppSessionsRoute = AppAppSessionsRouteImport.update({
 const AppAppRolesRoute = AppAppRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppReportsRoute = AppAppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AppAppRoute,
 } as any)
 const AppAppMyAgreementsRoute = AppAppMyAgreementsRouteImport.update({
@@ -244,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/app/configuration': typeof AppAppConfigurationRoute
   '/app/devices': typeof AppAppDevicesRoute
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
+  '/app/reports': typeof AppAppReportsRoute
   '/app/roles': typeof AppAppRolesRoute
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
@@ -252,11 +273,13 @@ export interface FileRoutesByFullPath {
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
+  '/app/shifts/attendance-issues': typeof AppShiftsAttendanceIssuesRoute
   '/app/shifts/manage-users': typeof AppShiftsManageUsersRouteWithChildren
   '/app/shifts/my-shifts': typeof AppShiftsMyShiftsRoute
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
   '/app/shifts/reports': typeof AppShiftsReportsRoute
+  '/app/shifts/schedule-overview': typeof AppShiftsScheduleOverviewRoute
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
@@ -279,6 +302,7 @@ export interface FileRoutesByTo {
   '/app/configuration': typeof AppAppConfigurationRoute
   '/app/devices': typeof AppAppDevicesRoute
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
+  '/app/reports': typeof AppAppReportsRoute
   '/app/roles': typeof AppAppRolesRoute
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
@@ -287,10 +311,12 @@ export interface FileRoutesByTo {
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
+  '/app/shifts/attendance-issues': typeof AppShiftsAttendanceIssuesRoute
   '/app/shifts/my-shifts': typeof AppShiftsMyShiftsRoute
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
   '/app/shifts/reports': typeof AppShiftsReportsRoute
+  '/app/shifts/schedule-overview': typeof AppShiftsScheduleOverviewRoute
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
@@ -316,6 +342,7 @@ export interface FileRoutesById {
   '/app/_app/configuration': typeof AppAppConfigurationRoute
   '/app/_app/devices': typeof AppAppDevicesRoute
   '/app/_app/my-agreements': typeof AppAppMyAgreementsRoute
+  '/app/_app/reports': typeof AppAppReportsRoute
   '/app/_app/roles': typeof AppAppRolesRoute
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
@@ -324,11 +351,13 @@ export interface FileRoutesById {
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
   '/app/shifts/attendance': typeof AppShiftsAttendanceRoute
+  '/app/shifts/attendance-issues': typeof AppShiftsAttendanceIssuesRoute
   '/app/shifts/manage-users': typeof AppShiftsManageUsersRouteWithChildren
   '/app/shifts/my-shifts': typeof AppShiftsMyShiftsRoute
   '/app/shifts/period-details': typeof AppShiftsPeriodDetailsRoute
   '/app/shifts/period-exceptions': typeof AppShiftsPeriodExceptionsRoute
   '/app/shifts/reports': typeof AppShiftsReportsRoute
+  '/app/shifts/schedule-overview': typeof AppShiftsScheduleOverviewRoute
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
@@ -355,6 +384,7 @@ export interface FileRouteTypes {
     | '/app/configuration'
     | '/app/devices'
     | '/app/my-agreements'
+    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/suspensions'
@@ -363,11 +393,13 @@ export interface FileRouteTypes {
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
     | '/app/shifts/attendance'
+    | '/app/shifts/attendance-issues'
     | '/app/shifts/manage-users'
     | '/app/shifts/my-shifts'
     | '/app/shifts/period-details'
     | '/app/shifts/period-exceptions'
     | '/app/shifts/reports'
+    | '/app/shifts/schedule-overview'
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
@@ -390,6 +422,7 @@ export interface FileRouteTypes {
     | '/app/configuration'
     | '/app/devices'
     | '/app/my-agreements'
+    | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
     | '/app/suspensions'
@@ -398,10 +431,12 @@ export interface FileRouteTypes {
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
     | '/app/shifts/attendance'
+    | '/app/shifts/attendance-issues'
     | '/app/shifts/my-shifts'
     | '/app/shifts/period-details'
     | '/app/shifts/period-exceptions'
     | '/app/shifts/reports'
+    | '/app/shifts/schedule-overview'
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
@@ -426,6 +461,7 @@ export interface FileRouteTypes {
     | '/app/_app/configuration'
     | '/app/_app/devices'
     | '/app/_app/my-agreements'
+    | '/app/_app/reports'
     | '/app/_app/roles'
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
@@ -434,11 +470,13 @@ export interface FileRouteTypes {
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
     | '/app/shifts/attendance'
+    | '/app/shifts/attendance-issues'
     | '/app/shifts/manage-users'
     | '/app/shifts/my-shifts'
     | '/app/shifts/period-details'
     | '/app/shifts/period-exceptions'
     | '/app/shifts/reports'
+    | '/app/shifts/schedule-overview'
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
@@ -551,6 +589,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShiftsSchedulingRouteImport
       parentRoute: typeof AppShiftsRoute
     }
+    '/app/shifts/schedule-overview': {
+      id: '/app/shifts/schedule-overview'
+      path: '/schedule-overview'
+      fullPath: '/app/shifts/schedule-overview'
+      preLoaderRoute: typeof AppShiftsScheduleOverviewRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
     '/app/shifts/reports': {
       id: '/app/shifts/reports'
       path: '/reports'
@@ -584,6 +629,13 @@ declare module '@tanstack/react-router' {
       path: '/manage-users'
       fullPath: '/app/shifts/manage-users'
       preLoaderRoute: typeof AppShiftsManageUsersRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/attendance-issues': {
+      id: '/app/shifts/attendance-issues'
+      path: '/attendance-issues'
+      fullPath: '/app/shifts/attendance-issues'
+      preLoaderRoute: typeof AppShiftsAttendanceIssuesRouteImport
       parentRoute: typeof AppShiftsRoute
     }
     '/app/shifts/attendance': {
@@ -640,6 +692,13 @@ declare module '@tanstack/react-router' {
       path: '/roles'
       fullPath: '/app/roles'
       preLoaderRoute: typeof AppAppRolesRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/reports': {
+      id: '/app/_app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppAppReportsRouteImport
       parentRoute: typeof AppAppRoute
     }
     '/app/_app/my-agreements': {
@@ -722,6 +781,7 @@ interface AppAppRouteChildren {
   AppAppConfigurationRoute: typeof AppAppConfigurationRoute
   AppAppDevicesRoute: typeof AppAppDevicesRoute
   AppAppMyAgreementsRoute: typeof AppAppMyAgreementsRoute
+  AppAppReportsRoute: typeof AppAppReportsRoute
   AppAppRolesRoute: typeof AppAppRolesRoute
   AppAppSessionsRoute: typeof AppAppSessionsRoute
   AppAppSuspensionsRoute: typeof AppAppSuspensionsRoute
@@ -738,6 +798,7 @@ const AppAppRouteChildren: AppAppRouteChildren = {
   AppAppConfigurationRoute: AppAppConfigurationRoute,
   AppAppDevicesRoute: AppAppDevicesRoute,
   AppAppMyAgreementsRoute: AppAppMyAgreementsRoute,
+  AppAppReportsRoute: AppAppReportsRoute,
   AppAppRolesRoute: AppAppRolesRoute,
   AppAppSessionsRoute: AppAppSessionsRoute,
   AppAppSuspensionsRoute: AppAppSuspensionsRoute,
@@ -783,11 +844,13 @@ const AppShiftsManageUsersRouteWithChildren =
 
 interface AppShiftsRouteChildren {
   AppShiftsAttendanceRoute: typeof AppShiftsAttendanceRoute
+  AppShiftsAttendanceIssuesRoute: typeof AppShiftsAttendanceIssuesRoute
   AppShiftsManageUsersRoute: typeof AppShiftsManageUsersRouteWithChildren
   AppShiftsMyShiftsRoute: typeof AppShiftsMyShiftsRoute
   AppShiftsPeriodDetailsRoute: typeof AppShiftsPeriodDetailsRoute
   AppShiftsPeriodExceptionsRoute: typeof AppShiftsPeriodExceptionsRoute
   AppShiftsReportsRoute: typeof AppShiftsReportsRoute
+  AppShiftsScheduleOverviewRoute: typeof AppShiftsScheduleOverviewRoute
   AppShiftsSchedulingRoute: typeof AppShiftsSchedulingRoute
   AppShiftsShiftSchedulesRoute: typeof AppShiftsShiftSchedulesRoute
   AppShiftsShiftTypesRoute: typeof AppShiftsShiftTypesRoute
@@ -796,11 +859,13 @@ interface AppShiftsRouteChildren {
 
 const AppShiftsRouteChildren: AppShiftsRouteChildren = {
   AppShiftsAttendanceRoute: AppShiftsAttendanceRoute,
+  AppShiftsAttendanceIssuesRoute: AppShiftsAttendanceIssuesRoute,
   AppShiftsManageUsersRoute: AppShiftsManageUsersRouteWithChildren,
   AppShiftsMyShiftsRoute: AppShiftsMyShiftsRoute,
   AppShiftsPeriodDetailsRoute: AppShiftsPeriodDetailsRoute,
   AppShiftsPeriodExceptionsRoute: AppShiftsPeriodExceptionsRoute,
   AppShiftsReportsRoute: AppShiftsReportsRoute,
+  AppShiftsScheduleOverviewRoute: AppShiftsScheduleOverviewRoute,
   AppShiftsSchedulingRoute: AppShiftsSchedulingRoute,
   AppShiftsShiftSchedulesRoute: AppShiftsShiftSchedulesRoute,
   AppShiftsShiftTypesRoute: AppShiftsShiftTypesRoute,

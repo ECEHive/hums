@@ -46,7 +46,14 @@ export const Route = createFileRoute("/app/shifts/shift-schedules")({
 		}),
 });
 
-export const permissions = ["shift_schedules.list"] as RequiredPermissions;
+export const permissions = {
+	all: ["shift_schedules.list"],
+	any: [
+		"shift_schedules.create",
+		"shift_schedules.update",
+		"shift_schedules.delete",
+	],
+} as RequiredPermissions;
 
 function ShiftSchedulesPage() {
 	const { period: periodId } = usePeriod();

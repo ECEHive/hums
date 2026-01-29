@@ -4,6 +4,7 @@ import { APP_TIME_ZONE } from "../timezone";
 import {
 	compareTimestamps,
 	filterExceptionPeriods,
+	filterPastTimestamps,
 	findNextDayOfWeek,
 	generateOccurrenceTimestamps,
 	parseTimeString,
@@ -632,5 +633,74 @@ describe("filterExceptionPeriods", () => {
 
 		expect(result).toHaveLength(0);
 		expect(result).toEqual([]);
+	});
+});
+
+describe("filterPastTimestamps", () => {
+	it("should filter out past timestamps", () => {
+		const now = new Date("2024-01-15T12:00:00Z");
+		const timestamps = [
+			new Date("2024-01-01T09:00:00Z"), // Past
+			new Date("2024-01-08T09:00:00Z"), // Past
+			new Date("2024-01-15T09:00:00Z"), // Past (same day, before reference)
+			new Date("2024-01-22T09:00:00Z"), // Future
+			new Date("2024-01-29T09:00:00Z"), // Future
+		];
+
+		const result = filterPastTimestamps(timestamps, now);
+
+		expect(result).toHaveLength(2);
+		expect(result.map((d) => d.toISOString())).toEqual([
+			"2024-01-22T09:00:00.000Z",
+			"2024-01-29T09:00:00.000Z",
+		]);
+	});
+
+	it("should return all timestamps when all are in the future", () => {
+		const now = new Date("2024-01-01T00:00:00Z");
+		const timestamps = [
+			new Date("2024-01-08T09:00:00Z"),
+			new Date("2024-01-15T09:00:00Z"),
+			new Date("2024-01-22T09:00:00Z"),
+		];
+
+		const result = filterPastTimestamps(timestamps, now);
+
+		expect(result).toHaveLength(3);
+	});
+
+	it("should return empty array when all timestamps are in the past", () => {
+		const now = new Date("2024-12-31T23:59:59Z");
+		const timestamps = [
+			new Date("2024-01-08T09:00:00Z"),
+			new Date("2024-01-15T09:00:00Z"),
+			new Date("2024-01-22T09:00:00Z"),
+		];
+
+		const result = filterPastTimestamps(timestamps, now);
+
+		expect(result).toHaveLength(0);
+	});
+
+	it("should handle empty timestamp array", () => {
+		const now = new Date("2024-01-15T12:00:00Z");
+		const timestamps: Date[] = [];
+
+		const result = filterPastTimestamps(timestamps, now);
+
+		expect(result).toHaveLength(0);
+		expect(result).toEqual([]);
+	});
+
+	it("should use current time as default reference", () => {
+		// Use far future timestamps to ensure they're always future
+		const timestamps = [
+			new Date("2099-01-08T09:00:00Z"),
+			new Date("2099-01-15T09:00:00Z"),
+		];
+
+		const result = filterPastTimestamps(timestamps);
+
+		expect(result).toHaveLength(2);
 	});
 });

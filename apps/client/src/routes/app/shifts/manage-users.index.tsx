@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2Icon, RefreshCcwIcon, UserIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RequirePermissions } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
@@ -40,8 +40,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { clearManageUsersMemory } from "@/hooks/use-manage-users-memory";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
-import { useTableState } from "@/hooks/use-table-state";
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
 import type { RequiredPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/shifts/manage-users/")({
@@ -323,7 +324,12 @@ function RolesFilterInput({
 
 function ManageUsersPage() {
 	const { period: selectedPeriodId } = usePeriod();
-	const [filters, setFilters] = useState<ShiftFilters>(DEFAULT_FILTERS);
+
+	// Clear the "memory" when visiting the users list page
+	// This ensures clicking the sidebar will go to this page next time
+	useEffect(() => {
+		clearManageUsersMemory();
+	}, []);
 
 	const {
 		page,
@@ -334,14 +340,20 @@ function ManageUsersPage() {
 		search,
 		setSearch,
 		debouncedSearch,
+		filters,
+		setFilters,
 		resetToFirstPage,
-	} = useTableState({ initialPageSize: 20 });
+	} = usePersistedTableState<ShiftFilters>({
+		pageKey: "manage-users",
+		defaultFilters: DEFAULT_FILTERS,
+		initialPageSize: 20,
+	});
 
 	const activeFiltersCount = [
-		filters.registeredShifts,
-		filters.droppedShifts,
-		filters.makeupShifts,
-		filters.roles,
+		filters?.registeredShifts,
+		filters?.droppedShifts,
+		filters?.makeupShifts,
+		filters?.roles,
 	].filter(Boolean).length;
 
 	const hasActiveFilters =
@@ -354,10 +366,10 @@ function ManageUsersPage() {
 				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
 			offset,
 			limit: pageSize,
-			registeredShiftsFilter: filters.registeredShifts ?? undefined,
-			droppedShiftsFilter: filters.droppedShifts ?? undefined,
-			makeupShiftsFilter: filters.makeupShifts ?? undefined,
-			rolesFilter: filters.roles
+			registeredShiftsFilter: filters?.registeredShifts ?? undefined,
+			droppedShiftsFilter: filters?.droppedShifts ?? undefined,
+			makeupShiftsFilter: filters?.makeupShifts ?? undefined,
+			rolesFilter: filters?.roles
 				? {
 						roleIds: filters.roles.roles.map((r) => r.id),
 						mode: filters.roles.mode,
@@ -446,9 +458,10 @@ function ManageUsersPage() {
 							>
 								<NumericFilterInput
 									label=""
-									value={filters.registeredShifts}
+									value={filters?.registeredShifts ?? null}
 									onChange={(value) => {
 										setFilters((prev) => ({
+											...DEFAULT_FILTERS,
 											...prev,
 											registeredShifts: value,
 										}));
@@ -462,9 +475,10 @@ function ManageUsersPage() {
 							>
 								<NumericFilterInput
 									label=""
-									value={filters.droppedShifts}
+									value={filters?.droppedShifts ?? null}
 									onChange={(value) => {
 										setFilters((prev) => ({
+											...DEFAULT_FILTERS,
 											...prev,
 											droppedShifts: value,
 										}));
@@ -478,9 +492,10 @@ function ManageUsersPage() {
 							>
 								<NumericFilterInput
 									label=""
-									value={filters.makeupShifts}
+									value={filters?.makeupShifts ?? null}
 									onChange={(value) => {
 										setFilters((prev) => ({
+											...DEFAULT_FILTERS,
 											...prev,
 											makeupShifts: value,
 										}));
@@ -490,9 +505,10 @@ function ManageUsersPage() {
 							</FilterField>
 							<FilterField label="Roles" description="Filter by user roles">
 								<RolesFilterInput
-									value={filters.roles}
+									value={filters?.roles ?? null}
 									onChange={(value) => {
 										setFilters((prev) => ({
+											...DEFAULT_FILTERS,
 											...prev,
 											roles: value,
 										}));

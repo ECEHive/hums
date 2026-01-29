@@ -35,7 +35,11 @@ export async function deleteHandler(options: TDeleteOptions) {
 		});
 
 		// Regenerate shift occurrences for the period since exception is removed
-		await generatePeriodShiftOccurrences(tx, periodId);
+		// Use skipPastOccurrences: true to avoid recreating past occurrences
+		// that were deleted when the exception was created
+		await generatePeriodShiftOccurrences(tx, periodId, {
+			skipPastOccurrences: true,
+		});
 
 		return { success: true };
 	});

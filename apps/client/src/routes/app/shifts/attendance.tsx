@@ -44,7 +44,7 @@ export const permissions = [] as RequiredPermissions;
 function AttendancePage() {
 	const { period: selectedPeriodId } = usePeriod();
 	const { page, setPage, pageSize, setPageSize, offset, resetToFirstPage } =
-		useTableState({ initialPageSize: 20 });
+		useTableState({ initialPageSize: 20, persistKey: "my-attendance" });
 	const limit = pageSize;
 
 	const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
@@ -106,7 +106,7 @@ function AttendancePage() {
 								{statsData?.totalShifts ?? 0}
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{statsData?.upcomingShiftsCount ?? 0} upcoming makeups
+								{statsData?.upcomingShiftsCount ?? 0} upcoming
 							</p>
 						</CardContent>
 					</Card>

@@ -212,7 +212,10 @@ function MyShifts() {
 		? !modificationWindow.isOpen
 		: false;
 	const canSubmitMakeup = Boolean(
-		selectedMakeupOccurrenceId && !isSubmittingMakeup && !makeupWindowClosed,
+		selectedMakeupOccurrenceId &&
+			!isSubmittingMakeup &&
+			!makeupWindowClosed &&
+			dropMakeupNotes.trim(),
 	);
 
 	const closeDropDialog = React.useCallback(() => {
@@ -248,11 +251,10 @@ function MyShifts() {
 	const handleConfirmDrop = React.useCallback(async () => {
 		if (!dropTarget) return;
 		setIsDropping(true);
-		const trimmedNotes = dropNotes.trim();
 		try {
 			await trpc.shiftOccurrences.drop.mutate({
 				shiftOccurrenceId: dropTarget.id,
-				...(trimmedNotes ? { notes: trimmedNotes } : {}),
+				notes: dropNotes.trim(),
 			});
 			toast.success("Shift dropped");
 			await refetchOccurrences();
@@ -267,12 +269,11 @@ function MyShifts() {
 	const handleDropMakeupConfirm = React.useCallback(async () => {
 		if (!makeupTarget || !selectedMakeupOccurrenceId) return;
 		setIsSubmittingMakeup(true);
-		const trimmedNotes = dropMakeupNotes.trim();
 		try {
 			await trpc.shiftOccurrences.dropMakeup.mutate({
 				shiftOccurrenceId: makeupTarget.id,
 				makeupShiftOccurrenceId: selectedMakeupOccurrenceId,
-				...(trimmedNotes ? { notes: trimmedNotes } : {}),
+				notes: dropMakeupNotes.trim(),
 			});
 			toast.success("Shift dropped and makeup scheduled");
 			await refetchOccurrences();
@@ -357,8 +358,8 @@ function MyShifts() {
 						<DialogHeader>
 							<DialogTitle>Drop this shift?</DialogTitle>
 							<DialogDescription>
-								Dropping removes you from this shift and marks your attendance
-								as <strong>dropped</strong>.
+								This cannot be undone. Unexcused drops count against your
+								attendance record.
 							</DialogDescription>
 						</DialogHeader>
 						{dropTarget ? (
@@ -370,21 +371,28 @@ function MyShifts() {
 									</AlertDescription>
 								</Alert>
 								<div className="space-y-2">
-									<Label htmlFor={dropNotesId}>Reason (optional)</Label>
+									<Label htmlFor={dropNotesId}>
+										Reason <span className="text-destructive">*</span>
+									</Label>
 									<Textarea
 										id={dropNotesId}
 										value={dropNotes}
 										onChange={(event) => setDropNotes(event.target.value)}
-										placeholder="Let the coordinators know why you're dropping this shift."
+										placeholder="Why are you dropping this shift? This will be shown to staff."
 										maxLength={500}
 									/>
 									<p className="text-xs text-muted-foreground text-right">
 										{dropNotes.length}/500 characters
 									</p>
 								</div>
-								<p>This action cannot be undone.</p>
 							</div>
 						) : null}
+						<Alert variant="destructive" className="mb-4">
+							<AlertDescription>
+								<strong>Warning:</strong> If not excused by staff, this drop
+								will count against your attendance record.
+							</AlertDescription>
+						</Alert>
 						<DialogFooter className="flex justify-end gap-2">
 							<Button
 								variant="outline"
@@ -396,7 +404,7 @@ function MyShifts() {
 							<Button
 								variant="destructive"
 								onClick={handleConfirmDrop}
-								disabled={isDropping}
+								disabled={isDropping || !dropNotes.trim()}
 							>
 								{isDropping ? "Dropping…" : "Confirm Drop"}
 							</Button>
@@ -410,10 +418,10 @@ function MyShifts() {
 				>
 					<SheetContent className="w-full overflow-y-auto sm:max-w-lg md:max-w-lg lg:max-w-xl">
 						<SheetHeader>
-							<SheetTitle>Find a makeup shift</SheetTitle>
+							<SheetTitle>Drop with makeup</SheetTitle>
 							<SheetDescription>
-								Choose an open shift occurrence to cover for{" "}
-								{makeupTarget?.shiftTypeName}.
+								Select a makeup shift to cover for {makeupTarget?.shiftTypeName}
+								. Your drop will be excused if you attend the makeup.
 							</SheetDescription>
 						</SheetHeader>
 
@@ -513,12 +521,14 @@ function MyShifts() {
 							)}
 
 							<div className="space-y-2">
-								<Label htmlFor={dropMakeupNotesId}>Reason (optional)</Label>
+								<Label htmlFor={dropMakeupNotesId}>
+									Reason <span className="text-destructive">*</span>
+								</Label>
 								<Textarea
 									id={dropMakeupNotesId}
 									value={dropMakeupNotes}
 									onChange={(event) => setDropMakeupNotes(event.target.value)}
-									placeholder="Let the coordinators know why you're dropping and selecting this makeup shift."
+									placeholder="Why are you dropping this shift? This will be shown to staff."
 									maxLength={500}
 								/>
 								<p className="text-xs text-muted-foreground text-right">

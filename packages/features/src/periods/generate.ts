@@ -1,5 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { generateShiftScheduleShiftOccurrences } from "../shift-schedules/generate";
+import {
+	type GenerateShiftOccurrencesOptions,
+	generateShiftScheduleShiftOccurrences,
+} from "../shift-schedules/generate";
 import type { Transaction } from "../types/transaction";
 
 /**
@@ -12,11 +15,13 @@ import type { Transaction } from "../types/transaction";
  *
  * @param tx - The database transaction to use.
  * @param periodId - The ID of the period to generate shift occurrences for.
+ * @param options - Optional settings for occurrence generation.
  * @throws Error if the period doesn't exist or if occurrence generation fails
  */
 export async function generatePeriodShiftOccurrences(
 	tx: Transaction,
 	periodId: number,
+	options: GenerateShiftOccurrencesOptions = {},
 ) {
 	// Get all shift types for this period with their shift schedules
 	const periodShiftTypes = await tx.shiftType.findMany({
@@ -35,7 +40,7 @@ export async function generatePeriodShiftOccurrences(
 	for (const shiftType of periodShiftTypes) {
 		for (const schedule of shiftType.shiftSchedules) {
 			try {
-				await generateShiftScheduleShiftOccurrences(tx, schedule.id);
+				await generateShiftScheduleShiftOccurrences(tx, schedule.id, options);
 			} catch (error) {
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",

@@ -11,6 +11,10 @@ type AttendanceRecord = {
 	didArriveLate: boolean | null;
 	didLeaveEarly: boolean | null;
 	isMakeup: boolean | null;
+	isExcused: boolean;
+	excuseNotes: string | null;
+	reviewedBy: { id: number; name: string } | null;
+	reviewedAt: Date | null;
 	droppedNotes: string | null;
 	shiftOccurrence: {
 		timestamp: Date;
@@ -89,6 +93,11 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
 		cell: ({ row }) => {
 			const attendance = row.original;
 			const getStatusBadge = () => {
+				// Check if excused first (can be excused with any underlying status)
+				if (attendance.isExcused) {
+					return <Badge>Excused</Badge>;
+				}
+
 				switch (attendance.status) {
 					case "upcoming":
 						return (
@@ -100,6 +109,8 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
 						return <Badge className="bg-green-600">Present</Badge>;
 					case "absent":
 						return <Badge variant="destructive">Absent</Badge>;
+					case "excused":
+						return <Badge className="bg-blue-600">Excused</Badge>;
 					case "dropped":
 					case "dropped_makeup":
 						return (
