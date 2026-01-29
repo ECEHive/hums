@@ -5,6 +5,7 @@ import { authRouter } from "./routers/auth/_route";
 import { configRouter } from "./routers/config/_route";
 import { devicesRouter } from "./routers/devices/_route";
 import { globalReportsRouter } from "./routers/globalReports/_route";
+import { inventoryRouter } from "./routers/inventory/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
 import { overviewRouter } from "./routers/overview/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
@@ -42,6 +43,7 @@ export const appRouter = router({
 	devices: devicesRouter,
 	oneTimeLoginCodes: oneTimeLoginCodesRouter,
 	reports: reportsRouter,
+	inventory: inventoryRouter,
 	globalReports: globalReportsRouter,
 });
 
