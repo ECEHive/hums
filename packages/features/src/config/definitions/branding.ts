@@ -1,4 +1,3 @@
-import { ConfigRegistry } from "../registry";
 import { defineConfig, type ExtractConfigType } from "../types";
 
 /**
@@ -183,6 +182,3 @@ export const DEFAULT_BRANDING = {
 		},
 	},
 };
-
-// Register the configuration
-ConfigRegistry.register("branding", brandingConfig);

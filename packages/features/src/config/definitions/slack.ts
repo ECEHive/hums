@@ -1,4 +1,3 @@
-import { ConfigRegistry } from "../registry";
 import { defineConfig, type ExtractConfigType } from "../types";
 
 /**
@@ -26,6 +25,3 @@ export const slackConfig = defineConfig({
 } as const);
 
 export type SlackConfigType = ExtractConfigType<typeof slackConfig>;
-
-// Register the configuration
-ConfigRegistry.register("slack", slackConfig);
