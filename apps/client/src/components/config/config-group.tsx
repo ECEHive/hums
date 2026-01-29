@@ -44,7 +44,6 @@ interface ConfigGroupProps {
 	group: ConfigGroupDef;
 	values: Record<string, unknown>;
 	canWrite: boolean;
-	savingKeys: Set<string>;
 	shouldShowField: (field: ConfigFieldDef) => boolean;
 	onChange: (key: string, value: unknown) => void;
 	onReset: (key: string) => void;
@@ -54,7 +53,6 @@ export function ConfigGroup({
 	group,
 	values,
 	canWrite,
-	savingKeys,
 	shouldShowField,
 	onChange,
 	onReset,
@@ -85,7 +83,6 @@ export function ConfigGroup({
 						field={field}
 						value={values[field.key] ?? field.defaultValue}
 						canWrite={canWrite}
-						isSaving={savingKeys.has(field.key)}
 						onChange={(value) => onChange(field.key, value)}
 						onReset={() => onReset(field.key)}
 					/>

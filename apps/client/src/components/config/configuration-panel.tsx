@@ -52,7 +52,6 @@ export function ConfigurationPanel({
 	const [savedValues, setSavedValues] =
 		useState<Record<string, unknown>>(initialValues);
 	const [search, setSearch] = useState("");
-	const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
 	const [isSaving, setIsSaving] = useState(false);
 
 	// Update saved values when initial values change (after fetch/reset)
@@ -109,36 +108,6 @@ export function ConfigurationPanel({
 		},
 	});
 
-	const resetValueMutation = useMutation({
-		mutationFn: ({ key }: { key: string; defaultValue: unknown }) =>
-			trpc.config.resetValue.mutate({ key }),
-		onMutate: ({ key }) => {
-			setSavingKeys((prev) => new Set(prev).add(key));
-		},
-		onSuccess: (_, { key, defaultValue }) => {
-			// Reset both local and saved state to default value
-			setValues((prev) => ({ ...prev, [key]: defaultValue }));
-			setSavedValues((prev) => ({ ...prev, [key]: defaultValue }));
-			queryClient.invalidateQueries({ queryKey: ["config", "all"] });
-			toast.success("Configuration reset to default");
-			setSavingKeys((prev) => {
-				const next = new Set(prev);
-				next.delete(key);
-				return next;
-			});
-		},
-		onError: (error, { key }) => {
-			toast.error("Failed to reset configuration", {
-				description: error.message,
-			});
-			setSavingKeys((prev) => {
-				const next = new Set(prev);
-				next.delete(key);
-				return next;
-			});
-		},
-	});
-
 	const handleValueChange = useCallback((key: string, value: unknown) => {
 		setValues((prev) => ({ ...prev, [key]: value }));
 	}, []);
@@ -159,9 +128,10 @@ export function ConfigurationPanel({
 		(key: string) => {
 			if (!canWrite) return;
 			const defaultValue = defaultValues[key];
-			resetValueMutation.mutate({ key, defaultValue });
+			// Reset the value locally - user will need to save to persist
+			setValues((prev) => ({ ...prev, [key]: defaultValue }));
 		},
-		[canWrite, defaultValues, resetValueMutation],
+		[canWrite, defaultValues],
 	);
 
 	// Filter groups based on search
@@ -238,7 +208,6 @@ export function ConfigurationPanel({
 								group={group}
 								values={values}
 								canWrite={canWrite}
-								savingKeys={savingKeys}
 								shouldShowField={shouldShowField}
 								onChange={handleValueChange}
 								onReset={handleReset}
