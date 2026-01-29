@@ -48,7 +48,7 @@ function Roles() {
 		setSearch,
 		debouncedSearch,
 		resetToFirstPage,
-	} = useTableState();
+	} = useTableState({ persistKey: "roles" });
 
 	const queryParams = React.useMemo(() => {
 		return {

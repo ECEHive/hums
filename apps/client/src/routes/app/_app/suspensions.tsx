@@ -48,7 +48,7 @@ function Suspensions() {
 		setSearch,
 		debouncedSearch,
 		resetToFirstPage,
-	} = useTableState();
+	} = useTableState({ persistKey: "suspensions" });
 
 	const queryParams = React.useMemo(() => {
 		return {

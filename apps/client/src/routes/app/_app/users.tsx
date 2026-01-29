@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { generateColumns } from "@/components/users/columns";
 import { CreateDialog } from "@/components/users/create-dialog";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
-import { useTableState } from "@/hooks/use-table-state";
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
 
 export const Route = createFileRoute("/app/_app/users")({
 	component: () =>
@@ -43,6 +43,14 @@ export const Route = createFileRoute("/app/_app/users")({
 
 export const permissions = ["users.list"];
 
+type UsersFilters = {
+	filterRoles: Role[];
+};
+
+const DEFAULT_FILTERS: UsersFilters = {
+	filterRoles: [],
+};
+
 function Users() {
 	const {
 		page,
@@ -53,9 +61,15 @@ function Users() {
 		search,
 		setSearch,
 		debouncedSearch,
+		filters,
+		setFilters,
 		resetToFirstPage,
-	} = useTableState();
-	const [filterRoles, setFilterRoles] = React.useState<Role[]>([]);
+	} = usePersistedTableState<UsersFilters>({
+		pageKey: "users",
+		defaultFilters: DEFAULT_FILTERS,
+	});
+
+	const filterRoles = filters?.filterRoles ?? [];
 
 	const queryParams = React.useMemo(() => {
 		return {
@@ -132,7 +146,7 @@ function Users() {
 							activeFiltersCount={filterRoles.length}
 							hasActiveFilters={filterRoles.length > 0}
 							onReset={() => {
-								setFilterRoles([]);
+								setFilters(DEFAULT_FILTERS);
 								resetToFirstPage();
 							}}
 						>
@@ -143,7 +157,11 @@ function Users() {
 								<RoleMultiSelect
 									value={filterRoles}
 									onChange={(newRoles) => {
-										setFilterRoles(newRoles);
+										setFilters((prev) => ({
+											...DEFAULT_FILTERS,
+											...prev,
+											filterRoles: newRoles,
+										}));
 										resetToFirstPage();
 									}}
 								/>

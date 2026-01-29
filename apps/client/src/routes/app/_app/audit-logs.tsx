@@ -46,6 +46,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { usePersistedFilters } from "@/hooks/use-persisted-filters";
 import { useDebounce } from "@/lib/debounce";
 import { checkPermissions } from "@/lib/permissions";
 
@@ -65,16 +66,21 @@ type FilterState = {
 	actor: AuditLogFilterUser | null;
 	impersonatedBy: AuditLogFilterUser | null;
 	apiToken: AuditLogFilterApiToken | null;
+	actionInput: string;
+	page: number;
+	pageSize: number;
 };
 
-const createDefaultFilters = (): FilterState => ({
+const DEFAULT_FILTERS: FilterState = {
 	source: "",
 	actor: null,
 	impersonatedBy: null,
 	apiToken: null,
-});
+	actionInput: "",
+	page: 1,
+	pageSize: 20,
+};
 
-const DEFAULT_PAGE_SIZE = 20;
 const _MAX_PAGE_SIZE = 100;
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
@@ -93,39 +99,60 @@ function AuditLogsPage() {
 		[user],
 	);
 
-	const [filters, setFilters] = useState<FilterState>(() =>
-		createDefaultFilters(),
-	);
-	const [actionInput, setActionInput] = useState<string>("");
-	const [page, setPage] = useState(1);
-	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const { filters, setFilters, resetFilters } =
+		usePersistedFilters<FilterState>({
+			pageKey: "audit-logs",
+			defaultFilters: DEFAULT_FILTERS,
+		});
+
+	// Extract values from filters with defaults
+	const source = filters.source ?? DEFAULT_FILTERS.source;
+	const actor = filters.actor ?? DEFAULT_FILTERS.actor;
+	const impersonatedBy =
+		filters.impersonatedBy ?? DEFAULT_FILTERS.impersonatedBy;
+	const apiToken = filters.apiToken ?? DEFAULT_FILTERS.apiToken;
+	const actionInput = filters.actionInput ?? DEFAULT_FILTERS.actionInput;
+	const page = filters.page ?? DEFAULT_FILTERS.page;
+	const pageSize = filters.pageSize ?? DEFAULT_FILTERS.pageSize;
+
 	const debouncedAction = useDebounce(actionInput, 300);
 
-	useEffect(() => {
-		setPage(1);
-	}, [debouncedAction]);
+	const setPage = useCallback(
+		(newPage: number) => {
+			setFilters((prev) => ({ ...prev, page: newPage }));
+		},
+		[setFilters],
+	);
+
+	const setPageSize = useCallback(
+		(newSize: number) => {
+			setFilters((prev) => ({ ...prev, pageSize: newSize, page: 1 }));
+		},
+		[setFilters],
+	);
+
+	const setActionInput = useCallback(
+		(value: string) => {
+			setFilters((prev) => ({ ...prev, actionInput: value, page: 1 }));
+		},
+		[setFilters],
+	);
 
 	useEffect(() => {
 		if (canFilterUsers) return;
-		let changed = false;
 		setFilters((prev) => {
 			if (!prev.actor && !prev.impersonatedBy) return prev;
-			changed = true;
 			return { ...prev, actor: null, impersonatedBy: null };
 		});
-		if (changed) setPage(1);
-	}, [canFilterUsers]);
+	}, [canFilterUsers, setFilters]);
 
 	useEffect(() => {
 		if (canFilterApiTokens) return;
-		let changed = false;
 		setFilters((prev) => {
 			if (!prev.apiToken) return prev;
-			changed = true;
 			return { ...prev, apiToken: null };
 		});
-		if (changed) setPage(1);
-	}, [canFilterApiTokens]);
+	}, [canFilterApiTokens, setFilters]);
 	const [selectedLog, setSelectedLog] = useState<AuditLogRow | null>(null);
 	const handleSelectLog = useCallback((log: AuditLogRow) => {
 		setSelectedLog(log);
@@ -142,14 +169,22 @@ function AuditLogsPage() {
 	const queryInput = useMemo(() => {
 		return {
 			action: formValueToString(debouncedAction),
-			userId: filters.actor?.id,
-			impersonatedById: filters.impersonatedBy?.id,
-			apiTokenId: filters.apiToken?.id,
-			source: filters.source || undefined,
+			userId: actor?.id,
+			impersonatedById: impersonatedBy?.id,
+			apiTokenId: apiToken?.id,
+			source: source || undefined,
 			limit: pageSize,
 			page,
 		};
-	}, [debouncedAction, filters, page, pageSize]);
+	}, [
+		debouncedAction,
+		actor,
+		impersonatedBy,
+		apiToken,
+		source,
+		page,
+		pageSize,
+	]);
 
 	const { data, isLoading, isFetching, refetch } =
 		useQuery<AuditLogsListResponse>({
@@ -174,62 +209,55 @@ function AuditLogsPage() {
 
 	const handlePageChange = useCallback(
 		(nextPage: number) => {
-			setPage((prev) => {
-				const clamped = Math.min(Math.max(nextPage, 1), totalPages);
-				return prev === clamped ? prev : clamped;
-			});
+			const clamped = Math.min(Math.max(nextPage, 1), totalPages);
+			setPage(clamped);
 		},
-		[totalPages],
+		[totalPages, setPage],
 	);
 
-	const handleActorChange = (actor: AuditLogFilterUser | null) => {
-		let changed = false;
-		setFilters((prev) => {
-			if (prev.actor?.id === actor?.id) return prev;
-			changed = true;
-			return { ...prev, actor };
-		});
-		if (changed) setPage(1);
-	};
+	const handleActorChange = useCallback(
+		(newActor: AuditLogFilterUser | null) => {
+			setFilters((prev) => {
+				if (prev.actor?.id === newActor?.id) return prev;
+				return { ...prev, actor: newActor, page: 1 };
+			});
+		},
+		[setFilters],
+	);
 
-	const handleImpersonatedByChange = (
-		impersonatedBy: AuditLogFilterUser | null,
-	) => {
-		let changed = false;
-		setFilters((prev) => {
-			if (prev.impersonatedBy?.id === impersonatedBy?.id) return prev;
-			changed = true;
-			return { ...prev, impersonatedBy };
-		});
-		if (changed) setPage(1);
-	};
+	const handleImpersonatedByChange = useCallback(
+		(newImpersonatedBy: AuditLogFilterUser | null) => {
+			setFilters((prev) => {
+				if (prev.impersonatedBy?.id === newImpersonatedBy?.id) return prev;
+				return { ...prev, impersonatedBy: newImpersonatedBy, page: 1 };
+			});
+		},
+		[setFilters],
+	);
 
-	const handleApiTokenChange = (apiToken: AuditLogFilterApiToken | null) => {
-		let changed = false;
-		setFilters((prev) => {
-			if (prev.apiToken?.id === apiToken?.id) return prev;
-			changed = true;
-			return { ...prev, apiToken };
-		});
-		if (changed) setPage(1);
-	};
+	const handleApiTokenChange = useCallback(
+		(newApiToken: AuditLogFilterApiToken | null) => {
+			setFilters((prev) => {
+				if (prev.apiToken?.id === newApiToken?.id) return prev;
+				return { ...prev, apiToken: newApiToken, page: 1 };
+			});
+		},
+		[setFilters],
+	);
 
-	const handleSourceChange = (source: FilterState["source"]) => {
-		let changed = false;
-		setFilters((prev) => {
-			if (prev.source === source) return prev;
-			changed = true;
-			return { ...prev, source };
-		});
-		if (changed) setPage(1);
-	};
+	const handleSourceChange = useCallback(
+		(newSource: FilterState["source"]) => {
+			setFilters((prev) => {
+				if (prev.source === newSource) return prev;
+				return { ...prev, source: newSource, page: 1 };
+			});
+		},
+		[setFilters],
+	);
 
-	const handleReset = () => {
-		const resetState = createDefaultFilters();
-		setFilters(resetState);
-		setActionInput("");
-		setPage(1);
-	};
+	const handleReset = useCallback(() => {
+		resetFilters();
+	}, [resetFilters]);
 
 	return (
 		<Page>
@@ -269,16 +297,13 @@ function AuditLogsPage() {
 								</TableSearchInput>
 								<TableFilters
 									activeFiltersCount={
-										(filters.actor ? 1 : 0) +
-										(filters.impersonatedBy ? 1 : 0) +
-										(filters.apiToken ? 1 : 0) +
-										(filters.source ? 1 : 0)
+										(actor ? 1 : 0) +
+										(impersonatedBy ? 1 : 0) +
+										(apiToken ? 1 : 0) +
+										(source ? 1 : 0)
 									}
 									hasActiveFilters={
-										!!filters.actor ||
-										!!filters.impersonatedBy ||
-										!!filters.apiToken ||
-										!!filters.source
+										!!actor || !!impersonatedBy || !!apiToken || !!source
 									}
 									onReset={handleReset}
 								>
@@ -287,14 +312,14 @@ function AuditLogsPage() {
 											<FilterField label="Actor">
 												<AuditLogUserSelector
 													placeholder="Search by name"
-													value={filters.actor}
+													value={actor}
 													onChange={handleActorChange}
 												/>
 											</FilterField>
 											<FilterField label="Impersonated by">
 												<AuditLogUserSelector
 													placeholder="Search impersonators"
-													value={filters.impersonatedBy}
+													value={impersonatedBy}
 													onChange={handleImpersonatedByChange}
 												/>
 											</FilterField>
@@ -304,14 +329,14 @@ function AuditLogsPage() {
 										<FilterField label="API token">
 											<AuditLogApiTokenSelector
 												placeholder="Search API tokens"
-												value={filters.apiToken}
+												value={apiToken}
 												onChange={handleApiTokenChange}
 											/>
 										</FilterField>
 									)}
 									<FilterField label="Source">
 										<Select
-											value={filters.source || "all"}
+											value={source || "all"}
 											onValueChange={(value) =>
 												handleSourceChange(
 													value === "all"
