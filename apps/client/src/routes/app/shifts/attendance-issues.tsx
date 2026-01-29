@@ -71,7 +71,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
-import { useTableState } from "@/hooks/use-table-state";
+import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 import { formatDate, formatTime } from "@/lib/reports/utils";
 
@@ -140,23 +140,22 @@ function getIssueBadgeVariant(
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+type AttendanceIssuesFilters = {
+	issueType: "all" | "dropped" | "absent" | "late" | "left_early";
+	unexcusedOnly: boolean;
+};
+
+const DEFAULT_FILTERS: AttendanceIssuesFilters = {
+	issueType: "all",
+	unexcusedOnly: true,
+};
+
 function AttendanceIssuesPage() {
 	const { period: selectedPeriodId } = usePeriod();
 	const currentUser = useCurrentUser();
 	const queryClient = useQueryClient();
 
-	// Filter state
-	const [issueType, setIssueType] = useState<
-		"all" | "dropped" | "absent" | "late" | "left_early"
-	>("all");
-	const [unexcusedOnly, setUnexcusedOnly] = useState(true);
-
-	// Dialog state
-	const [excuseDialogOpen, setExcuseDialogOpen] = useState(false);
-	const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-	const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-	const [excuseNotes, setExcuseNotes] = useState("");
-
+	// Combined filter and table state with persistence
 	const {
 		page,
 		setPage,
@@ -166,8 +165,37 @@ function AttendanceIssuesPage() {
 		search,
 		setSearch,
 		debouncedSearch,
+		filters,
+		setFilters,
 		resetToFirstPage,
-	} = useTableState({ initialPageSize: 20 });
+	} = usePersistedTableState<AttendanceIssuesFilters>({
+		pageKey: "attendance-issues",
+		defaultFilters: DEFAULT_FILTERS,
+		initialPageSize: 20,
+	});
+
+	// Extract filter values with defaults
+	const issueType = filters?.issueType ?? DEFAULT_FILTERS.issueType;
+	const unexcusedOnly = filters?.unexcusedOnly ?? DEFAULT_FILTERS.unexcusedOnly;
+
+	// Helper to update individual filter fields
+	const setIssueType = (value: AttendanceIssuesFilters["issueType"]) => {
+		setFilters((prev) => ({ ...DEFAULT_FILTERS, ...prev, issueType: value }));
+	};
+
+	const setUnexcusedOnly = (value: boolean) => {
+		setFilters((prev) => ({
+			...DEFAULT_FILTERS,
+			...prev,
+			unexcusedOnly: value,
+		}));
+	};
+
+	// Dialog state
+	const [excuseDialogOpen, setExcuseDialogOpen] = useState(false);
+	const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+	const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+	const [excuseNotes, setExcuseNotes] = useState("");
 
 	const hasPermission =
 		currentUser && checkPermissions(currentUser, permissions);
@@ -264,8 +292,7 @@ function AttendanceIssuesPage() {
 	};
 
 	const resetFilters = () => {
-		setIssueType("all");
-		setUnexcusedOnly(true);
+		setFilters(DEFAULT_FILTERS);
 		resetToFirstPage();
 	};
 

@@ -48,6 +48,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { usePersistedFilters } from "@/hooks/use-persisted-filters";
 import { useDebounce } from "@/lib/debounce";
 import { checkPermissions } from "@/lib/permissions";
 
@@ -75,7 +76,16 @@ function ApiTokensPage() {
 	const canDelete = user
 		? checkPermissions(user, ["api_tokens.delete"])
 		: false;
-	const [search, setSearch] = useState("");
+
+	const { filters, setFilters } = usePersistedFilters<{ search: string }>({
+		pageKey: "api-tokens",
+		defaultFilters: { search: "" },
+	});
+
+	const search = filters.search ?? "";
+	const setSearch = (value: string) =>
+		setFilters((prev) => ({ ...prev, search: value }));
+
 	const debouncedSearch = useDebounce(search, 250);
 	const [tokenToShow, setTokenToShow] = useState<GeneratedToken | null>(null);
 	const queryClient = useQueryClient();

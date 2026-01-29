@@ -44,7 +44,7 @@ export const Route = createFileRoute("/app/_app/me/sessions")({
 
 function MySessionsPage() {
 	const { page, setPage, pageSize, setPageSize, offset, resetToFirstPage } =
-		useTableState({ initialPageSize: 20 });
+		useTableState({ initialPageSize: 20, persistKey: "my-sessions" });
 	const queryClient = useQueryClient();
 	const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
 

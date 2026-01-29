@@ -44,7 +44,7 @@ export const permissions = [] as RequiredPermissions;
 function AttendancePage() {
 	const { period: selectedPeriodId } = usePeriod();
 	const { page, setPage, pageSize, setPageSize, offset, resetToFirstPage } =
-		useTableState({ initialPageSize: 20 });
+		useTableState({ initialPageSize: 20, persistKey: "my-attendance" });
 	const limit = pageSize;
 
 	const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
