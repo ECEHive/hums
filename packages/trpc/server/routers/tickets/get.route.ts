@@ -1,6 +1,7 @@
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZGetTicketSchema = z.object({
 	id: z.string().uuid(),
