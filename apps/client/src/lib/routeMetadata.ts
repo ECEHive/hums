@@ -150,6 +150,28 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Export Shifts",
 		breadcrumb: "Export Shifts",
 	},
+
+	// Tickets Routes
+	"/app/tickets": {
+		title: "Tickets",
+		breadcrumb: "Tickets",
+	},
+	"/app/tickets/my-tickets": {
+		title: "My Tickets",
+		breadcrumb: "My Tickets",
+	},
+	"/app/tickets/submit": {
+		title: "Submit Ticket",
+		breadcrumb: "Submit",
+	},
+	"/app/tickets/admin": {
+		title: "Admin Tickets",
+		breadcrumb: "Admin",
+	},
+	"/app/tickets/admin/types": {
+		title: "Ticket Types",
+		breadcrumb: "Types",
+	},
 };
 
 /**
