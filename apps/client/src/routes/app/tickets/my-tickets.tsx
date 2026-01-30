@@ -7,4 +7,3 @@ export const Route = createFileRoute("/app/tickets/my-tickets")({
 function MyTicketsLayout() {
 	return <Outlet />;
 }
-

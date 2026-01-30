@@ -5,6 +5,7 @@ export { clearQueue, getQueueStatus, queueEmail, queueEmails } from "./queue";
 export type {
 	RenderEmailOptions,
 	RenderedEmail,
+	TicketAssignmentEmailProps,
 	TicketConfirmationEmailProps,
 	TicketStatusUpdateEmailProps,
 } from "./template-renderer";
