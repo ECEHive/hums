@@ -1,9 +1,9 @@
 <p align="center">
   <h1 align="center">HUMS</h1>
-  <h3 align="center">Hive User Management System</h3>
+  <h3 align="center">Hive Unified Management System</h3>
 
   <p align="center">
-    User management system for The Hive Makerspace at Georgia Tech.
+    Management system for The Hive Makerspace at Georgia Tech.
   </p>
 </p>
 
