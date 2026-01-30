@@ -12,6 +12,16 @@ import {
 	SuspensionNoticeEmailSubject,
 } from "./templates/SuspensionNoticeEmail";
 import {
+	TicketConfirmationEmail,
+	type TicketConfirmationEmailProps,
+	TicketConfirmationEmailSubject,
+} from "./templates/TicketConfirmationEmail";
+import {
+	TicketStatusUpdateEmail,
+	type TicketStatusUpdateEmailProps,
+	TicketStatusUpdateEmailSubject,
+} from "./templates/TicketStatusUpdateEmail";
+import {
 	WelcomeEmail,
 	type WelcomeEmailProps,
 	WelcomeEmailSubject,
@@ -24,6 +34,8 @@ const logger = getLogger("email:renderer");
 export type {
 	SessionAutoLogoutEmailProps,
 	SuspensionNoticeEmailProps,
+	TicketConfirmationEmailProps,
+	TicketStatusUpdateEmailProps,
 	WelcomeEmailProps,
 };
 
@@ -39,6 +51,14 @@ export type RenderEmailOptions =
 	| {
 			template: "suspension-notice";
 			data: SuspensionNoticeEmailProps;
+	  }
+	| {
+			template: "ticket-confirmation";
+			data: TicketConfirmationEmailProps;
+	  }
+	| {
+			template: "ticket-status-update";
+			data: TicketStatusUpdateEmailProps;
 	  };
 
 export interface RenderedEmail {
@@ -84,6 +104,22 @@ export async function renderEmail(
 					<SuspensionNoticeEmail {...options.data} logos={logos} />,
 				);
 				subject = SuspensionNoticeEmailSubject;
+				break;
+			}
+
+			case "ticket-confirmation": {
+				html = renderToStaticMarkup(
+					<TicketConfirmationEmail {...options.data} logos={logos} />,
+				);
+				subject = TicketConfirmationEmailSubject;
+				break;
+			}
+
+			case "ticket-status-update": {
+				html = renderToStaticMarkup(
+					<TicketStatusUpdateEmail {...options.data} logos={logos} />,
+				);
+				subject = TicketStatusUpdateEmailSubject;
 				break;
 			}
 		}

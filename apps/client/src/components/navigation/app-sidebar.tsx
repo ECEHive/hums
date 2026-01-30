@@ -24,6 +24,7 @@ import {
 	ShieldIcon,
 	SunIcon,
 	SunMoonIcon,
+	TicketIcon,
 	User2Icon,
 	UserIcon,
 } from "lucide-react";
@@ -109,6 +110,13 @@ export const items: AppSidebarGroup[] = [
 				title: "Inventory",
 				url: "/app/inventory",
 				icon: LaptopMinimalCheckIcon,
+				permissions: [], // Available to all authenticated users
+				hasChildren: true,
+			},
+			{
+				title: "Tickets",
+				url: "/app/tickets",
+				icon: TicketIcon,
 				permissions: [], // Available to all authenticated users
 				hasChildren: true,
 			},

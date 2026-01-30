@@ -22,6 +22,8 @@ export function EmailLayout({
 	const logoLight = logos?.light ?? "";
 	const logoDark = logos?.dark ?? "";
 
+	console.log("Using logos", { logoLight, logoDark });
+
 	return (
 		<html lang="en">
 			<head>
