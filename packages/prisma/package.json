@@ -12,10 +12,10 @@
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
-		"@prisma/adapter-pg": "^7.1.0",
-		"@prisma/client": "7.3.0",
+		"@prisma/adapter-pg": "^7.3.0",
+		"@prisma/client": "^7.3.0",
 		"pg": "^8.16.3",
-		"prisma": "7.3.0"
+		"prisma": "^7.3.0"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
