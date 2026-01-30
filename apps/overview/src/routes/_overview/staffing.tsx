@@ -101,16 +101,23 @@ function StaffingPage() {
 	}
 
 	// Count totals for summary
-	const totalCurrentTimeSlots =
-		data?.currentShiftGroups.reduce((sum, g) => sum + g.timeSlots.length, 0) ??
-		0;
-	const totalMissingUsers =
+	// Total slots = sum of all totalSlots across all time slots
+	const totalCurrentSlots =
+		data?.currentShiftGroups.reduce(
+			(sum, g) =>
+				sum + g.timeSlots.reduce((s, t) => s + t.totalSlots, 0),
+			0,
+		) ?? 0;
+	// Missing = users marked as missing + empty slots
+	const totalMissing =
 		data?.currentShiftGroups.reduce(
 			(sum, g) =>
 				sum +
 				g.timeSlots.reduce(
 					(s, t) =>
-						s + t.assignedUsers.filter((u) => u.status === "missing").length,
+						s +
+						t.assignedUsers.filter((u) => u.status === "missing").length +
+						t.emptySlots,
 					0,
 				),
 			0,
@@ -157,15 +164,15 @@ function StaffingPage() {
 									variant="secondary"
 									className="text-sm md:text-base font-semibold px-2.5 py-1 md:px-3 md:py-1.5"
 								>
-									{totalCurrentTimeSlots} shift
-									{totalCurrentTimeSlots !== 1 ? "s" : ""}
+									{totalCurrentSlots} slot
+									{totalCurrentSlots !== 1 ? "s" : ""}
 								</Badge>
-								{totalMissingUsers > 0 && (
+								{totalMissing > 0 && (
 									<Badge
 										variant="destructive"
 										className="text-sm md:text-base font-semibold px-2.5 py-1 md:px-3 md:py-1.5"
 									>
-										{totalMissingUsers} missing
+										{totalMissing} missing
 									</Badge>
 								)}
 							</div>
