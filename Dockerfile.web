@@ -56,6 +56,16 @@ RUN bun run build
 WORKDIR /app
 
 # =============================================================================
+# Build Inventory Stage
+# =============================================================================
+FROM deps AS build-inventory
+
+# Build inventory
+WORKDIR /app/apps/inventory
+RUN bun run build
+WORKDIR /app
+
+# =============================================================================
 # Production NGINX Image
 # =============================================================================
 FROM nginx:alpine AS web
@@ -64,6 +74,7 @@ FROM nginx:alpine AS web
 COPY --from=build-client /app/apps/client/dist /usr/share/nginx/html/client
 COPY --from=build-kiosk /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
 COPY --from=build-overview /app/apps/overview/dist /usr/share/nginx/html/overview
+COPY --from=build-inventory /app/apps/inventory/dist /usr/share/nginx/html/inventory
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
