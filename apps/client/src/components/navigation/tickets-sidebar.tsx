@@ -39,6 +39,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { getLastVisitedAdminTicket } from "@/hooks/use-admin-tickets-memory";
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
@@ -158,25 +159,35 @@ export function TicketsSidebar() {
 							)}
 							<SidebarGroupContent>
 								<SidebarMenu>
-									{visibleItems.map((item) => (
-										<SidebarMenuItem key={item.title}>
-											<SidebarMenuButton
-												asChild
-												isActive={isPathActive(item.url)}
-											>
-												<Link
-													to={item.url}
-													className="flex w-full items-center gap-3"
+									{visibleItems.map((item) => {
+										// For All Tickets, check if there's a remembered ticket to navigate to
+										let targetUrl = item.url;
+										if (item.url === "/app/tickets/admin") {
+											const lastTicketId = getLastVisitedAdminTicket();
+											if (lastTicketId) {
+												targetUrl = `/app/tickets/admin/${lastTicketId}`;
+											}
+										}
+										return (
+											<SidebarMenuItem key={item.title}>
+												<SidebarMenuButton
+													asChild
+													isActive={isPathActive(item.url)}
 												>
-													<item.icon className="h-4 w-4" />
-													<span className="flex-1">{item.title}</span>
-													{"external" in item && item.external && (
-														<ExternalLinkIcon className="h-3 w-3 text-muted-foreground" />
-													)}
-												</Link>
-											</SidebarMenuButton>
-										</SidebarMenuItem>
-									))}
+													<Link
+														to={targetUrl}
+														className="flex w-full items-center gap-3"
+													>
+														<item.icon className="h-4 w-4" />
+														<span className="flex-1">{item.title}</span>
+														{"external" in item && item.external && (
+															<ExternalLinkIcon className="h-3 w-3 text-muted-foreground" />
+														)}
+													</Link>
+												</SidebarMenuButton>
+											</SidebarMenuItem>
+										);
+									})}
 								</SidebarMenu>
 							</SidebarGroupContent>
 						</SidebarGroup>

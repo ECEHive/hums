@@ -52,6 +52,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdminTicketsMemory } from "@/hooks/use-admin-tickets-memory";
 import type { RequiredPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
@@ -93,6 +94,9 @@ function AdminTicketDetailPage() {
 	const { ticketId } = Route.useParams();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+
+	// Remember this ticket visit for navigation
+	useAdminTicketsMemory(ticketId);
 
 	const [selectedStatus, setSelectedStatus] = useState<string>("");
 	const [selectedHandler, setSelectedHandler] = useState<string>("");
