@@ -284,7 +284,7 @@ export function AdminSessionManagementDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-[500px]">
+			<DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
 				<DialogHeader>
 					<DialogTitle>Manage User Session</DialogTitle>
 					<DialogDescription>
@@ -292,7 +292,7 @@ export function AdminSessionManagementDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-6 py-4">
+				<div className="space-y-6 py-4 overflow-y-auto flex-1">
 					{/* User Selection */}
 					<div className="space-y-2">
 						<div className="text-sm font-medium">Select User</div>
@@ -530,6 +530,16 @@ export function AdminSessionManagementDialog({
 															<SelectItem value="staffing">Staffing</SelectItem>
 														</SelectContent>
 													</Select>
+													{pastSessionType === "staffing" && (
+														<Alert variant="destructive">
+															<AlertCircle className="h-4 w-4" />
+															<AlertDescription>
+																Past staffing sessions will not automatically
+																track shift attendance. Attendance must be
+																managed separately.
+															</AlertDescription>
+														</Alert>
+													)}
 												</div>
 
 												{/* Start Date/Time */}
