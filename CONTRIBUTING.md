@@ -1,6 +1,6 @@
 # Contributing to HUMS
 
-Thanks for your interest in contributing to **The Hive User Management System**.
+Thanks for your interest in contributing to **The Hive Unified Management System**.
 We’re excited to have you help improve the project - whether you’re fixing bugs, improving documentation, or adding new features.
 
 ---
