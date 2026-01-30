@@ -5,6 +5,10 @@ import {
 	router,
 } from "../../trpc";
 import {
+	adminCreatePastSessionHandler,
+	ZAdminCreatePastSessionSchema,
+} from "./adminCreatePastSession.route";
+import {
 	adminEndSessionHandler,
 	ZAdminEndSessionSchema,
 } from "./adminEndSession.route";
@@ -47,4 +51,7 @@ export const sessionsRouter = router({
 	adminEndSession: permissionProtectedProcedure("sessions.manage")
 		.input(ZAdminEndSessionSchema)
 		.mutation(adminEndSessionHandler),
+	adminCreatePastSession: permissionProtectedProcedure("sessions.manage")
+		.input(ZAdminCreatePastSessionSchema)
+		.mutation(adminCreatePastSessionHandler),
 });

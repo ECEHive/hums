@@ -290,10 +290,11 @@ model Session {
   id Int @id @default(autoincrement())
 
   // fields
-  userId      Int
-  sessionType SessionType @default(regular)
-  startedAt   DateTime    @default(now())
-  endedAt     DateTime?
+  userId             Int
+  sessionType        SessionType @default(regular)
+  startedAt          DateTime    @default(now())
+  endedAt            DateTime?
+  isManuallyCreated  Boolean     @default(false)
 
   // relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
