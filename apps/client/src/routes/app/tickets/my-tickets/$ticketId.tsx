@@ -95,9 +95,8 @@ function MyTicketDetailPage() {
 				<PageHeader>
 					<div className="flex items-center gap-2">
 						<Link to="/app/tickets/my-tickets">
-							<Button variant="ghost" size="sm">
-								<ArrowLeftIcon className="mr-2 h-4 w-4" />
-								Back
+							<Button variant="ghost" size="icon">
+								<ArrowLeftIcon className="h-4 w-4" />
 							</Button>
 						</Link>
 					</div>
@@ -134,9 +133,8 @@ function MyTicketDetailPage() {
 			<PageHeader>
 				<div className="flex items-center gap-4">
 					<Link to="/app/tickets/my-tickets">
-						<Button variant="ghost" size="sm">
-							<ArrowLeftIcon className="mr-2 h-4 w-4" />
-							Back
+						<Button variant="ghost" size="icon">
+							<ArrowLeftIcon className="h-4 w-4" />
 						</Button>
 					</Link>
 					<PageTitle className="flex items-center gap-3">
