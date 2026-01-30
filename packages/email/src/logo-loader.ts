@@ -1,6 +1,5 @@
+import { BrandingService } from "@ecehive/features";
 import { getLogger } from "@ecehive/logger";
-import LogoDark from "../assets/logo_dark.svg" with { type: "text" };
-import LogoLight from "../assets/logo_light.svg" with { type: "text" };
 
 const logger = getLogger("email:logo-loader");
 
@@ -9,23 +8,40 @@ interface EmailLogos {
 	dark: string;
 }
 
-// Cache logos to avoid reading files multiple times
+// Cache logos to avoid repeated config lookups
 let cachedLogos: EmailLogos | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 60000; // 1 minute cache
+
+function isCacheValid(): boolean {
+	return cachedLogos !== null && Date.now() - cacheTimestamp < CACHE_TTL;
+}
+
+/**
+ * Clear the email logo cache - useful when branding is updated
+ */
+export function clearEmailLogoCache(): void {
+	cachedLogos = null;
+	cacheTimestamp = 0;
+	logger.debug("Email logo cache cleared");
+}
 
 /**
  * Get email logos as base64 data URLs
- * Loads SVG files from client assets and converts them to base64
+ * Loads SVG content from the branding configuration
  * Caches results for performance
  */
-export function getEmailLogos(): EmailLogos {
-	if (cachedLogos) {
+export async function getEmailLogosAsync(): Promise<EmailLogos> {
+	if (isCacheValid() && cachedLogos) {
 		return cachedLogos;
 	}
 
 	try {
+		const branding = await BrandingService.getBranding();
+
 		// Convert to base64 data URLs
-		const lightBase64 = Buffer.from(LogoLight).toString("base64");
-		const darkBase64 = Buffer.from(LogoDark).toString("base64");
+		const lightBase64 = Buffer.from(branding.logos.light).toString("base64");
+		const darkBase64 = Buffer.from(branding.logos.dark).toString("base64");
 
 		const lightDataUrl = `data:image/svg+xml;base64,${lightBase64}`;
 		const darkDataUrl = `data:image/svg+xml;base64,${darkBase64}`;
@@ -35,15 +51,41 @@ export function getEmailLogos(): EmailLogos {
 			light: lightDataUrl,
 			dark: darkDataUrl,
 		};
+		cacheTimestamp = Date.now();
 
 		return cachedLogos;
 	} catch (error) {
-		logger.error("Failed to load email logos", {
+		logger.error("Failed to load email logos from branding config", {
 			error: error instanceof Error ? error.message : String(error),
 		});
+
+		// Return empty strings on error
 		return {
 			light: "",
 			dark: "",
 		};
 	}
+}
+
+/**
+ * Get email logos synchronously (uses cached value or returns empty)
+ * @deprecated Use getEmailLogosAsync instead
+ */
+export function getEmailLogos(): EmailLogos {
+	if (cachedLogos) {
+		return cachedLogos;
+	}
+
+	// Trigger async load for next time
+	getEmailLogosAsync().catch((error) => {
+		logger.error("Failed to preload email logos", {
+			error: error instanceof Error ? error.message : String(error),
+		});
+	});
+
+	// Return empty - caller should use async version
+	return {
+		light: "",
+		dark: "",
+	};
 }

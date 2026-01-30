@@ -30,6 +30,7 @@ const formSchema = z.object({
 	isActive: z.boolean(),
 	hasKioskAccess: z.boolean(),
 	hasDashboardAccess: z.boolean(),
+	hasInventoryAccess: z.boolean(),
 });
 
 type CreateDialogProps = {
@@ -49,6 +50,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			isActive: boolean;
 			hasKioskAccess: boolean;
 			hasDashboardAccess: boolean;
+			hasInventoryAccess: boolean;
 		}) => trpc.devices.create.mutate(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["devices"] });
@@ -62,6 +64,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			isActive: true,
 			hasKioskAccess: true,
 			hasDashboardAccess: false,
+			hasInventoryAccess: false,
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -129,7 +132,6 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
-
 					<form.Field name="ipAddress">
 						{(field) => (
 							<Field>
@@ -144,7 +146,6 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
-
 					<form.Field name="isActive">
 						{(field) => (
 							<Field>
@@ -161,7 +162,6 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
-
 					<div className="border-t pt-4 space-y-4">
 						<h4 className="text-sm font-medium">Access Permissions</h4>
 
@@ -205,8 +205,28 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								</Field>
 							)}
 						</form.Field>
-					</div>
 
+						<form.Field name="hasInventoryAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Inventory Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to access the inventory kiosk for
+										check-in/check-out
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+					</div>{" "}
 					{serverError && (
 						<div className="text-sm text-destructive">{serverError}</div>
 					)}

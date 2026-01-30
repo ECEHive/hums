@@ -5,6 +5,10 @@ export interface SuspensionNoticeEmailProps {
 	startDate: Date;
 	endDate: Date;
 	externalNotes: string | null;
+	logos?: {
+		light: string;
+		dark: string;
+	};
 }
 
 export const SuspensionNoticeEmailSubject =
@@ -15,6 +19,7 @@ export function SuspensionNoticeEmail({
 	startDate,
 	endDate,
 	externalNotes,
+	logos,
 }: SuspensionNoticeEmailProps) {
 	const formatDate = (date: Date) => {
 		return date.toLocaleDateString("en-US", {
@@ -32,6 +37,7 @@ export function SuspensionNoticeEmail({
 		<EmailLayout
 			title="Your Hive Access Has Been Suspended"
 			preheader="Your access to The Hive has been temporarily suspended."
+			logos={logos}
 		>
 			<p>
 				Hello <strong>{userName}</strong>,

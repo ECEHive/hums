@@ -5,6 +5,7 @@ import { authRouter } from "./routers/auth/_route";
 import { configRouter } from "./routers/config/_route";
 import { devicesRouter } from "./routers/devices/_route";
 import { globalReportsRouter } from "./routers/globalReports/_route";
+import { inventoryRouter } from "./routers/inventory/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
 import { overviewRouter } from "./routers/overview/_route";
 import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
@@ -18,6 +19,7 @@ import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
 import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
 import { shiftTypesRouter } from "./routers/shiftTypes/_route";
 import { suspensionsRouter } from "./routers/suspensions/_route";
+import { ticketsRouter } from "./routers/tickets/_route";
 import { usersRouter } from "./routers/users/_route";
 import { router } from "./trpc";
 
@@ -42,7 +44,9 @@ export const appRouter = router({
 	devices: devicesRouter,
 	oneTimeLoginCodes: oneTimeLoginCodesRouter,
 	reports: reportsRouter,
+	inventory: inventoryRouter,
 	globalReports: globalReportsRouter,
+	tickets: ticketsRouter,
 });
 
 export type AppRouter = typeof appRouter;

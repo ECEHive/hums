@@ -1,9 +1,12 @@
+export { clearEmailLogoCache, getEmailLogosAsync } from "./logo-loader";
 export { getEmailProvider } from "./providers";
 export type { QueueEmailParams } from "./queue";
 export { clearQueue, getQueueStatus, queueEmail, queueEmails } from "./queue";
 export type {
 	RenderEmailOptions,
 	RenderedEmail,
+	TicketConfirmationEmailProps,
+	TicketStatusUpdateEmailProps,
 } from "./template-renderer";
 export { renderEmail } from "./template-renderer";
 export type { SessionAutoLogoutEmailProps } from "./templates/SessionAutoLogoutEmail";

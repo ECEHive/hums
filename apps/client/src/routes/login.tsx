@@ -102,9 +102,9 @@ function Login() {
 	useEffect(() => {
 		if (data?.token) {
 			setToken(data.token);
-			void router.navigate({ to: redirectTo });
+			// Navigation will be handled by the status effect above once auth state is updated
 		}
-	}, [data?.token, setToken, router, redirectTo]);
+	}, [data?.token, setToken]);
 
 	// Start CAS login on demand
 	const startCasLogin = () => {

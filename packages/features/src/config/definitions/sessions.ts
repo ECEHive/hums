@@ -1,4 +1,3 @@
-import { ConfigRegistry } from "../registry";
 import { defineConfig, type ExtractConfigType } from "../types";
 
 /**
@@ -62,6 +61,3 @@ export const sessionConfig = defineConfig({
 } as const);
 
 export type SessionConfigType = ExtractConfigType<typeof sessionConfig>;
-
-// Register the configuration
-ConfigRegistry.register("sessions", sessionConfig);

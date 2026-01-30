@@ -12,6 +12,7 @@ type Device = {
 	isActive: boolean;
 	hasKioskAccess: boolean;
 	hasDashboardAccess: boolean;
+	hasInventoryAccess: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -69,6 +70,17 @@ export function generateColumns(): ColumnDef<Device>[] {
 								<XCircle className="h-3 w-3" />
 							)}
 							Dashboard
+						</Badge>
+						<Badge
+							variant={row.original.hasInventoryAccess ? "default" : "outline"}
+							className="flex items-center gap-1"
+						>
+							{row.original.hasInventoryAccess ? (
+								<CheckCircle2 className="h-3 w-3" />
+							) : (
+								<XCircle className="h-3 w-3" />
+							)}
+							Inventory
 						</Badge>
 					</div>
 				);

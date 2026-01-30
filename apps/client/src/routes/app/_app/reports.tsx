@@ -44,11 +44,11 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+import { columnsToExportFormat, exportReport } from "@/lib/reports/export";
 import {
 	GLOBAL_REPORTS_PERMISSION,
 	globalReportConfigs,
 } from "@/lib/reports/global-configs";
-import { columnsToExportFormat, exportReport } from "@/lib/reports/export";
 import type { ReportConfig } from "@/lib/reports/types";
 
 export const Route = createFileRoute("/app/_app/reports")({
@@ -67,7 +67,11 @@ export const permissions = [GLOBAL_REPORTS_PERMISSION] as RequiredPermissions;
  */
 function getGlobalDatePresets() {
 	const now = new Date();
-	const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+	const startOfToday = new Date(
+		now.getFullYear(),
+		now.getMonth(),
+		now.getDate(),
+	);
 	const startOfWeek = new Date(startOfToday);
 	startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
 	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

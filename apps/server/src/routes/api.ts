@@ -2,6 +2,7 @@ import { restApiRoute } from "@ecehive/rest";
 import { appRouter, createContext } from "@ecehive/trpc/server";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import type { FastifyPluginAsync } from "fastify";
+import { brandingRoute } from "./branding";
 import { configRoute } from "./config";
 import { icalRoute } from "./ical";
 
@@ -16,6 +17,10 @@ export const apiRoute: FastifyPluginAsync = async (fastify) => {
 
 	fastify.register(configRoute, {
 		prefix: "/config",
+	});
+
+	fastify.register(brandingRoute, {
+		prefix: "/branding",
 	});
 
 	fastify.register(icalRoute, {

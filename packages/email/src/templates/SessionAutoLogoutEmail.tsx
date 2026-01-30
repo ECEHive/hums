@@ -6,6 +6,10 @@ export interface SessionAutoLogoutEmailProps {
 	startedAt: Date;
 	endedAt: Date;
 	timeoutHours: number;
+	logos?: {
+		light: string;
+		dark: string;
+	};
 }
 
 export function getSessionAutoLogoutSubject(
@@ -20,6 +24,7 @@ export function SessionAutoLogoutEmail({
 	userName,
 	sessionType,
 	timeoutHours,
+	logos,
 }: SessionAutoLogoutEmailProps) {
 	const sessionTypeDisplay =
 		sessionType === "staffing" ? "Staffing" : "Regular";
@@ -29,6 +34,7 @@ export function SessionAutoLogoutEmail({
 		<EmailLayout
 			title={`Your ${sessionTypeDisplay} Session Automatically Ended`}
 			preheader={`Your ${sessionTypeLower} session was automatically ended after ${timeoutHours} hours.`}
+			logos={logos}
 		>
 			<p>
 				Hello <strong>{userName}</strong>,

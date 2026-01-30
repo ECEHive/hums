@@ -176,6 +176,43 @@ export const kioskProtectedProcedure = t.procedure.use(async (opts) => {
 	});
 });
 
+/**
+ * A procedure that requires the request to come from a registered device IP address.
+ * Checks for inventory access permission.
+ */
+export const inventoryProtectedProcedure = t.procedure.use(async (opts) => {
+	// Get the client IP address from the request
+	const ip = getClientIp(opts.ctx.req);
+
+	// Check if this IP is registered as an active device with inventory access
+	const device = await prisma.device.findFirst({
+		where: {
+			ipAddress: ip,
+			isActive: true,
+			hasInventoryAccess: true,
+		},
+	});
+
+	if (!device) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: `Access denied. IP address ${ip} is not registered as a device with inventory access.`,
+		});
+	}
+
+	return opts.next({
+		ctx: {
+			...opts.ctx,
+			device,
+		},
+	});
+});
+
+export type TInventoryProtectedProcedureContext =
+	inferProcedureBuilderResolverOptions<
+		typeof inventoryProtectedProcedure
+	>["ctx"];
+
 export type TKioskProtectedProcedureContext =
 	inferProcedureBuilderResolverOptions<typeof kioskProtectedProcedure>["ctx"];
 

@@ -10,7 +10,9 @@ export type ConfigFieldType =
 	| "select"
 	| "multiselect"
 	| "textarea"
-	| "secret";
+	| "secret"
+	| "color"
+	| "svg";
 
 export interface ConfigFieldOption {
 	value: string;

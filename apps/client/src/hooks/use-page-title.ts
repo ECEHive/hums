@@ -28,7 +28,7 @@ export function usePageTitle() {
 			document.title = formatPageTitle(title);
 		} else {
 			// Fallback to default title if no metadata found
-			document.title = "HUMS - Hive User Management System";
+			document.title = "HUMS - Hive Unified Management System";
 		}
 	}, [pathname]);
 }

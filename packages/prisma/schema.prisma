@@ -44,6 +44,11 @@ enum AuditLogSource {
   slack
 }
 
+enum InventoryAction {
+  CHECK_IN
+  CHECK_OUT
+}
+
 //
 // Models
 //
@@ -80,6 +85,14 @@ model User {
   // Many-to-many (explicit)
   userAgreements UserAgreement[]
   apiTokens     ApiToken[]
+
+  // Inventory
+  inventoryTransactions InventoryTransaction[]
+
+  // Tickets
+  submittedTickets Ticket[] @relation("TicketSubmitter")
+  handledTickets   Ticket[] @relation("TicketHandler")
+  ticketStatusChanges TicketStatusHistory[] @relation("TicketStatusChangedBy")
 }
 
 model Role {
@@ -97,6 +110,9 @@ model Role {
   users       User[]
   shiftTypes ShiftType[]
   periods    Period[]   @relation("PeriodRoles")
+  
+  // Inventory approval roles (items that require this role to approve checkout/checkin)
+  approvalItems Item[] @relation("ItemApprovalRoles")
 }
 
 model Permission {
@@ -295,8 +311,9 @@ model Device {
   isActive  Boolean @default(true)
 
   // Device access permissions
-  hasKioskAccess     Boolean @default(true)
-  hasDashboardAccess Boolean @default(false)
+  hasKioskAccess      Boolean @default(true)
+  hasDashboardAccess  Boolean @default(false)
+  hasInventoryAccess  Boolean @default(false)
 
   // timestamps
   createdAt DateTime @default(now())
@@ -440,4 +457,162 @@ model Suspension {
   @@index([userId])
   @@index([startDate, endDate])
   @@index([emailSentAt, startDate])
+}
+
+model Item {
+  id String @id @default(uuid())
+
+  // fields
+  name        String
+  description String?
+  sku         String?  @unique
+  location    String?
+  minQuantity Int?     // minimum quantity threshold for alerts
+  link        String?  // ordering/product link
+  isActive    Boolean  @default(true)
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  transactions InventoryTransaction[]
+  snapshot     InventorySnapshot?
+  
+  // Roles required to approve checkout/checkin for this item (any role in the list can approve)
+  approvalRoles Role[] @relation("ItemApprovalRoles")
+}
+
+model InventoryTransaction {
+  id String @id @default(uuid())
+
+  // fields
+  itemId   String
+  userId   Int
+  action   InventoryAction
+  quantity Int             // positive or negative depending on action
+  notes    String?
+
+  // timestamps
+  createdAt DateTime @default(now())
+
+  // relations
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // indexes
+  @@index([itemId, createdAt])
+}
+
+model InventorySnapshot {
+  // fields
+  itemId   String   @id
+  quantity Int      // authoritative quantity at snapshot time
+  takenAt  DateTime @default(now())
+
+  // relations
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+//
+// Ticket System
+//
+
+enum TicketStatus {
+  pending
+  in_progress
+  resolved
+  closed
+  cancelled
+}
+
+model TicketType {
+  id Int @id @default(autoincrement())
+
+  // fields
+  name        String  @unique
+  description String?
+  icon        String? // Icon identifier for UI display
+  color       String? // Color for UI display
+  
+  // Configuration
+  requiresAuth Boolean @default(false) // Whether submission requires authentication
+  isActive     Boolean @default(true)  // Whether this ticket type is available for submission
+  sortOrder    Int     @default(0)     // Display order in ticket type list
+  
+  // Field schema (JSON Schema-like structure defining expected fields)
+  fieldSchema Json
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  tickets Ticket[]
+}
+
+model Ticket {
+  id String @id @default(uuid())
+
+  // fields
+  ticketTypeId Int
+  status       TicketStatus @default(pending)
+  
+  // Dynamic data stored as JSON (validated against TicketType.fieldSchema)
+  data Json
+  
+  // Optional submitter info (null if anonymous submission)
+  submitterId Int?
+  submitterEmail String? // For anonymous submissions or as backup contact
+  submitterName  String? // For anonymous submissions
+  
+  // Handler/assignee for the ticket
+  handlerId Int?
+  
+  // Notes for internal use
+  internalNotes String? @db.Text
+  
+  // Resolution notes (visible to submitter)
+  resolutionNotes String? @db.Text
+
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  resolvedAt DateTime?
+
+  // relations
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  submitter  User?      @relation("TicketSubmitter", fields: [submitterId], references: [id], onDelete: SetNull)
+  handler    User?      @relation("TicketHandler", fields: [handlerId], references: [id], onDelete: SetNull)
+  
+  statusHistory TicketStatusHistory[]
+
+  // indexes
+  @@index([ticketTypeId])
+  @@index([submitterId])
+  @@index([handlerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TicketStatusHistory {
+  id Int @id @default(autoincrement())
+
+  // fields
+  ticketId     String
+  previousStatus TicketStatus?
+  newStatus      TicketStatus
+  notes          String? @db.Text
+  changedById    Int?
+
+  // timestamps
+  createdAt DateTime @default(now())
+
+  // relations
+  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  changedBy User?  @relation("TicketStatusChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+
+  // indexes
+  @@index([ticketId])
+  @@index([createdAt])
 }
