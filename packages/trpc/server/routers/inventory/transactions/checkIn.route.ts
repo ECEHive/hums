@@ -1,4 +1,4 @@
-import { prisma } from "@ecehive/prisma";
+import { Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TInventoryProtectedProcedureContext } from "../../../trpc";
@@ -70,6 +70,47 @@ export async function checkInHandler(options: TCheckInOptions) {
 			code: "BAD_REQUEST",
 			message: `Cannot check in to inactive item: ${inactive.id}`,
 		});
+	}
+
+	// Validate that the user has enough items checked out to return
+	// Get the user's current balance for the requested items
+	const userBalances = await prisma.$queryRaw<
+		Array<{ itemId: string; netQuantity: bigint }>
+	>`
+		SELECT "itemId", SUM(quantity)::bigint as "netQuantity"
+		FROM "InventoryTransaction"
+		WHERE "userId" = ${userId} AND "itemId" IN (${Prisma.join(itemIds)})
+		GROUP BY "itemId"
+	`;
+
+	// Create a map of itemId to net quantity (negative means checked out)
+	const balanceMap = new Map<string, number>(
+		userBalances.map((b) => [b.itemId, Number(b.netQuantity)]),
+	);
+
+	// Check each item to ensure the user has enough checked out to return
+	for (const requested of items) {
+		const currentBalance = balanceMap.get(requested.itemId) ?? 0;
+		// currentBalance is negative when items are checked out (e.g., -5 means 5 items checked out)
+		// The user can return at most Math.abs(currentBalance) items
+		const checkedOutQuantity = Math.abs(Math.min(0, currentBalance));
+
+		if (requested.quantity > checkedOutQuantity) {
+			const item = foundItems.find((i) => i.id === requested.itemId);
+			const itemName = item?.name ?? requested.itemId;
+
+			if (checkedOutQuantity === 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `You do not have any "${itemName}" checked out to return`,
+				});
+			}
+
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: `Cannot return ${requested.quantity} of "${itemName}" — you only have ${checkedOutQuantity} checked out`,
+			});
+		}
 	}
 
 	// Check for items that require approval

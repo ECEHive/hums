@@ -9,7 +9,7 @@ interface ErrorDialogProps {
 export function ErrorDialog({ message, isExiting }: ErrorDialogProps) {
 	return (
 		<motion.div
-			className="absolute inset-0 z-50 p-8 flex items-center justify-center bg-black/95 backdrop-blur-md"
+			className="fixed inset-0 z-[70] p-8 flex items-center justify-center bg-black/95 backdrop-blur-md"
 			initial={{ opacity: 0 }}
 			animate={{ opacity: isExiting ? 0 : 1 }}
 			transition={{ duration: 0.3 }}

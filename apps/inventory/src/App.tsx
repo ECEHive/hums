@@ -130,6 +130,7 @@ function App() {
 									onCheckout={inventoryWorkflow.handleCheckout}
 									onReturn={inventoryWorkflow.handleReturn}
 									onCancel={inventoryWorkflow.handleTransactionCancel}
+									onError={inventoryWorkflow.showError}
 								/>
 							)}
 
