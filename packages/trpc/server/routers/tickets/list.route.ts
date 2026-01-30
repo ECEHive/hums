@@ -1,6 +1,5 @@
 import { type Prisma, prisma } from "@ecehive/prisma";
 import { z } from "zod";
-import type { TProtectedProcedureContext } from "../../trpc";
 import { TicketStatusEnum } from "./schemas";
 
 export const ZListTicketsSchema = z.object({
@@ -27,7 +26,6 @@ export const ZListTicketsSchema = z.object({
 export async function listTicketsHandler({
 	input,
 }: {
-	ctx: TProtectedProcedureContext;
 	input: z.infer<typeof ZListTicketsSchema>;
 }) {
 	const where: Prisma.TicketWhereInput = {};

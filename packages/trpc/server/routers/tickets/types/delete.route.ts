@@ -1,7 +1,6 @@
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { TProtectedProcedureContext } from "../../../trpc";
 
 export const ZDeleteTicketTypeSchema = z.object({
 	id: z.number().int(),
@@ -10,7 +9,6 @@ export const ZDeleteTicketTypeSchema = z.object({
 export async function deleteTicketTypeHandler({
 	input,
 }: {
-	ctx: TProtectedProcedureContext;
 	input: z.infer<typeof ZDeleteTicketTypeSchema>;
 }) {
 	// Check if there are any tickets using this type

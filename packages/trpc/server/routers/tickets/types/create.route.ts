@@ -1,7 +1,6 @@
 import { Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { TProtectedProcedureContext } from "../../../trpc";
 import { TicketFieldsSchema } from "../schemas";
 
 export const ZCreateTicketTypeSchema = z.object({
@@ -21,7 +20,6 @@ export const ZCreateTicketTypeSchema = z.object({
 export async function createTicketTypeHandler({
 	input,
 }: {
-	ctx: TProtectedProcedureContext;
 	input: z.infer<typeof ZCreateTicketTypeSchema>;
 }) {
 	// Validate field schema if provided

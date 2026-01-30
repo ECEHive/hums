@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	AlertTriangleIcon,
 	CheckCircleIcon,
@@ -37,7 +37,6 @@ export const Route = createFileRoute("/app/tickets/submit/$ticketTypeId")({
 function SubmitTicketFormPage() {
 	const { ticketTypeId } = Route.useParams();
 	const { user, status: authStatus } = useAuth();
-	const _navigate = useNavigate();
 	const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 	const [submittedTicketId, setSubmittedTicketId] = useState<string | null>(
 		null,

@@ -1,7 +1,6 @@
 import { Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { TProtectedProcedureContext } from "../../../trpc";
 import { TicketFieldsSchema } from "../schemas";
 
 export const ZUpdateTicketTypeSchema = z.object({
@@ -19,7 +18,6 @@ export const ZUpdateTicketTypeSchema = z.object({
 export async function updateTicketTypeHandler({
 	input,
 }: {
-	ctx: TProtectedProcedureContext;
 	input: z.infer<typeof ZUpdateTicketTypeSchema>;
 }) {
 	const { id, fieldSchema, ...rest } = input;

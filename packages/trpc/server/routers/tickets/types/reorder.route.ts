@@ -1,6 +1,5 @@
 import { prisma } from "@ecehive/prisma";
 import { z } from "zod";
-import type { TProtectedProcedureContext } from "../../../trpc";
 
 export const ZReorderTicketTypesSchema = z.object({
 	/**
@@ -13,7 +12,6 @@ export const ZReorderTicketTypesSchema = z.object({
 export async function reorderTicketTypesHandler({
 	input,
 }: {
-	ctx: TProtectedProcedureContext;
 	input: z.infer<typeof ZReorderTicketTypesSchema>;
 }) {
 	const { orderedIds } = input;

@@ -1,7 +1,6 @@
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { TProtectedProcedureContext } from "../../trpc";
 
 export const ZGetTicketSchema = z.object({
 	id: z.string().uuid(),
@@ -10,7 +9,6 @@ export const ZGetTicketSchema = z.object({
 export async function getTicketHandler({
 	input,
 }: {
-	ctx: TProtectedProcedureContext;
 	input: z.infer<typeof ZGetTicketSchema>;
 }) {
 	const ticket = await prisma.ticket.findUnique({

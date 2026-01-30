@@ -276,7 +276,6 @@ function AdminTicketDetailPage() {
 	}
 
 	const Icon = ticketTypeIcons[ticket.ticketType.name] ?? AlertTriangleIcon;
-	const _statusStyle = statusStyles[ticket.status] ?? statusStyles.pending;
 	const ticketData = ticket.data as Record<string, unknown>;
 
 	return (
