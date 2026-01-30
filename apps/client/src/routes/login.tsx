@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
@@ -50,45 +50,57 @@ const sanitizeRedirect = (target: string | null) => {
 
 function Login() {
 	const { setToken, status, token } = useAuth();
-	const router = useRouter();
 	const { data: config, isLoading: configLoading } = useConfig();
 	const authProvider = resolveAuthProvider(config?.authProvider);
-	const params = useMemo(() => {
-		if (typeof window === "undefined") return new URLSearchParams("");
-		return new URLSearchParams(window.location.search);
+
+	// Track if we've already initiated a redirect to prevent loops
+	const hasRedirected = useRef(false);
+
+	// Parse URL parameters once on mount
+	const { ticket, serviceFromUrl, redirectTo } = useMemo(() => {
+		if (typeof window === "undefined") {
+			return { ticket: "", serviceFromUrl: "", redirectTo: "/app" };
+		}
+		const params = new URLSearchParams(window.location.search);
+		const ticketParam = params.get("ticket") ?? "";
+		const serviceParam = params.get("service") ?? "";
+		const redirectParam = params.get("redirect") ?? params.get("returnTo");
+		return {
+			ticket: ticketParam,
+			serviceFromUrl: serviceParam,
+			redirectTo: sanitizeRedirect(redirectParam),
+		};
 	}, []);
 
-	const ticket = params.get("ticket") ?? "";
-	const serviceFromUrl = params.get("service") ?? "";
-	const redirectParam = params.get("redirect") ?? params.get("returnTo");
-	const redirectTo = useMemo(
-		() => sanitizeRedirect(redirectParam),
-		[redirectParam],
-	);
-
+	// Build the service URL for CAS callback
 	const service = useMemo(() => {
 		if (serviceFromUrl) return serviceFromUrl;
 		if (typeof window === "undefined") return "";
-		const current = new URL(window.location.href);
-		current.searchParams.delete("ticket");
-		current.searchParams.delete("service");
-		current.searchParams.delete("returnTo");
+		const current = new URL(`${window.location.origin}/login`);
 		current.searchParams.set("redirect", redirectTo);
 		return current.toString();
 	}, [serviceFromUrl, redirectTo]);
 
-	// If we're already logged in, go to the app
+	// Perform redirect using window.location for a clean navigation
+	const performRedirect = (destination: string) => {
+		if (hasRedirected.current) return;
+		hasRedirected.current = true;
+		// Use replace to avoid adding to browser history
+		window.location.replace(destination);
+	};
+
+	// If we're already logged in, go to the destination
 	useEffect(() => {
 		if (status === "authenticated") {
-			void router.navigate({ to: redirectTo });
+			performRedirect(redirectTo);
 			return;
 		}
 
-		// If unauthenticated but we have a token, it must be invalid
+		// If unauthenticated but we have a token, it must be invalid - clear it
 		if (status === "unauthenticated" && token) {
 			setToken(null);
 		}
-	}, [status, router, redirectTo, token, setToken]);
+	}, [status, redirectTo, token, setToken]);
 
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["login", ticket, service],
@@ -99,12 +111,15 @@ function Login() {
 		retry: false,
 	});
 
+	// Handle successful login - set token and redirect
 	useEffect(() => {
 		if (data?.token) {
 			setToken(data.token);
-			// Navigation will be handled by the status effect above once auth state is updated
+			// Redirect immediately after setting token
+			// The auth provider will verify the token on the next page
+			performRedirect(redirectTo);
 		}
-	}, [data?.token, setToken]);
+	}, [data?.token, setToken, redirectTo]);
 
 	// Start CAS login on demand
 	const startCasLogin = () => {

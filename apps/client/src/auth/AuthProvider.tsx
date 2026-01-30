@@ -1,6 +1,5 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
 import type React from "react";
 import {
 	createContext,
@@ -140,23 +139,19 @@ export function useAuth() {
 /**
  * Helper to require authentication to view a page.
  *
- * Redirects to `to` if not authenticated.
+ * Redirects to login with the current path as the redirect parameter.
  */
-export function RequireAuth({
-	children,
-	to = "/login",
-}: {
-	children: React.ReactNode;
-	to?: string;
-}) {
-	const router = useRouter();
+export function RequireAuth({ children }: { children: React.ReactNode }) {
 	const { status } = useAuth();
 
 	useEffect(() => {
 		if (status === "unauthenticated") {
-			void router.navigate({ to });
+			// Build login URL with current path as redirect parameter
+			const currentPath = window.location.pathname + window.location.search;
+			const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+			window.location.replace(loginUrl);
 		}
-	}, [status, router, to]);
+	}, [status]);
 
 	if (status !== "authenticated") return null;
 	return <>{children}</>;
@@ -165,34 +160,34 @@ export function RequireAuth({
 /**
  * Require the user to have all given permissions to view the children.
  *
- * If not authenticated, redirects to `to`.
+ * If not authenticated, redirects to login with current path as redirect.
  * If authenticated but missing permissions, shows `forbiddenFallback` if provided.
  */
 export function RequirePermissions({
 	permissions,
 	children,
-	to = "/login",
 	forbiddenFallback,
 }: {
 	permissions: RequiredPermissions;
 	children: React.ReactNode;
-	to?: string;
 	forbiddenFallback?: React.ReactNode;
 }) {
-	const router = useRouter();
 	const { status, user } = useAuth();
 
 	useEffect(() => {
 		if (status === "authenticated" && user) {
 			const allowed = checkPermissions(user, permissions);
 			if (!allowed && !forbiddenFallback) {
-				// Navigate away if no fallback provided
-				void router.navigate({ to });
+				// Navigate away if no fallback provided - go to app root
+				window.location.replace("/app");
 			}
 		} else if (status === "unauthenticated") {
-			void router.navigate({ to });
+			// Build login URL with current path as redirect parameter
+			const currentPath = window.location.pathname + window.location.search;
+			const loginUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+			window.location.replace(loginUrl);
 		}
-	}, [status, user, permissions, router, to, forbiddenFallback]);
+	}, [status, user, permissions, forbiddenFallback]);
 
 	if (status !== "authenticated") return null;
 
