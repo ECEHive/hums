@@ -19,6 +19,7 @@ import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
 import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
 import { shiftTypesRouter } from "./routers/shiftTypes/_route";
 import { suspensionsRouter } from "./routers/suspensions/_route";
+import { ticketsRouter } from "./routers/tickets/_route";
 import { usersRouter } from "./routers/users/_route";
 import { router } from "./trpc";
 
@@ -45,6 +46,7 @@ export const appRouter = router({
 	reports: reportsRouter,
 	inventory: inventoryRouter,
 	globalReports: globalReportsRouter,
+	tickets: ticketsRouter,
 });
 
 export type AppRouter = typeof appRouter;

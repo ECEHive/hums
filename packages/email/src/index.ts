@@ -5,6 +5,8 @@ export { clearQueue, getQueueStatus, queueEmail, queueEmails } from "./queue";
 export type {
 	RenderEmailOptions,
 	RenderedEmail,
+	TicketConfirmationEmailProps,
+	TicketStatusUpdateEmailProps,
 } from "./template-renderer";
 export { renderEmail } from "./template-renderer";
 export type { SessionAutoLogoutEmailProps } from "./templates/SessionAutoLogoutEmail";

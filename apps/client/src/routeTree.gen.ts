@@ -13,12 +13,17 @@ import { Route as OtaSessionLoginRouteImport } from './routes/ota-session-login'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SubmitIndexRouteImport } from './routes/submit/index'
+import { Route as SubmitTicketTypeIdRouteImport } from './routes/submit/$ticketTypeId'
+import { Route as AppTicketsRouteImport } from './routes/app/tickets'
 import { Route as AppShiftsRouteImport } from './routes/app/shifts'
 import { Route as AppInventoryRouteImport } from './routes/app/inventory'
 import { Route as AppAppRouteImport } from './routes/app/_app'
+import { Route as AppTicketsIndexRouteImport } from './routes/app/tickets/index'
 import { Route as AppShiftsIndexRouteImport } from './routes/app/shifts/index'
 import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
 import { Route as AppAppIndexRouteImport } from './routes/app/_app/index'
+import { Route as AppTicketsMyTicketsRouteImport } from './routes/app/tickets/my-tickets'
 import { Route as AppShiftsShiftTypesRouteImport } from './routes/app/shifts/shift-types'
 import { Route as AppShiftsShiftSchedulesRouteImport } from './routes/app/shifts/shift-schedules'
 import { Route as AppShiftsSchedulingRouteImport } from './routes/app/shifts/scheduling'
@@ -44,8 +49,14 @@ import { Route as AppAppConfigurationRouteImport } from './routes/app/_app/confi
 import { Route as AppAppAuditLogsRouteImport } from './routes/app/_app/audit-logs'
 import { Route as AppAppApiTokensRouteImport } from './routes/app/_app/api-tokens'
 import { Route as AppAppAgreementsRouteImport } from './routes/app/_app/agreements'
+import { Route as AppTicketsMyTicketsIndexRouteImport } from './routes/app/tickets/my-tickets/index'
+import { Route as AppTicketsAdminIndexRouteImport } from './routes/app/tickets/admin/index'
 import { Route as AppShiftsManageUsersIndexRouteImport } from './routes/app/shifts/manage-users.index'
 import { Route as AppAppMeIndexRouteImport } from './routes/app/_app/me/index'
+import { Route as AppTicketsSubmitTicketTypeIdRouteImport } from './routes/app/tickets/submit.$ticketTypeId'
+import { Route as AppTicketsMyTicketsTicketIdRouteImport } from './routes/app/tickets/my-tickets/$ticketId'
+import { Route as AppTicketsAdminTypesRouteImport } from './routes/app/tickets/admin/types'
+import { Route as AppTicketsAdminTicketIdRouteImport } from './routes/app/tickets/admin/$ticketId'
 import { Route as AppShiftsManageUsersUserIdRouteImport } from './routes/app/shifts/manage-users.$userId'
 import { Route as AppAppMeSessionsRouteImport } from './routes/app/_app/me/sessions'
 
@@ -69,6 +80,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubmitIndexRoute = SubmitIndexRouteImport.update({
+  id: '/submit/',
+  path: '/submit/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubmitTicketTypeIdRoute = SubmitTicketTypeIdRouteImport.update({
+  id: '/submit/$ticketTypeId',
+  path: '/submit/$ticketTypeId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppTicketsRoute = AppTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppShiftsRoute = AppShiftsRouteImport.update({
   id: '/shifts',
   path: '/shifts',
@@ -82,6 +108,11 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
 const AppAppRoute = AppAppRouteImport.update({
   id: '/_app',
   getParentRoute: () => AppRoute,
+} as any)
+const AppTicketsIndexRoute = AppTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
 const AppShiftsIndexRoute = AppShiftsIndexRouteImport.update({
   id: '/',
@@ -97,6 +128,11 @@ const AppAppIndexRoute = AppAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppAppRoute,
+} as any)
+const AppTicketsMyTicketsRoute = AppTicketsMyTicketsRouteImport.update({
+  id: '/my-tickets',
+  path: '/my-tickets',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
 const AppShiftsShiftTypesRoute = AppShiftsShiftTypesRouteImport.update({
   id: '/shift-types',
@@ -228,6 +264,17 @@ const AppAppAgreementsRoute = AppAppAgreementsRouteImport.update({
   path: '/agreements',
   getParentRoute: () => AppAppRoute,
 } as any)
+const AppTicketsMyTicketsIndexRoute =
+  AppTicketsMyTicketsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppTicketsMyTicketsRoute,
+  } as any)
+const AppTicketsAdminIndexRoute = AppTicketsAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
 const AppShiftsManageUsersIndexRoute =
   AppShiftsManageUsersIndexRouteImport.update({
     id: '/',
@@ -238,6 +285,28 @@ const AppAppMeIndexRoute = AppAppMeIndexRouteImport.update({
   id: '/me/',
   path: '/me/',
   getParentRoute: () => AppAppRoute,
+} as any)
+const AppTicketsSubmitTicketTypeIdRoute =
+  AppTicketsSubmitTicketTypeIdRouteImport.update({
+    id: '/submit/$ticketTypeId',
+    path: '/submit/$ticketTypeId',
+    getParentRoute: () => AppTicketsRoute,
+  } as any)
+const AppTicketsMyTicketsTicketIdRoute =
+  AppTicketsMyTicketsTicketIdRouteImport.update({
+    id: '/$ticketId',
+    path: '/$ticketId',
+    getParentRoute: () => AppTicketsMyTicketsRoute,
+  } as any)
+const AppTicketsAdminTypesRoute = AppTicketsAdminTypesRouteImport.update({
+  id: '/admin/types',
+  path: '/admin/types',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsAdminTicketIdRoute = AppTicketsAdminTicketIdRouteImport.update({
+  id: '/admin/$ticketId',
+  path: '/admin/$ticketId',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
 const AppShiftsManageUsersUserIdRoute =
   AppShiftsManageUsersUserIdRouteImport.update({
@@ -258,6 +327,9 @@ export interface FileRoutesByFullPath {
   '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/inventory': typeof AppInventoryRouteWithChildren
   '/app/shifts': typeof AppShiftsRouteWithChildren
+  '/app/tickets': typeof AppTicketsRouteWithChildren
+  '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
+  '/submit': typeof SubmitIndexRoute
   '/app/agreements': typeof AppAppAgreementsRoute
   '/app/api-tokens': typeof AppAppApiTokensRoute
   '/app/audit-logs': typeof AppAppAuditLogsRoute
@@ -283,19 +355,29 @@ export interface FileRoutesByFullPath {
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
+  '/app/tickets/my-tickets': typeof AppTicketsMyTicketsRouteWithChildren
   '/app/': typeof AppAppIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
+  '/app/tickets/': typeof AppTicketsIndexRoute
   '/app/me/sessions': typeof AppAppMeSessionsRoute
   '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
+  '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
+  '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
+  '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
+  '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/me': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
+  '/app/tickets/admin': typeof AppTicketsAdminIndexRoute
+  '/app/tickets/my-tickets/': typeof AppTicketsMyTicketsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppAppIndexRoute
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
+  '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
+  '/submit': typeof SubmitIndexRoute
   '/app/agreements': typeof AppAppAgreementsRoute
   '/app/api-tokens': typeof AppAppApiTokensRoute
   '/app/audit-logs': typeof AppAppAuditLogsRoute
@@ -322,10 +404,17 @@ export interface FileRoutesByTo {
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
   '/app/inventory': typeof AppInventoryIndexRoute
   '/app/shifts': typeof AppShiftsIndexRoute
+  '/app/tickets': typeof AppTicketsIndexRoute
   '/app/me/sessions': typeof AppAppMeSessionsRoute
   '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
+  '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
+  '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
+  '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
+  '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/me': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users': typeof AppShiftsManageUsersIndexRoute
+  '/app/tickets/admin': typeof AppTicketsAdminIndexRoute
+  '/app/tickets/my-tickets': typeof AppTicketsMyTicketsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -336,6 +425,9 @@ export interface FileRoutesById {
   '/app/_app': typeof AppAppRouteWithChildren
   '/app/inventory': typeof AppInventoryRouteWithChildren
   '/app/shifts': typeof AppShiftsRouteWithChildren
+  '/app/tickets': typeof AppTicketsRouteWithChildren
+  '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
+  '/submit/': typeof SubmitIndexRoute
   '/app/_app/agreements': typeof AppAppAgreementsRoute
   '/app/_app/api-tokens': typeof AppAppApiTokensRoute
   '/app/_app/audit-logs': typeof AppAppAuditLogsRoute
@@ -361,13 +453,21 @@ export interface FileRoutesById {
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
+  '/app/tickets/my-tickets': typeof AppTicketsMyTicketsRouteWithChildren
   '/app/_app/': typeof AppAppIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
+  '/app/tickets/': typeof AppTicketsIndexRoute
   '/app/_app/me/sessions': typeof AppAppMeSessionsRoute
   '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
+  '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
+  '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
+  '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
+  '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/_app/me/': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
+  '/app/tickets/admin/': typeof AppTicketsAdminIndexRoute
+  '/app/tickets/my-tickets/': typeof AppTicketsMyTicketsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -378,6 +478,9 @@ export interface FileRouteTypes {
     | '/ota-session-login'
     | '/app/inventory'
     | '/app/shifts'
+    | '/app/tickets'
+    | '/submit/$ticketTypeId'
+    | '/submit'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
@@ -403,19 +506,29 @@ export interface FileRouteTypes {
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
+    | '/app/tickets/my-tickets'
     | '/app/'
     | '/app/inventory/'
     | '/app/shifts/'
+    | '/app/tickets/'
     | '/app/me/sessions'
     | '/app/shifts/manage-users/$userId'
+    | '/app/tickets/admin/$ticketId'
+    | '/app/tickets/admin/types'
+    | '/app/tickets/my-tickets/$ticketId'
+    | '/app/tickets/submit/$ticketTypeId'
     | '/app/me'
     | '/app/shifts/manage-users/'
+    | '/app/tickets/admin'
+    | '/app/tickets/my-tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/app'
     | '/login'
     | '/ota-session-login'
+    | '/submit/$ticketTypeId'
+    | '/submit'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
@@ -442,10 +555,17 @@ export interface FileRouteTypes {
     | '/app/shifts/shift-types'
     | '/app/inventory'
     | '/app/shifts'
+    | '/app/tickets'
     | '/app/me/sessions'
     | '/app/shifts/manage-users/$userId'
+    | '/app/tickets/admin/$ticketId'
+    | '/app/tickets/admin/types'
+    | '/app/tickets/my-tickets/$ticketId'
+    | '/app/tickets/submit/$ticketTypeId'
     | '/app/me'
     | '/app/shifts/manage-users'
+    | '/app/tickets/admin'
+    | '/app/tickets/my-tickets'
   id:
     | '__root__'
     | '/'
@@ -455,6 +575,9 @@ export interface FileRouteTypes {
     | '/app/_app'
     | '/app/inventory'
     | '/app/shifts'
+    | '/app/tickets'
+    | '/submit/$ticketTypeId'
+    | '/submit/'
     | '/app/_app/agreements'
     | '/app/_app/api-tokens'
     | '/app/_app/audit-logs'
@@ -480,13 +603,21 @@ export interface FileRouteTypes {
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
+    | '/app/tickets/my-tickets'
     | '/app/_app/'
     | '/app/inventory/'
     | '/app/shifts/'
+    | '/app/tickets/'
     | '/app/_app/me/sessions'
     | '/app/shifts/manage-users/$userId'
+    | '/app/tickets/admin/$ticketId'
+    | '/app/tickets/admin/types'
+    | '/app/tickets/my-tickets/$ticketId'
+    | '/app/tickets/submit/$ticketTypeId'
     | '/app/_app/me/'
     | '/app/shifts/manage-users/'
+    | '/app/tickets/admin/'
+    | '/app/tickets/my-tickets/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -494,6 +625,8 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   OtaSessionLoginRoute: typeof OtaSessionLoginRoute
+  SubmitTicketTypeIdRoute: typeof SubmitTicketTypeIdRoute
+  SubmitIndexRoute: typeof SubmitIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -526,6 +659,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/submit/': {
+      id: '/submit/'
+      path: '/submit'
+      fullPath: '/submit'
+      preLoaderRoute: typeof SubmitIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/submit/$ticketTypeId': {
+      id: '/submit/$ticketTypeId'
+      path: '/submit/$ticketTypeId'
+      fullPath: '/submit/$ticketTypeId'
+      preLoaderRoute: typeof SubmitTicketTypeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/tickets': {
+      id: '/app/tickets'
+      path: '/tickets'
+      fullPath: '/app/tickets'
+      preLoaderRoute: typeof AppTicketsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/shifts': {
       id: '/app/shifts'
       path: '/shifts'
@@ -547,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/tickets/': {
+      id: '/app/tickets/'
+      path: '/'
+      fullPath: '/app/tickets/'
+      preLoaderRoute: typeof AppTicketsIndexRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
     '/app/shifts/': {
       id: '/app/shifts/'
       path: '/'
@@ -567,6 +728,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppAppIndexRouteImport
       parentRoute: typeof AppAppRoute
+    }
+    '/app/tickets/my-tickets': {
+      id: '/app/tickets/my-tickets'
+      path: '/my-tickets'
+      fullPath: '/app/tickets/my-tickets'
+      preLoaderRoute: typeof AppTicketsMyTicketsRouteImport
+      parentRoute: typeof AppTicketsRoute
     }
     '/app/shifts/shift-types': {
       id: '/app/shifts/shift-types'
@@ -743,6 +911,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppAgreementsRouteImport
       parentRoute: typeof AppAppRoute
     }
+    '/app/tickets/my-tickets/': {
+      id: '/app/tickets/my-tickets/'
+      path: '/'
+      fullPath: '/app/tickets/my-tickets/'
+      preLoaderRoute: typeof AppTicketsMyTicketsIndexRouteImport
+      parentRoute: typeof AppTicketsMyTicketsRoute
+    }
+    '/app/tickets/admin/': {
+      id: '/app/tickets/admin/'
+      path: '/admin'
+      fullPath: '/app/tickets/admin'
+      preLoaderRoute: typeof AppTicketsAdminIndexRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
     '/app/shifts/manage-users/': {
       id: '/app/shifts/manage-users/'
       path: '/'
@@ -756,6 +938,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/me'
       preLoaderRoute: typeof AppAppMeIndexRouteImport
       parentRoute: typeof AppAppRoute
+    }
+    '/app/tickets/submit/$ticketTypeId': {
+      id: '/app/tickets/submit/$ticketTypeId'
+      path: '/submit/$ticketTypeId'
+      fullPath: '/app/tickets/submit/$ticketTypeId'
+      preLoaderRoute: typeof AppTicketsSubmitTicketTypeIdRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/app/tickets/my-tickets/$ticketId': {
+      id: '/app/tickets/my-tickets/$ticketId'
+      path: '/$ticketId'
+      fullPath: '/app/tickets/my-tickets/$ticketId'
+      preLoaderRoute: typeof AppTicketsMyTicketsTicketIdRouteImport
+      parentRoute: typeof AppTicketsMyTicketsRoute
+    }
+    '/app/tickets/admin/types': {
+      id: '/app/tickets/admin/types'
+      path: '/admin/types'
+      fullPath: '/app/tickets/admin/types'
+      preLoaderRoute: typeof AppTicketsAdminTypesRouteImport
+      parentRoute: typeof AppTicketsRoute
+    }
+    '/app/tickets/admin/$ticketId': {
+      id: '/app/tickets/admin/$ticketId'
+      path: '/admin/$ticketId'
+      fullPath: '/app/tickets/admin/$ticketId'
+      preLoaderRoute: typeof AppTicketsAdminTicketIdRouteImport
+      parentRoute: typeof AppTicketsRoute
     }
     '/app/shifts/manage-users/$userId': {
       id: '/app/shifts/manage-users/$userId'
@@ -876,16 +1086,53 @@ const AppShiftsRouteWithChildren = AppShiftsRoute._addFileChildren(
   AppShiftsRouteChildren,
 )
 
+interface AppTicketsMyTicketsRouteChildren {
+  AppTicketsMyTicketsTicketIdRoute: typeof AppTicketsMyTicketsTicketIdRoute
+  AppTicketsMyTicketsIndexRoute: typeof AppTicketsMyTicketsIndexRoute
+}
+
+const AppTicketsMyTicketsRouteChildren: AppTicketsMyTicketsRouteChildren = {
+  AppTicketsMyTicketsTicketIdRoute: AppTicketsMyTicketsTicketIdRoute,
+  AppTicketsMyTicketsIndexRoute: AppTicketsMyTicketsIndexRoute,
+}
+
+const AppTicketsMyTicketsRouteWithChildren =
+  AppTicketsMyTicketsRoute._addFileChildren(AppTicketsMyTicketsRouteChildren)
+
+interface AppTicketsRouteChildren {
+  AppTicketsMyTicketsRoute: typeof AppTicketsMyTicketsRouteWithChildren
+  AppTicketsIndexRoute: typeof AppTicketsIndexRoute
+  AppTicketsAdminTicketIdRoute: typeof AppTicketsAdminTicketIdRoute
+  AppTicketsAdminTypesRoute: typeof AppTicketsAdminTypesRoute
+  AppTicketsSubmitTicketTypeIdRoute: typeof AppTicketsSubmitTicketTypeIdRoute
+  AppTicketsAdminIndexRoute: typeof AppTicketsAdminIndexRoute
+}
+
+const AppTicketsRouteChildren: AppTicketsRouteChildren = {
+  AppTicketsMyTicketsRoute: AppTicketsMyTicketsRouteWithChildren,
+  AppTicketsIndexRoute: AppTicketsIndexRoute,
+  AppTicketsAdminTicketIdRoute: AppTicketsAdminTicketIdRoute,
+  AppTicketsAdminTypesRoute: AppTicketsAdminTypesRoute,
+  AppTicketsSubmitTicketTypeIdRoute: AppTicketsSubmitTicketTypeIdRoute,
+  AppTicketsAdminIndexRoute: AppTicketsAdminIndexRoute,
+}
+
+const AppTicketsRouteWithChildren = AppTicketsRoute._addFileChildren(
+  AppTicketsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAppRoute: typeof AppAppRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppShiftsRoute: typeof AppShiftsRouteWithChildren
+  AppTicketsRoute: typeof AppTicketsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRouteWithChildren,
   AppInventoryRoute: AppInventoryRouteWithChildren,
   AppShiftsRoute: AppShiftsRouteWithChildren,
+  AppTicketsRoute: AppTicketsRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -895,6 +1142,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   OtaSessionLoginRoute: OtaSessionLoginRoute,
+  SubmitTicketTypeIdRoute: SubmitTicketTypeIdRoute,
+  SubmitIndexRoute: SubmitIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
