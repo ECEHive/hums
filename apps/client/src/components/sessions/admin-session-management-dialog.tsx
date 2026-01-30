@@ -1,14 +1,18 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	AlertCircle,
 	Check,
 	ChevronsUpDown,
+	Clock,
+	History,
 	LogOut,
 	PlayCircle,
 	RefreshCw,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,11 +30,21 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +68,14 @@ export function AdminSessionManagementDialog({
 	const [selectedUser, setSelectedUser] = useState<User | null>(null);
 	const [userSelectOpen, setUserSelectOpen] = useState(false);
 	const [userSearch, setUserSearch] = useState("");
+
+	// Create past session form state
+	const [showCreatePastSession, setShowCreatePastSession] = useState(false);
+	const [pastSessionType, setPastSessionType] = useState<
+		"regular" | "staffing"
+	>("regular");
+	const [pastStartDate, setPastStartDate] = useState("");
+	const [pastEndDate, setPastEndDate] = useState("");
 
 	// Fetch users for selection
 	const { data: usersData, isLoading: usersLoading } = useQuery({
@@ -150,13 +172,86 @@ export function AdminSessionManagementDialog({
 		},
 	});
 
+	// Mutation for creating past sessions
+	const createPastSessionMutation = useMutation({
+		mutationFn: async (data: {
+			userId: number;
+			sessionType: "regular" | "staffing";
+			startedAt: Date;
+			endedAt: Date;
+		}) => {
+			return await trpc.sessions.adminCreatePastSession.mutate(data);
+		},
+		onSuccess: (data) => {
+			toast.success(
+				`Created past session (${data.durationFormatted}) for ${data.user.name}`,
+			);
+			queryClient.invalidateQueries({ queryKey: ["sessions"] });
+			queryClient.invalidateQueries({ queryKey: ["sessionsStats"] });
+			queryClient.invalidateQueries({
+				queryKey: ["userSessionStats", selectedUser?.id],
+			});
+			resetCreatePastSessionForm();
+			onOpenChange(false);
+			setSelectedUser(null);
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || "Failed to create past session");
+		},
+	});
+
 	const users = usersData ?? [];
 	const isInSession = sessionStats?.currentlyActive ?? false;
 	const currentSessionType = sessionStats?.activeSessionType;
 
+	// Calculate session duration for preview
+	const sessionDurationInfo = useMemo(() => {
+		if (!pastStartDate || !pastEndDate) return null;
+
+		const start = new Date(pastStartDate);
+		const end = new Date(pastEndDate);
+		const now = new Date();
+
+		if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+			return null;
+		}
+
+		const errors: string[] = [];
+
+		if (start >= now) {
+			errors.push("Start date must be in the past");
+		}
+		if (end >= now) {
+			errors.push("End date must be in the past");
+		}
+		if (start >= end) {
+			errors.push("Start date must be before end date");
+		}
+
+		if (errors.length > 0) {
+			return { errors, durationMs: 0, formatted: "" };
+		}
+
+		const durationMs = end.getTime() - start.getTime();
+		const durationMinutes = Math.round(durationMs / (1000 * 60));
+		const hours = Math.floor(durationMinutes / 60);
+		const minutes = durationMinutes % 60;
+		const formatted = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+		return { errors: [], durationMs, formatted };
+	}, [pastStartDate, pastEndDate]);
+
+	const resetCreatePastSessionForm = () => {
+		setShowCreatePastSession(false);
+		setPastSessionType("regular");
+		setPastStartDate("");
+		setPastEndDate("");
+	};
+
 	const handleReset = () => {
 		setSelectedUser(null);
 		setUserSearch("");
+		resetCreatePastSessionForm();
 	};
 
 	const handleOpenChange = (newOpen: boolean) => {
@@ -165,6 +260,27 @@ export function AdminSessionManagementDialog({
 		}
 		onOpenChange(newOpen);
 	};
+
+	const handleCreatePastSession = () => {
+		if (!selectedUser || !pastStartDate || !pastEndDate) return;
+
+		const start = new Date(pastStartDate);
+		const end = new Date(pastEndDate);
+
+		createPastSessionMutation.mutate({
+			userId: selectedUser.id,
+			sessionType: pastSessionType,
+			startedAt: start,
+			endedAt: end,
+		});
+	};
+
+	const canSubmitPastSession =
+		selectedUser &&
+		pastStartDate &&
+		pastEndDate &&
+		sessionDurationInfo &&
+		sessionDurationInfo.errors.length === 0;
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -215,6 +331,7 @@ export function AdminSessionManagementDialog({
 													onSelect={() => {
 														setSelectedUser(user);
 														setUserSelectOpen(false);
+														resetCreatePastSessionForm();
 													}}
 												>
 													<Check
@@ -370,6 +487,133 @@ export function AdminSessionManagementDialog({
 												</>
 											)}
 										</div>
+									</div>
+
+									<Separator />
+
+									{/* Create Past Session Section */}
+									<div className="space-y-3">
+										{!showCreatePastSession ? (
+											<Button
+												variant="outline"
+												className="w-full justify-start"
+												onClick={() => setShowCreatePastSession(true)}
+											>
+												<History className="mr-2 h-4 w-4" />
+												Create Past Session
+											</Button>
+										) : (
+											<div className="rounded-lg border p-4 space-y-4">
+												<div className="flex items-center justify-between">
+													<div className="text-sm font-medium">
+														Create Past Session
+													</div>
+													<Badge variant="secondary">Manual Entry</Badge>
+												</div>
+
+												{/* Session Type */}
+												<div className="space-y-2">
+													<Label htmlFor="pastSessionType">Session Type</Label>
+													<Select
+														value={pastSessionType}
+														onValueChange={(value) =>
+															setPastSessionType(
+																value as "regular" | "staffing",
+															)
+														}
+													>
+														<SelectTrigger id="pastSessionType">
+															<SelectValue />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="regular">Regular</SelectItem>
+															<SelectItem value="staffing">Staffing</SelectItem>
+														</SelectContent>
+													</Select>
+												</div>
+
+												{/* Start Date/Time */}
+												<div className="space-y-2">
+													<Label htmlFor="pastStartDate">
+														Start Date & Time
+													</Label>
+													<Input
+														id="pastStartDate"
+														type="datetime-local"
+														value={pastStartDate}
+														onChange={(e) => setPastStartDate(e.target.value)}
+														max={new Date().toISOString().slice(0, 16)}
+													/>
+												</div>
+
+												{/* End Date/Time */}
+												<div className="space-y-2">
+													<Label htmlFor="pastEndDate">End Date & Time</Label>
+													<Input
+														id="pastEndDate"
+														type="datetime-local"
+														value={pastEndDate}
+														onChange={(e) => setPastEndDate(e.target.value)}
+														max={new Date().toISOString().slice(0, 16)}
+													/>
+												</div>
+
+												{/* Duration Preview / Validation Errors */}
+												{sessionDurationInfo &&
+													(sessionDurationInfo.errors.length > 0 ? (
+														<Alert variant="destructive">
+															<AlertCircle className="h-4 w-4" />
+															<AlertDescription>
+																<ul className="list-disc list-inside">
+																	{sessionDurationInfo.errors.map(
+																		(error, i) => (
+																			<li key={i}>{error}</li>
+																		),
+																	)}
+																</ul>
+															</AlertDescription>
+														</Alert>
+													) : (
+														<Alert>
+															<Clock className="h-4 w-4" />
+															<AlertDescription>
+																<span className="font-medium">
+																	Session Duration:
+																</span>{" "}
+																{sessionDurationInfo.formatted}
+															</AlertDescription>
+														</Alert>
+													))}
+
+												{/* Action Buttons */}
+												<div className="flex gap-2">
+													<Button
+														variant="outline"
+														className="flex-1"
+														onClick={resetCreatePastSessionForm}
+													>
+														Cancel
+													</Button>
+													<Button
+														className="flex-1"
+														onClick={handleCreatePastSession}
+														disabled={
+															!canSubmitPastSession ||
+															createPastSessionMutation.isPending
+														}
+													>
+														{createPastSessionMutation.isPending ? (
+															<>
+																<Spinner className="mr-2 h-4 w-4" />
+																Creating...
+															</>
+														) : (
+															"Create Session"
+														)}
+													</Button>
+												</div>
+											</div>
+										)}
 									</div>
 								</>
 							)}
