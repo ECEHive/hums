@@ -104,8 +104,7 @@ function StaffingPage() {
 	// Total slots = sum of all totalSlots across all time slots
 	const totalCurrentSlots =
 		data?.currentShiftGroups.reduce(
-			(sum, g) =>
-				sum + g.timeSlots.reduce((s, t) => s + t.totalSlots, 0),
+			(sum, g) => sum + g.timeSlots.reduce((s, t) => s + t.totalSlots, 0),
 			0,
 		) ?? 0;
 	// Missing = users marked as missing + empty slots
@@ -264,7 +263,7 @@ function ShiftTypeGroupCard({ group, variant }: ShiftTypeGroupCardProps) {
 			>
 				{group.timeSlots.map((timeSlot) => (
 					<TimeSlotCard
-						key={`${timeSlot.startTime}-${timeSlot.endTime}`}
+						key={`${new Date(timeSlot.startTime).getTime()}-${new Date(timeSlot.endTime).getTime()}`}
 						timeSlot={timeSlot}
 						variant={variant}
 						layout={isSingleSlot ? "horizontal" : "vertical"}

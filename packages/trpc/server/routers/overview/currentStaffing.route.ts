@@ -230,14 +230,17 @@ export async function currentStaffingHandler(
 			if (existing) {
 				// Each occurrence is 1 slot
 				existing.totalSlots += 1;
-				if (hasUsers) {
-					existing.filledSlots += 1;
-				}
-				// Merge users, avoiding duplicates
+				// Merge users, avoiding duplicates. Count this slot as filled
+				// only if it contributes at least one new user.
+				let newUserAdded = false;
 				for (const user of occ.users) {
 					if (!existing.users.some((u) => u.id === user.id)) {
 						existing.users.push(user);
+						newUserAdded = true;
 					}
+				}
+				if (hasUsers && newUserAdded) {
+					existing.filledSlots += 1;
 				}
 			} else {
 				timeSlotMap.set(key, {
@@ -345,14 +348,17 @@ export async function currentStaffingHandler(
 			if (existing) {
 				// Each occurrence is 1 slot
 				existing.totalSlots += 1;
-				if (hasUsers) {
-					existing.filledSlots += 1;
-				}
-				// Merge users, avoiding duplicates
+				// Merge users, avoiding duplicates. Count this slot as filled
+				// only if it contributes at least one new user.
+				let newUserAdded = false;
 				for (const user of occ.users) {
 					if (!existing.users.some((u) => u.id === user.id)) {
 						existing.users.push(user);
+						newUserAdded = true;
 					}
+				}
+				if (hasUsers && newUserAdded) {
+					existing.filledSlots += 1;
 				}
 			} else {
 				timeSlotMap.set(key, {
