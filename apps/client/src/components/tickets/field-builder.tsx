@@ -210,6 +210,16 @@ export function FieldBuilder({ fields, onChange, errors }: FieldBuilderProps) {
 							errors={errors?.[field.id]}
 						/>
 					))}
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={addField}
+						className="w-full"
+					>
+						<PlusIcon className="h-4 w-4 mr-2" />
+						New Field
+					</Button>
 				</div>
 			)}
 		</div>

@@ -12,6 +12,11 @@ import {
 	SuspensionNoticeEmailSubject,
 } from "./templates/SuspensionNoticeEmail";
 import {
+	TicketAssignmentEmail,
+	type TicketAssignmentEmailProps,
+	TicketAssignmentEmailSubject,
+} from "./templates/TicketAssignmentEmail";
+import {
 	TicketConfirmationEmail,
 	type TicketConfirmationEmailProps,
 	TicketConfirmationEmailSubject,
@@ -34,6 +39,7 @@ const logger = getLogger("email:renderer");
 export type {
 	SessionAutoLogoutEmailProps,
 	SuspensionNoticeEmailProps,
+	TicketAssignmentEmailProps,
 	TicketConfirmationEmailProps,
 	TicketStatusUpdateEmailProps,
 	WelcomeEmailProps,
@@ -51,6 +57,10 @@ export type RenderEmailOptions =
 	| {
 			template: "suspension-notice";
 			data: SuspensionNoticeEmailProps;
+	  }
+	| {
+			template: "ticket-assignment";
+			data: TicketAssignmentEmailProps;
 	  }
 	| {
 			template: "ticket-confirmation";
@@ -104,6 +114,14 @@ export async function renderEmail(
 					<SuspensionNoticeEmail {...options.data} logos={logos} />,
 				);
 				subject = SuspensionNoticeEmailSubject;
+				break;
+			}
+
+			case "ticket-assignment": {
+				html = renderToStaticMarkup(
+					<TicketAssignmentEmail {...options.data} logos={logos} />,
+				);
+				subject = TicketAssignmentEmailSubject;
 				break;
 			}
 

@@ -286,6 +286,8 @@ function TicketTypesManagementPage() {
 		queryFn: async () => {
 			return await trpc.tickets.types.list.query({ activeOnly: false });
 		},
+		// Prevent refetch on window focus to keep sheet open when navigating away and back
+		refetchOnWindowFocus: false,
 	});
 
 	const reorderMutation = useMutation({

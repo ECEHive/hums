@@ -1,3 +1,4 @@
+import { queueEmail } from "@ecehive/email";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -14,6 +15,16 @@ export async function assignTicketHandler({
 }) {
 	const ticket = await prisma.ticket.findUnique({
 		where: { id: input.id },
+		include: {
+			ticketType: true,
+			submitter: {
+				select: {
+					id: true,
+					name: true,
+					email: true,
+				},
+			},
+		},
 	});
 
 	if (!ticket) {
@@ -24,9 +35,19 @@ export async function assignTicketHandler({
 	}
 
 	// Verify the handler exists if provided
+	let handler: {
+		id: number;
+		name: string | null;
+		email: string | null;
+	} | null = null;
 	if (input.handlerId) {
-		const handler = await prisma.user.findUnique({
+		handler = await prisma.user.findUnique({
 			where: { id: input.handlerId },
+			select: {
+				id: true,
+				name: true,
+				email: true,
+			},
 		});
 
 		if (!handler) {
@@ -37,7 +58,7 @@ export async function assignTicketHandler({
 		}
 	}
 
-	return prisma.ticket.update({
+	const updatedTicket = await prisma.ticket.update({
 		where: { id: input.id },
 		data: {
 			handlerId: input.handlerId,
@@ -60,4 +81,23 @@ export async function assignTicketHandler({
 			},
 		},
 	});
+
+	// Send assignment email to the new handler if they have an email
+	if (handler?.email) {
+		const submitterName =
+			ticket.submitter?.name ?? ticket.submitterName ?? "Unknown";
+		queueEmail({
+			to: handler.email,
+			template: "ticket-assignment",
+			data: {
+				ticketId: ticket.id,
+				ticketTypeName: ticket.ticketType.name,
+				submitterName,
+				assigneeName: handler.name ?? "there",
+				assignedAt: new Date(),
+			},
+		});
+	}
+
+	return updatedTicket;
 }

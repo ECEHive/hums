@@ -7,7 +7,7 @@ import {
 	RefreshCcwIcon,
 	SettingsIcon,
 } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
 import { RequirePermissions } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
@@ -36,6 +36,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { clearAdminTicketsMemory } from "@/hooks/use-admin-tickets-memory";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
 import type { RequiredPermissions } from "@/lib/permissions";
@@ -64,6 +65,12 @@ const DEFAULT_FILTERS: AdminTicketsFilters = {
 };
 
 function AdminTicketsPage() {
+	// Clear the "memory" when visiting the tickets list page
+	// This ensures clicking the sidebar will go to this page next time
+	useEffect(() => {
+		clearAdminTicketsMemory();
+	}, []);
+
 	const {
 		page,
 		setPage,
