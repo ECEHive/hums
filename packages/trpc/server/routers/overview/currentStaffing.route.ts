@@ -15,37 +15,37 @@ export type TCurrentStaffingOptions = {
 	input: TCurrentStaffingSchema;
 };
 
-interface StaffingUser {
+// Types for assigned users within time slots
+interface AssignedUser {
 	id: number;
 	name: string;
-	sessionStartedAt: Date;
-	shiftInfo: {
-		shiftTypeName: string;
-		location: string;
-		startTime: string;
-		endTime: string;
-		status: "present" | "late" | "no-shift";
-	} | null;
+	status: "present" | "late" | "missing" | "not-started";
 }
 
-interface UpcomingShift {
-	user: {
-		id: number;
-		name: string;
-	};
+// A time slot groups all occurrences with the same start/end time
+interface TimeSlot {
+	startTime: Date;
+	endTime: Date;
+	totalSlots: number;
+	emptySlots: number;
+	assignedUsers: AssignedUser[];
+}
+
+// Grouped time slots by shift type
+interface ShiftTypeGroup {
 	shiftType: {
+		id: number;
 		name: string;
 		location: string;
 	};
-	startTime: Date;
-	endTime: Date;
-	status: "upcoming" | "missing";
+	timeSlots: TimeSlot[];
 }
 
 export async function currentStaffingHandler(
 	_options: TCurrentStaffingOptions,
 ) {
 	const now = new Date();
+	const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
 
 	// Get all users with active staffing sessions
 	const activeStaffingSessions = await prisma.session.findMany({
@@ -53,130 +53,15 @@ export async function currentStaffingHandler(
 			endedAt: null,
 			sessionType: "staffing",
 		},
-		include: {
-			user: {
-				select: {
-					id: true,
-					name: true,
-				},
-			},
+		select: {
+			userId: true,
+			startedAt: true,
 		},
 	});
+	const activeUserIds = new Set(activeStaffingSessions.map((s) => s.userId));
 
-	// For each staffing user, find their current shift (if any)
-	const staffingUsers: StaffingUser[] = await Promise.all(
-		activeStaffingSessions.map(async (session) => {
-			// Find active shift occurrence for this user
-			const activeOccurrence = await prisma.shiftOccurrence.findFirst({
-				where: {
-					users: {
-						some: { id: session.userId },
-					},
-					timestamp: {
-						lte: now,
-					},
-				},
-				include: {
-					shiftSchedule: {
-						include: {
-							shiftType: {
-								select: {
-									name: true,
-									location: true,
-								},
-							},
-						},
-					},
-					attendances: {
-						where: { userId: session.userId },
-						select: {
-							status: true,
-							didArriveLate: true,
-							timeIn: true,
-						},
-					},
-				},
-				orderBy: { timestamp: "desc" },
-			});
-
-			let shiftInfo: StaffingUser["shiftInfo"] = null;
-
-			if (activeOccurrence) {
-				const occStart = computeOccurrenceStart(
-					new Date(activeOccurrence.timestamp),
-					activeOccurrence.shiftSchedule.startTime,
-				);
-				const occEnd = computeOccurrenceEnd(
-					occStart,
-					activeOccurrence.shiftSchedule.startTime,
-					activeOccurrence.shiftSchedule.endTime,
-				);
-
-				// Check if the occurrence is currently active
-				if (occStart <= now && occEnd > now) {
-					const attendance = activeOccurrence.attendances[0];
-					shiftInfo = {
-						shiftTypeName: activeOccurrence.shiftSchedule.shiftType.name,
-						location: activeOccurrence.shiftSchedule.shiftType.location,
-						startTime: activeOccurrence.shiftSchedule.startTime,
-						endTime: activeOccurrence.shiftSchedule.endTime,
-						status: attendance?.didArriveLate ? "late" : "present",
-					};
-				}
-			}
-
-			// If no shift found but user is staffing, mark as no-shift
-			if (!shiftInfo) {
-				shiftInfo = null;
-			}
-
-			return {
-				id: session.user.id,
-				name: session.user.name,
-				sessionStartedAt: session.startedAt,
-				shiftInfo,
-			};
-		}),
-	);
-
-	// Find upcoming shifts (next 30 minutes) and check if staffers are missing
-	const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
-	const upcomingOccurrences = await prisma.shiftOccurrence.findMany({
-		where: {
-			timestamp: {
-				gte: now,
-				lte: thirtyMinutesFromNow,
-			},
-		},
-		include: {
-			shiftSchedule: {
-				include: {
-					shiftType: {
-						select: {
-							name: true,
-							location: true,
-						},
-					},
-				},
-			},
-			users: {
-				select: {
-					id: true,
-					name: true,
-				},
-			},
-			attendances: {
-				select: {
-					userId: true,
-					status: true,
-				},
-			},
-		},
-		orderBy: { timestamp: "asc" },
-	});
-
-	// Also find current shifts where assigned users are missing
-	const currentMissingOccurrences = await prisma.shiftOccurrence.findMany({
+	// Find all current occurrences (that are currently active)
+	const currentOccurrences = await prisma.shiftOccurrence.findMany({
 		where: {
 			timestamp: {
 				lte: now,
@@ -184,9 +69,12 @@ export async function currentStaffingHandler(
 		},
 		include: {
 			shiftSchedule: {
-				include: {
+				select: {
+					startTime: true,
+					endTime: true,
 					shiftType: {
 						select: {
+							id: true,
 							name: true,
 							location: true,
 						},
@@ -203,19 +91,196 @@ export async function currentStaffingHandler(
 				select: {
 					userId: true,
 					status: true,
+					didArriveLate: true,
 					timeIn: true,
 				},
 			},
 		},
 		orderBy: { timestamp: "desc" },
-		take: 50, // Recent occurrences
+		take: 100, // Get recent occurrences
 	});
 
-	const upcomingShifts: UpcomingShift[] = [];
-	const missingStaffers: UpcomingShift[] = [];
-	const activeUserIds = new Set(staffingUsers.map((u) => u.id));
+	// Find upcoming occurrences (next 30 minutes)
+	const upcomingOccurrences = await prisma.shiftOccurrence.findMany({
+		where: {
+			timestamp: {
+				gt: now,
+				lte: thirtyMinutesFromNow,
+			},
+		},
+		include: {
+			shiftSchedule: {
+				select: {
+					startTime: true,
+					endTime: true,
+					shiftType: {
+						select: {
+							id: true,
+							name: true,
+							location: true,
+						},
+					},
+				},
+			},
+			users: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
+		},
+		orderBy: { timestamp: "asc" },
+	});
 
-	// Process upcoming shifts
+	// Process current occurrences - group by shift type and time slot
+	// Each occurrence represents ONE slot
+	const currentByShiftType = new Map<
+		number,
+		{
+			shiftType: { id: number; name: string; location: string };
+			occurrences: Array<{
+				startTime: Date;
+				endTime: Date;
+				users: AssignedUser[];
+			}>;
+		}
+	>();
+
+	for (const occ of currentOccurrences) {
+		const occStart = computeOccurrenceStart(
+			new Date(occ.timestamp),
+			occ.shiftSchedule.startTime,
+		);
+		const occEnd = computeOccurrenceEnd(
+			occStart,
+			occ.shiftSchedule.startTime,
+			occ.shiftSchedule.endTime,
+		);
+
+		// Skip occurrences that are not currently active
+		if (occStart > now || occEnd <= now) continue;
+
+		const assignedUsers: AssignedUser[] = occ.users.map((user) => {
+			const attendance = occ.attendances.find((a) => a.userId === user.id);
+			const isCurrentlyStaffing = activeUserIds.has(user.id);
+
+			let status: AssignedUser["status"];
+			if (isCurrentlyStaffing) {
+				// User is currently staffing
+				status = attendance?.didArriveLate ? "late" : "present";
+			} else if (attendance?.timeIn) {
+				// User was present but left (no longer has active session)
+				status = "missing";
+			} else {
+				// User has not started attending yet
+				status = "missing";
+			}
+
+			return {
+				id: user.id,
+				name: user.name,
+				status,
+			};
+		});
+
+		const shiftTypeId = occ.shiftSchedule.shiftType.id;
+		const existing = currentByShiftType.get(shiftTypeId);
+		if (existing) {
+			existing.occurrences.push({
+				startTime: occStart,
+				endTime: occEnd,
+				users: assignedUsers,
+			});
+		} else {
+			currentByShiftType.set(shiftTypeId, {
+				shiftType: {
+					id: occ.shiftSchedule.shiftType.id,
+					name: occ.shiftSchedule.shiftType.name,
+					location: occ.shiftSchedule.shiftType.location,
+				},
+				occurrences: [
+					{
+						startTime: occStart,
+						endTime: occEnd,
+						users: assignedUsers,
+					},
+				],
+			});
+		}
+	}
+
+	// Group occurrences by time slot within each shift type
+	// Each occurrence = 1 slot
+	const currentShiftGroups: ShiftTypeGroup[] = [];
+	for (const group of Array.from(currentByShiftType.values())) {
+		const timeSlotMap = new Map<
+			string,
+			{
+				startTime: Date;
+				endTime: Date;
+				totalSlots: number;
+				filledSlots: number;
+				users: AssignedUser[];
+			}
+		>();
+		for (const occ of group.occurrences) {
+			const key = `${occ.startTime.getTime()}-${occ.endTime.getTime()}`;
+			const existing = timeSlotMap.get(key);
+			const hasUsers = occ.users.length > 0;
+			if (existing) {
+				// Each occurrence is 1 slot
+				existing.totalSlots += 1;
+				if (hasUsers) {
+					existing.filledSlots += 1;
+				}
+				// Merge users, avoiding duplicates
+				for (const user of occ.users) {
+					if (!existing.users.some((u) => u.id === user.id)) {
+						existing.users.push(user);
+					}
+				}
+			} else {
+				timeSlotMap.set(key, {
+					startTime: occ.startTime,
+					endTime: occ.endTime,
+					totalSlots: 1,
+					filledSlots: hasUsers ? 1 : 0,
+					users: [...occ.users],
+				});
+			}
+		}
+		const timeSlots: TimeSlot[] = Array.from(timeSlotMap.values())
+			.map((slot) => ({
+				startTime: slot.startTime,
+				endTime: slot.endTime,
+				totalSlots: slot.totalSlots,
+				emptySlots: slot.totalSlots - slot.filledSlots,
+				assignedUsers: slot.users,
+			}))
+			.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+		currentShiftGroups.push({
+			shiftType: group.shiftType,
+			timeSlots,
+		});
+	}
+	currentShiftGroups.sort((a, b) =>
+		a.shiftType.name.localeCompare(b.shiftType.name),
+	);
+
+	// Process upcoming occurrences - group by shift type and time slot
+	// Each occurrence = 1 slot
+	const upcomingByShiftType = new Map<
+		number,
+		{
+			shiftType: { id: number; name: string; location: string };
+			occurrences: Array<{
+				startTime: Date;
+				endTime: Date;
+				users: AssignedUser[];
+			}>;
+		}
+	>();
+
 	for (const occ of upcomingOccurrences) {
 		const occStart = computeOccurrenceStart(
 			new Date(occ.timestamp),
@@ -227,67 +292,98 @@ export async function currentStaffingHandler(
 			occ.shiftSchedule.endTime,
 		);
 
-		for (const user of occ.users) {
-			upcomingShifts.push({
-				user: {
-					id: user.id,
-					name: user.name,
-				},
+		const assignedUsers: AssignedUser[] = occ.users.map((user) => ({
+			id: user.id,
+			name: user.name,
+			status: "not-started" as const,
+		}));
+
+		const shiftTypeId = occ.shiftSchedule.shiftType.id;
+		const existing = upcomingByShiftType.get(shiftTypeId);
+		if (existing) {
+			existing.occurrences.push({
+				startTime: occStart,
+				endTime: occEnd,
+				users: assignedUsers,
+			});
+		} else {
+			upcomingByShiftType.set(shiftTypeId, {
 				shiftType: {
+					id: occ.shiftSchedule.shiftType.id,
 					name: occ.shiftSchedule.shiftType.name,
 					location: occ.shiftSchedule.shiftType.location,
 				},
-				startTime: occStart,
-				endTime: occEnd,
-				status: "upcoming",
+				occurrences: [
+					{
+						startTime: occStart,
+						endTime: occEnd,
+						users: assignedUsers,
+					},
+				],
 			});
 		}
 	}
 
-	// Process current shifts to find missing staffers
-	for (const occ of currentMissingOccurrences) {
-		const occStart = computeOccurrenceStart(
-			new Date(occ.timestamp),
-			occ.shiftSchedule.startTime,
-		);
-		const occEnd = computeOccurrenceEnd(
-			occStart,
-			occ.shiftSchedule.startTime,
-			occ.shiftSchedule.endTime,
-		);
-
-		// Only check shifts that are currently active
-		if (occStart > now || occEnd <= now) continue;
-
-		for (const user of occ.users) {
-			// User is missing if they are NOT currently staffing (no active session)
-			// This includes both:
-			// 1. Users who never showed up (no timeIn)
-			// 2. Users who showed up but left early (had timeIn but session ended)
-			if (!activeUserIds.has(user.id)) {
-				missingStaffers.push({
-					user: {
-						id: user.id,
-						name: user.name,
-					},
-					shiftType: {
-						name: occ.shiftSchedule.shiftType.name,
-						location: occ.shiftSchedule.shiftType.location,
-					},
-					startTime: occStart,
-					endTime: occEnd,
-					status: "missing",
+	// Group occurrences by time slot within each shift type
+	// Each occurrence = 1 slot
+	const upcomingShiftGroups: ShiftTypeGroup[] = [];
+	for (const group of Array.from(upcomingByShiftType.values())) {
+		const timeSlotMap = new Map<
+			string,
+			{
+				startTime: Date;
+				endTime: Date;
+				totalSlots: number;
+				filledSlots: number;
+				users: AssignedUser[];
+			}
+		>();
+		for (const occ of group.occurrences) {
+			const key = `${occ.startTime.getTime()}-${occ.endTime.getTime()}`;
+			const existing = timeSlotMap.get(key);
+			const hasUsers = occ.users.length > 0;
+			if (existing) {
+				// Each occurrence is 1 slot
+				existing.totalSlots += 1;
+				if (hasUsers) {
+					existing.filledSlots += 1;
+				}
+				// Merge users, avoiding duplicates
+				for (const user of occ.users) {
+					if (!existing.users.some((u) => u.id === user.id)) {
+						existing.users.push(user);
+					}
+				}
+			} else {
+				timeSlotMap.set(key, {
+					startTime: occ.startTime,
+					endTime: occ.endTime,
+					totalSlots: 1,
+					filledSlots: hasUsers ? 1 : 0,
+					users: [...occ.users],
 				});
 			}
 		}
+		const timeSlots: TimeSlot[] = Array.from(timeSlotMap.values())
+			.map((slot) => ({
+				startTime: slot.startTime,
+				endTime: slot.endTime,
+				totalSlots: slot.totalSlots,
+				emptySlots: slot.totalSlots - slot.filledSlots,
+				assignedUsers: slot.users,
+			}))
+			.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+		upcomingShiftGroups.push({
+			shiftType: group.shiftType,
+			timeSlots,
+		});
 	}
-
-	// Sort upcoming shifts by start time
-	upcomingShifts.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+	upcomingShiftGroups.sort((a, b) =>
+		a.shiftType.name.localeCompare(b.shiftType.name),
+	);
 
 	return {
-		currentStaffers: staffingUsers,
-		upcomingShifts: upcomingShifts.slice(0, 10), // Limit upcoming shifts
-		missingStaffers: missingStaffers.slice(0, 10), // Limit missing staffers
+		currentShiftGroups,
+		upcomingShiftGroups,
 	};
 }

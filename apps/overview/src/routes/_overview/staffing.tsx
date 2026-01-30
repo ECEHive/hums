@@ -4,10 +4,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertTriangle,
 	Clock,
-	MapPin,
 	RefreshCw,
 	User,
 	UserCheck,
+	UserMinus,
+	UserX,
 } from "lucide-react";
 import { useDevice } from "@/components/providers/device-provider";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const Route = createFileRoute("/_overview/staffing")({
 	component: StaffingPage,
 });
+
+type UserStatus = "present" | "late" | "missing" | "not-started";
+
+interface AssignedUser {
+	id: number;
+	name: string;
+	status: UserStatus;
+}
+
+// A time slot groups all users from overlapping occurrences
+interface TimeSlot {
+	startTime: Date;
+	endTime: Date;
+	totalSlots: number;
+	emptySlots: number;
+	assignedUsers: AssignedUser[];
+}
+
+interface ShiftTypeGroup {
+	shiftType: {
+		id: number;
+		name: string;
+		location: string;
+	};
+	timeSlots: TimeSlot[];
+}
 
 function StaffingPage() {
 	const { hasDashboardAccess, isLoading: deviceLoading } = useDevice();
@@ -73,6 +100,22 @@ function StaffingPage() {
 		);
 	}
 
+	// Count totals for summary
+	const totalCurrentTimeSlots =
+		data?.currentShiftGroups.reduce((sum, g) => sum + g.timeSlots.length, 0) ??
+		0;
+	const totalMissingUsers =
+		data?.currentShiftGroups.reduce(
+			(sum, g) =>
+				sum +
+				g.timeSlots.reduce(
+					(s, t) =>
+						s + t.assignedUsers.filter((u) => u.status === "missing").length,
+					0,
+				),
+			0,
+		) ?? 0;
+
 	return (
 		<div className="space-y-4 md:space-y-6">
 			{/* Page Header */}
@@ -95,148 +138,70 @@ function StaffingPage() {
 				</div>
 			</div>
 
-			{/* Current Staff */}
+			{/* Current Shifts Section */}
 			<Card>
 				<CardHeader className="pb-2 md:pb-4">
 					<div className="flex items-center justify-between">
 						<div className="space-y-1">
 							<CardTitle className="flex items-center gap-2 text-base md:text-lg">
 								<UserCheck className="h-4 w-4 md:h-5 md:w-5" />
-								On Duty
+								Current Shifts
 							</CardTitle>
 							<CardDescription className="text-xs md:text-sm">
-								Currently active staffing sessions
+								Active shift occurrences right now
 							</CardDescription>
 						</div>
 						{!isLoading && data && (
-							<Badge
-								variant="secondary"
-								className="text-sm md:text-base font-semibold px-2.5 py-1 md:px-3 md:py-1.5"
-							>
-								{data.currentStaffers.length}
-							</Badge>
+							<div className="flex items-center gap-2">
+								<Badge
+									variant="secondary"
+									className="text-sm md:text-base font-semibold px-2.5 py-1 md:px-3 md:py-1.5"
+								>
+									{totalCurrentTimeSlots} shift
+									{totalCurrentTimeSlots !== 1 ? "s" : ""}
+								</Badge>
+								{totalMissingUsers > 0 && (
+									<Badge
+										variant="destructive"
+										className="text-sm md:text-base font-semibold px-2.5 py-1 md:px-3 md:py-1.5"
+									>
+										{totalMissingUsers} missing
+									</Badge>
+								)}
+							</div>
 						)}
 					</div>
 				</CardHeader>
 				<CardContent>
 					{isLoading || deviceLoading ? (
-						<div className="space-y-3 md:space-y-4">
-							{[1, 2, 3].map((i) => (
-								<div key={i} className="flex items-center gap-3 md:gap-4">
-									<Skeleton className="h-9 w-9 md:h-10 md:w-10 rounded-full" />
-									<div className="space-y-1.5 md:space-y-2 flex-1">
-										<Skeleton className="h-4 w-28 md:w-32" />
-										<Skeleton className="h-3 w-40 md:w-48" />
-									</div>
+						<div className="space-y-4">
+							{[1, 2].map((i) => (
+								<div key={i} className="space-y-2">
+									<Skeleton className="h-5 w-40" />
+									<Skeleton className="h-20 w-full" />
 								</div>
 							))}
 						</div>
-					) : data?.currentStaffers.length === 0 ? (
+					) : !data || data.currentShiftGroups.length === 0 ? (
 						<p className="text-muted-foreground text-center py-6 md:py-8 text-sm">
-							Nobody currently on duty
+							No active shifts right now
 						</p>
 					) : (
-						<div className="space-y-3 md:space-y-4">
-							{data?.currentStaffers.map((staffer) => (
-								<div
-									key={staffer.id}
-									className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 rounded-lg bg-muted/50"
-								>
-									<div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-										<User className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-									</div>
-									<div className="flex-1 min-w-0">
-										<div className="font-medium text-sm md:text-base truncate">
-											{staffer.name}
-										</div>
-										{staffer.shiftInfo ? (
-											<div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
-												<span className="flex items-center gap-1">
-													<MapPin className="h-3 w-3 shrink-0" />
-													<span className="truncate">
-														{staffer.shiftInfo.shiftTypeName}
-													</span>
-												</span>
-												<span className="hidden sm:inline">•</span>
-												<span className="hidden sm:inline truncate">
-													{staffer.shiftInfo.location}
-												</span>
-												{staffer.shiftInfo.status === "late" && (
-													<Badge
-														variant="outline"
-														className="text-orange-500 border-orange-500 text-xs px-1.5 py-0"
-													>
-														Late
-													</Badge>
-												)}
-											</div>
-										) : (
-											<div className="text-xs md:text-sm text-muted-foreground">
-												Staffing (no scheduled shift)
-											</div>
-										)}
-									</div>
-								</div>
+						<div className="space-y-6">
+							{data.currentShiftGroups.map((group) => (
+								<ShiftTypeGroupCard
+									key={group.shiftType.id}
+									group={group}
+									variant="current"
+								/>
 							))}
 						</div>
 					)}
 				</CardContent>
 			</Card>
 
-			{/* Missing Staff */}
-			{!isLoading && data && data.missingStaffers.length > 0 && (
-				<Card className="border-destructive/50">
-					<CardHeader className="pb-2 md:pb-4">
-						<CardTitle className="flex items-center gap-2 text-destructive text-base md:text-lg">
-							<AlertTriangle className="h-4 w-4 md:h-5 md:w-5" />
-							Missing
-						</CardTitle>
-						<CardDescription className="text-xs md:text-sm">
-							Assigned to current shifts but not checked in
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-3 md:space-y-4">
-							{data.missingStaffers.map((missing, index) => (
-								<div
-									key={`${missing.user.id}-${index}`}
-									className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 rounded-lg bg-destructive/10"
-								>
-									<div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
-										<User className="h-4 w-4 md:h-5 md:w-5 text-destructive" />
-									</div>
-									<div className="flex-1 min-w-0">
-										<div className="font-medium text-sm md:text-base truncate">
-											{missing.user.name}
-										</div>
-										<div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
-											<span className="flex items-center gap-1">
-												<MapPin className="h-3 w-3 shrink-0" />
-												<span className="truncate">
-													{missing.shiftType.name}
-												</span>
-											</span>
-											<span className="hidden sm:inline">•</span>
-											<span className="hidden sm:inline truncate">
-												{missing.shiftType.location}
-											</span>
-										</div>
-									</div>
-									<Badge
-										variant="destructive"
-										className="text-xs px-1.5 py-0.5 shrink-0"
-									>
-										Missing
-									</Badge>
-								</div>
-							))}
-						</div>
-					</CardContent>
-				</Card>
-			)}
-
-			{/* Upcoming Shifts */}
-			{!isLoading && data && data.upcomingShifts.length > 0 && (
+			{/* Upcoming Shifts Section */}
+			{!isLoading && data && data.upcomingShiftGroups.length > 0 && (
 				<Card>
 					<CardHeader className="pb-2 md:pb-4">
 						<CardTitle className="flex items-center gap-2 text-base md:text-lg">
@@ -248,37 +213,13 @@ function StaffingPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="space-y-3 md:space-y-4">
-							{data.upcomingShifts.map((shift, index) => (
-								<div
-									key={`${shift.user.id}-${index}`}
-									className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 rounded-lg bg-muted/50"
-								>
-									<div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-										<User className="h-4 w-4 md:h-5 md:w-5" />
-									</div>
-									<div className="flex-1 min-w-0">
-										<div className="font-medium text-sm md:text-base truncate">
-											{shift.user.name}
-										</div>
-										<div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
-											<span className="flex items-center gap-1">
-												<MapPin className="h-3 w-3 shrink-0" />
-												<span className="truncate">{shift.shiftType.name}</span>
-											</span>
-											<span className="hidden sm:inline">•</span>
-											<span className="hidden sm:inline truncate">
-												{shift.shiftType.location}
-											</span>
-										</div>
-									</div>
-									<Badge
-										variant="outline"
-										className="text-xs px-1.5 py-0.5 shrink-0"
-									>
-										{formatTime(shift.startTime)}
-									</Badge>
-								</div>
+						<div className="space-y-6">
+							{data.upcomingShiftGroups.map((group) => (
+								<ShiftTypeGroupCard
+									key={group.shiftType.id}
+									group={group}
+									variant="upcoming"
+								/>
 							))}
 						</div>
 					</CardContent>
@@ -288,9 +229,202 @@ function StaffingPage() {
 	);
 }
 
+interface ShiftTypeGroupCardProps {
+	group: ShiftTypeGroup;
+	variant: "current" | "upcoming";
+}
+
+function ShiftTypeGroupCard({ group, variant }: ShiftTypeGroupCardProps) {
+	const isSingleSlot = group.timeSlots.length === 1;
+
+	return (
+		<div className="space-y-3">
+			{/* Shift Type Header */}
+			<div className="flex items-center gap-2">
+				<h3 className="font-semibold text-sm md:text-base">
+					{group.shiftType.name}
+				</h3>
+				<span className="text-xs text-muted-foreground">
+					{group.shiftType.location}
+				</span>
+			</div>
+
+			{/* Time Slots */}
+			<div
+				className={
+					isSingleSlot ? "" : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+				}
+			>
+				{group.timeSlots.map((timeSlot) => (
+					<TimeSlotCard
+						key={`${timeSlot.startTime}-${timeSlot.endTime}`}
+						timeSlot={timeSlot}
+						variant={variant}
+						layout={isSingleSlot ? "horizontal" : "vertical"}
+					/>
+				))}
+			</div>
+		</div>
+	);
+}
+
+interface TimeSlotCardProps {
+	timeSlot: TimeSlot;
+	variant: "current" | "upcoming";
+	layout: "horizontal" | "vertical";
+}
+
+function TimeSlotCard({ timeSlot, variant, layout }: TimeSlotCardProps) {
+	const hasAssignedUsers = timeSlot.assignedUsers.length > 0;
+	const hasEmptySlots = timeSlot.emptySlots > 0;
+	const isCompletelyEmpty = !hasAssignedUsers && hasEmptySlots;
+
+	return (
+		<div
+			className={`rounded-lg border p-3 ${
+				variant === "current" && isCompletelyEmpty
+					? "border-amber-500/50 bg-amber-50 dark:bg-amber-950/20"
+					: "bg-muted/30"
+			}`}
+		>
+			{/* Time display */}
+			<div className="flex items-center justify-between mb-2">
+				<span className="text-xs font-medium">
+					{formatTimeRange(timeSlot.startTime, timeSlot.endTime)}
+				</span>
+				{variant === "upcoming" && (
+					<Badge variant="outline" className="text-xs">
+						Starts {formatTime(timeSlot.startTime)}
+					</Badge>
+				)}
+				{variant === "current" && isCompletelyEmpty && (
+					<Badge
+						variant="outline"
+						className="text-xs text-amber-600 border-amber-500 dark:text-amber-400"
+					>
+						Unstaffed
+					</Badge>
+				)}
+			</div>
+
+			{/* Assigned Users and Empty Slots */}
+			<div className="flex flex-wrap gap-2">
+				{timeSlot.assignedUsers.map((user) => (
+					<UserStatusRow
+						key={user.id}
+						user={user}
+						compact={layout === "horizontal"}
+					/>
+				))}
+				{/* Show empty slot indicators */}
+				{hasEmptySlots &&
+					Array.from({ length: timeSlot.emptySlots }).map((_, index) => (
+						<EmptySlotIndicator
+							key={`empty-${index}`}
+							compact={layout === "horizontal"}
+						/>
+					))}
+			</div>
+		</div>
+	);
+}
+
+interface EmptySlotIndicatorProps {
+	compact?: boolean;
+}
+
+function EmptySlotIndicator({ compact = false }: EmptySlotIndicatorProps) {
+	return (
+		<div
+			className={`inline-flex items-center gap-1.5 rounded-full bg-muted/50 border border-dashed border-muted-foreground/30 ${
+				compact ? "px-2 py-1" : "px-2.5 py-1.5"
+			}`}
+		>
+			<UserMinus
+				className={`text-muted-foreground ${compact ? "h-3.5 w-3.5" : "h-4 w-4"}`}
+			/>
+			<span
+				className={`text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}
+			>
+				Empty
+			</span>
+		</div>
+	);
+}
+
+interface UserStatusRowProps {
+	user: AssignedUser;
+	compact?: boolean;
+}
+
+function UserStatusRow({ user, compact = false }: UserStatusRowProps) {
+	const getStatusConfig = (status: UserStatus) => {
+		switch (status) {
+			case "present":
+				return {
+					icon: UserCheck,
+					iconClassName: "text-green-600 dark:text-green-400",
+					bgClassName: "bg-green-100 dark:bg-green-900/30",
+					textClassName: "",
+				};
+			case "late":
+				return {
+					icon: UserCheck,
+					iconClassName: "text-orange-600 dark:text-orange-400",
+					bgClassName: "bg-orange-100 dark:bg-orange-900/30",
+					textClassName: "",
+				};
+			case "missing":
+				return {
+					icon: UserX,
+					iconClassName: "text-destructive",
+					bgClassName: "bg-muted/50",
+					textClassName: "text-destructive",
+				};
+			case "not-started":
+				return {
+					icon: User,
+					iconClassName: "text-muted-foreground",
+					bgClassName: "bg-muted/50",
+					textClassName: "",
+				};
+		}
+	};
+
+	const config = getStatusConfig(user.status);
+	const Icon = config.icon;
+
+	return (
+		<div
+			className={`inline-flex items-center gap-1.5 rounded-full ${config.bgClassName} ${
+				compact ? "px-2 py-1" : "px-2.5 py-1.5"
+			}`}
+		>
+			<div
+				className={`rounded-full flex items-center justify-center shrink-0 ${config.iconClassName} ${
+					compact ? "h-4 w-4" : "h-5 w-5"
+				}`}
+			>
+				<Icon className={compact ? "h-2.5 w-2.5" : "h-3 w-3"} />
+			</div>
+			<span
+				className={`font-medium ${config.textClassName} ${
+					compact ? "text-xs" : "text-sm"
+				}`}
+			>
+				{user.name}
+			</span>
+		</div>
+	);
+}
+
 function formatTime(date: Date | string): string {
 	const d = new Date(date);
 	return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function formatTimeRange(start: Date | string, end: Date | string): string {
+	return `${formatTime(start)} - ${formatTime(end)}`;
 }
 
 function formatRelativeTime(timestamp: number): string {
