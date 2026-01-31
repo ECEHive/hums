@@ -12,6 +12,7 @@ interface InventoryTransactionViewProps {
 	onCheckout: (items: { sku: string; quantity: number }[]) => Promise<void>;
 	onReturn: (items: { sku: string; quantity: number }[]) => Promise<void>;
 	onCancel: () => void;
+	onError: (message: string) => void;
 }
 
 type TransactionItem = {
@@ -27,13 +28,13 @@ export function InventoryTransactionView({
 	onCheckout,
 	onReturn,
 	onCancel,
+	onError,
 }: InventoryTransactionViewProps) {
 	const [mode, setMode] = useState<"select" | "checkout" | "return" | null>(
 		null,
 	);
 	const [items, setItems] = useState<TransactionItem[]>([]);
 	const [currentSku, setCurrentSku] = useState("");
-	const [skuError, setSkuError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const skuInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,11 +102,11 @@ export function InventoryTransactionView({
 				try {
 					const item = await trpc.inventory.items.getBySku.query({ sku });
 					if (!item) {
-						setSkuError(`Item not found: ${sku}`);
+						onError(`Item not found: ${sku}`);
 						return;
 					}
 					if (item.isActive === false) {
-						setSkuError("Cannot add inactive item");
+						onError("Cannot add inactive item");
 						return;
 					}
 					if (item.name) {
@@ -127,11 +128,10 @@ export function InventoryTransactionView({
 								},
 							];
 						});
-						setSkuError(null);
 					}
 				} catch (err) {
 					console.error("Failed to fetch item name", err);
-					setSkuError("Failed to fetch item information");
+					onError("Failed to fetch item information");
 				}
 			})();
 		}
@@ -260,20 +260,14 @@ export function InventoryTransactionView({
 											value={currentSku}
 											onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 												setCurrentSku(e.target.value);
-												setSkuError(null);
 											}}
 											onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
 												if (e.key === "Enter") {
 													handleAddItem();
 												}
 											}}
-											placeholder={skuError ?? "Scan or enter SKU..."}
-											aria-invalid={!!skuError}
-											className={`h-14 text-xl ${
-												skuError
-													? "border-destructive focus:border-destructive placeholder:text-destructive"
-													: ""
-											}`}
+											placeholder="Scan or enter SKU..."
+											className="h-14 text-xl"
 											autoFocus
 										/>
 									</div>

@@ -63,6 +63,9 @@ model User {
   cardNumber   String?  @unique
   slackUsername String? @unique
   isSystemUser Boolean  @default(false)
+  
+  // Face ID
+  faceIdEnabled Boolean @default(false)
 
   // timestamps
   createdAt DateTime @default(now())
@@ -93,6 +96,10 @@ model User {
   submittedTickets Ticket[] @relation("TicketSubmitter")
   handledTickets   Ticket[] @relation("TicketHandler")
   ticketStatusChanges TicketStatusHistory[] @relation("TicketStatusChangedBy")
+  
+  // Face ID and Security
+  faceEnrollment FaceEnrollment?
+  securitySnapshots SecuritySnapshot[]
 }
 
 model Role {
@@ -290,10 +297,11 @@ model Session {
   id Int @id @default(autoincrement())
 
   // fields
-  userId      Int
-  sessionType SessionType @default(regular)
-  startedAt   DateTime    @default(now())
-  endedAt     DateTime?
+  userId             Int
+  sessionType        SessionType @default(regular)
+  startedAt          DateTime    @default(now())
+  endedAt            DateTime?
+  isManuallyCreated  Boolean     @default(false)
 
   // relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -318,6 +326,9 @@ model Device {
   // timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  securitySnapshots SecuritySnapshot[]
 }
 
 model Agreement {
@@ -615,4 +626,70 @@ model TicketStatusHistory {
   // indexes
   @@index([ticketId])
   @@index([createdAt])
+}
+
+//
+// Face ID and Security
+//
+
+enum SecurityEventType {
+  TAP_IN
+  TAP_OUT
+  FACE_ID_LOGIN
+  FACE_ID_ENROLLMENT
+}
+
+model FaceEnrollment {
+  id Int @id @default(autoincrement())
+
+  // fields
+  userId Int @unique
+  
+  // Native vector column for pgvector similarity search (128 dimensions for face-api.js)
+  // This enables efficient nearest neighbor search using HNSW index
+  faceEmbedding Unsupported("vector(128)")?
+  
+  // Metadata about enrollment
+  enrolledAt DateTime @default(now())
+  lastUsedAt DateTime?
+  successfulMatches Int @default(0)
+  
+  // timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SecuritySnapshot {
+  id String @id @default(uuid())
+
+  // fields
+  deviceId   Int?
+  userId     Int?
+  eventType  SecurityEventType
+  
+  // Image stored on disk, this stores the relative path from storage root
+  imagePath  String
+  
+  // Metadata
+  capturedAt DateTime @default(now())
+  
+  // Optional face detection data from the snapshot
+  faceDetected Boolean @default(false)
+  faceConfidence Float?
+
+  // timestamps
+  createdAt DateTime @default(now())
+
+  // relations
+  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // indexes
+  @@index([deviceId])
+  @@index([userId])
+  @@index([capturedAt])
+  @@index([eventType])
 }

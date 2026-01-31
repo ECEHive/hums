@@ -34,6 +34,20 @@ export function useCardReader({
 		useState<ConnectionStatus>("disconnected");
 	const serialRef = useRef<SerialSession | null>(null);
 
+	// Use refs for callbacks so we always call the latest version
+	// This is critical because the serial connection captures the callback once
+	const onScanRef = useRef(onScan);
+	const onInvalidScanRef = useRef(onInvalidScan);
+
+	// Keep refs up to date
+	useEffect(() => {
+		onScanRef.current = onScan;
+	}, [onScan]);
+
+	useEffect(() => {
+		onInvalidScanRef.current = onInvalidScan;
+	}, [onInvalidScan]);
+
 	const disconnect = useCallback(async () => {
 		if (!serialRef.current) {
 			setConnectionStatus("disconnected");
@@ -62,7 +76,8 @@ export function useCardReader({
 		const session = await connectSerial(
 			(scan) => {
 				try {
-					const maybePromise = onScan(scan.data);
+					// Use ref to always call the latest callback
+					const maybePromise = onScanRef.current(scan.data);
 					if (isPromise<void>(maybePromise)) {
 						maybePromise.catch((error) => {
 							log.error(
@@ -86,7 +101,8 @@ export function useCardReader({
 			},
 			{
 				onInvalidScan: (raw) => {
-					onInvalidScan?.(raw);
+					// Use ref to always call the latest callback
+					onInvalidScanRef.current?.(raw);
 				},
 			},
 		);
@@ -99,7 +115,9 @@ export function useCardReader({
 			setConnectionStatus("error");
 			log.error("Failed to connect to card reader");
 		}
-	}, [handleFatalError, log, onInvalidScan, onScan]);
+		// Note: onScan and onInvalidScan are intentionally not in dependencies
+		// because we use refs to always call the latest versions
+	}, [handleFatalError, log]);
 
 	useEffect(() => {
 		if (connectionStatus !== "connected" || !serialRef.current?.port) {

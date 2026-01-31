@@ -4,6 +4,7 @@ import { auditLogsRouter } from "./routers/auditLogs/_route";
 import { authRouter } from "./routers/auth/_route";
 import { configRouter } from "./routers/config/_route";
 import { devicesRouter } from "./routers/devices/_route";
+import { faceIdRouter } from "./routers/faceId/_route";
 import { globalReportsRouter } from "./routers/globalReports/_route";
 import { inventoryRouter } from "./routers/inventory/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
@@ -13,6 +14,7 @@ import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
 import { reportsRouter } from "./routers/reports/_route";
 import { rolesRouter } from "./routers/roles/_route";
+import { securityRouter } from "./routers/security/_route";
 import { sessionsRouter } from "./routers/sessions/_route";
 import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
@@ -47,6 +49,8 @@ export const appRouter = router({
 	inventory: inventoryRouter,
 	globalReports: globalReportsRouter,
 	tickets: ticketsRouter,
+	security: securityRouter,
+	faceId: faceIdRouter,
 });
 
 export type AppRouter = typeof appRouter;

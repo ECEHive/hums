@@ -4,6 +4,7 @@ import {
 	BugIcon,
 	CalendarClock,
 	CalendarIcon,
+	CameraIcon,
 	ChevronRightIcon,
 	ChevronsDownIcon,
 	ChevronsUpIcon,
@@ -70,6 +71,7 @@ import { permissions as devicesPagePermissions } from "@/routes/app/_app/devices
 import { permissions as appIndexPagePermissions } from "@/routes/app/_app/index";
 import { permissions as reportsPagePermissions } from "@/routes/app/_app/reports";
 import { permissions as rolesPagePermissions } from "@/routes/app/_app/roles";
+import { permissions as securityPagePermissions } from "@/routes/app/_app/security";
 import { permissions as sessionsPagePermissions } from "@/routes/app/_app/sessions";
 import { permissions as suspensionsPagePermissions } from "@/routes/app/_app/suspensions";
 import { permissions as usersPagePermissions } from "@/routes/app/_app/users";
@@ -179,6 +181,12 @@ export const items: AppSidebarGroup[] = [
 				url: "/app/sessions",
 				icon: FileClockIcon,
 				permissions: sessionsPagePermissions,
+			},
+			{
+				title: "Security Snapshots",
+				url: "/app/security",
+				icon: CameraIcon,
+				permissions: securityPagePermissions,
 			},
 			{
 				title: "Reports",
