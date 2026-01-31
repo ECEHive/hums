@@ -11,6 +11,17 @@ HUMS is deployed as two Docker images:
 
 Additionally, the server image includes a `prisma-migrate` target for running database migrations.
 
+## Database Requirements
+
+HUMS requires PostgreSQL 16+ with the **pgvector** extension for Face ID recognition. The Face ID system uses pgvector for efficient vector similarity search to match face embeddings.
+
+The default `docker-compose.sample.yml` uses the `pgvector/pgvector:pg16` image which includes the extension pre-installed.
+
+If you're using an external PostgreSQL database:
+1. Ensure PostgreSQL 16 or higher is installed
+2. Install the pgvector extension: `CREATE EXTENSION IF NOT EXISTS vector;`
+3. This is handled automatically by database migrations when running `prisma migrate deploy`
+
 ## Pre-built Images
 
 Docker images are automatically built and published to GitHub Container Registry (ghcr.io) on each release:
