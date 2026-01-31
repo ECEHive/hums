@@ -506,10 +506,17 @@ export function FaceIdEnrollment({
 		};
 	}, [step, camera.modelsLoaded, checkFacePosition]);
 
+	// Ref to prevent double-processing of enrollment
+	const isProcessingRef = useRef(false);
+
 	// Process enrollment with the captured descriptor
 	useEffect(() => {
 		if (step !== "processing" || !user || !capturedDescriptorRef.current)
 			return;
+
+		// Guard against double execution
+		if (isProcessingRef.current) return;
+		isProcessingRef.current = true;
 
 		const processEnrollment = async () => {
 			try {
@@ -535,7 +542,7 @@ export function FaceIdEnrollment({
 							eventType: "FACE_ID_ENROLLMENT",
 							userId: user.id,
 							faceDetected: true,
-							faceConfidence: faceDetection?.confidence ?? 0,
+							faceConfidence: 1.0, // We know face was detected during enrollment
 						})
 						.catch((err) => {
 							console.warn(
@@ -576,14 +583,16 @@ export function FaceIdEnrollment({
 		};
 
 		void processEnrollment();
-	}, [step, user, camera, faceDetection, onComplete]);
+	}, [step, user, camera, onComplete]);
 
 	const handleCancel = useCallback(() => {
+		isProcessingRef.current = false;
 		reset();
 		onCancel?.();
 	}, [reset, onCancel]);
 
 	const handleRetry = useCallback(() => {
+		isProcessingRef.current = false;
 		reset();
 		setStep("card_prompt");
 	}, [reset]);

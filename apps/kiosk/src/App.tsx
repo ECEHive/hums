@@ -5,7 +5,6 @@ import { CameraProvider, useCameraContext } from "@/components/camera-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FaceIdConfirmation } from "@/components/face-id-confirmation";
 import { FaceIdEnrollment } from "@/components/face-id-enrollment";
-import { FaceIdIndicator } from "@/components/face-id-indicator";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
@@ -361,9 +360,6 @@ function AppContent() {
 						/>
 					)}
 				</div>
-
-				{/* Face ID Status Indicator */}
-				<FaceIdIndicator />
 			</KioskContainer>
 		</ErrorBoundary>
 	);
