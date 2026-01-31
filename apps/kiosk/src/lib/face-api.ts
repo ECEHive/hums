@@ -150,26 +150,6 @@ export async function detectFace(
 	}
 
 	try {
-		// Log input dimensions for debugging
-		const inputWidth =
-			"videoWidth" in input
-				? input.videoWidth
-				: "naturalWidth" in input
-					? input.naturalWidth
-					: input.width;
-		const inputHeight =
-			"videoHeight" in input
-				? input.videoHeight
-				: "naturalHeight" in input
-					? input.naturalHeight
-					: input.height;
-		console.log("[FaceAPI] detectFace input:", {
-			type: input.tagName,
-			width: inputWidth,
-			height: inputHeight,
-			readyState: "readyState" in input ? input.readyState : "N/A",
-		});
-
 		const detection = await faceapi
 			.detectSingleFace(input, DETECTION_OPTIONS)
 			.withFaceLandmarks()
@@ -189,12 +169,6 @@ export async function detectFace(
 
 		// Estimate head yaw angle from landmarks
 		const yawAngle = estimateYawAngle(detection.landmarks);
-
-		console.log("[FaceAPI] Face detected:", {
-			confidence: detection.detection.score,
-			box: detection.detection.box,
-			yawAngle: yawAngle.toFixed(1),
-		});
 
 		return {
 			detected: true,
@@ -262,7 +236,6 @@ export async function detectFaceWithExpression(
 			.withFaceExpressions();
 
 		if (!detection) {
-			console.log("[FaceAPI] No face detected in frame");
 			return {
 				detected: false,
 				confidence: 0,
@@ -282,13 +255,6 @@ export async function detectFaceWithExpression(
 		const dominantExpression = expressionEntries.reduce((max, current) =>
 			current[1] > max[1] ? current : max,
 		);
-
-		console.log("[FaceAPI] Face detected with expression:", {
-			confidence: detection.detection.score,
-			yawAngle: yawAngle.toFixed(1),
-			expression: dominantExpression[0],
-			expressionConfidence: dominantExpression[1].toFixed(2),
-		});
 
 		return {
 			detected: true,
@@ -474,6 +440,44 @@ export function dataUrlToBlob(dataUrl: string): Blob {
 		u8arr[n] = bstr.charCodeAt(n);
 	}
 	return new Blob([u8arr], { type: mime });
+}
+
+/**
+ * Convert FaceDetectionResult to format suitable for FaceTracker
+ */
+export function toTrackerDetection(result: FaceDetectionResult): {
+	box: { x: number; y: number; width: number; height: number };
+	confidence: number;
+	descriptor: number[] | null;
+	yawAngle: number | null;
+} | null {
+	if (!result.detected || !result.box) {
+		return null;
+	}
+
+	return {
+		box: result.box,
+		confidence: result.confidence,
+		descriptor: result.descriptor
+			? serializeDescriptor(result.descriptor)
+			: null,
+		yawAngle: result.yawAngle,
+	};
+}
+
+/**
+ * Get video dimensions from a video element
+ */
+export function getVideoDimensions(
+	video: HTMLVideoElement,
+): { width: number; height: number } | null {
+	if (video.videoWidth === 0 || video.videoHeight === 0) {
+		return null;
+	}
+	return {
+		width: video.videoWidth,
+		height: video.videoHeight,
+	};
 }
 
 // Re-export faceapi for drawing utilities if needed

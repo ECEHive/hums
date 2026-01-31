@@ -5,6 +5,7 @@ import { CameraProvider, useCameraContext } from "@/components/camera-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FaceIdConfirmation } from "@/components/face-id-confirmation";
 import { FaceIdEnrollment } from "@/components/face-id-enrollment";
+import { FaceIdIndicator } from "@/components/face-id-indicator";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
@@ -168,20 +169,18 @@ function AppContent() {
 		}
 	}, [connectionStatus, kioskStatus.isKiosk, cameraContext.startCamera]);
 
-	// Start Face ID scanning when camera is ready, models are loaded, and there are enrolled faces
+	// Start Face ID scanning when camera is ready and models are loaded
 	// Don't scan during Face ID enrollment
 	useEffect(() => {
 		const shouldScan =
 			cameraContext.isCameraReady &&
 			cameraContext.modelsLoaded &&
-			cameraContext.enrolledFaceCount > 0 &&
 			!showFaceIdEnrollment &&
 			!cameraContext.isFaceIdScanning;
 
 		console.log("[App] Face ID scan check:", {
 			cameraReady: cameraContext.isCameraReady,
 			modelsLoaded: cameraContext.modelsLoaded,
-			enrolledFaceCount: cameraContext.enrolledFaceCount,
 			showFaceIdEnrollment,
 			isFaceIdScanning: cameraContext.isFaceIdScanning,
 			shouldScan,
@@ -197,7 +196,6 @@ function AppContent() {
 	}, [
 		cameraContext.isCameraReady,
 		cameraContext.modelsLoaded,
-		cameraContext.enrolledFaceCount,
 		showFaceIdEnrollment,
 		cameraContext.isFaceIdScanning,
 		cameraContext.startFaceIdScanning,
@@ -348,7 +346,6 @@ function AppContent() {
 								isEnrollmentModeRef.current = false;
 								enrollmentCardHandlerRef.current = null;
 								setShowFaceIdEnrollment(false);
-								void cameraContext.refreshEnrolledFaces();
 							}}
 							onCancel={() => {
 								console.log("[App] Face ID enrollment cancelled");
@@ -364,6 +361,9 @@ function AppContent() {
 						/>
 					)}
 				</div>
+
+				{/* Face ID Status Indicator */}
+				<FaceIdIndicator />
 			</KioskContainer>
 		</ErrorBoundary>
 	);

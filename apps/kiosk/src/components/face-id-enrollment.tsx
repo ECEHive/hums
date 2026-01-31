@@ -561,8 +561,6 @@ export function FaceIdEnrollment({
 
 				console.log("[FaceIdEnrollment] Enrollment successful!");
 
-				await camera.refreshEnrolledFaces();
-
 				setStep("success");
 
 				setTimeout(() => {
