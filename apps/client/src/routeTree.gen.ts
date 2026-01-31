@@ -41,6 +41,7 @@ import { Route as AppInventoryItemsRouteImport } from './routes/app/inventory/it
 import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
+import { Route as AppAppSecurityRouteImport } from './routes/app/_app/security'
 import { Route as AppAppRolesRouteImport } from './routes/app/_app/roles'
 import { Route as AppAppReportsRouteImport } from './routes/app/_app/reports'
 import { Route as AppAppMyAgreementsRouteImport } from './routes/app/_app/my-agreements'
@@ -224,6 +225,11 @@ const AppAppSessionsRoute = AppAppSessionsRouteImport.update({
   path: '/sessions',
   getParentRoute: () => AppAppRoute,
 } as any)
+const AppAppSecurityRoute = AppAppSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AppAppRoute,
+} as any)
 const AppAppRolesRoute = AppAppRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
   '/app/reports': typeof AppAppReportsRoute
   '/app/roles': typeof AppAppRolesRoute
+  '/app/security': typeof AppAppSecurityRoute
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByTo {
   '/app/my-agreements': typeof AppAppMyAgreementsRoute
   '/app/reports': typeof AppAppReportsRoute
   '/app/roles': typeof AppAppRolesRoute
+  '/app/security': typeof AppAppSecurityRoute
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
@@ -436,6 +444,7 @@ export interface FileRoutesById {
   '/app/_app/my-agreements': typeof AppAppMyAgreementsRoute
   '/app/_app/reports': typeof AppAppReportsRoute
   '/app/_app/roles': typeof AppAppRolesRoute
+  '/app/_app/security': typeof AppAppSecurityRoute
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
   '/app/_app/users': typeof AppAppUsersRoute
@@ -489,6 +498,7 @@ export interface FileRouteTypes {
     | '/app/my-agreements'
     | '/app/reports'
     | '/app/roles'
+    | '/app/security'
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
@@ -537,6 +547,7 @@ export interface FileRouteTypes {
     | '/app/my-agreements'
     | '/app/reports'
     | '/app/roles'
+    | '/app/security'
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/app/_app/my-agreements'
     | '/app/_app/reports'
     | '/app/_app/roles'
+    | '/app/_app/security'
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
     | '/app/_app/users'
@@ -855,6 +867,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppSessionsRouteImport
       parentRoute: typeof AppAppRoute
     }
+    '/app/_app/security': {
+      id: '/app/_app/security'
+      path: '/security'
+      fullPath: '/app/security'
+      preLoaderRoute: typeof AppAppSecurityRouteImport
+      parentRoute: typeof AppAppRoute
+    }
     '/app/_app/roles': {
       id: '/app/_app/roles'
       path: '/roles'
@@ -993,6 +1012,7 @@ interface AppAppRouteChildren {
   AppAppMyAgreementsRoute: typeof AppAppMyAgreementsRoute
   AppAppReportsRoute: typeof AppAppReportsRoute
   AppAppRolesRoute: typeof AppAppRolesRoute
+  AppAppSecurityRoute: typeof AppAppSecurityRoute
   AppAppSessionsRoute: typeof AppAppSessionsRoute
   AppAppSuspensionsRoute: typeof AppAppSuspensionsRoute
   AppAppUsersRoute: typeof AppAppUsersRoute
@@ -1010,6 +1030,7 @@ const AppAppRouteChildren: AppAppRouteChildren = {
   AppAppMyAgreementsRoute: AppAppMyAgreementsRoute,
   AppAppReportsRoute: AppAppReportsRoute,
   AppAppRolesRoute: AppAppRolesRoute,
+  AppAppSecurityRoute: AppAppSecurityRoute,
   AppAppSessionsRoute: AppAppSessionsRoute,
   AppAppSuspensionsRoute: AppAppSuspensionsRoute,
   AppAppUsersRoute: AppAppUsersRoute,
