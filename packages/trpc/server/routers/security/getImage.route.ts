@@ -1,11 +1,10 @@
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { env } from "@ecehive/env";
 import { getLogger } from "@ecehive/logger";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../trpc";
+import { validateSecurityFilePath } from "./utils";
 
 const logger = getLogger("security:getImage");
 
@@ -39,8 +38,8 @@ export async function getImageHandler(options: TGetImageOptions) {
 		});
 	}
 
-	const storagePath = path.resolve(env.SECURITY_STORAGE_PATH);
-	const fullPath = path.join(storagePath, snapshot.imagePath);
+	const storagePath = validateSecurityFilePath(snapshot.imagePath);
+	const fullPath = storagePath;
 
 	try {
 		const imageBuffer = await fs.readFile(fullPath);

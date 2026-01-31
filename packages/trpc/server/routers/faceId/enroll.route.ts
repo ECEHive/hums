@@ -10,6 +10,9 @@ export const ZEnrollSchema = z.object({
 	userId: z.number(),
 	// Face descriptor is a 128-dimensional vector
 	faceDescriptor: z.array(z.number()).length(128),
+	// Card number used for verification - proves user authenticated via card tap
+	// Enrollment requires recent card verification for authorization
+	verificationCardNumber: z.string().regex(/^\d+$/),
 });
 
 export type TEnrollOptions = {
@@ -19,18 +22,44 @@ export type TEnrollOptions = {
 
 export async function enrollHandler(options: TEnrollOptions) {
 	const { ctx, input } = options;
-	const { userId, faceDescriptor } = input;
+	const { userId, faceDescriptor, verificationCardNumber } = input;
 
-	// Verify user exists
+	// Validate all descriptor values are finite numbers
+	for (let i = 0; i < faceDescriptor.length; i++) {
+		if (!Number.isFinite(faceDescriptor[i])) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: `Invalid face descriptor: value at index ${i} is not a finite number`,
+			});
+		}
+	}
+
+	// Verify user exists and card number matches - this ensures the enrollment
+	// is being performed for the user who recently tapped their card
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
-		select: { id: true, name: true, username: true },
+		select: { id: true, name: true, username: true, cardNumber: true },
 	});
 
 	if (!user) {
 		throw new TRPCError({
 			code: "NOT_FOUND",
 			message: "User not found",
+		});
+	}
+
+	// Authorization check: verify the card number matches the user being enrolled
+	// This ensures Face ID enrollment can only be performed by the user themselves
+	// after they have authenticated via their physical card
+	if (!user.cardNumber || user.cardNumber !== verificationCardNumber) {
+		logger.warn("Face ID enrollment authorization failed - card mismatch", {
+			userId,
+			deviceId: ctx.device.id,
+		});
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message:
+				"Face ID enrollment requires card verification for the same user",
 		});
 	}
 

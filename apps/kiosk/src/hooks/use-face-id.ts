@@ -19,7 +19,7 @@ import {
 	serializeDescriptor,
 } from "@/lib/face-api";
 
-// Cooldown between Face ID recognitions for the same user (30 seconds)
+// Cooldown between Face ID recognitions for the same user (5 seconds)
 const FACE_ID_COOLDOWN_MS = 5000;
 
 // Minimum confidence for Face ID match (from server)

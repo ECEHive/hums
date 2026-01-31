@@ -436,12 +436,10 @@ export function FaceIdEnrollment({
 				}
 
 				// Update positioning guide based on state
-				if (currentCountdown === null) {
-					if (emotionMsg) {
-						setPositioningGuide(emotionMsg);
-					} else {
-						setPositioningGuide(position.message);
-					}
+				if (emotionMsg) {
+					setPositioningGuide(emotionMsg);
+				} else {
+					setPositioningGuide(position.message);
 				}
 			} catch (err) {
 				console.error("[FaceIdEnrollment] Face detection error:", err);
@@ -548,9 +546,17 @@ export function FaceIdEnrollment({
 				}
 
 				console.log("[FaceIdEnrollment] Saving face descriptor...");
+				const verificationCardNumber = pendingCardRef.current;
+				if (!verificationCardNumber) {
+					throw new Error(
+						"Card verification information lost. Please try again.",
+					);
+				}
+
 				await trpc.faceId.enroll.mutate({
 					userId: user.id,
 					faceDescriptor: serializeDescriptor(descriptor),
+					verificationCardNumber,
 				});
 
 				console.log("[FaceIdEnrollment] Enrollment successful!");

@@ -1,5 +1,6 @@
 import { getLogger } from "@ecehive/logger";
 import { prisma } from "@ecehive/prisma";
+import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TKioskProtectedProcedureContext } from "../../trpc";
 
@@ -8,6 +9,41 @@ const logger = getLogger("faceId:matchFace");
 // Face matching threshold (lower = more strict)
 // This is the maximum Euclidean distance for a match
 const FACE_MATCH_THRESHOLD = 0.6;
+
+// Rate limiting configuration
+// Allows a maximum number of requests per device within a time window
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
+const RATE_LIMIT_MAX_REQUESTS = 30; // Max 30 requests per minute per device
+
+// In-memory rate limiting store (per device)
+// In production, consider using Redis for distributed rate limiting
+const rateLimitStore = new Map<
+	number,
+	{ count: number; windowStart: number }
+>();
+
+/**
+ * Check and update rate limit for a device
+ * Returns true if the request is allowed, false if rate limited
+ */
+function checkRateLimit(deviceId: number): boolean {
+	const now = Date.now();
+	const deviceLimit = rateLimitStore.get(deviceId);
+
+	if (!deviceLimit || now - deviceLimit.windowStart > RATE_LIMIT_WINDOW_MS) {
+		// Start a new window
+		rateLimitStore.set(deviceId, { count: 1, windowStart: now });
+		return true;
+	}
+
+	if (deviceLimit.count >= RATE_LIMIT_MAX_REQUESTS) {
+		return false;
+	}
+
+	// Increment count in current window
+	deviceLimit.count++;
+	return true;
+}
 
 export const ZMatchFaceSchema = z.object({
 	// Face descriptor is a 128-dimensional vector from face-api.js
@@ -41,6 +77,35 @@ interface FaceMatchResult {
 export async function matchFaceHandler(options: TMatchFaceOptions) {
 	const { ctx, input } = options;
 	const { faceDescriptor } = input;
+
+	// Check rate limit before processing
+	if (!checkRateLimit(ctx.device.id)) {
+		logger.warn("Rate limit exceeded for Face ID matching", {
+			deviceId: ctx.device.id,
+		});
+		throw new TRPCError({
+			code: "TOO_MANY_REQUESTS",
+			message:
+				"Too many Face ID match requests. Please wait before trying again.",
+		});
+	}
+
+	// Validate all descriptor values are finite numbers
+	for (let i = 0; i < faceDescriptor.length; i++) {
+		if (!Number.isFinite(faceDescriptor[i])) {
+			logger.warn("Invalid face descriptor value", {
+				index: i,
+				value: faceDescriptor[i],
+				deviceId: ctx.device.id,
+			});
+			return {
+				matched: false,
+				user: null,
+				confidence: 0,
+				distance: Infinity,
+			};
+		}
+	}
 
 	logger.debug("Matching face descriptor using pgvector", {
 		deviceId: ctx.device.id,

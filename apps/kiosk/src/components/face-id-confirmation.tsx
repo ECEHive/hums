@@ -9,29 +9,25 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 
 /**
- * Transform raw confidence (0-1) to a more user-friendly "artificial" confidence
- * This makes the displayed confidence feel more natural - low scores appear higher
- * Uses a logarithmic-style curve: 0→0%, 0.4→80%, 0.6→92%, 0.8→98%, 1→100%
+ * Normalize raw confidence (0-1) for display without inflating the score.
+ * Clamps the input to the [0, 1] range so the displayed confidence
+ * accurately reflects the underlying face-matching confidence.
+ *
+ * For security-critical features like biometric authentication, displaying
+ * accurate confidence metrics is important for informed decision-making.
  */
 function getDisplayConfidence(rawConfidence: number): number {
-	if (rawConfidence <= 0) return 0;
-	if (rawConfidence >= 1) return 1;
+	if (Number.isNaN(rawConfidence)) {
+		return 0;
+	}
 
-	// Use a power curve that boosts lower values significantly
-	// confidence^0.3 gives us: 0.4→0.74, 0.5→0.79, 0.6→0.84, 0.7→0.89, 0.8→0.93
-	// Then we scale to make it feel even more confident
-	const boosted = rawConfidence ** 0.25;
-
-	// Scale so minimum useful confidence (0.4) shows as ~80%
-	// and max (1.0) shows as 100%
-	return Math.min(1, boosted * 0.95 + 0.05);
+	// Clamp to [0, 1] to avoid displaying out-of-range values
+	return Math.min(1, Math.max(0, rawConfidence));
 }
 
 interface FaceIdConfirmationProps {
 	/** User's name */
 	userName: string;
-	/** Whether user is currently tapped in */
-	isTappedIn: boolean;
 	/** Confidence level (0-1) */
 	confidence: number;
 	/** Time remaining before auto-dismiss (seconds) */

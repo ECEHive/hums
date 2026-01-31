@@ -8,6 +8,15 @@ import { CronJob } from "cron";
 const logger = getLogger("workers:cleanup-security-snapshots");
 
 /**
+ * Get the resolved security storage path.
+ * Mirrors the implementation in trpc security utils for consistency.
+ */
+function getSecurityStoragePath(): string {
+	const configuredPath = env.SECURITY_STORAGE_PATH;
+	return path.resolve(configuredPath);
+}
+
+/**
  * Deletes security snapshots older than the configured retention period.
  * Removes both the database record and the image file from disk.
  * Also cleans up empty directories left behind.
@@ -41,7 +50,7 @@ export async function cleanupSecuritySnapshots(): Promise<void> {
 			cutoffDate: cutoffDate.toISOString(),
 		});
 
-		const basePath = env.SECURITY_STORAGE_PATH ?? "./data/security";
+		const basePath = getSecurityStoragePath();
 		let deletedFiles = 0;
 		let deletedRecords = 0;
 		const failedDeletions: string[] = [];
@@ -115,7 +124,7 @@ async function cleanupEmptyDirectories(dirPath: string): Promise<boolean> {
 		const remainingEntries = await fs.readdir(dirPath);
 
 		// If directory is empty, remove it (but not the base path)
-		const basePath = env.SECURITY_STORAGE_PATH ?? "./data/security";
+		const basePath = getSecurityStoragePath();
 		if (remainingEntries.length === 0 && dirPath !== basePath) {
 			await fs.rmdir(dirPath);
 			logger.debug("Removed empty directory", { dirPath });

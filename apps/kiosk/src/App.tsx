@@ -333,7 +333,6 @@ function AppContent() {
 						!showFaceIdEnrollment && (
 							<FaceIdConfirmation
 								userName={cameraContext.pendingFaceIdMatch.userName}
-								isTappedIn={false} // TODO: Check actual session state
 								confidence={cameraContext.pendingFaceIdMatch.confidence}
 								onConfirm={handleFaceIdConfirm}
 								onCancel={handleFaceIdCancel}

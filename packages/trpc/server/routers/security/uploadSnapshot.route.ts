@@ -1,11 +1,11 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { env } from "@ecehive/env";
 import { getLogger } from "@ecehive/logger";
 import { prisma, type SecurityEventType } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TKioskProtectedProcedureContext } from "../../trpc";
+import { getSecurityStoragePath } from "./utils";
 
 const logger = getLogger("security:upload");
 
@@ -46,7 +46,7 @@ function generateFilename(
  * Ensure the storage directory exists
  */
 async function ensureStorageDir(): Promise<string> {
-	const storagePath = path.resolve(env.SECURITY_STORAGE_PATH);
+	const storagePath = getSecurityStoragePath();
 
 	// Create year/month subdirectory for organization
 	const now = new Date();
@@ -84,8 +84,22 @@ export async function uploadSnapshotHandler(options: TUploadSnapshotOptions) {
 		const fullPath = path.join(storageDir, filename);
 
 		// Calculate relative path from storage root
-		const storagePath = path.resolve(env.SECURITY_STORAGE_PATH);
+		const storagePath = getSecurityStoragePath();
 		const relativePath = path.relative(storagePath, fullPath);
+
+		// Validate relative path doesn't contain path traversal sequences
+		// This prevents storing paths that could escape the storage directory
+		if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+			logger.error("Invalid storage path detected (possible path traversal)", {
+				relativePath,
+				fullPath,
+				storagePath,
+			});
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Invalid storage path",
+			});
+		}
 
 		// Write image to disk
 		await fs.writeFile(fullPath, imageBuffer);
