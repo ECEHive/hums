@@ -90,8 +90,10 @@ export interface FaceDetectionResult {
 		width: number;
 		height: number;
 	} | null;
-	/** Estimated head yaw angle in degrees (-90 to 90, negative = looking left) */
+	/** Estimated head yaw angle in degrees (-45 to 45, negative = looking left) */
 	yawAngle: number | null;
+	/** Estimated head pitch angle in degrees (-45 to 45, negative = looking down) */
+	pitchAngle: number | null;
 	/** Detected expression and confidence */
 	expression: {
 		type: string;
@@ -138,6 +140,51 @@ function estimateYawAngle(landmarks: faceapi.FaceLandmarks68): number {
 }
 
 /**
+ * Estimate head pitch angle from facial landmarks
+ * Uses the nose tip relative to eyes and mouth to estimate vertical rotation
+ */
+function estimatePitchAngle(landmarks: faceapi.FaceLandmarks68): number {
+	// Get key points for pitch estimation
+	const nose = landmarks.getNose();
+	const leftEye = landmarks.getLeftEye();
+	const rightEye = landmarks.getRightEye();
+	const mouth = landmarks.getMouth();
+
+	// Get the nose tip
+	const noseTip = nose[3]; // Point 30
+
+	// Calculate eye center Y
+	const leftEyeCenter =
+		leftEye.reduce((sum, p) => sum + p.y, 0) / leftEye.length;
+	const rightEyeCenter =
+		rightEye.reduce((sum, p) => sum + p.y, 0) / rightEye.length;
+	const eyesCenterY = (leftEyeCenter + rightEyeCenter) / 2;
+
+	// Get mouth center Y (use top of mouth)
+	const mouthTopY = mouth[3].y; // Top center of upper lip
+
+	// Calculate expected face height (eyes to mouth)
+	const faceHeight = mouthTopY - eyesCenterY;
+
+	// Calculate expected nose tip position (when looking straight)
+	// Nose tip should be roughly 60% of the way from eyes to mouth
+	const expectedNoseTipY = eyesCenterY + faceHeight * 0.6;
+
+	// Calculate deviation from expected position
+	const noseDeviation = noseTip.y - expectedNoseTipY;
+
+	// Normalize to approximate angle
+	// Positive deviation = looking down, negative = looking up
+	const normalizedDeviation = noseDeviation / (faceHeight * 0.3);
+
+	// Convert to approximate degrees (clamped to reasonable range)
+	// Negate so that looking up is positive, looking down is negative
+	const pitchAngle = Math.max(-45, Math.min(45, -normalizedDeviation * 30));
+
+	return pitchAngle;
+}
+
+/**
  * Detect a face in the given input (image, video, or canvas element)
  * Basic detection without expression analysis
  */
@@ -163,12 +210,14 @@ export async function detectFace(
 				descriptor: null,
 				box: null,
 				yawAngle: null,
+				pitchAngle: null,
 				expression: null,
 			};
 		}
 
 		// Estimate head yaw angle from landmarks
 		const yawAngle = estimateYawAngle(detection.landmarks);
+		const pitchAngle = estimatePitchAngle(detection.landmarks);
 
 		return {
 			detected: true,
@@ -181,6 +230,7 @@ export async function detectFace(
 				height: detection.detection.box.height,
 			},
 			yawAngle,
+			pitchAngle,
 			expression: null,
 		};
 	} catch (error) {
@@ -191,6 +241,7 @@ export async function detectFace(
 			descriptor: null,
 			box: null,
 			yawAngle: null,
+			pitchAngle: null,
 			expression: null,
 		};
 	}
@@ -242,12 +293,14 @@ export async function detectFaceWithExpression(
 				descriptor: null,
 				box: null,
 				yawAngle: null,
+				pitchAngle: null,
 				expression: null,
 			};
 		}
 
-		// Estimate head yaw angle from landmarks
+		// Estimate head angles from landmarks
 		const yawAngle = estimateYawAngle(detection.landmarks);
+		const pitchAngle = estimatePitchAngle(detection.landmarks);
 
 		// Find dominant expression
 		const expressions = detection.expressions;
@@ -267,6 +320,7 @@ export async function detectFaceWithExpression(
 				height: detection.detection.box.height,
 			},
 			yawAngle,
+			pitchAngle,
 			expression: {
 				type: dominantExpression[0],
 				confidence: dominantExpression[1],
@@ -280,6 +334,7 @@ export async function detectFaceWithExpression(
 			descriptor: null,
 			box: null,
 			yawAngle: null,
+			pitchAngle: null,
 			expression: null,
 		};
 	}
