@@ -34,6 +34,10 @@ const BaseEnvSchema = z.object({
 	// Sentry DSNs for client applications (exposed via /api/config)
 	CLIENT_SENTRY_DSN: z.string().optional(),
 	KIOSK_SENTRY_DSN: z.string().optional(),
+	// Security storage path for snapshots (defaults to ./data/security)
+	SECURITY_STORAGE_PATH: z.string().default("./data/security"),
+	// Security snapshot retention in days (default 7)
+	SECURITY_RETENTION_DAYS: z.coerce.number().default(7),
 });
 
 const LegacyProviderSchema = z

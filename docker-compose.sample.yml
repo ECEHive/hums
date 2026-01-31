@@ -1,7 +1,7 @@
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database with pgvector extension for face recognition
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: hums-db
     restart: unless-stopped
     environment:
