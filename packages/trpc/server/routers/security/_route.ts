@@ -33,11 +33,11 @@ export const securityRouter = router({
 		.query(lookupUserByCardHandler),
 
 	// Admin endpoints for viewing and managing snapshots
-	listSnapshots: permissionProtectedProcedure("security.view")
+	listSnapshots: permissionProtectedProcedure("security.list")
 		.input(ZListSnapshotsSchema)
 		.query(listSnapshotsHandler),
 
-	getImage: permissionProtectedProcedure("security.view")
+	getImage: permissionProtectedProcedure("security.list")
 		.input(ZGetImageSchema)
 		.query(getImageHandler),
 

@@ -52,7 +52,7 @@ export const Route = createFileRoute("/app/_app/security")({
 		}),
 });
 
-export const permissions = ["security.view"];
+export const permissions = ["security.list"];
 
 type SecuritySnapshot = {
 	id: string;

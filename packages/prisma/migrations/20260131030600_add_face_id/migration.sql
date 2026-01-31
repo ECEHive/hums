@@ -65,3 +65,7 @@ ALTER TABLE "SecuritySnapshot" ADD CONSTRAINT "SecuritySnapshot_deviceId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "SecuritySnapshot" ADD CONSTRAINT "SecuritySnapshot_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Add security permissions
+INSERT INTO "Permission" ("name") VALUES
+    ('security.list');
