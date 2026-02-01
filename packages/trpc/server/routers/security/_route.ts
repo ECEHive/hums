@@ -9,6 +9,10 @@ import {
 } from "./deleteSnapshot.route";
 import { getImageHandler, ZGetImageSchema } from "./getImage.route";
 import {
+	getLatestByDeviceHandler,
+	ZGetLatestByDeviceSchema,
+} from "./getLatestByDevice.route";
+import {
 	listSnapshotsHandler,
 	ZListSnapshotsSchema,
 } from "./listSnapshots.route";
@@ -36,6 +40,10 @@ export const securityRouter = router({
 	listSnapshots: permissionProtectedProcedure("security.list")
 		.input(ZListSnapshotsSchema)
 		.query(listSnapshotsHandler),
+
+	getLatestByDevice: permissionProtectedProcedure("security.list")
+		.input(ZGetLatestByDeviceSchema)
+		.query(getLatestByDeviceHandler),
 
 	getImage: permissionProtectedProcedure("security.list")
 		.input(ZGetImageSchema)
