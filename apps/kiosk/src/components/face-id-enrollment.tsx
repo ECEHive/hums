@@ -10,7 +10,6 @@
 
 import { trpc } from "@ecehive/trpc/client";
 import {
-	Camera,
 	CheckCircle2,
 	CreditCard,
 	Loader2,
@@ -58,6 +57,10 @@ const MAX_FACE_SIZE_RATIO = 0.65; // Face must be at most 65% of frame width
 const MAX_CENTER_OFFSET_RATIO = 0.15; // Face center must be within 15% of frame center
 const CIRCLE_RADIUS_RATIO = 0.28; // Visual circle is 28% of frame
 
+// Head rotation limits for enrollment (degrees)
+const MAX_YAW_ANGLE = 15; // Maximum horizontal rotation (left/right)
+const MAX_PITCH_ANGLE = 12; // Maximum vertical rotation (up/down)
+
 // Enrollment quality settings
 const SCAN_INTERVAL_MS = 100; // Scanning interval for positioning check
 
@@ -79,6 +82,9 @@ export function FaceIdEnrollment({
 	);
 	const [_isPositionGood, setIsPositionGood] = useState(false);
 	const [emotionMessage, setEmotionMessage] = useState<string | null>(null);
+	const [setupProgress, setSetupProgress] = useState<
+		"camera" | "models" | "ready"
+	>("camera");
 
 	const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,7 +99,7 @@ export function FaceIdEnrollment({
 	// Keep stepRef in sync with state
 	stepRef.current = step;
 
-	// Check if face is well-positioned (centered, sized, and within circle)
+	// Check if face is well-positioned (centered, sized, angle, and within circle)
 	const checkFacePosition = useCallback(
 		(
 			detection: FaceDetectionResult,
@@ -104,6 +110,7 @@ export function FaceIdEnrollment({
 			isCentered: boolean;
 			isSized: boolean;
 			isInCircle: boolean;
+			isAngleGood: boolean;
 			message: string;
 		} => {
 			if (!detection.detected || !detection.box) {
@@ -112,11 +119,12 @@ export function FaceIdEnrollment({
 					isCentered: false,
 					isSized: false,
 					isInCircle: false,
+					isAngleGood: false,
 					message: "Position your face in the circle",
 				};
 			}
 
-			const { box } = detection;
+			const { box, yawAngle, pitchAngle } = detection;
 			const faceCenterX = box.x + box.width / 2;
 			const faceCenterY = box.y + box.height / 2;
 			const frameCenterX = frameWidth / 2;
@@ -142,12 +150,37 @@ export function FaceIdEnrollment({
 			);
 			const isInCircle = distFromCenter < circleRadius * 0.8;
 
+			// Check head rotation angles
+			const yaw = yawAngle ?? 0;
+			const pitch = pitchAngle ?? 0;
+			const isYawGood = Math.abs(yaw) <= MAX_YAW_ANGLE;
+			const isPitchGood = Math.abs(pitch) <= MAX_PITCH_ANGLE;
+			const isAngleGood = isYawGood && isPitchGood;
+
+			// Determine guidance message - prioritize most important issue
 			let message = "";
 			if (!isSized) {
 				if (sizeRatio < MIN_FACE_SIZE_RATIO) {
 					message = "Move closer";
 				} else {
 					message = "Move back";
+				}
+			} else if (!isAngleGood) {
+				// Head rotation guidance - video is mirrored, so directions are intuitive
+				if (!isYawGood) {
+					// Yaw: negative = looking left in real life (appears right in mirrored video)
+					if (yaw < -MAX_YAW_ANGLE) {
+						message = "Turn right";
+					} else if (yaw > MAX_YAW_ANGLE) {
+						message = "Turn left";
+					}
+				} else if (!isPitchGood) {
+					// Pitch: positive = looking up, negative = looking down
+					if (pitch < -MAX_PITCH_ANGLE) {
+						message = "Look up";
+					} else if (pitch > MAX_PITCH_ANGLE) {
+						message = "Look down";
+					}
 				}
 			} else if (!isCentered || !isInCircle) {
 				if (offsetX > offsetY) {
@@ -161,10 +194,15 @@ export function FaceIdEnrollment({
 
 			return {
 				isValid:
-					isCentered && isSized && isInCircle && isEnrollmentQuality(detection),
+					isCentered &&
+					isSized &&
+					isInCircle &&
+					isAngleGood &&
+					isEnrollmentQuality(detection),
 				isCentered,
 				isSized,
 				isInCircle,
+				isAngleGood,
 				message,
 			};
 		},
@@ -195,6 +233,7 @@ export function FaceIdEnrollment({
 	// Start camera and prepare for enrollment
 	const startCameraAndSetup = useCallback(async () => {
 		setStep("camera_setup");
+		setSetupProgress("camera");
 
 		console.log("[FaceIdEnrollment] Starting camera...");
 		await camera.startCamera();
@@ -217,6 +256,7 @@ export function FaceIdEnrollment({
 
 		// Wait for models to be loaded
 		if (!camera.modelsLoaded) {
+			setSetupProgress("models");
 			console.log("[FaceIdEnrollment] Waiting for models to load...");
 			let modelAttempts = 0;
 			while (!camera.modelsLoaded && modelAttempts < 100) {
@@ -225,6 +265,7 @@ export function FaceIdEnrollment({
 			}
 		}
 
+		setSetupProgress("ready");
 		console.log(
 			"[FaceIdEnrollment] Ready for scanning, models loaded:",
 			camera.modelsLoaded,
@@ -506,10 +547,17 @@ export function FaceIdEnrollment({
 		};
 	}, [step, camera.modelsLoaded, checkFacePosition]);
 
+	// Ref to prevent double-processing of enrollment
+	const isProcessingRef = useRef(false);
+
 	// Process enrollment with the captured descriptor
 	useEffect(() => {
 		if (step !== "processing" || !user || !capturedDescriptorRef.current)
 			return;
+
+		// Guard against double execution
+		if (isProcessingRef.current) return;
+		isProcessingRef.current = true;
 
 		const processEnrollment = async () => {
 			try {
@@ -535,7 +583,7 @@ export function FaceIdEnrollment({
 							eventType: "FACE_ID_ENROLLMENT",
 							userId: user.id,
 							faceDetected: true,
-							faceConfidence: faceDetection?.confidence ?? 0,
+							faceConfidence: 1.0, // We know face was detected during enrollment
 						})
 						.catch((err) => {
 							console.warn(
@@ -561,8 +609,6 @@ export function FaceIdEnrollment({
 
 				console.log("[FaceIdEnrollment] Enrollment successful!");
 
-				await camera.refreshEnrolledFaces();
-
 				setStep("success");
 
 				setTimeout(() => {
@@ -578,14 +624,16 @@ export function FaceIdEnrollment({
 		};
 
 		void processEnrollment();
-	}, [step, user, camera, faceDetection, onComplete]);
+	}, [step, user, camera, onComplete]);
 
 	const handleCancel = useCallback(() => {
+		isProcessingRef.current = false;
 		reset();
 		onCancel?.();
 	}, [reset, onCancel]);
 
 	const handleRetry = useCallback(() => {
+		isProcessingRef.current = false;
 		reset();
 		setStep("card_prompt");
 	}, [reset]);
@@ -664,18 +712,19 @@ export function FaceIdEnrollment({
 						className="transition-all duration-200"
 					/>
 
-					{/* Face box if detected */}
-					{faceDetection?.detected && faceDetection.box && (
-						<rect
-							x={faceDetection.box.x}
-							y={faceDetection.box.y}
-							width={faceDetection.box.width}
-							height={faceDetection.box.height}
-							fill="none"
-							stroke={isGoodPositionLocal ? "#22c55e" : "#f59e0b"}
-							strokeWidth={2}
-							rx={4}
-						/>
+					{/* Face landmarks - render all 68 points, mirrored to match video */}
+					{faceDetection?.detected && faceDetection.landmarks && (
+						<g>
+							{faceDetection.landmarks.map((point, index) => (
+								<circle
+									key={index}
+									cx={width - point.x}
+									cy={point.y}
+									r={2}
+									fill={isGoodPositionLocal ? "#22c55e" : "#f59e0b"}
+								/>
+							))}
+						</g>
 					)}
 				</svg>
 
@@ -786,13 +835,62 @@ export function FaceIdEnrollment({
 						exit={{ opacity: 0, scale: 0.9 }}
 						className="bg-card rounded-2xl p-8 max-w-md text-center"
 					>
-						<h2 className="text-2xl font-bold mb-4">Setting up camera...</h2>
-						<p className="text-muted-foreground">
-							Hello, {user?.name}! Please wait while we prepare the camera.
+						<h2 className="text-2xl font-bold mb-4">
+							{setupProgress === "camera"
+								? "Starting camera..."
+								: setupProgress === "models"
+									? "Loading face recognition..."
+									: "Almost ready..."}
+						</h2>
+						<p className="text-muted-foreground mb-6">
+							Hello, {user?.name}! Please wait while we prepare for enrollment.
 						</p>
-						<div className="flex justify-center mt-4">
-							<Camera className="w-10 h-10 text-muted-foreground animate-pulse" />
+
+						{/* Progress steps */}
+						<div className="space-y-3 text-left max-w-xs mx-auto mb-6">
+							<div className="flex items-center gap-3">
+								{setupProgress === "camera" ? (
+									<Loader2 className="w-5 h-5 text-primary animate-spin" />
+								) : (
+									<CheckCircle2 className="w-5 h-5 text-green-500" />
+								)}
+								<span
+									className={
+										setupProgress === "camera"
+											? "text-foreground font-medium"
+											: "text-muted-foreground"
+									}
+								>
+									Starting camera
+								</span>
+							</div>
+							<div className="flex items-center gap-3">
+								{setupProgress === "camera" ? (
+									<div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+								) : setupProgress === "models" ? (
+									<Loader2 className="w-5 h-5 text-primary animate-spin" />
+								) : (
+									<CheckCircle2 className="w-5 h-5 text-green-500" />
+								)}
+								<span
+									className={
+										setupProgress === "models"
+											? "text-foreground font-medium"
+											: setupProgress === "camera"
+												? "text-muted-foreground/50"
+												: "text-muted-foreground"
+									}
+								>
+									Loading face recognition
+								</span>
+							</div>
 						</div>
+
+						<p className="text-sm text-muted-foreground/70">
+							{setupProgress === "models"
+								? "This may take a few seconds on first use..."
+								: "Please wait..."}
+						</p>
 					</motion.div>
 				)}
 

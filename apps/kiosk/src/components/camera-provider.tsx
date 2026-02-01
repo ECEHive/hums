@@ -39,11 +39,11 @@ interface CameraContextValue {
 	faceIdStatus: FaceIdStatus;
 	faceIdError: string | null;
 	isFaceIdReady: boolean;
-	enrolledFaceCount: number;
 	startFaceIdScanning: () => void;
 	stopFaceIdScanning: () => void;
 	isFaceIdScanning: boolean;
-	refreshEnrolledFaces: () => Promise<void>;
+	faceIdTrackerStats: import("@/hooks/use-face-id").TrackerStats;
+	currentTrackedFace: import("@/lib/face-tracker").TrackedFace | null;
 
 	// Face ID match handling
 	pendingFaceIdMatch: FaceIdMatch | null;
@@ -52,7 +52,7 @@ interface CameraContextValue {
 
 	// Snapshot capture
 	captureSecuritySnapshot: (
-		eventType: "TAP_IN" | "TAP_OUT" | "FACE_ID_LOGIN" | "FACE_ID_ENROLLMENT",
+		eventType: "TAP" | "FACE_ID" | "FACE_ID_ENROLLMENT",
 		userId?: number,
 	) => Promise<void>;
 
@@ -117,7 +117,7 @@ export function CameraProvider({
 	// Capture security snapshot
 	const captureSecuritySnapshot = useCallback(
 		async (
-			eventType: "TAP_IN" | "TAP_OUT" | "FACE_ID_LOGIN" | "FACE_ID_ENROLLMENT",
+			eventType: "TAP" | "FACE_ID" | "FACE_ID_ENROLLMENT",
 			userId?: number,
 		) => {
 			const video = camera.videoRef.current;
@@ -195,11 +195,11 @@ export function CameraProvider({
 		faceIdStatus: faceId.status,
 		faceIdError: faceId.error,
 		isFaceIdReady: faceId.isReady,
-		enrolledFaceCount: faceId.enrolledCount,
 		startFaceIdScanning: faceId.startScanning,
 		stopFaceIdScanning: faceId.stopScanning,
 		isFaceIdScanning: faceId.isScanning,
-		refreshEnrolledFaces: faceId.refreshEnrolledFaces,
+		faceIdTrackerStats: faceId.trackerStats,
+		currentTrackedFace: faceId.currentTrackedFace,
 
 		// Match handling
 		pendingFaceIdMatch,

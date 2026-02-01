@@ -76,15 +76,13 @@ function AppContent() {
 					});
 					console.log("[App] User lookup result:", result);
 					const userId = result.found ? result.userId : undefined;
-					await cameraContext.captureSecuritySnapshot("TAP_IN", userId);
+					await cameraContext.captureSecuritySnapshot("TAP", userId);
 				} catch (err) {
 					console.warn("[App] User lookup or snapshot failed:", err);
 					// Fallback: capture without userId
-					await cameraContext
-						.captureSecuritySnapshot("TAP_IN")
-						.catch((err2) => {
-							console.warn("[App] Fallback snapshot also failed:", err2);
-						});
+					await cameraContext.captureSecuritySnapshot("TAP").catch((err2) => {
+						console.warn("[App] Fallback snapshot also failed:", err2);
+					});
 				}
 			};
 			void lookupAndCapture();
@@ -109,7 +107,7 @@ function AppContent() {
 
 		// Capture snapshot for Face ID login (non-blocking)
 		void cameraContext
-			.captureSecuritySnapshot("FACE_ID_LOGIN", match.userId)
+			.captureSecuritySnapshot("FACE_ID", match.userId)
 			.catch((err) => {
 				console.warn("[App] Face ID login snapshot failed:", err);
 			});
@@ -168,20 +166,18 @@ function AppContent() {
 		}
 	}, [connectionStatus, kioskStatus.isKiosk, cameraContext.startCamera]);
 
-	// Start Face ID scanning when camera is ready, models are loaded, and there are enrolled faces
+	// Start Face ID scanning when camera is ready and models are loaded
 	// Don't scan during Face ID enrollment
 	useEffect(() => {
 		const shouldScan =
 			cameraContext.isCameraReady &&
 			cameraContext.modelsLoaded &&
-			cameraContext.enrolledFaceCount > 0 &&
 			!showFaceIdEnrollment &&
 			!cameraContext.isFaceIdScanning;
 
 		console.log("[App] Face ID scan check:", {
 			cameraReady: cameraContext.isCameraReady,
 			modelsLoaded: cameraContext.modelsLoaded,
-			enrolledFaceCount: cameraContext.enrolledFaceCount,
 			showFaceIdEnrollment,
 			isFaceIdScanning: cameraContext.isFaceIdScanning,
 			shouldScan,
@@ -197,7 +193,6 @@ function AppContent() {
 	}, [
 		cameraContext.isCameraReady,
 		cameraContext.modelsLoaded,
-		cameraContext.enrolledFaceCount,
 		showFaceIdEnrollment,
 		cameraContext.isFaceIdScanning,
 		cameraContext.startFaceIdScanning,
@@ -348,7 +343,6 @@ function AppContent() {
 								isEnrollmentModeRef.current = false;
 								enrollmentCardHandlerRef.current = null;
 								setShowFaceIdEnrollment(false);
-								void cameraContext.refreshEnrolledFaces();
 							}}
 							onCancel={() => {
 								console.log("[App] Face ID enrollment cancelled");
