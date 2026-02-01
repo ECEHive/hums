@@ -10,7 +10,6 @@
 
 import { trpc } from "@ecehive/trpc/client";
 import {
-	Camera,
 	CheckCircle2,
 	CreditCard,
 	Loader2,
@@ -83,6 +82,9 @@ export function FaceIdEnrollment({
 	);
 	const [_isPositionGood, setIsPositionGood] = useState(false);
 	const [emotionMessage, setEmotionMessage] = useState<string | null>(null);
+	const [setupProgress, setSetupProgress] = useState<
+		"camera" | "models" | "ready"
+	>("camera");
 
 	const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 	const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -231,6 +233,7 @@ export function FaceIdEnrollment({
 	// Start camera and prepare for enrollment
 	const startCameraAndSetup = useCallback(async () => {
 		setStep("camera_setup");
+		setSetupProgress("camera");
 
 		console.log("[FaceIdEnrollment] Starting camera...");
 		await camera.startCamera();
@@ -253,6 +256,7 @@ export function FaceIdEnrollment({
 
 		// Wait for models to be loaded
 		if (!camera.modelsLoaded) {
+			setSetupProgress("models");
 			console.log("[FaceIdEnrollment] Waiting for models to load...");
 			let modelAttempts = 0;
 			while (!camera.modelsLoaded && modelAttempts < 100) {
@@ -261,6 +265,7 @@ export function FaceIdEnrollment({
 			}
 		}
 
+		setSetupProgress("ready");
 		console.log(
 			"[FaceIdEnrollment] Ready for scanning, models loaded:",
 			camera.modelsLoaded,
@@ -829,13 +834,62 @@ export function FaceIdEnrollment({
 						exit={{ opacity: 0, scale: 0.9 }}
 						className="bg-card rounded-2xl p-8 max-w-md text-center"
 					>
-						<h2 className="text-2xl font-bold mb-4">Setting up camera...</h2>
-						<p className="text-muted-foreground">
-							Hello, {user?.name}! Please wait while we prepare the camera.
+						<h2 className="text-2xl font-bold mb-4">
+							{setupProgress === "camera"
+								? "Starting camera..."
+								: setupProgress === "models"
+									? "Loading face recognition..."
+									: "Almost ready..."}
+						</h2>
+						<p className="text-muted-foreground mb-6">
+							Hello, {user?.name}! Please wait while we prepare for enrollment.
 						</p>
-						<div className="flex justify-center mt-4">
-							<Camera className="w-10 h-10 text-muted-foreground animate-pulse" />
+
+						{/* Progress steps */}
+						<div className="space-y-3 text-left max-w-xs mx-auto mb-6">
+							<div className="flex items-center gap-3">
+								{setupProgress === "camera" ? (
+									<Loader2 className="w-5 h-5 text-primary animate-spin" />
+								) : (
+									<CheckCircle2 className="w-5 h-5 text-green-500" />
+								)}
+								<span
+									className={
+										setupProgress === "camera"
+											? "text-foreground font-medium"
+											: "text-muted-foreground"
+									}
+								>
+									Starting camera
+								</span>
+							</div>
+							<div className="flex items-center gap-3">
+								{setupProgress === "camera" ? (
+									<div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30" />
+								) : setupProgress === "models" ? (
+									<Loader2 className="w-5 h-5 text-primary animate-spin" />
+								) : (
+									<CheckCircle2 className="w-5 h-5 text-green-500" />
+								)}
+								<span
+									className={
+										setupProgress === "models"
+											? "text-foreground font-medium"
+											: setupProgress === "camera"
+												? "text-muted-foreground/50"
+												: "text-muted-foreground"
+									}
+								>
+									Loading face recognition
+								</span>
+							</div>
 						</div>
+
+						<p className="text-sm text-muted-foreground/70">
+							{setupProgress === "models"
+								? "This may take a few seconds on first use..."
+								: "Please wait..."}
+						</p>
 					</motion.div>
 				)}
 
