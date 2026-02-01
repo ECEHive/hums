@@ -245,8 +245,8 @@ function UserProfilePage() {
 												</AlertDialogTitle>
 												<AlertDialogDescription>
 													This will permanently delete your Face ID enrollment
-													data. You will no longer be able to log in using
-													Face ID until you re-enroll at a kiosk.
+													data. You will no longer be able to log in using Face
+													ID until you re-enroll at a kiosk.
 												</AlertDialogDescription>
 											</AlertDialogHeader>
 											<AlertDialogFooter>
