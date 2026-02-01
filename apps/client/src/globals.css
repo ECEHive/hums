@@ -146,20 +146,8 @@
 
 /* View Transitions */
 @layer utilities {
-	/* Assign view transition names to layout elements */
-	[data-sidebar="sidebar"][data-sidebar-id="app"] {
-		view-transition-name: app-sidebar;
-	}
-
-	[data-sidebar="sidebar"][data-sidebar-id="shifts"] {
-		view-transition-name: shifts-sidebar;
-	}
-
-	[data-sidebar="sidebar"][data-sidebar-id="inventory"] {
-		view-transition-name: inventory-sidebar;
-	}
-
-	[data-sidebar="inset"] {
+	/* Main content transitions */
+	[data-slot="main-content"] {
 		view-transition-name: main-content;
 	}
 
@@ -174,29 +162,6 @@
 		to {
 			opacity: 0;
 		}
-	}
-
-	/* Keep sidebars static when they persist between pages */
-	::view-transition-old(app-sidebar):not(:only-child),
-	::view-transition-new(app-sidebar):not(:only-child),
-	::view-transition-old(shifts-sidebar):not(:only-child),
-	::view-transition-new(shifts-sidebar):not(:only-child),
-	::view-transition-old(inventory-sidebar):not(:only-child),
-	::view-transition-new(inventory-sidebar):not(:only-child) {
-		animation: none;
-	}
-
-	/* Fade sidebar when entering/exiting */
-	::view-transition-old(app-sidebar):only-child,
-	::view-transition-old(shifts-sidebar):only-child,
-	::view-transition-old(inventory-sidebar):only-child {
-		animation: 100ms cubic-bezier(0.4, 0, 1, 1) both fade-out;
-	}
-
-	::view-transition-new(app-sidebar):only-child,
-	::view-transition-new(shifts-sidebar):only-child,
-	::view-transition-new(inventory-sidebar):only-child {
-		animation: 100ms cubic-bezier(0, 0, 0.2, 1) both fade-in;
 	}
 
 	/* Fade main content */
