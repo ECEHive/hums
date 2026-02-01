@@ -76,15 +76,13 @@ function AppContent() {
 					});
 					console.log("[App] User lookup result:", result);
 					const userId = result.found ? result.userId : undefined;
-					await cameraContext.captureSecuritySnapshot("TAP_IN", userId);
+					await cameraContext.captureSecuritySnapshot("TAP", userId);
 				} catch (err) {
 					console.warn("[App] User lookup or snapshot failed:", err);
 					// Fallback: capture without userId
-					await cameraContext
-						.captureSecuritySnapshot("TAP_IN")
-						.catch((err2) => {
-							console.warn("[App] Fallback snapshot also failed:", err2);
-						});
+					await cameraContext.captureSecuritySnapshot("TAP").catch((err2) => {
+						console.warn("[App] Fallback snapshot also failed:", err2);
+					});
 				}
 			};
 			void lookupAndCapture();
@@ -109,7 +107,7 @@ function AppContent() {
 
 		// Capture snapshot for Face ID login (non-blocking)
 		void cameraContext
-			.captureSecuritySnapshot("FACE_ID_LOGIN", match.userId)
+			.captureSecuritySnapshot("FACE_ID", match.userId)
 			.catch((err) => {
 				console.warn("[App] Face ID login snapshot failed:", err);
 			});
