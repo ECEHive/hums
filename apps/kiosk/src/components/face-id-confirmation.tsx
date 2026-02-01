@@ -8,27 +8,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 
-/**
- * Normalize raw confidence (0-1) for display without inflating the score.
- * Clamps the input to the [0, 1] range so the displayed confidence
- * accurately reflects the underlying face-matching confidence.
- *
- * For security-critical features like biometric authentication, displaying
- * accurate confidence metrics is important for informed decision-making.
- */
-function getDisplayConfidence(rawConfidence: number): number {
-	if (Number.isNaN(rawConfidence)) {
-		return 0;
-	}
-
-	// Clamp to [0, 1] to avoid displaying out-of-range values
-	return Math.min(1, Math.max(0, rawConfidence));
-}
-
 interface FaceIdConfirmationProps {
 	/** User's name */
 	userName: string;
-	/** Confidence level (0-1) */
+	/** Confidence level (0-1) - kept for potential future use */
 	confidence: number;
 	/** Time remaining before auto-dismiss (seconds) */
 	timeoutSeconds?: number;
@@ -40,7 +23,7 @@ interface FaceIdConfirmationProps {
 
 export function FaceIdConfirmation({
 	userName,
-	confidence,
+	confidence: _confidence,
 	timeoutSeconds = 5,
 	onConfirm,
 	onCancel,
@@ -105,26 +88,7 @@ export function FaceIdConfirmation({
 					</div>
 
 					{/* Greeting */}
-					<h2 className="text-3xl font-bold mb-2">Hello, {userName}!</h2>
-
-					{/* Confidence indicator - uses artificial/boosted confidence for display */}
-					{(() => {
-						const displayConf = getDisplayConfidence(confidence);
-						return (
-							<div className="mb-6">
-								<div className="text-sm text-muted-foreground mb-1">
-									Match confidence: {Math.round(displayConf * 100)}%
-								</div>
-								<div className="h-2 bg-muted rounded-full overflow-hidden">
-									<motion.div
-										className="h-full bg-green-500"
-										initial={{ width: 0 }}
-										animate={{ width: `${displayConf * 100}%` }}
-									/>
-								</div>
-							</div>
-						);
-					})()}
+					<h2 className="text-3xl font-bold mb-6">Hello, {userName}!</h2>
 
 					{/* Action buttons */}
 					<div className="flex gap-4 justify-center mb-4">

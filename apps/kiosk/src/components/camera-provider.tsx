@@ -39,11 +39,11 @@ interface CameraContextValue {
 	faceIdStatus: FaceIdStatus;
 	faceIdError: string | null;
 	isFaceIdReady: boolean;
-	enrolledFaceCount: number;
 	startFaceIdScanning: () => void;
 	stopFaceIdScanning: () => void;
 	isFaceIdScanning: boolean;
-	refreshEnrolledFaces: () => Promise<void>;
+	faceIdTrackerStats: import("@/hooks/use-face-id").TrackerStats;
+	currentTrackedFace: import("@/lib/face-tracker").TrackedFace | null;
 
 	// Face ID match handling
 	pendingFaceIdMatch: FaceIdMatch | null;
@@ -195,11 +195,11 @@ export function CameraProvider({
 		faceIdStatus: faceId.status,
 		faceIdError: faceId.error,
 		isFaceIdReady: faceId.isReady,
-		enrolledFaceCount: faceId.enrolledCount,
 		startFaceIdScanning: faceId.startScanning,
 		stopFaceIdScanning: faceId.stopScanning,
 		isFaceIdScanning: faceId.isScanning,
-		refreshEnrolledFaces: faceId.refreshEnrolledFaces,
+		faceIdTrackerStats: faceId.trackerStats,
+		currentTrackedFace: faceId.currentTrackedFace,
 
 		// Match handling
 		pendingFaceIdMatch,

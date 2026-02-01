@@ -90,8 +90,12 @@ export interface FaceDetectionResult {
 		width: number;
 		height: number;
 	} | null;
-	/** Estimated head yaw angle in degrees (-90 to 90, negative = looking left) */
+	/** 68-point facial landmarks for rendering */
+	landmarks: { x: number; y: number }[] | null;
+	/** Estimated head yaw angle in degrees (-45 to 45, negative = looking left) */
 	yawAngle: number | null;
+	/** Estimated head pitch angle in degrees (-45 to 45, negative = looking down) */
+	pitchAngle: number | null;
 	/** Detected expression and confidence */
 	expression: {
 		type: string;
@@ -138,6 +142,51 @@ function estimateYawAngle(landmarks: faceapi.FaceLandmarks68): number {
 }
 
 /**
+ * Estimate head pitch angle from facial landmarks
+ * Uses the nose tip relative to eyes and mouth to estimate vertical rotation
+ */
+function estimatePitchAngle(landmarks: faceapi.FaceLandmarks68): number {
+	// Get key points for pitch estimation
+	const nose = landmarks.getNose();
+	const leftEye = landmarks.getLeftEye();
+	const rightEye = landmarks.getRightEye();
+	const mouth = landmarks.getMouth();
+
+	// Get the nose tip
+	const noseTip = nose[3]; // Point 30
+
+	// Calculate eye center Y
+	const leftEyeCenter =
+		leftEye.reduce((sum, p) => sum + p.y, 0) / leftEye.length;
+	const rightEyeCenter =
+		rightEye.reduce((sum, p) => sum + p.y, 0) / rightEye.length;
+	const eyesCenterY = (leftEyeCenter + rightEyeCenter) / 2;
+
+	// Get mouth center Y (use top of mouth)
+	const mouthTopY = mouth[3].y; // Top center of upper lip
+
+	// Calculate expected face height (eyes to mouth)
+	const faceHeight = mouthTopY - eyesCenterY;
+
+	// Calculate expected nose tip position (when looking straight)
+	// Nose tip should be roughly 60% of the way from eyes to mouth
+	const expectedNoseTipY = eyesCenterY + faceHeight * 0.6;
+
+	// Calculate deviation from expected position
+	const noseDeviation = noseTip.y - expectedNoseTipY;
+
+	// Normalize to approximate angle
+	// Positive deviation = looking down, negative = looking up
+	const normalizedDeviation = noseDeviation / (faceHeight * 0.3);
+
+	// Convert to approximate degrees (clamped to reasonable range)
+	// Negate so that looking up is positive, looking down is negative
+	const pitchAngle = Math.max(-45, Math.min(45, -normalizedDeviation * 30));
+
+	return pitchAngle;
+}
+
+/**
  * Detect a face in the given input (image, video, or canvas element)
  * Basic detection without expression analysis
  */
@@ -150,26 +199,6 @@ export async function detectFace(
 	}
 
 	try {
-		// Log input dimensions for debugging
-		const inputWidth =
-			"videoWidth" in input
-				? input.videoWidth
-				: "naturalWidth" in input
-					? input.naturalWidth
-					: input.width;
-		const inputHeight =
-			"videoHeight" in input
-				? input.videoHeight
-				: "naturalHeight" in input
-					? input.naturalHeight
-					: input.height;
-		console.log("[FaceAPI] detectFace input:", {
-			type: input.tagName,
-			width: inputWidth,
-			height: inputHeight,
-			readyState: "readyState" in input ? input.readyState : "N/A",
-		});
-
 		const detection = await faceapi
 			.detectSingleFace(input, DETECTION_OPTIONS)
 			.withFaceLandmarks()
@@ -182,19 +211,22 @@ export async function detectFace(
 				confidence: 0,
 				descriptor: null,
 				box: null,
+				landmarks: null,
 				yawAngle: null,
+				pitchAngle: null,
 				expression: null,
 			};
 		}
 
 		// Estimate head yaw angle from landmarks
 		const yawAngle = estimateYawAngle(detection.landmarks);
+		const pitchAngle = estimatePitchAngle(detection.landmarks);
 
-		console.log("[FaceAPI] Face detected:", {
-			confidence: detection.detection.score,
-			box: detection.detection.box,
-			yawAngle: yawAngle.toFixed(1),
-		});
+		// Extract landmark positions
+		const landmarkPositions = detection.landmarks.positions.map((pt) => ({
+			x: pt.x,
+			y: pt.y,
+		}));
 
 		return {
 			detected: true,
@@ -206,7 +238,9 @@ export async function detectFace(
 				width: detection.detection.box.width,
 				height: detection.detection.box.height,
 			},
+			landmarks: landmarkPositions,
 			yawAngle,
+			pitchAngle,
 			expression: null,
 		};
 	} catch (error) {
@@ -216,7 +250,9 @@ export async function detectFace(
 			confidence: 0,
 			descriptor: null,
 			box: null,
+			landmarks: null,
 			yawAngle: null,
+			pitchAngle: null,
 			expression: null,
 		};
 	}
@@ -262,19 +298,21 @@ export async function detectFaceWithExpression(
 			.withFaceExpressions();
 
 		if (!detection) {
-			console.log("[FaceAPI] No face detected in frame");
 			return {
 				detected: false,
 				confidence: 0,
 				descriptor: null,
 				box: null,
+				landmarks: null,
 				yawAngle: null,
+				pitchAngle: null,
 				expression: null,
 			};
 		}
 
-		// Estimate head yaw angle from landmarks
+		// Estimate head angles from landmarks
 		const yawAngle = estimateYawAngle(detection.landmarks);
+		const pitchAngle = estimatePitchAngle(detection.landmarks);
 
 		// Find dominant expression
 		const expressions = detection.expressions;
@@ -283,12 +321,11 @@ export async function detectFaceWithExpression(
 			current[1] > max[1] ? current : max,
 		);
 
-		console.log("[FaceAPI] Face detected with expression:", {
-			confidence: detection.detection.score,
-			yawAngle: yawAngle.toFixed(1),
-			expression: dominantExpression[0],
-			expressionConfidence: dominantExpression[1].toFixed(2),
-		});
+		// Extract landmark positions as simple x,y points
+		const landmarkPositions = detection.landmarks.positions.map((pt) => ({
+			x: pt.x,
+			y: pt.y,
+		}));
 
 		return {
 			detected: true,
@@ -300,7 +337,9 @@ export async function detectFaceWithExpression(
 				width: detection.detection.box.width,
 				height: detection.detection.box.height,
 			},
+			landmarks: landmarkPositions,
 			yawAngle,
+			pitchAngle,
 			expression: {
 				type: dominantExpression[0],
 				confidence: dominantExpression[1],
@@ -313,7 +352,9 @@ export async function detectFaceWithExpression(
 			confidence: 0,
 			descriptor: null,
 			box: null,
+			landmarks: null,
 			yawAngle: null,
+			pitchAngle: null,
 			expression: null,
 		};
 	}
@@ -474,6 +515,44 @@ export function dataUrlToBlob(dataUrl: string): Blob {
 		u8arr[n] = bstr.charCodeAt(n);
 	}
 	return new Blob([u8arr], { type: mime });
+}
+
+/**
+ * Convert FaceDetectionResult to format suitable for FaceTracker
+ */
+export function toTrackerDetection(result: FaceDetectionResult): {
+	box: { x: number; y: number; width: number; height: number };
+	confidence: number;
+	descriptor: number[] | null;
+	yawAngle: number | null;
+} | null {
+	if (!result.detected || !result.box) {
+		return null;
+	}
+
+	return {
+		box: result.box,
+		confidence: result.confidence,
+		descriptor: result.descriptor
+			? serializeDescriptor(result.descriptor)
+			: null,
+		yawAngle: result.yawAngle,
+	};
+}
+
+/**
+ * Get video dimensions from a video element
+ */
+export function getVideoDimensions(
+	video: HTMLVideoElement,
+): { width: number; height: number } | null {
+	if (video.videoWidth === 0 || video.videoHeight === 0) {
+		return null;
+	}
+	return {
+		width: video.videoWidth,
+		height: video.videoHeight,
+	};
 }
 
 // Re-export faceapi for drawing utilities if needed
