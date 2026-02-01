@@ -90,6 +90,8 @@ export interface FaceDetectionResult {
 		width: number;
 		height: number;
 	} | null;
+	/** 68-point facial landmarks for rendering */
+	landmarks: { x: number; y: number }[] | null;
 	/** Estimated head yaw angle in degrees (-45 to 45, negative = looking left) */
 	yawAngle: number | null;
 	/** Estimated head pitch angle in degrees (-45 to 45, negative = looking down) */
@@ -209,6 +211,7 @@ export async function detectFace(
 				confidence: 0,
 				descriptor: null,
 				box: null,
+				landmarks: null,
 				yawAngle: null,
 				pitchAngle: null,
 				expression: null,
@@ -218,6 +221,12 @@ export async function detectFace(
 		// Estimate head yaw angle from landmarks
 		const yawAngle = estimateYawAngle(detection.landmarks);
 		const pitchAngle = estimatePitchAngle(detection.landmarks);
+
+		// Extract landmark positions
+		const landmarkPositions = detection.landmarks.positions.map((pt) => ({
+			x: pt.x,
+			y: pt.y,
+		}));
 
 		return {
 			detected: true,
@@ -229,6 +238,7 @@ export async function detectFace(
 				width: detection.detection.box.width,
 				height: detection.detection.box.height,
 			},
+			landmarks: landmarkPositions,
 			yawAngle,
 			pitchAngle,
 			expression: null,
@@ -240,6 +250,7 @@ export async function detectFace(
 			confidence: 0,
 			descriptor: null,
 			box: null,
+			landmarks: null,
 			yawAngle: null,
 			pitchAngle: null,
 			expression: null,
@@ -292,6 +303,7 @@ export async function detectFaceWithExpression(
 				confidence: 0,
 				descriptor: null,
 				box: null,
+				landmarks: null,
 				yawAngle: null,
 				pitchAngle: null,
 				expression: null,
@@ -309,6 +321,12 @@ export async function detectFaceWithExpression(
 			current[1] > max[1] ? current : max,
 		);
 
+		// Extract landmark positions as simple x,y points
+		const landmarkPositions = detection.landmarks.positions.map((pt) => ({
+			x: pt.x,
+			y: pt.y,
+		}));
+
 		return {
 			detected: true,
 			confidence: detection.detection.score,
@@ -319,6 +337,7 @@ export async function detectFaceWithExpression(
 				width: detection.detection.box.width,
 				height: detection.detection.box.height,
 			},
+			landmarks: landmarkPositions,
 			yawAngle,
 			pitchAngle,
 			expression: {
@@ -333,6 +352,7 @@ export async function detectFaceWithExpression(
 			confidence: 0,
 			descriptor: null,
 			box: null,
+			landmarks: null,
 			yawAngle: null,
 			pitchAngle: null,
 			expression: null,

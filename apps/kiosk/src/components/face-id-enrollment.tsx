@@ -712,18 +712,19 @@ export function FaceIdEnrollment({
 						className="transition-all duration-200"
 					/>
 
-					{/* Face box if detected */}
-					{faceDetection?.detected && faceDetection.box && (
-						<rect
-							x={faceDetection.box.x}
-							y={faceDetection.box.y}
-							width={faceDetection.box.width}
-							height={faceDetection.box.height}
-							fill="none"
-							stroke={isGoodPositionLocal ? "#22c55e" : "#f59e0b"}
-							strokeWidth={2}
-							rx={4}
-						/>
+					{/* Face landmarks - render all 68 points, mirrored to match video */}
+					{faceDetection?.detected && faceDetection.landmarks && (
+						<g>
+							{faceDetection.landmarks.map((point, index) => (
+								<circle
+									key={index}
+									cx={width - point.x}
+									cy={point.y}
+									r={2}
+									fill={isGoodPositionLocal ? "#22c55e" : "#f59e0b"}
+								/>
+							))}
+						</g>
 					)}
 				</svg>
 
