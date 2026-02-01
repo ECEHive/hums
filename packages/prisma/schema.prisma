@@ -633,9 +633,8 @@ model TicketStatusHistory {
 //
 
 enum SecurityEventType {
-  TAP_IN
-  TAP_OUT
-  FACE_ID_LOGIN
+  TAP
+  FACE_ID
   FACE_ID_ENROLLMENT
 }
 

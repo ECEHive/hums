@@ -99,7 +99,7 @@ function AppIndexLayout() {
 
 						<CardContent>
 							<p className="text-muted-foreground">
-								Use this dashboard to navigate to different sections of the user
+								Use this dashboard to navigate to different sections of the
 								management system.
 							</p>
 						</CardContent>

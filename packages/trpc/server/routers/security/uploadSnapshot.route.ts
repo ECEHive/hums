@@ -12,12 +12,7 @@ const logger = getLogger("security:upload");
 export const ZUploadSnapshotSchema = z.object({
 	// Base64 encoded image data
 	imageData: z.string(),
-	eventType: z.enum([
-		"TAP_IN",
-		"TAP_OUT",
-		"FACE_ID_LOGIN",
-		"FACE_ID_ENROLLMENT",
-	]),
+	eventType: z.enum(["TAP", "FACE_ID", "FACE_ID_ENROLLMENT"]),
 	userId: z.number().optional(),
 	// Face detection metadata from the client
 	faceDetected: z.boolean().default(false),

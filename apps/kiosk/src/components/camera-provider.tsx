@@ -52,7 +52,7 @@ interface CameraContextValue {
 
 	// Snapshot capture
 	captureSecuritySnapshot: (
-		eventType: "TAP_IN" | "TAP_OUT" | "FACE_ID_LOGIN" | "FACE_ID_ENROLLMENT",
+		eventType: "TAP" | "FACE_ID" | "FACE_ID_ENROLLMENT",
 		userId?: number,
 	) => Promise<void>;
 
@@ -117,7 +117,7 @@ export function CameraProvider({
 	// Capture security snapshot
 	const captureSecuritySnapshot = useCallback(
 		async (
-			eventType: "TAP_IN" | "TAP_OUT" | "FACE_ID_LOGIN" | "FACE_ID_ENROLLMENT",
+			eventType: "TAP" | "FACE_ID" | "FACE_ID_ENROLLMENT",
 			userId?: number,
 		) => {
 			const video = camera.videoRef.current;
