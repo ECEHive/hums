@@ -1,5 +1,6 @@
 /**
  * Camera Provider - Manages shared camera access across the kiosk app
+ * Provides face presence detection for security snapshots (not Face ID recognition)
  */
 
 import { trpc } from "@ecehive/trpc/client";
@@ -14,16 +15,15 @@ import {
 } from "react";
 import { type CameraStatus, useCamera } from "@/hooks/use-camera";
 import {
-	type FaceIdMatch,
-	type FaceIdStatus,
-	useFaceId,
-} from "@/hooks/use-face-id";
-import {
 	areModelsLoaded,
 	captureSnapshot,
 	detectFace,
 	loadFaceApiModels,
 } from "@/lib/face-api";
+import {
+	FaceTracker,
+	type TrackedFace,
+} from "@/lib/face-tracker";
 
 // =============================================================================
 // Smart Photo Security System Configuration
@@ -37,7 +37,7 @@ const MIN_PRESENCE_FACE_SIZE_RATIO = 0.05;
 
 /**
  * Delay (ms) after face detection before sending presence snapshot.
- * During this window, if the user taps (card or Face ID), the snapshot is cancelled.
+ * During this window, if the user taps (card), the snapshot is cancelled.
  * If no action occurs (even if face leaves frame), the snapshot is sent after this delay.
  */
 const PRESENCE_SNAPSHOT_DELAY_MS = 8000;
@@ -62,6 +62,12 @@ const AUTH_GRACE_PERIOD_MS = 15000;
 
 /** Minimum face quality score (0-1) required to consider a frame for capture */
 const MIN_FRAME_QUALITY_SCORE = 0.6;
+
+/** How often to scan for faces (ms) */
+const SCAN_INTERVAL_MS = 250;
+
+/** Minimum video readiness for scanning */
+const MIN_VIDEO_READY_STATE = 2;
 
 // =============================================================================
 // Types
@@ -107,6 +113,14 @@ interface PendingPresenceSnapshot {
 	frameUpdates: number;
 }
 
+export interface TrackerStats {
+	totalFaces: number;
+	detected: number;
+	qualified: number;
+	attempted: number;
+	suppressed: number;
+}
+
 interface CameraContextValue {
 	// Camera state
 	videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -118,24 +132,16 @@ interface CameraContextValue {
 	cameraDimensions: { width: number; height: number } | null;
 	captureDataUrl: (quality?: number) => string | null;
 
-	// Face ID state
-	faceIdStatus: FaceIdStatus;
-	faceIdError: string | null;
-	isFaceIdReady: boolean;
-	startFaceIdScanning: () => void;
-	stopFaceIdScanning: () => void;
-	isFaceIdScanning: boolean;
-	faceIdTrackerStats: import("@/hooks/use-face-id").TrackerStats;
-	currentTrackedFace: import("@/lib/face-tracker").TrackedFace | null;
-
-	// Face ID match handling
-	pendingFaceIdMatch: FaceIdMatch | null;
-	clearPendingMatch: () => void;
-	isFaceIdCooldownActive: boolean;
+	// Face presence detection state
+	isFacePresenceScanning: boolean;
+	startFacePresenceScanning: () => void;
+	stopFacePresenceScanning: () => void;
+	currentTrackedFace: TrackedFace | null;
+	trackerStats: TrackerStats;
 
 	// Snapshot capture
 	captureSecuritySnapshot: (
-		eventType: "TAP" | "FACE_ID" | "FACE_ID_ENROLLMENT" | "PRESENCE",
+		eventType: "TAP" | "PRESENCE",
 		userId?: number,
 	) => Promise<void>;
 
@@ -159,9 +165,21 @@ export function CameraProvider({
 	enabled = true,
 }: CameraProviderProps) {
 	const camera = useCamera({ autoStart: false });
-	const [pendingFaceIdMatch, setPendingFaceIdMatch] =
-		useState<FaceIdMatch | null>(null);
 	const [modelsLoaded, setModelsLoaded] = useState(false);
+	const [isFacePresenceScanning, setIsFacePresenceScanning] = useState(false);
+	const [currentTrackedFace, setCurrentTrackedFace] = useState<TrackedFace | null>(null);
+	const [trackerStats, setTrackerStats] = useState<TrackerStats>({
+		totalFaces: 0,
+		detected: 0,
+		qualified: 0,
+		attempted: 0,
+		suppressed: 0,
+	});
+
+	// Face presence scanning refs
+	const faceTrackerRef = useRef<FaceTracker | null>(null);
+	const isScanningRef = useRef(false);
+	const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
 	// ==========================================================================
 	// Smart Photo Security System State
@@ -181,11 +199,20 @@ export function CameraProvider({
 	/** Last global presence snapshot timestamp - updated at SEND time to prevent race conditions */
 	const lastGlobalPresenceSnapshotRef = useRef<number>(0);
 
-	/** Timestamp of last authentication event (tap or Face ID) */
+	/** Timestamp of last authentication event (tap) */
 	const lastAuthEventRef = useRef<number>(0);
 
 	/** Set of face IDs that have authenticated (to track who's "good") */
 	const authenticatedFaceIdsRef = useRef<Set<string>>(new Set());
+
+	// Initialize FaceTracker
+	useEffect(() => {
+		faceTrackerRef.current = new FaceTracker({});
+
+		return () => {
+			faceTrackerRef.current?.clear();
+		};
+	}, []);
 
 	// Initialize face-api models
 	useEffect(() => {
@@ -202,28 +229,6 @@ export function CameraProvider({
 
 		void loadModels();
 	}, [enabled]);
-
-	// Face ID handling
-	const handleFaceIdMatch = useCallback((match: FaceIdMatch) => {
-		console.log("[CameraProvider] Face ID match received:", {
-			userId: match.userId,
-			userName: match.userName,
-			confidence: match.confidence,
-			hasCardNumber: !!match.cardNumber,
-		});
-		setPendingFaceIdMatch(match);
-	}, []);
-
-	const faceId = useFaceId({
-		videoRef: camera.videoRef,
-		enabled: enabled && modelsLoaded,
-		onMatch: handleFaceIdMatch,
-	});
-
-	const clearPendingMatch = useCallback(() => {
-		console.log("[CameraProvider] Clearing pending Face ID match");
-		setPendingFaceIdMatch(null);
-	}, []);
 
 	// ==========================================================================
 	// Smart Photo Security System Functions
@@ -254,16 +259,15 @@ export function CameraProvider({
 		lastAuthEventRef.current = now;
 
 		// Mark the current tracked face as authenticated if present
-		const currentFace = faceId.currentTrackedFace;
-		if (currentFace) {
-			authenticatedFaceIdsRef.current.add(currentFace.id);
+		if (currentTrackedFace) {
+			authenticatedFaceIdsRef.current.add(currentTrackedFace.id);
 			console.log(
-				`[CameraProvider] Marked face ${currentFace.id.slice(0, 8)} as authenticated`,
+				`[CameraProvider] Marked face ${currentTrackedFace.id.slice(0, 8)} as authenticated`,
 			);
 		}
 
 		cancelPendingPresenceSnapshots();
-	}, [cancelPendingPresenceSnapshots, faceId.currentTrackedFace]);
+	}, [cancelPendingPresenceSnapshots, currentTrackedFace]);
 
 	/**
 	 * Check if we're within the grace period after an authentication event
@@ -481,13 +485,6 @@ export function CameraProvider({
 
 	/**
 	 * Schedule a presence snapshot for a qualified face.
-	 *
-	 * Improved Flow:
-	 * 1. When a new face meets criteria, capture initial snapshot
-	 * 2. Continue monitoring for better quality frames during delay period
-	 * 3. If user taps during delay, cancel the snapshot (notifyTapEvent)
-	 * 4. If delay expires with no action, send the BEST quality frame captured
-	 * 5. Re-check rate limits at send time to prevent race conditions
 	 */
 	const schedulePresenceSnapshot = useCallback(
 		(
@@ -591,7 +588,6 @@ export function CameraProvider({
 			);
 
 			// Send snapshot after delay if not cancelled by a tap event
-			// During delay, better frames may be captured and update this snapshot
 			const timeoutId = setTimeout(() => {
 				const pending = pendingPresenceSnapshotsRef.current.get(snapshotId);
 				if (pending) {
@@ -625,46 +621,147 @@ export function CameraProvider({
 		],
 	);
 
-	// ==========================================================================
-	// Monitor tracked face for presence snapshots
-	// ==========================================================================
+	/**
+	 * Convert FaceDetectionResult to tracker detection format
+	 */
+	const toTrackerDetection = (detection: { detected: boolean; confidence: number; box: { x: number; y: number; width: number; height: number } | null; descriptor: Float32Array | null; yawAngle: number | null } | null): { confidence: number; box: { x: number; y: number; width: number; height: number }; descriptor: number[] | null; yawAngle: number | null } | null => {
+		if (!detection?.detected || !detection.box) return null;
+		return {
+			confidence: detection.confidence,
+			box: detection.box,
+			descriptor: detection.descriptor ? Array.from(detection.descriptor) : null,
+			yawAngle: detection.yawAngle,
+		};
+	};
 
-	useEffect(() => {
-		const trackedFace = faceId.currentTrackedFace;
+	/**
+	 * Get video dimensions
+	 */
+	const getVideoDimensions = (video: HTMLVideoElement): { width: number; height: number } | null => {
+		if (video.videoWidth === 0 || video.videoHeight === 0) return null;
+		return { width: video.videoWidth, height: video.videoHeight };
+	};
 
-		if (!trackedFace) return;
-
-		// Only consider faces in "qualified" or "attempted" state (high confidence, stable)
-		// These states indicate the face has been tracked long enough to be meaningful
-		const qualifyingStates = ["qualified", "attempted", "suppressed"];
-		if (!qualifyingStates.includes(trackedFace.state)) return;
-
-		// Get video dimensions
+	/**
+	 * Face presence scanning loop
+	 */
+	const performScan = useCallback(async () => {
 		const video = camera.videoRef.current;
-		if (!video || video.videoWidth === 0) return;
+		const tracker = faceTrackerRef.current;
 
-		const videoDimensions = {
-			width: video.videoWidth,
-			height: video.videoHeight,
-		};
+		// Check preconditions
+		if (!isScanningRef.current || !tracker) return;
 
-		// Pass full face box with position for quality scoring
-		const faceBox = {
-			width: trackedFace.box.width,
-			height: trackedFace.box.height,
-			x: trackedFace.box.x,
-			y: trackedFace.box.y,
-		};
+		const videoReady =
+			video &&
+			video.readyState >= MIN_VIDEO_READY_STATE &&
+			video.videoWidth > 0;
+		if (!videoReady) return;
 
-		// Schedule a presence snapshot (or update existing one with better frame)
-		schedulePresenceSnapshot(
-			trackedFace.id,
-			trackedFace.confidence,
-			faceBox,
-			videoDimensions,
-			"UNAUTHENTICATED_PRESENCE",
-		);
-	}, [faceId.currentTrackedFace, camera.videoRef, schedulePresenceSnapshot]);
+		if (!areModelsLoaded()) return;
+
+		try {
+			// Update tracker's video dimensions
+			const dimensions = getVideoDimensions(video);
+			if (dimensions) {
+				tracker.setVideoDimensions(dimensions.width, dimensions.height);
+			}
+
+			// Detect face
+			const detection = await detectFace(video);
+			const trackerDetection = toTrackerDetection(detection);
+
+			// Process frame (handles tracking, stability, state transitions)
+			const detections = trackerDetection ? [trackerDetection] : [];
+			tracker.processFrame(detections);
+
+			// Update stats
+			const stats = tracker.getStats();
+			setTrackerStats({
+				totalFaces: stats.totalFaces,
+				detected: stats.byState.detected,
+				qualified: stats.byState.qualified,
+				attempted: stats.byState.attempted,
+				suppressed: stats.byState.suppressed,
+			});
+
+			// Get the most recent detected face for tracking
+			const allFaces = tracker.getAllFaces();
+			const trackedFace = allFaces.length > 0 ? allFaces[0] : null;
+			setCurrentTrackedFace(trackedFace);
+
+			// Schedule presence snapshot if face is qualified
+			if (trackedFace) {
+				const qualifyingStates = ["qualified", "attempted", "suppressed"];
+				if (qualifyingStates.includes(trackedFace.state) && dimensions) {
+					const faceBox = {
+						width: trackedFace.box.width,
+						height: trackedFace.box.height,
+						x: trackedFace.box.x,
+						y: trackedFace.box.y,
+					};
+					schedulePresenceSnapshot(
+						trackedFace.id,
+						trackedFace.confidence,
+						faceBox,
+						dimensions,
+						"UNAUTHENTICATED_PRESENCE",
+					);
+				}
+			}
+		} catch (err) {
+			console.error("[CameraProvider] Scan error:", err);
+		}
+	}, [camera.videoRef, schedulePresenceSnapshot]);
+
+	/**
+	 * Start face presence scanning
+	 */
+	const startFacePresenceScanning = useCallback(() => {
+		if (isFacePresenceScanning) {
+			console.log("[CameraProvider] Already scanning for face presence");
+			return;
+		}
+
+		console.log("[CameraProvider] Starting face presence scanning");
+		setIsFacePresenceScanning(true);
+		isScanningRef.current = true;
+
+		// Clear tracker state
+		faceTrackerRef.current?.clear();
+
+		// Perform an immediate scan
+		void performScan();
+
+		scanIntervalRef.current = setInterval(() => {
+			void performScan();
+		}, SCAN_INTERVAL_MS);
+	}, [isFacePresenceScanning, performScan]);
+
+	/**
+	 * Stop face presence scanning
+	 */
+	const stopFacePresenceScanning = useCallback(() => {
+		console.log("[CameraProvider] Stopping face presence scanning");
+		setIsFacePresenceScanning(false);
+		isScanningRef.current = false;
+		setCurrentTrackedFace(null);
+
+		if (scanIntervalRef.current) {
+			clearInterval(scanIntervalRef.current);
+			scanIntervalRef.current = null;
+		}
+
+		// Clear tracker state
+		faceTrackerRef.current?.clear();
+		setTrackerStats({
+			totalFaces: 0,
+			detected: 0,
+			qualified: 0,
+			attempted: 0,
+			suppressed: 0,
+		});
+	}, []);
 
 	// Cleanup on unmount
 	useEffect(() => {
@@ -674,6 +771,10 @@ export function CameraProvider({
 				clearTimeout(snapshot.timeoutId);
 			}
 			pendingPresenceSnapshotsRef.current.clear();
+
+			if (scanIntervalRef.current) {
+				clearInterval(scanIntervalRef.current);
+			}
 		};
 	}, []);
 
@@ -694,7 +795,6 @@ export function CameraProvider({
 			}
 
 			// Clean up old authenticated face IDs (clear periodically if set gets large)
-			// Note: We can't easily track when individual faces were authenticated
 			if (authenticatedFaceIdsRef.current.size > 50) {
 				console.log(
 					`[CameraProvider] Clearing ${authenticatedFaceIdsRef.current.size} old authenticated face IDs`,
@@ -702,7 +802,7 @@ export function CameraProvider({
 				authenticatedFaceIdsRef.current.clear();
 			}
 
-			// Clean up old snapshot timestamps (already handled in canSchedulePresenceSnapshot, but double-check)
+			// Clean up old snapshot timestamps
 			const oneMinuteAgo = now - 60000;
 			presenceSnapshotTimestampsRef.current =
 				presenceSnapshotTimestampsRef.current.filter((t) => t > oneMinuteAgo);
@@ -714,7 +814,7 @@ export function CameraProvider({
 	// Capture security snapshot
 	const captureSecuritySnapshot = useCallback(
 		async (
-			eventType: "TAP" | "FACE_ID" | "FACE_ID_ENROLLMENT" | "PRESENCE",
+			eventType: "TAP" | "PRESENCE",
 			userId?: number,
 		) => {
 			const video = camera.videoRef.current;
@@ -731,7 +831,6 @@ export function CameraProvider({
 			});
 
 			// Check the video element directly instead of relying on React state
-			// This avoids issues with stale closures from async callbacks
 			if (!video || !videoReady) {
 				console.warn(
 					"[CameraProvider] Camera not ready for snapshot - video element not ready",
@@ -788,20 +887,12 @@ export function CameraProvider({
 		cameraDimensions: camera.dimensions,
 		captureDataUrl: camera.captureDataUrl,
 
-		// Face ID
-		faceIdStatus: faceId.status,
-		faceIdError: faceId.error,
-		isFaceIdReady: faceId.isReady,
-		startFaceIdScanning: faceId.startScanning,
-		stopFaceIdScanning: faceId.stopScanning,
-		isFaceIdScanning: faceId.isScanning,
-		faceIdTrackerStats: faceId.trackerStats,
-		currentTrackedFace: faceId.currentTrackedFace,
-
-		// Match handling
-		pendingFaceIdMatch,
-		clearPendingMatch,
-		isFaceIdCooldownActive: faceId.isCooldownActive,
+		// Face presence detection
+		isFacePresenceScanning,
+		startFacePresenceScanning,
+		stopFacePresenceScanning,
+		currentTrackedFace,
+		trackerStats,
 
 		// Snapshots
 		captureSecuritySnapshot,

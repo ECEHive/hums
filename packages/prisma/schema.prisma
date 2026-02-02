@@ -18,11 +18,9 @@ model User {
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @default(now()) @updatedAt
   slackUsername         String?                @unique
-  faceIdEnabled         Boolean                @default(false)
   apiTokens             ApiToken[]
   impersonatedAuditLogs AuditLog[]             @relation("AuditLogImpersonators")
   auditLogs             AuditLog[]
-  faceEnrollment        FaceEnrollment?
   inventoryTransactions InventoryTransaction[]
   securitySnapshots     SecuritySnapshot[]
   sessions              Session[]
@@ -381,18 +379,6 @@ model TicketStatusHistory {
   @@index([createdAt])
 }
 
-model FaceEnrollment {
-  id                Int                    @id @default(autoincrement())
-  userId            Int                    @unique
-  faceEmbedding     Unsupported("vector")?
-  enrolledAt        DateTime               @default(now())
-  lastUsedAt        DateTime?
-  successfulMatches Int                    @default(0)
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @default(now()) @updatedAt
-  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
 model SecuritySnapshot {
   id             String            @id @default(uuid())
   deviceId       Int?
@@ -459,7 +445,5 @@ enum TicketStatus {
 
 enum SecurityEventType {
   TAP
-  FACE_ID
-  FACE_ID_ENROLLMENT
   PRESENCE // Snapshot taken when face is detected but no tap event occurs
 }

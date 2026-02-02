@@ -7,11 +7,19 @@ import {
 	deleteSnapshotHandler,
 	ZDeleteSnapshotSchema,
 } from "./deleteSnapshot.route";
+import {
+	getDevicesWithSnapshotsHandler,
+	ZGetDevicesWithSnapshotsSchema,
+} from "./getDevicesWithSnapshots.route";
 import { getImageHandler, ZGetImageSchema } from "./getImage.route";
 import {
 	getLatestByDeviceHandler,
 	ZGetLatestByDeviceSchema,
 } from "./getLatestByDevice.route";
+import {
+	getTimelineSnapshotsHandler,
+	ZGetTimelineSnapshotsSchema,
+} from "./getTimelineSnapshots.route";
 import {
 	listSnapshotsHandler,
 	ZListSnapshotsSchema,
@@ -44,6 +52,14 @@ export const securityRouter = router({
 	getLatestByDevice: permissionProtectedProcedure("security.list")
 		.input(ZGetLatestByDeviceSchema)
 		.query(getLatestByDeviceHandler),
+
+	getDevicesWithSnapshots: permissionProtectedProcedure("security.list")
+		.input(ZGetDevicesWithSnapshotsSchema)
+		.query(getDevicesWithSnapshotsHandler),
+
+	getTimelineSnapshots: permissionProtectedProcedure("security.list")
+		.input(ZGetTimelineSnapshotsSchema)
+		.query(getTimelineSnapshotsHandler),
 
 	getImage: permissionProtectedProcedure("security.list")
 		.input(ZGetImageSchema)
