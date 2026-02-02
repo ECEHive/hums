@@ -328,10 +328,15 @@ export const appModules: AppModule[] = [
 
 /**
  * Admin navigation items - shown in a separate section
+ *
+ * Organized into logical groupings:
+ * - People & Access: User management, roles, and permissions
+ * - Compliance & Security: Agreements, suspensions, audit trails, security monitoring
+ * - System: Devices, sessions, API tokens, configuration, reports
  */
 export const adminNavItems: NavGroup[] = [
 	{
-		name: "Users & Access",
+		name: "People & Access",
 		items: [
 			{
 				title: "Users",
@@ -344,8 +349,27 @@ export const adminNavItems: NavGroup[] = [
 				title: "Roles",
 				url: "/app/roles",
 				icon: ShieldIcon,
-				permissions: { any: ["user_roles.list"] },
+				permissions: { any: ["roles.list"] },
 				description: "Manage roles and permissions",
+			},
+			{
+				title: "Sessions",
+				url: "/app/sessions",
+				icon: FileClockIcon,
+				permissions: { any: ["sessions.list"] },
+				description: "View active user sessions",
+			},
+		],
+	},
+	{
+		name: "Compliance & Security",
+		items: [
+			{
+				title: "Agreements",
+				url: "/app/agreements",
+				icon: FileTextIcon,
+				permissions: { any: ["agreements.list"] },
+				description: "Manage user agreements",
 			},
 			{
 				title: "Suspensions",
@@ -355,11 +379,18 @@ export const adminNavItems: NavGroup[] = [
 				description: "View and manage suspensions",
 			},
 			{
-				title: "Agreements",
-				url: "/app/agreements",
-				icon: FileTextIcon,
-				permissions: { any: ["agreements.list"] },
-				description: "Manage user agreements",
+				title: "Audit Logs",
+				url: "/app/audit-logs",
+				icon: ScrollTextIcon,
+				permissions: { any: ["audit_logs.list"] },
+				description: "View system audit logs",
+			},
+			{
+				title: "Security Snapshots",
+				url: "/app/security",
+				icon: CameraIcon,
+				permissions: { any: ["security.list"] },
+				description: "Security camera snapshots",
 			},
 		],
 	},
@@ -379,27 +410,6 @@ export const adminNavItems: NavGroup[] = [
 				icon: KeyIcon,
 				permissions: { any: ["api_tokens.list"] },
 				description: "Manage API access tokens",
-			},
-			{
-				title: "Sessions",
-				url: "/app/sessions",
-				icon: FileClockIcon,
-				permissions: { any: ["sessions.list"] },
-				description: "View user sessions",
-			},
-			{
-				title: "Security Snapshots",
-				url: "/app/security",
-				icon: CameraIcon,
-				permissions: { any: ["security_snapshots.list"] },
-				description: "Security camera snapshots",
-			},
-			{
-				title: "Audit Logs",
-				url: "/app/audit-logs",
-				icon: ScrollTextIcon,
-				permissions: { any: ["audit_logs.list"] },
-				description: "View system audit logs",
 			},
 			{
 				title: "Reports",
