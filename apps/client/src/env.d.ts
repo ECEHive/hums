@@ -1,3 +1,5 @@
+/// <reference types="vite-plugin-pwa/client" />
+
 declare global {
 	interface ImportMetaEnv {
 		// Development-only variables used by Vite dev server

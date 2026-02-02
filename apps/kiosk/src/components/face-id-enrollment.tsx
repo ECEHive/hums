@@ -53,13 +53,13 @@ interface FaceIdEnrollmentProps {
 
 // Face positioning requirements
 const MIN_FACE_SIZE_RATIO = 0.15; // Face must be at least 15% of frame width (larger = closer)
-const MAX_FACE_SIZE_RATIO = 0.65; // Face must be at most 65% of frame width
-const MAX_CENTER_OFFSET_RATIO = 0.15; // Face center must be within 15% of frame center
+const MAX_FACE_SIZE_RATIO = 0.75; // Face must be at most 75% of frame width
+const MAX_CENTER_OFFSET_RATIO = 0.18; // Face center must be within 18% of frame center (relaxed from 15%)
 const CIRCLE_RADIUS_RATIO = 0.28; // Visual circle is 28% of frame
 
-// Head rotation limits for enrollment (degrees)
-const MAX_YAW_ANGLE = 15; // Maximum horizontal rotation (left/right)
-const MAX_PITCH_ANGLE = 12; // Maximum vertical rotation (up/down)
+// Head rotation limits for enrollment (degrees) - relaxed for easier enrollment
+const MAX_YAW_ANGLE = 20; // Maximum horizontal rotation (left/right) - relaxed from 15°
+const MAX_PITCH_ANGLE = 15; // Maximum vertical rotation (up/down) - relaxed from 12°
 
 // Enrollment quality settings
 const SCAN_INTERVAL_MS = 100; // Scanning interval for positioning check
@@ -491,10 +491,13 @@ export function FaceIdEnrollment({
 			void scan();
 		}, SCAN_INTERVAL_MS);
 
-		// Hold-still timer - wait for user to hold position for a few seconds
+		// Hold-still timer - wait for user to hold position
 		// Tracks how many consecutive ticks the position has been good
+		// Allow some tolerance by counting "mostly good" frames
 		let goodPositionTicks = 0;
-		const REQUIRED_GOOD_TICKS = 25; // 2.5 seconds at 100ms intervals
+		let badTicksInWindow = 0;
+		const REQUIRED_GOOD_TICKS = 15; // 1.5 seconds at 100ms intervals (reduced from 2.5s)
+		const MAX_BAD_TICKS_ALLOWED = 3; // Allow up to 3 "bad" ticks during the hold window
 
 		const holdStillTick = () => {
 			// Read current state via functional update pattern
@@ -523,10 +526,18 @@ export function FaceIdEnrollment({
 						setStep("processing");
 					}
 				} else {
-					if (goodPositionTicks > 0) {
-						console.log("[FaceIdEnrollment] Position lost, resetting timer");
+					// Allow some tolerance for brief position losses
+					badTicksInWindow++;
+					if (
+						badTicksInWindow > MAX_BAD_TICKS_ALLOWED ||
+						goodPositionTicks === 0
+					) {
+						if (goodPositionTicks > 0) {
+							console.log("[FaceIdEnrollment] Position lost, resetting timer");
+						}
+						goodPositionTicks = 0;
+						badTicksInWindow = 0;
 					}
-					goodPositionTicks = 0;
 				}
 				return isGood; // Return unchanged
 			});
