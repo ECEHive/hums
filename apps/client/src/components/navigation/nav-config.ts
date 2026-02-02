@@ -422,7 +422,7 @@ export const adminNavItems: NavGroup[] = [
 				title: "Configuration",
 				url: "/app/configuration",
 				icon: SettingsIcon,
-				permissions: { any: ["configuration.view"] },
+				permissions: { any: ["config.read"] },
 				description: "System configuration",
 			},
 		],
