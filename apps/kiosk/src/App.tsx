@@ -1,10 +1,8 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CameraProvider, useCameraContext } from "@/components/camera-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { FaceIdConfirmation } from "@/components/face-id-confirmation";
-import { FaceIdEnrollment } from "@/components/face-id-enrollment";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
 import { KioskHeader } from "@/components/kiosk-header";
@@ -21,18 +19,10 @@ function AppContent() {
 	// Load and apply branding
 	useBranding();
 	const [isFullscreen, setIsFullscreen] = useState(false);
-	const [showFaceIdEnrollment, setShowFaceIdEnrollment] = useState(false);
-	// Use ref for enrollment mode - this is checked directly in handleCardScan
-	// and is set IMMEDIATELY when user clicks setup, before React state updates
-	const isEnrollmentModeRef = useRef(false);
-	// Use ref for enrollment card handler to avoid stale closure issues
-	const enrollmentCardHandlerRef = useRef<
-		((cardNumber: string) => void) | null
-	>(null);
 	const tapWorkflow = useTapWorkflow();
 	const { data: config } = useConfig();
 
-	// Camera context for Face ID and snapshots
+	// Camera context for snapshots and face presence detection
 	const cameraContext = useCameraContext();
 
 	const { data: deviceStatusData, isLoading: deviceStatusLoading } = useQuery({
@@ -97,60 +87,9 @@ function AppContent() {
 		[cameraContext, tapWorkflow],
 	);
 
-	// Handle Face ID match confirmation
-	const handleFaceIdConfirm = useCallback(async () => {
-		const match = cameraContext.pendingFaceIdMatch;
-		console.log("[App] Face ID confirm triggered:", match);
-
-		if (!match || !match.cardNumber) {
-			console.warn("[App] Face ID confirm: missing match or card number");
-			cameraContext.clearPendingMatch();
-			return;
-		}
-
-		// Cancel any pending presence snapshots since user is using Face ID
-		cameraContext.notifyTapEvent();
-
-		// Capture snapshot for Face ID login (non-blocking)
-		void cameraContext
-			.captureSecuritySnapshot("FACE_ID", match.userId)
-			.catch((err) => {
-				console.warn("[App] Face ID login snapshot failed:", err);
-			});
-
-		// Trigger the tap workflow with the user's card number
-		console.log(
-			"[App] Triggering tap workflow for Face ID user:",
-			match.userName,
-		);
-		await tapWorkflow.handleTap(match.cardNumber);
-		cameraContext.clearPendingMatch();
-	}, [cameraContext, tapWorkflow]);
-
-	const handleFaceIdCancel = useCallback(() => {
-		console.log("[App] Face ID confirmation cancelled");
-		cameraContext.clearPendingMatch();
-	}, [cameraContext]);
-
-	// Card handler that prioritizes Face ID enrollment
-	// Uses refs to avoid stale closure issues - refs are always current
+	// Card handler for tap events
 	const handleCardScan = useCallback(
 		(cardNumber: string) => {
-			console.log(
-				"[App] handleCardScan called, isEnrollmentMode:",
-				isEnrollmentModeRef.current,
-				"hasHandler:",
-				!!enrollmentCardHandlerRef.current,
-			);
-
-			// Check the ref directly - this is always up to date
-			// If Face ID enrollment is active and has a card handler, use that
-			if (isEnrollmentModeRef.current && enrollmentCardHandlerRef.current) {
-				console.log("[App] Card scan routed to Face ID enrollment");
-				enrollmentCardHandlerRef.current(cardNumber);
-				return;
-			}
-			// Otherwise, process as normal tap
 			console.log("[App] Card scan routed to regular tap workflow");
 			void handleTapWithSnapshot(cardNumber);
 		},
@@ -172,37 +111,29 @@ function AppContent() {
 		}
 	}, [connectionStatus, kioskStatus.isKiosk, cameraContext.startCamera]);
 
-	// Start Face ID scanning when camera is ready and models are loaded
-	// Don't scan during Face ID enrollment
+	// Start face presence detection when camera is ready and models are loaded
 	useEffect(() => {
 		const shouldScan =
 			cameraContext.isCameraReady &&
 			cameraContext.modelsLoaded &&
-			!showFaceIdEnrollment &&
-			!cameraContext.isFaceIdScanning;
+			!cameraContext.isFacePresenceScanning;
 
-		console.log("[App] Face ID scan check:", {
+		console.log("[App] Face presence scan check:", {
 			cameraReady: cameraContext.isCameraReady,
 			modelsLoaded: cameraContext.modelsLoaded,
-			showFaceIdEnrollment,
-			isFaceIdScanning: cameraContext.isFaceIdScanning,
+			isFacePresenceScanning: cameraContext.isFacePresenceScanning,
 			shouldScan,
 		});
 
 		if (shouldScan) {
-			console.log("[App] Starting Face ID scanning");
-			cameraContext.startFaceIdScanning();
-		} else if (showFaceIdEnrollment && cameraContext.isFaceIdScanning) {
-			console.log("[App] Stopping Face ID scanning during enrollment");
-			cameraContext.stopFaceIdScanning();
+			console.log("[App] Starting face presence scanning");
+			cameraContext.startFacePresenceScanning();
 		}
 	}, [
 		cameraContext.isCameraReady,
 		cameraContext.modelsLoaded,
-		showFaceIdEnrollment,
-		cameraContext.isFaceIdScanning,
-		cameraContext.startFaceIdScanning,
-		cameraContext.stopFaceIdScanning,
+		cameraContext.isFacePresenceScanning,
+		cameraContext.startFacePresenceScanning,
 	]);
 
 	const toggleFullscreen = async () => {
@@ -304,15 +235,6 @@ function AppContent() {
 									isFullscreen={isFullscreen}
 									isProcessing={tapWorkflow.isProcessing}
 									onToggleFullscreen={toggleFullscreen}
-									onFaceIdSetup={() => {
-										console.log(
-											"[App] Starting Face ID setup - setting enrollment mode",
-										);
-										// Set the ref IMMEDIATELY before any state updates
-										// This ensures the card handler will route to enrollment
-										isEnrollmentModeRef.current = true;
-										setShowFaceIdEnrollment(true);
-									}}
 								/>
 							)}
 						</div>
@@ -325,42 +247,6 @@ function AppContent() {
 							expiresAt={tapWorkflow.oneTimeLogin?.expiresAt ?? null}
 							onShow={tapWorkflow.handleLoginWithoutCard}
 							onHide={tapWorkflow.handleLoginWithoutCardCancel}
-						/>
-					)}
-
-					{/* Face ID Confirmation Dialog */}
-					{cameraContext.pendingFaceIdMatch &&
-						!tapWorkflow.isProcessing &&
-						!showFaceIdEnrollment && (
-							<FaceIdConfirmation
-								userName={cameraContext.pendingFaceIdMatch.userName}
-								confidence={cameraContext.pendingFaceIdMatch.confidence}
-								onConfirm={handleFaceIdConfirm}
-								onCancel={handleFaceIdCancel}
-							/>
-						)}
-
-					{/* Face ID Enrollment Modal */}
-					{showFaceIdEnrollment && (
-						<FaceIdEnrollment
-							onComplete={() => {
-								console.log("[App] Face ID enrollment complete");
-								// Clear both the handler AND the mode ref
-								isEnrollmentModeRef.current = false;
-								enrollmentCardHandlerRef.current = null;
-								setShowFaceIdEnrollment(false);
-							}}
-							onCancel={() => {
-								console.log("[App] Face ID enrollment cancelled");
-								// Clear both the handler AND the mode ref
-								isEnrollmentModeRef.current = false;
-								enrollmentCardHandlerRef.current = null;
-								setShowFaceIdEnrollment(false);
-							}}
-							onRegisterCardHandler={(handler) => {
-								console.log("[App] Registering enrollment card handler");
-								enrollmentCardHandlerRef.current = handler;
-							}}
 						/>
 					)}
 				</div>

@@ -1,17 +1,17 @@
 /**
- * Face Tracker - Stateful face tracking for intelligent identification
+ * Face Tracker - Stateful face tracking for presence detection
  *
- * This module implements a state-driven approach to face identification that:
+ * This module implements a state-driven approach to face tracking that:
  * - Tracks individual faces across frames
- * - Requires temporal stability before attempting identification
- * - Suppresses repeated identification attempts for the same face
+ * - Requires temporal stability before triggering presence detection
+ * - Suppresses repeated presence snapshots for the same face
  * - Distinguishes between new and existing faces
  *
  * Face Lifecycle States:
- * - DETECTED: Face is present but not yet qualified for identification
+ * - DETECTED: Face is present but not yet qualified for presence snapshot
  * - QUALIFIED: Face meets quality criteria and has been stable long enough
- * - ATTEMPTED: An identification request has been made
- * - SUPPRESSED: Further attempts are paused (after successful match or failure)
+ * - ATTEMPTED: A presence check has been made
+ * - SUPPRESSED: Further attempts are paused
  * - EXPIRED: Face has left the scene
  */
 
