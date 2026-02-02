@@ -1,3 +1,4 @@
+import { registerSW } from "virtual:pwa-register";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
@@ -10,6 +11,19 @@ import * as Sentry from "@sentry/react";
 import { ErrorPage } from "./components/errors/error-page";
 import { fetchConfig } from "./lib/config";
 import { routeTree } from "./routeTree.gen";
+
+// Register service worker with auto-update
+const updateSW = registerSW({
+	onNeedRefresh() {
+		// When a new version is available, reload to get the new content
+		if (confirm("A new version of HUMS is available. Reload to update?")) {
+			updateSW(true);
+		}
+	},
+	onOfflineReady() {
+		console.log("HUMS is ready to work offline");
+	},
+});
 
 // Initialize Sentry from runtime config
 fetchConfig()

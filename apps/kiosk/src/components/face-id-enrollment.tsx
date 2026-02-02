@@ -528,7 +528,10 @@ export function FaceIdEnrollment({
 				} else {
 					// Allow some tolerance for brief position losses
 					badTicksInWindow++;
-					if (badTicksInWindow > MAX_BAD_TICKS_ALLOWED || goodPositionTicks === 0) {
+					if (
+						badTicksInWindow > MAX_BAD_TICKS_ALLOWED ||
+						goodPositionTicks === 0
+					) {
 						if (goodPositionTicks > 0) {
 							console.log("[FaceIdEnrollment] Position lost, resetting timer");
 						}
