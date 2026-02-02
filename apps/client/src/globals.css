@@ -173,3 +173,8 @@
 		animation: 150ms cubic-bezier(0, 0, 0.2, 1) 60ms both fade-in;
 	}
 }
+
+/* Safe area inset for iOS devices with home indicator */
+.safe-area-inset-bottom {
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+}

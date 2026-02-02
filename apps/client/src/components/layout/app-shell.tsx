@@ -4,12 +4,14 @@ import { RequireAuth } from "@/auth/AuthProvider";
 import {
 	DualSidebar,
 	MobileNavTrigger,
+	MobileTabBar,
 } from "@/components/navigation/dual-sidebar";
 import { DynamicBreadcrumbs } from "@/components/navigation/dynamic-breadcrumbs";
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { cn } from "@/lib/utils";
 
 interface AppShellProps {
 	/**
@@ -71,11 +73,14 @@ export function AppShell({
 						{/* Banners */}
 						{banners && <div className="px-4 py-2 md:px-6">{banners}</div>}
 
-						{/* Page content */}
-						<main className="flex-1 overflow-auto">
+						{/* Page content - add bottom padding on mobile for tab bar */}
+						<main className={cn("flex-1 overflow-auto", isMobile && "pb-16")}>
 							<Outlet />
 						</main>
 					</div>
+
+					{/* Mobile tab bar */}
+					<MobileTabBar />
 				</div>
 			</TooltipProvider>
 		</RequireAuth>

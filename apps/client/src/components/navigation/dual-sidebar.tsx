@@ -12,6 +12,7 @@ import {
 	SettingsIcon,
 	SunIcon,
 	SunMoonIcon,
+	UserIcon,
 	XIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -37,6 +38,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAppNavigation } from "@/hooks/use-app-navigation";
 import { useGlitchEgg } from "@/hooks/use-glitch-egg";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useShiftAccess } from "@/hooks/use-shift-access";
@@ -75,6 +77,7 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 	const user = useCurrentUser();
 	const { canAccessShifts } = useShiftAccess();
 	const { handleClick: handleLogoClick } = useGlitchEgg();
+	const { modulePaths } = useAppNavigation();
 
 	const currentModule = getCurrentModule(pathname);
 	const isAdmin = isAdminPath(pathname);
@@ -132,7 +135,12 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 						{visibleModules.map((module) => {
 							const isActive = currentModule?.id === module.id && !isAdmin;
 							return (
-								<RailItem key={module.id} module={module} isActive={isActive} />
+								<RailItem
+									key={module.id}
+									module={module}
+									isActive={isActive}
+									savedPath={modulePaths[module.id]}
+								/>
 							);
 						})}
 
@@ -152,6 +160,7 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 										groups: [],
 									}}
 									isActive={isAdmin}
+									savedPath={modulePaths.admin}
 								/>
 							</>
 						)}
@@ -199,14 +208,17 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 interface RailItemProps {
 	module: AppModule;
 	isActive: boolean;
+	savedPath?: string;
 }
 
-function RailItem({ module, isActive }: RailItemProps) {
+function RailItem({ module, isActive, savedPath }: RailItemProps) {
+	const targetPath = savedPath ?? module.basePath;
+
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
 				<Link
-					to={module.basePath}
+					to={targetPath}
 					className={cn(
 						"flex h-10 w-10 items-center justify-center rounded-lg transition-all",
 						"hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -242,29 +254,11 @@ function MobileSidebar({
 }: MobileSidebarProps) {
 	const location = useLocation();
 	const pathname = location?.pathname ?? "/";
-	const user = useCurrentUser();
 	const { canAccessShifts } = useShiftAccess();
 	const { handleClick: handleLogoClick } = useGlitchEgg();
 
 	const currentModule = getCurrentModule(pathname);
 	const isAdmin = isAdminPath(pathname);
-
-	// Filter modules based on permissions
-	const visibleModules = useMemo(() => {
-		return appModules.filter((module) => {
-			if (module.allowWithShiftAccess && canAccessShifts) {
-				return true;
-			}
-			return checkPermissions(user, module.permissions);
-		});
-	}, [user, canAccessShifts]);
-
-	// Check if user has any admin permissions
-	const hasAnyAdminAccess = useMemo(() => {
-		return adminNavItems.some((group) =>
-			group.items.some((item) => checkPermissions(user, item.permissions)),
-		);
-	}, [user]);
 
 	// Get the navigation groups to display
 	const navGroups = useMemo(() => {
@@ -311,55 +305,6 @@ function MobileSidebar({
 					</div>
 
 					<ScrollArea className="flex-1 overflow-y-auto">
-						{/* App modules as horizontal pills */}
-						<div className="border-b p-3 min-w-0">
-							<div className="text-xs font-medium text-muted-foreground mb-2 px-1">
-								Apps
-							</div>
-							<div className="flex flex-wrap gap-2">
-								{visibleModules.map((module) => {
-									const isActive = currentModule?.id === module.id && !isAdmin;
-									return (
-										<Link
-											key={module.id}
-											to={module.basePath}
-											className={cn(
-												"flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors",
-												isActive
-													? "bg-primary text-primary-foreground"
-													: "bg-muted hover:bg-muted/80",
-											)}
-										>
-											<module.icon
-												className={cn(
-													"h-4 w-4",
-													isActive && "text-primary-foreground",
-												)}
-											/>
-											{module.name}
-										</Link>
-									);
-								})}
-								{hasAnyAdminAccess && (
-									<>
-										<div className="w-px h-6 bg-border self-center" />
-										<Link
-											to="/app/users"
-											className={cn(
-												"flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors",
-												isAdmin
-													? "bg-primary text-primary-foreground"
-													: "bg-muted hover:bg-muted/80",
-											)}
-										>
-											<SettingsIcon className="h-4 w-4" />
-											Admin
-										</Link>
-									</>
-								)}
-							</div>
-						</div>
-
 						{/* Current module header */}
 						<div className="flex items-center gap-2 px-4 py-3 border-b">
 							<ModuleIcon className={cn("h-5 w-5", moduleColor)} />
@@ -386,9 +331,6 @@ function MobileSidebar({
 							/>
 						</div>
 					</ScrollArea>
-
-					{/* User footer */}
-					<UserMenu />
 				</div>
 			</SheetContent>
 		</Sheet>
@@ -541,6 +483,12 @@ function UserMenu() {
 				<DropdownMenuContent align="end" className="w-56">
 					<DropdownMenuLabel>HUMS v{__APP_VERSION__}</DropdownMenuLabel>
 					<DropdownMenuSeparator />
+					<Link to="/app/me">
+						<DropdownMenuItem>
+							<UserIcon className="h-4 w-4" />
+							My Profile
+						</DropdownMenuItem>
+					</Link>
 					<a href="/overview/" target="_blank" rel="noopener noreferrer">
 						<DropdownMenuItem>
 							<LayoutDashboardIcon className="h-4 w-4" />
@@ -631,5 +579,155 @@ export function MobileNavTrigger({
 				showPeriodSelector={showPeriodSelector}
 			/>
 		</>
+	);
+}
+
+/**
+ * Mobile bottom tab bar for app switching
+ * Displays icons for each app module in a fixed bottom bar
+ */
+export function MobileTabBar() {
+	const location = useLocation();
+	const pathname = location?.pathname ?? "/";
+	const user = useCurrentUser();
+	const { canAccessShifts } = useShiftAccess();
+	const { modulePaths } = useAppNavigation();
+	const isMobile = useIsMobile();
+	const { logout } = useAuth();
+	const { setTheme } = useTheme();
+
+	const currentModule = getCurrentModule(pathname);
+	const isAdmin = isAdminPath(pathname);
+
+	// Filter modules based on permissions
+	const visibleModules = useMemo(() => {
+		return appModules.filter((module) => {
+			if (module.allowWithShiftAccess && canAccessShifts) {
+				return true;
+			}
+			return checkPermissions(user, module.permissions);
+		});
+	}, [user, canAccessShifts]);
+
+	// Check if user has any admin permissions
+	const hasAnyAdminAccess = useMemo(() => {
+		return adminNavItems.some((group) =>
+			group.items.some((item) => checkPermissions(user, item.permissions)),
+		);
+	}, [user]);
+
+	if (!isMobile) return null;
+
+	// All tabs including admin if user has access
+	const tabs = [
+		...visibleModules.map((module) => ({
+			id: module.id,
+			name: module.name,
+			icon: module.icon,
+			path: modulePaths[module.id] ?? module.basePath,
+			color: module.color,
+			isActive: currentModule?.id === module.id && !isAdmin,
+		})),
+		...(hasAnyAdminAccess
+			? [
+					{
+						id: "admin",
+						name: "Admin",
+						icon: SettingsIcon,
+						path: modulePaths.admin ?? "/app/users",
+						color: "text-red-500",
+						isActive: isAdmin,
+					},
+				]
+			: []),
+	];
+
+	return (
+		<nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden safe-area-inset-bottom">
+			<div className="flex h-16 items-center justify-around px-2">
+				{tabs.map((tab) => (
+					<Link
+						key={tab.id}
+						to={tab.path}
+						className={cn(
+							"flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors",
+							tab.isActive
+								? tab.color
+								: "text-muted-foreground hover:text-foreground",
+						)}
+					>
+						<tab.icon className="h-5 w-5" />
+						<span className="text-[10px] font-medium">{tab.name}</span>
+					</Link>
+				))}
+				{/* User profile tab with dropdown */}
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<button
+							type="button"
+							className="flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors text-muted-foreground hover:text-foreground"
+						>
+							<div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
+								{(user?.name || user?.email || "U").charAt(0).toUpperCase()}
+							</div>
+							<span className="text-[10px] font-medium">Profile</span>
+						</button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" side="top" className="w-56 mb-2">
+						<DropdownMenuLabel>
+							<div className="flex flex-col">
+								<span>{user?.name ?? "Account"}</span>
+								<span className="text-xs font-normal text-muted-foreground">
+									{user?.email}
+								</span>
+							</div>
+						</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						<Link to="/app/me">
+							<DropdownMenuItem>
+								<UserIcon className="h-4 w-4" />
+								My Profile
+							</DropdownMenuItem>
+						</Link>
+						<a href="/overview/" target="_blank" rel="noopener noreferrer">
+							<DropdownMenuItem>
+								<LayoutDashboardIcon className="h-4 w-4" />
+								Space Overview
+							</DropdownMenuItem>
+						</a>
+						<DropdownMenuSeparator />
+						<DropdownMenuLabel>Theme</DropdownMenuLabel>
+						<DropdownMenuItem onSelect={() => setTheme("light")}>
+							<SunIcon className="h-4 w-4" />
+							Light
+						</DropdownMenuItem>
+						<DropdownMenuItem onSelect={() => setTheme("dark")}>
+							<MoonIcon className="h-4 w-4" />
+							Dark
+						</DropdownMenuItem>
+						<DropdownMenuItem onSelect={() => setTheme("system")}>
+							<SunMoonIcon className="h-4 w-4" />
+							System
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<a
+							href="https://github.com/ECEHive/hums/issues"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<DropdownMenuItem>
+								<BugIcon className="h-4 w-4" />
+								Report Issue
+							</DropdownMenuItem>
+						</a>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onSelect={() => logout()}>
+							<DoorOpenIcon className="h-4 w-4" />
+							Sign out
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
+		</nav>
 	);
 }
