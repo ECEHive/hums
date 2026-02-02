@@ -10,7 +10,7 @@ export const ZListSnapshotsSchema = z.object({
 	deviceId: z.number().optional(),
 	userId: z.number().optional(),
 	userSearch: z.string().optional(),
-	eventType: z.enum(["TAP", "FACE_ID", "FACE_ID_ENROLLMENT"]).optional(),
+	eventType: z.enum(["TAP", "PRESENCE"]).optional(),
 	startDate: z.date().optional(),
 	endDate: z.date().optional(),
 	faceDetected: z.boolean().optional(),

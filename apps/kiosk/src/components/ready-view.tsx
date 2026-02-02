@@ -1,4 +1,4 @@
-import { Maximize, Scan } from "lucide-react";
+import { Maximize } from "lucide-react";
 import { KioskClock } from "@/components/kiosk-clock";
 import { LoadingIndicator } from "@/components/loading-indicator";
 import { getLogoDataUrl, useBranding } from "@/hooks/useBranding";
@@ -8,14 +8,12 @@ interface ReadyViewProps {
 	isFullscreen: boolean;
 	isProcessing?: boolean;
 	onToggleFullscreen: () => void;
-	onFaceIdSetup?: () => void;
 }
 
 export function ReadyView({
 	isFullscreen,
 	isProcessing = false,
 	onToggleFullscreen,
-	onFaceIdSetup,
 }: ReadyViewProps) {
 	const { data: branding } = useBranding();
 	const logoSrc = branding ? getLogoDataUrl(branding.logos.dark) : undefined;
@@ -46,22 +44,9 @@ export function ReadyView({
 					{isProcessing ? (
 						<LoadingIndicator message="Processing..." />
 					) : (
-						<>
-							<p className="text-2xl text-muted-foreground">
-								Tap your BuzzCard
-							</p>
-							{onFaceIdSetup && (
-								<Button
-									variant="outline"
-									size="lg"
-									onClick={onFaceIdSetup}
-									className="flex items-center gap-2 mt-4 bg-background/50 hover:bg-background/80"
-								>
-									<Scan className="w-5 h-5" />
-									<span>Set Up Face ID</span>
-								</Button>
-							)}
-						</>
+						<p className="text-2xl text-muted-foreground">
+							Tap your BuzzCard
+						</p>
 					)}
 				</div>
 			</div>

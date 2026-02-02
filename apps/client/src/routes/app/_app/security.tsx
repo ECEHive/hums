@@ -92,14 +92,12 @@ type SecuritySnapshot = {
 
 const eventTypeColors: Record<string, string> = {
 	TAP: "bg-green-500",
-	FACE_ID: "bg-purple-500",
-	FACE_ID_ENROLLMENT: "bg-orange-500",
+	PRESENCE: "bg-yellow-500",
 };
 
 const eventTypeLabels: Record<string, string> = {
 	TAP: "Tap",
-	FACE_ID: "Face ID",
-	FACE_ID_ENROLLMENT: "Face ID Enrollment",
+	PRESENCE: "Presence",
 };
 
 // ============================================================================
@@ -1424,8 +1422,7 @@ function HistorySnapshotsView() {
 					selectedEventType !== "all" && {
 						eventType: selectedEventType as
 							| "TAP"
-							| "FACE_ID"
-							| "FACE_ID_ENROLLMENT",
+							| "PRESENCE",
 					}),
 				...(selectedDevice &&
 					selectedDevice !== "all" && {
@@ -1618,10 +1615,7 @@ function HistorySnapshotsView() {
 						<SelectContent>
 							<SelectItem value="all">All Events</SelectItem>
 							<SelectItem value="TAP">Tap</SelectItem>
-							<SelectItem value="FACE_ID">Face ID</SelectItem>
-							<SelectItem value="FACE_ID_ENROLLMENT">
-								Face ID Enrollment
-							</SelectItem>
+							<SelectItem value="PRESENCE">Presence</SelectItem>
 						</SelectContent>
 					</Select>
 
