@@ -1,5 +1,3 @@
-/// <reference types="vite-plugin-pwa/client" />
-
 declare global {
 	declare const __APP_VERSION__: string;
 

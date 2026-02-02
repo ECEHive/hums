@@ -9,13 +9,16 @@ import {
 	LayoutDashboardIcon,
 	MenuIcon,
 	MoonIcon,
+	PanelLeftCloseIcon,
+	PanelLeftIcon,
 	SettingsIcon,
 	SunIcon,
 	SunMoonIcon,
 	UserIcon,
 	XIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import type React from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { useAuth, useCurrentUser } from "@/auth/AuthProvider";
 import { PeriodSelector } from "@/components/periods/period-selector";
 import { usePeriod } from "@/components/providers/period-provider";
@@ -53,6 +56,33 @@ import {
 	type NavItem,
 } from "./nav-config";
 
+// Sidebar collapsed state context
+interface SidebarContextType {
+	isCollapsed: boolean;
+	setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+	toggleSidebar: () => void;
+}
+
+const SidebarContext = createContext<SidebarContextType | null>(null);
+
+function useSidebarContext() {
+	const context = useContext(SidebarContext);
+	return context;
+}
+
+export function SidebarProvider({ children }: { children: React.ReactNode }) {
+	const [isCollapsed, setIsCollapsed] = useState(false);
+	const toggleSidebar = () => setIsCollapsed((prev) => !prev);
+
+	return (
+		<SidebarContext.Provider
+			value={{ isCollapsed, setIsCollapsed, toggleSidebar }}
+		>
+			{children}
+		</SidebarContext.Provider>
+	);
+}
+
 interface DualSidebarProps {
 	showPeriodSelector?: boolean;
 }
@@ -78,6 +108,8 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 	const { canAccessShifts } = useShiftAccess();
 	const { handleClick: handleLogoClick } = useGlitchEgg();
 	const { modulePaths } = useAppNavigation();
+	const sidebarContext = useSidebarContext();
+	const isCollapsed = sidebarContext?.isCollapsed ?? false;
 
 	const currentModule = getCurrentModule(pathname);
 	const isAdmin = isAdminPath(pathname);
@@ -120,7 +152,12 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 		<TooltipProvider delayDuration={0}>
 			<div className="flex h-full">
 				{/* App Rail - Icon sidebar */}
-				<div className="flex h-full w-16 flex-col items-center border-r bg-sidebar/50 py-3 gap-2">
+				<div
+					className={cn(
+						"flex h-full flex-col items-center border-r bg-sidebar/50 py-3 gap-2 transition-all duration-200",
+						isCollapsed ? "w-0 overflow-hidden border-r-0 p-0" : "w-16",
+					)}
+				>
 					{/* Logo */}
 					<button
 						type="button"
@@ -168,7 +205,14 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 				</div>
 
 				{/* Main Sidebar */}
-				<div className="flex h-full min-w-56 w-fit max-w-72 flex-col border-r bg-sidebar">
+				<div
+					className={cn(
+						"flex h-full flex-col border-r bg-sidebar transition-all duration-200",
+						isCollapsed
+							? "w-0 overflow-hidden border-r-0"
+							: "min-w-56 w-fit max-w-72",
+					)}
+				>
 					{/* Module header */}
 					<div className="flex h-14 items-center gap-2 border-b px-4 whitespace-nowrap">
 						<ModuleIcon className={cn("h-5 w-5", moduleColor)} />
@@ -202,6 +246,36 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 				</div>
 			</div>
 		</TooltipProvider>
+	);
+}
+
+/**
+ * Desktop header trigger component to collapse/expand the sidebar
+ */
+export function DesktopSidebarTrigger() {
+	const isMobile = useIsMobile();
+	const sidebarContext = useSidebarContext();
+
+	if (isMobile || !sidebarContext) return null;
+
+	const { isCollapsed, toggleSidebar } = sidebarContext;
+
+	return (
+		<Button
+			variant="ghost"
+			size="icon"
+			className="hidden md:flex"
+			onClick={toggleSidebar}
+		>
+			{isCollapsed ? (
+				<PanelLeftIcon className="h-5 w-5" />
+			) : (
+				<PanelLeftCloseIcon className="h-5 w-5" />
+			)}
+			<span className="sr-only">
+				{isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+			</span>
+		</Button>
 	);
 }
 
