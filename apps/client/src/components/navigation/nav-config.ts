@@ -331,7 +331,7 @@ export const appModules: AppModule[] = [
  */
 export const adminNavItems: NavGroup[] = [
 	{
-		name: "Users & Access",
+		name: "Users",
 		items: [
 			{
 				title: "Users",
@@ -344,7 +344,7 @@ export const adminNavItems: NavGroup[] = [
 				title: "Roles",
 				url: "/app/roles",
 				icon: ShieldIcon,
-				permissions: { any: ["user_roles.list"] },
+				permissions: { any: ["roles.list"] },
 				description: "Manage roles and permissions",
 			},
 			{
@@ -391,7 +391,7 @@ export const adminNavItems: NavGroup[] = [
 				title: "Security Snapshots",
 				url: "/app/security",
 				icon: CameraIcon,
-				permissions: { any: ["security_snapshots.list"] },
+				permissions: { any: ["security.list"] },
 				description: "Security camera snapshots",
 			},
 			{
