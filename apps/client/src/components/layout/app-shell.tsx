@@ -1,20 +1,19 @@
 import { Outlet } from "@tanstack/react-router";
 import type React from "react";
 import { RequireAuth } from "@/auth/AuthProvider";
+import {
+	DualSidebar,
+	MobileNavTrigger,
+	MobileTabBar,
+} from "@/components/navigation/dual-sidebar";
 import { DynamicBreadcrumbs } from "@/components/navigation/dynamic-breadcrumbs";
 import { Separator } from "@/components/ui/separator";
-import {
-	SidebarInset,
-	SidebarProvider,
-	SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { cn } from "@/lib/utils";
 
 interface AppShellProps {
-	/**
-	 * The sidebar component to render
-	 */
-	sidebar: React.ReactNode;
 	/**
 	 * Optional banner components to show above the header
 	 */
@@ -24,44 +23,68 @@ interface AppShellProps {
 	 * Function receives children and should return wrapped JSX
 	 */
 	wrapper?: (children: React.ReactNode) => React.ReactNode;
+	/**
+	 * Whether to show the period selector in the sidebar (for shifts module)
+	 */
+	showPeriodSelector?: boolean;
 }
 
 /**
  * Base application shell that provides consistent layout structure
- * with sidebar, header, breadcrumbs, and content area.
+ * with dual sidebar navigation, header, breadcrumbs, and content area.
+ *
+ * Features a two-panel sidebar:
+ * - Left icon rail for quick app switching
+ * - Main sidebar with contextual navigation
  *
  * @example
  * ```tsx
  * <AppShell
- *   sidebar={<AppSidebar />}
  *   banners={<><ImpersonationBanner /><AgreementsBanner /></>}
  * />
  * ```
  */
-export function AppShell({ sidebar, banners, wrapper }: AppShellProps) {
-	// Automatically update page title based on current route
+export function AppShell({
+	banners,
+	wrapper,
+	showPeriodSelector,
+}: AppShellProps) {
 	usePageTitle();
+	const isMobile = useIsMobile();
 
 	const content = (
 		<RequireAuth>
-			<SidebarProvider>
-				{sidebar}
-				<SidebarInset>
-					<header className="flex h-16 shrink-0 items-center gap-2 px-4">
-						<SidebarTrigger className="-ml-1" />
-						<Separator
-							orientation="vertical"
-							className="mr-2 data-[orientation=vertical]:h-4"
-						/>
-						<DynamicBreadcrumbs />
-					</header>
-					{banners && <div className="px-4 md:px-6">{banners}</div>}
-					<Outlet />
-				</SidebarInset>
-			</SidebarProvider>
+			<TooltipProvider delayDuration={0}>
+				<div className="flex h-svh w-full bg-background">
+					{/* Desktop sidebar */}
+					{!isMobile && <DualSidebar showPeriodSelector={showPeriodSelector} />}
+
+					{/* Main content area */}
+					<div className="flex flex-1 flex-col min-w-0">
+						{/* Header */}
+						<header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+							{isMobile && (
+								<MobileNavTrigger showPeriodSelector={showPeriodSelector} />
+							)}
+							{isMobile && <Separator orientation="vertical" className="h-6" />}
+							<DynamicBreadcrumbs />
+						</header>
+
+						{/* Banners */}
+						{banners && <div className="px-4 py-2 md:px-6">{banners}</div>}
+
+						{/* Page content - add bottom padding on mobile for tab bar */}
+						<main className={cn("flex-1 overflow-auto", isMobile && "pb-16")}>
+							<Outlet />
+						</main>
+					</div>
+
+					{/* Mobile tab bar */}
+					<MobileTabBar />
+				</div>
+			</TooltipProvider>
 		</RequireAuth>
 	);
 
-	// If a wrapper is provided, use it to wrap the content
 	return wrapper ? wrapper(content) : content;
 }
