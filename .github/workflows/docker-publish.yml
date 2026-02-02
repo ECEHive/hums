@@ -15,11 +15,14 @@ env:
   WEB_IMAGE_NAME: ${{ github.repository_owner }}/hums-web
 
 jobs:
-  build-and-push:
+  # Build server image
+  build-server:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout repository
@@ -38,26 +41,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata for server image
-        id: meta-server
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ github.event.inputs.tag }},priority=900
-
-      - name: Extract metadata for migrate image
-        id: meta-migrate
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ github.event.inputs.tag }},priority=900
-
-      - name: Extract metadata for web image
-        id: meta-web
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
           tags: |
             type=raw,value=${{ github.event.inputs.tag }},priority=900
 
@@ -68,11 +55,44 @@ jobs:
           file: ./Dockerfile.server
           target: server
           push: true
-          tags: ${{ steps.meta-server.outputs.tags }}
-          labels: ${{ steps.meta-server.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           # cache-from: type=gha
           # cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+
+  # Build migrate image
+  build-migrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag != 'latest' && github.event.inputs.tag || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for migrate image
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ github.event.inputs.tag }},priority=900
 
       - name: Build and push prisma-migrate image
         uses: docker/build-push-action@v6
@@ -81,11 +101,44 @@ jobs:
           file: ./Dockerfile.server
           target: prisma-migrate
           push: true
-          tags: ${{ steps.meta-migrate.outputs.tags }}
-          labels: ${{ steps.meta-migrate.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           # cache-from: type=gha
           # cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+
+  # Build web image
+  build-web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag != 'latest' && github.event.inputs.tag || github.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for web image
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ github.event.inputs.tag }},priority=900
 
       - name: Build and push web image
         uses: docker/build-push-action@v6
@@ -94,11 +147,23 @@ jobs:
           file: ./Dockerfile.web
           target: web
           push: true
-          tags: ${{ steps.meta-web.outputs.tags }}
-          labels: ${{ steps.meta-web.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           # cache-from: type=gha
           # cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+
+  # Finalize after all builds complete
+  finalize:
+    needs: [build-server, build-migrate, build-web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Make images public
         run: |
@@ -125,15 +190,15 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Server Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta-server.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.build-server.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Migrate Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta-migrate.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.build-migrate.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Web Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta-web.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.build-web.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

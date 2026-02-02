@@ -249,14 +249,17 @@ jobs:
               body: `⚠️ Release ${tag} already exists. No new release was created.`
             });
 
-  # Build and publish Docker images after release is created
-  build-and-push-docker:
+  # Build and publish Docker images after release is created (in parallel)
+  build-server:
     needs: create-release
     if: needs.create-release.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
     
     steps:
       - name: Checkout repository
@@ -275,7 +278,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata for server image
-        id: meta-server
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}
@@ -284,8 +287,47 @@ jobs:
             type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
             type=raw,value=latest,priority=600
 
+      - name: Build and push server image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.server
+          target: server
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+  build-migrate:
+    needs: create-release
+    if: needs.create-release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.tag }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata for migrate image
-        id: meta-migrate
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}
@@ -294,8 +336,47 @@ jobs:
             type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
             type=raw,value=latest,priority=600
 
+      - name: Build and push prisma-migrate image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.server
+          target: prisma-migrate
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+  build-web:
+    needs: create-release
+    if: needs.create-release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-release.outputs.tag }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata for web image
-        id: meta-web
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
@@ -304,41 +385,30 @@ jobs:
             type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
             type=raw,value=latest,priority=600
 
-      - name: Build and push server image
-        id: build-server
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.server
-          target: server
-          push: true
-          tags: ${{ steps.meta-server.outputs.tags }}
-          labels: ${{ steps.meta-server.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-
-      - name: Build and push prisma-migrate image
-        id: build-migrate
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.server
-          target: prisma-migrate
-          push: true
-          tags: ${{ steps.meta-migrate.outputs.tags }}
-          labels: ${{ steps.meta-migrate.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-
       - name: Build and push web image
-        id: build-web
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.web
           target: web
           push: true
-          tags: ${{ steps.meta-web.outputs.tags }}
-          labels: ${{ steps.meta-web.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+
+  # Finalize after all builds complete
+  finalize-docker:
+    needs: [create-release, build-server, build-migrate, build-web]
+    if: needs.create-release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Make images public
         run: |
@@ -365,9 +435,9 @@ jobs:
           RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
           TAG: ${{ needs.create-release.outputs.tag }}
           VERSION: ${{ needs.create-release.outputs.version }}
-          SERVER_DIGEST: ${{ steps.build-server.outputs.digest }}
-          MIGRATE_DIGEST: ${{ steps.build-migrate.outputs.digest }}
-          WEB_DIGEST: ${{ steps.build-web.outputs.digest }}
+          SERVER_DIGEST: ${{ needs.build-server.outputs.digest }}
+          MIGRATE_DIGEST: ${{ needs.build-migrate.outputs.digest }}
+          WEB_DIGEST: ${{ needs.build-web.outputs.digest }}
           REPO_OWNER: ${{ github.repository_owner }}
         with:
           script: |
@@ -436,18 +506,18 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Server Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta-server.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.build-server.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "Digest: \`${{ steps.build-server.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${{ needs.build-server.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Migrate Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta-migrate.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.build-migrate.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "Digest: \`${{ steps.build-migrate.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${{ needs.build-migrate.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Web Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta-web.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.build-web.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "Digest: \`${{ steps.build-web.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${{ needs.build-web.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
