@@ -1,4 +1,3 @@
-import { registerSW } from "virtual:pwa-register";
 import * as Sentry from "@sentry/react";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,15 +7,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./globals.css";
 import { fetchConfig } from "./lib/config";
-
-// Register service worker with auto-update
-// Inventory Kiosk mode: auto-reload when new version is available
-registerSW({
-	immediate: true,
-	onOfflineReady() {
-		console.log("HUMS Inventory Kiosk is ready to work offline");
-	},
-});
 
 // Initialize Sentry from runtime config
 fetchConfig()
