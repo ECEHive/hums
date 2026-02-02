@@ -1,16 +1,416 @@
 generator client {
-  provider   = "prisma-client"
-  output     = "./generated"
-  runtime    = "bun"
+  provider = "prisma-client"
+  output   = "./generated"
+  runtime  = "bun"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-//
-// Enums
-//
+model User {
+  id                    Int                    @id @default(autoincrement())
+  username              String                 @unique
+  name                  String
+  email                 String                 @unique
+  cardNumber            String?                @unique
+  isSystemUser          Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now()) @updatedAt
+  slackUsername         String?                @unique
+  faceIdEnabled         Boolean                @default(false)
+  apiTokens             ApiToken[]
+  impersonatedAuditLogs AuditLog[]             @relation("AuditLogImpersonators")
+  auditLogs             AuditLog[]
+  faceEnrollment        FaceEnrollment?
+  inventoryTransactions InventoryTransaction[]
+  securitySnapshots     SecuritySnapshot[]
+  sessions              Session[]
+  reviewedAttendances   ShiftAttendance[]      @relation("ShiftAttendanceReviewedBy")
+  attendances           ShiftAttendance[]
+  createdSuspensions    Suspension[]           @relation("SuspensionCreatedBy")
+  suspensions           Suspension[]
+  handledTickets        Ticket[]               @relation("TicketHandler")
+  submittedTickets      Ticket[]               @relation("TicketSubmitter")
+  ticketStatusChanges   TicketStatusHistory[]  @relation("TicketStatusChangedBy")
+  userAgreements        UserAgreement[]
+  roles                 Role[]                 @relation("RoleToUser")
+  shiftOccurrences      ShiftOccurrence[]      @relation("ShiftOccurrenceToUser")
+  shiftSchedules        ShiftSchedule[]        @relation("ShiftScheduleToUser")
+}
+
+model Role {
+  id            Int          @id @default(autoincrement())
+  name          String       @unique
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now()) @updatedAt
+  approvalItems Item[]       @relation("ItemApprovalRoles")
+  periods       Period[]     @relation("PeriodRoles")
+  permissions   Permission[] @relation("PermissionToRole")
+  shiftTypes    ShiftType[]  @relation("RoleToShiftType")
+  users         User[]       @relation("RoleToUser")
+}
+
+model Permission {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  roles     Role[]   @relation("PermissionToRole")
+}
+
+model Period {
+  id                  Int               @id @default(autoincrement())
+  name                String
+  start               DateTime
+  end                 DateTime
+  visibleStart        DateTime
+  visibleEnd          DateTime
+  scheduleSignupStart DateTime
+  scheduleSignupEnd   DateTime
+  scheduleModifyStart DateTime
+  scheduleModifyEnd   DateTime
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt
+  max                 Int?
+  min                 Int?
+  minMaxUnit          MinMaxUnit?
+  periodExceptions    PeriodException[]
+  shiftTypes          ShiftType[]
+  roles               Role[]            @relation("PeriodRoles")
+}
+
+model PeriodException {
+  id        Int      @id @default(autoincrement())
+  periodId  Int
+  name      String
+  start     DateTime
+  end       DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  period    Period   @relation(fields: [periodId], references: [id], onDelete: Cascade)
+}
+
+model ShiftType {
+  id                      Int                      @id @default(autoincrement())
+  periodId                Int
+  name                    String
+  location                String
+  description             String?
+  color                   String?
+  icon                    String?
+  isBalancedAcrossOverlap Boolean                  @default(false)
+  isBalancedAcrossDay     Boolean                  @default(false)
+  isBalancedAcrossPeriod  Boolean                  @default(false)
+  canSelfAssign           Boolean                  @default(true)
+  doRequireRoles          ShiftTypeRoleRequirement @default(disabled)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @default(now()) @updatedAt
+  shiftSchedules          ShiftSchedule[]
+  period                  Period                   @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  roles                   Role[]                   @relation("RoleToShiftType")
+}
+
+model ShiftSchedule {
+  id               Int               @id @default(autoincrement())
+  shiftTypeId      Int
+  slots            Int               @default(1)
+  dayOfWeek        Int
+  startTime        String
+  endTime          String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  shiftOccurrences ShiftOccurrence[]
+  shiftType        ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
+  users            User[]            @relation("ShiftScheduleToUser")
+
+  @@unique([shiftTypeId, dayOfWeek, startTime])
+}
+
+model ShiftOccurrence {
+  id              Int               @id @default(autoincrement())
+  shiftScheduleId Int
+  timestamp       DateTime
+  slot            Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now()) @updatedAt
+  attendances     ShiftAttendance[]
+  shiftSchedule   ShiftSchedule     @relation(fields: [shiftScheduleId], references: [id], onDelete: Cascade)
+  users           User[]            @relation("ShiftOccurrenceToUser")
+
+  @@unique([shiftScheduleId, timestamp, slot])
+}
+
+model ShiftAttendance {
+  id                Int                   @id @default(autoincrement())
+  shiftOccurrenceId Int
+  userId            Int
+  status            ShiftAttendanceStatus @default(absent)
+  timeIn            DateTime?
+  timeOut           DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @default(now()) @updatedAt
+  didArriveLate     Boolean               @default(false)
+  didLeaveEarly     Boolean               @default(false)
+  droppedNotes      String?
+  isMakeup          Boolean               @default(false)
+  excuseNotes       String?
+  isExcused         Boolean               @default(false)
+  reviewedAt        DateTime?
+  reviewedById      Int?
+  reviewedBy        User?                 @relation("ShiftAttendanceReviewedBy", fields: [reviewedById], references: [id])
+  shiftOccurrence   ShiftOccurrence       @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftOccurrenceId, userId])
+}
+
+model Session {
+  id                Int         @id @default(autoincrement())
+  userId            Int
+  startedAt         DateTime    @default(now())
+  endedAt           DateTime?
+  sessionType       SessionType @default(regular)
+  isManuallyCreated Boolean     @default(false)
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endedAt])
+}
+
+model Device {
+  id                 Int                @id @default(autoincrement())
+  name               String
+  ipAddress          String             @unique
+  isActive           Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @default(now()) @updatedAt
+  hasDashboardAccess Boolean            @default(false)
+  hasKioskAccess     Boolean            @default(true)
+  hasInventoryAccess Boolean            @default(false)
+  securitySnapshots  SecuritySnapshot[]
+}
+
+model Agreement {
+  id               Int             @id @default(autoincrement())
+  title            String
+  content          String
+  confirmationText String
+  isEnabled        Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+  userAgreements   UserAgreement[]
+}
+
+model UserAgreement {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  agreementId Int
+  agreedAt    DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  agreement   Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agreementId])
+}
+
+model ApiToken {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  prefix      String     @unique
+  hashedKey   String     @unique
+  createdById Int?
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  createdBy   User?      @relation(fields: [createdById], references: [id])
+  auditLogs   AuditLog[]
+}
+
+model AuditLog {
+  id               Int            @id @default(autoincrement())
+  userId           Int
+  impersonatedById Int?
+  apiTokenId       Int?
+  action           String
+  metadata         Json           @default("{}")
+  source           AuditLogSource
+  createdAt        DateTime       @default(now())
+  apiToken         ApiToken?      @relation(fields: [apiTokenId], references: [id])
+  impersonatedBy   User?          @relation("AuditLogImpersonators", fields: [impersonatedById], references: [id])
+  user             User           @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([apiTokenId, createdAt])
+  @@index([action, createdAt])
+}
+
+model OneTimeAccessCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@index([code, expiresAt])
+}
+
+model ConfigValue {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([key])
+}
+
+model Suspension {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  startDate     DateTime
+  endDate       DateTime
+  internalNotes String?
+  externalNotes String?
+  createdById   Int?
+  emailSentAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  createdBy     User?     @relation("SuspensionCreatedBy", fields: [createdById], references: [id])
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([startDate, endDate])
+  @@index([emailSentAt, startDate])
+}
+
+model Item {
+  id            String                 @id @default(uuid())
+  name          String
+  description   String?
+  sku           String?                @unique
+  location      String?
+  minQuantity   Int?
+  isActive      Boolean                @default(true)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @default(now()) @updatedAt
+  link          String?
+  snapshot      InventorySnapshot?
+  transactions  InventoryTransaction[]
+  approvalRoles Role[]                 @relation("ItemApprovalRoles")
+}
+
+model InventoryTransaction {
+  id        String          @id @default(uuid())
+  itemId    String
+  userId    Int
+  action    InventoryAction
+  quantity  Int
+  notes     String?
+  createdAt DateTime        @default(now())
+  item      Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id])
+
+  @@index([itemId, createdAt])
+}
+
+model InventorySnapshot {
+  itemId   String   @id
+  quantity Int
+  takenAt  DateTime @default(now())
+  item     Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model TicketType {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  description  String?
+  icon         String?
+  color        String?
+  requiresAuth Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  fieldSchema  Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  tickets      Ticket[]
+}
+
+model Ticket {
+  id              String                @id @default(uuid())
+  ticketTypeId    Int
+  status          TicketStatus          @default(pending)
+  data            Json
+  submitterId     Int?
+  submitterEmail  String?
+  submitterName   String?
+  handlerId       Int?
+  internalNotes   String?
+  resolutionNotes String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @default(now()) @updatedAt
+  resolvedAt      DateTime?
+  handler         User?                 @relation("TicketHandler", fields: [handlerId], references: [id])
+  submitter       User?                 @relation("TicketSubmitter", fields: [submitterId], references: [id])
+  ticketType      TicketType            @relation(fields: [ticketTypeId], references: [id])
+  statusHistory   TicketStatusHistory[]
+
+  @@index([ticketTypeId])
+  @@index([submitterId])
+  @@index([handlerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TicketStatusHistory {
+  id             Int           @id @default(autoincrement())
+  ticketId       String
+  previousStatus TicketStatus?
+  newStatus      TicketStatus
+  notes          String?
+  changedById    Int?
+  createdAt      DateTime      @default(now())
+  changedBy      User?         @relation("TicketStatusChangedBy", fields: [changedById], references: [id])
+  ticket         Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+model FaceEnrollment {
+  id                Int                    @id @default(autoincrement())
+  userId            Int                    @unique
+  faceEmbedding     Unsupported("vector")?
+  enrolledAt        DateTime               @default(now())
+  lastUsedAt        DateTime?
+  successfulMatches Int                    @default(0)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @default(now()) @updatedAt
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SecuritySnapshot {
+  id             String            @id @default(uuid())
+  deviceId       Int?
+  userId         Int?
+  eventType      SecurityEventType
+  imagePath      String
+  capturedAt     DateTime          @default(now())
+  faceDetected   Boolean           @default(false)
+  faceConfidence Float?
+  createdAt      DateTime          @default(now())
+  device         Device?           @relation(fields: [deviceId], references: [id])
+  user           User?             @relation(fields: [userId], references: [id])
+
+  @@index([deviceId])
+  @@index([userId])
+  @@index([capturedAt])
+  @@index([eventType])
+}
 
 enum ShiftTypeRoleRequirement {
   disabled
@@ -24,7 +424,7 @@ enum ShiftAttendanceStatus {
   absent
   dropped
   dropped_makeup
-  excused // Full credit granted due to approved excuse
+  excused
 }
 
 enum SessionType {
@@ -49,486 +449,6 @@ enum InventoryAction {
   CHECK_OUT
 }
 
-//
-// Models
-//
-
-model User {
-  id Int @id @default(autoincrement())
-
-  // fields
-  username     String   @unique
-  name         String
-  email        String   @unique
-  cardNumber   String?  @unique
-  slackUsername String? @unique
-  isSystemUser Boolean  @default(false)
-  
-  // Face ID
-  faceIdEnabled Boolean @default(false)
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  roles            Role[]
-  shiftSchedules   ShiftSchedule[]
-  shiftOccurrences     ShiftOccurrence[]
-  auditLogs            AuditLog[]
-  impersonatedAuditLogs AuditLog[] @relation("AuditLogImpersonators")
-
-  // One-to-many
-  sessions    Session[]
-  attendances ShiftAttendance[]
-  reviewedAttendances ShiftAttendance[] @relation("ShiftAttendanceReviewedBy")
-  suspensions Suspension[]
-  createdSuspensions Suspension[] @relation("SuspensionCreatedBy")
-  
-  // Many-to-many (explicit)
-  userAgreements UserAgreement[]
-  apiTokens     ApiToken[]
-
-  // Inventory
-  inventoryTransactions InventoryTransaction[]
-
-  // Tickets
-  submittedTickets Ticket[] @relation("TicketSubmitter")
-  handledTickets   Ticket[] @relation("TicketHandler")
-  ticketStatusChanges TicketStatusHistory[] @relation("TicketStatusChangedBy")
-  
-  // Face ID and Security
-  faceEnrollment FaceEnrollment?
-  securitySnapshots SecuritySnapshot[]
-}
-
-model Role {
-  id Int @id @default(autoincrement())
-
-  // fields
-  name String @unique
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  permissions Permission[]
-  users       User[]
-  shiftTypes ShiftType[]
-  periods    Period[]   @relation("PeriodRoles")
-  
-  // Inventory approval roles (items that require this role to approve checkout/checkin)
-  approvalItems Item[] @relation("ItemApprovalRoles")
-}
-
-model Permission {
-  id Int @id @default(autoincrement())
-
-  // fields
-  name String @unique
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  roles Role[]
-}
-
-// RolePermission and UserRole converted to implicit many-to-many relations.
-
-model Period {
-  id Int @id @default(autoincrement())
-
-  // fields
-  name  String
-  start DateTime
-  end   DateTime
-
-  min       Int?
-  max       Int?
-  minMaxUnit MinMaxUnit?
-
-  visibleStart DateTime
-  visibleEnd   DateTime
-
-  scheduleSignupStart DateTime
-  scheduleSignupEnd   DateTime
-
-  scheduleModifyStart DateTime
-  scheduleModifyEnd   DateTime
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  periodExceptions PeriodException[]
-  shiftTypes ShiftType[]
-  roles      Role[]     @relation("PeriodRoles")
-}
-
-model PeriodException {
-  id Int @id @default(autoincrement())
-
-  // fields
-  periodId Int
-  name     String
-  start    DateTime
-  end      DateTime
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  period Period @relation(fields: [periodId], references: [id], onDelete: Cascade)
-}
-
-model ShiftType {
-  id Int @id @default(autoincrement())
-
-  // fields
-  periodId    Int
-  name        String
-  location    String
-  description String?
-  color       String?
-  icon        String?
-
-  isBalancedAcrossOverlap Boolean @default(false)
-  isBalancedAcrossDay     Boolean @default(false)
-  isBalancedAcrossPeriod  Boolean @default(false)
-  canSelfAssign           Boolean @default(true)
-
-  doRequireRoles ShiftTypeRoleRequirement @default(disabled)
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  period         Period          @relation(fields: [periodId], references: [id], onDelete: Cascade)
-  roles          Role[]
-  shiftSchedules ShiftSchedule[]
-}
-
-model ShiftSchedule {
-  id Int @id @default(autoincrement())
-
-  // fields
-  shiftTypeId Int
-  slots       Int    @default(1)
-  dayOfWeek   Int
-  startTime   String
-  endTime     String
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  shiftType        ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
-  shiftOccurrences ShiftOccurrence[]
-  users            User[]
-
-  // constraints
-  @@unique([shiftTypeId, dayOfWeek, startTime])
-}
-
-model ShiftOccurrence {
-  id Int @id @default(autoincrement())
-
-  // fields
-  shiftScheduleId Int
-  timestamp       DateTime
-  slot            Int      @default(0)
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  shiftSchedule ShiftSchedule     @relation(fields: [shiftScheduleId], references: [id], onDelete: Cascade)
-  users         User[]
-  attendances   ShiftAttendance[]
-
-  // constraints
-  @@unique([shiftScheduleId, timestamp, slot])
-}
-
-model ShiftAttendance {
-  id Int @id @default(autoincrement())
-
-  // fields
-  shiftOccurrenceId Int
-  userId            Int
-  status            ShiftAttendanceStatus @default(absent)
-  isMakeup          Boolean             @default(false)
-  didArriveLate     Boolean             @default(false)
-  didLeaveEarly     Boolean             @default(false)
-  isExcused         Boolean             @default(false)
-  droppedNotes      String?
-  excuseNotes       String?             // Notes provided when excusing (only relevant when isExcused=true)
-  timeIn            DateTime?
-  timeOut           DateTime?
-  // Review tracking:
-  // - When null: issue is "pending review" (not yet reviewed by staff)
-  // - When set with isExcused=true: issue was reviewed and excused
-  // - When set with isExcused=false: issue was reviewed and marked as unexcused
-  reviewedAt        DateTime?
-  reviewedById      Int?
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  shiftOccurrence ShiftOccurrence @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy      User?           @relation("ShiftAttendanceReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
-
-  // constraints
-  @@unique([shiftOccurrenceId, userId])
-}
-
-model Session {
-  id Int @id @default(autoincrement())
-
-  // fields
-  userId             Int
-  sessionType        SessionType @default(regular)
-  startedAt          DateTime    @default(now())
-  endedAt            DateTime?
-  isManuallyCreated  Boolean     @default(false)
-
-  // relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // constraints
-  @@unique([userId, endedAt])
-}
-
-model Device {
-  id Int @id @default(autoincrement())
-
-  // fields
-  name      String
-  ipAddress String  @unique
-  isActive  Boolean @default(true)
-
-  // Device access permissions
-  hasKioskAccess      Boolean @default(true)
-  hasDashboardAccess  Boolean @default(false)
-  hasInventoryAccess  Boolean @default(false)
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  securitySnapshots SecuritySnapshot[]
-}
-
-model Agreement {
-  id Int @id @default(autoincrement())
-
-  // fields
-  title            String
-  content          String  @db.Text
-  confirmationText String
-  isEnabled        Boolean @default(true)
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  userAgreements UserAgreement[]
-}
-
-model UserAgreement {
-  id Int @id @default(autoincrement())
-
-  // fields
-  userId      Int
-  agreementId Int
-
-  // timestamps
-  agreedAt  DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agreement Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
-
-  // constraints
-  @@unique([userId, agreementId])
-}
-
-model ApiToken {
-  id Int @id @default(autoincrement())
-
-  // fields
-  name        String
-  description String?
-  prefix      String @unique
-  hashedKey   String @unique
-  createdById Int?
-  expiresAt   DateTime?
-  lastUsedAt  DateTime?
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  auditLogs AuditLog[]
-}
-
-model AuditLog {
-  id Int @id @default(autoincrement())
-
-  // fields
-  userId           Int
-  impersonatedById Int?
-  apiTokenId       Int?
-  action           String
-  metadata         Json    @default("{}")
-  source           AuditLogSource
-  createdAt        DateTime @default(now())
-
-  // relations
-  user           User      @relation(fields: [userId], references: [id], onDelete: Restrict)
-  impersonatedBy User?     @relation("AuditLogImpersonators", fields: [impersonatedById], references: [id], onDelete: SetNull)
-  apiToken       ApiToken? @relation(fields: [apiTokenId], references: [id], onDelete: SetNull)
-
-  // indexes
-  @@index([createdAt])
-  @@index([userId, createdAt])
-  @@index([apiTokenId, createdAt])
-  @@index([action, createdAt])
-}
-
-model OneTimeAccessCode {
-  id Int @id @default(autoincrement())
-
-  // fields
-  code      String   @unique
-  usedAt    DateTime?
-  expiresAt DateTime
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // indexes
-  @@index([code, expiresAt])
-}
-
-model ConfigValue {
-  id Int @id @default(autoincrement())
-
-  // fields
-  key   String @unique
-  value Json
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // indexes
-  @@index([key])
-}
-
-model Suspension {
-  id Int @id @default(autoincrement())
-
-  // fields
-  userId        Int
-  startDate     DateTime
-  endDate       DateTime
-  internalNotes String?  @db.Text  // Not shared with user
-  externalNotes String?  @db.Text  // Shared with user
-  createdById   Int?
-  emailSentAt   DateTime?          // Track when suspension notice was sent
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdBy User? @relation("SuspensionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-
-  // indexes
-  @@index([userId])
-  @@index([startDate, endDate])
-  @@index([emailSentAt, startDate])
-}
-
-model Item {
-  id String @id @default(uuid())
-
-  // fields
-  name        String
-  description String?
-  sku         String?  @unique
-  location    String?
-  minQuantity Int?     // minimum quantity threshold for alerts
-  link        String?  // ordering/product link
-  isActive    Boolean  @default(true)
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  transactions InventoryTransaction[]
-  snapshot     InventorySnapshot?
-  
-  // Roles required to approve checkout/checkin for this item (any role in the list can approve)
-  approvalRoles Role[] @relation("ItemApprovalRoles")
-}
-
-model InventoryTransaction {
-  id String @id @default(uuid())
-
-  // fields
-  itemId   String
-  userId   Int
-  action   InventoryAction
-  quantity Int             // positive or negative depending on action
-  notes    String?
-
-  // timestamps
-  createdAt DateTime @default(now())
-
-  // relations
-  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
-
-  // indexes
-  @@index([itemId, createdAt])
-}
-
-model InventorySnapshot {
-  // fields
-  itemId   String   @id
-  quantity Int      // authoritative quantity at snapshot time
-  takenAt  DateTime @default(now())
-
-  // relations
-  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
-}
-
-//
-// Ticket System
-//
-
 enum TicketStatus {
   pending
   in_progress
@@ -537,158 +457,9 @@ enum TicketStatus {
   cancelled
 }
 
-model TicketType {
-  id Int @id @default(autoincrement())
-
-  // fields
-  name        String  @unique
-  description String?
-  icon        String? // Icon identifier for UI display
-  color       String? // Color for UI display
-  
-  // Configuration
-  requiresAuth Boolean @default(false) // Whether submission requires authentication
-  isActive     Boolean @default(true)  // Whether this ticket type is available for submission
-  sortOrder    Int     @default(0)     // Display order in ticket type list
-  
-  // Field schema (JSON Schema-like structure defining expected fields)
-  fieldSchema Json
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  tickets Ticket[]
-}
-
-model Ticket {
-  id String @id @default(uuid())
-
-  // fields
-  ticketTypeId Int
-  status       TicketStatus @default(pending)
-  
-  // Dynamic data stored as JSON (validated against TicketType.fieldSchema)
-  data Json
-  
-  // Optional submitter info (null if anonymous submission)
-  submitterId Int?
-  submitterEmail String? // For anonymous submissions or as backup contact
-  submitterName  String? // For anonymous submissions
-  
-  // Handler/assignee for the ticket
-  handlerId Int?
-  
-  // Notes for internal use
-  internalNotes String? @db.Text
-  
-  // Resolution notes (visible to submitter)
-  resolutionNotes String? @db.Text
-
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  resolvedAt DateTime?
-
-  // relations
-  ticketType TicketType @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
-  submitter  User?      @relation("TicketSubmitter", fields: [submitterId], references: [id], onDelete: SetNull)
-  handler    User?      @relation("TicketHandler", fields: [handlerId], references: [id], onDelete: SetNull)
-  
-  statusHistory TicketStatusHistory[]
-
-  // indexes
-  @@index([ticketTypeId])
-  @@index([submitterId])
-  @@index([handlerId])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model TicketStatusHistory {
-  id Int @id @default(autoincrement())
-
-  // fields
-  ticketId     String
-  previousStatus TicketStatus?
-  newStatus      TicketStatus
-  notes          String? @db.Text
-  changedById    Int?
-
-  // timestamps
-  createdAt DateTime @default(now())
-
-  // relations
-  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  changedBy User?  @relation("TicketStatusChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
-
-  // indexes
-  @@index([ticketId])
-  @@index([createdAt])
-}
-
-//
-// Face ID and Security
-//
-
 enum SecurityEventType {
   TAP
   FACE_ID
   FACE_ID_ENROLLMENT
-}
-
-model FaceEnrollment {
-  id Int @id @default(autoincrement())
-
-  // fields
-  userId Int @unique
-  
-  // Native vector column for pgvector similarity search (128 dimensions for face-api.js)
-  // This enables efficient nearest neighbor search using HNSW index
-  faceEmbedding Unsupported("vector(128)")?
-  
-  // Metadata about enrollment
-  enrolledAt DateTime @default(now())
-  lastUsedAt DateTime?
-  successfulMatches Int @default(0)
-  
-  // timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  // relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model SecuritySnapshot {
-  id String @id @default(uuid())
-
-  // fields
-  deviceId   Int?
-  userId     Int?
-  eventType  SecurityEventType
-  
-  // Image stored on disk, this stores the relative path from storage root
-  imagePath  String
-  
-  // Metadata
-  capturedAt DateTime @default(now())
-  
-  // Optional face detection data from the snapshot
-  faceDetected Boolean @default(false)
-  faceConfidence Float?
-
-  // timestamps
-  createdAt DateTime @default(now())
-
-  // relations
-  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  // indexes
-  @@index([deviceId])
-  @@index([userId])
-  @@index([capturedAt])
-  @@index([eventType])
+  PRESENCE // Snapshot taken when face is detected but no tap event occurs
 }

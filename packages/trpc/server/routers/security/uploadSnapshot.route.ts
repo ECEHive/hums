@@ -12,11 +12,13 @@ const logger = getLogger("security:upload");
 export const ZUploadSnapshotSchema = z.object({
 	// Base64 encoded image data
 	imageData: z.string(),
-	eventType: z.enum(["TAP", "FACE_ID", "FACE_ID_ENROLLMENT"]),
+	eventType: z.enum(["TAP", "FACE_ID", "FACE_ID_ENROLLMENT", "PRESENCE"]),
 	userId: z.number().optional(),
 	// Face detection metadata from the client
 	faceDetected: z.boolean().default(false),
 	faceConfidence: z.number().optional(),
+	// Additional metadata (JSON string) for debugging and analysis
+	metadata: z.string().optional(),
 });
 
 export type TUploadSnapshotOptions = {
@@ -55,7 +57,14 @@ async function ensureStorageDir(): Promise<string> {
 
 export async function uploadSnapshotHandler(options: TUploadSnapshotOptions) {
 	const { ctx, input } = options;
-	const { imageData, eventType, userId, faceDetected, faceConfidence } = input;
+	const {
+		imageData,
+		eventType,
+		userId,
+		faceDetected,
+		faceConfidence,
+		metadata,
+	} = input;
 
 	try {
 		// Decode base64 image
@@ -124,6 +133,7 @@ export async function uploadSnapshotHandler(options: TUploadSnapshotOptions) {
 			userId,
 			eventType,
 			faceDetected,
+			...(metadata ? { metadata: JSON.parse(metadata) } : {}),
 		});
 
 		return {

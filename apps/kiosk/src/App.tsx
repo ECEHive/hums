@@ -59,6 +59,9 @@ function AppContent() {
 		async (cardNumber: string) => {
 			console.log("[App] handleTapWithSnapshot called");
 
+			// Cancel any pending presence snapshots since user is tapping
+			cameraContext.notifyTapEvent();
+
 			// Start camera if not already running (don't wait for it to be fully ready)
 			if (!cameraContext.isCameraReady) {
 				console.log("[App] Camera not ready, starting in background...");
@@ -104,6 +107,9 @@ function AppContent() {
 			cameraContext.clearPendingMatch();
 			return;
 		}
+
+		// Cancel any pending presence snapshots since user is using Face ID
+		cameraContext.notifyTapEvent();
 
 		// Capture snapshot for Face ID login (non-blocking)
 		void cameraContext
