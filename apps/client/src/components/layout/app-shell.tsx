@@ -2,9 +2,11 @@ import { Outlet } from "@tanstack/react-router";
 import type React from "react";
 import { RequireAuth } from "@/auth/AuthProvider";
 import {
+	DesktopSidebarTrigger,
 	DualSidebar,
 	MobileNavTrigger,
 	MobileTabBar,
+	SidebarProvider,
 } from "@/components/navigation/dual-sidebar";
 import { DynamicBreadcrumbs } from "@/components/navigation/dynamic-breadcrumbs";
 import { Separator } from "@/components/ui/separator";
@@ -55,33 +57,38 @@ export function AppShell({
 	const content = (
 		<RequireAuth>
 			<TooltipProvider delayDuration={0}>
-				<div className="flex h-svh w-full bg-background">
-					{/* Desktop sidebar */}
-					{!isMobile && <DualSidebar showPeriodSelector={showPeriodSelector} />}
+				<SidebarProvider>
+					<div className="flex h-svh w-full bg-background">
+						{/* Desktop sidebar */}
+						{!isMobile && (
+							<DualSidebar showPeriodSelector={showPeriodSelector} />
+						)}
 
-					{/* Main content area */}
-					<div className="flex flex-1 flex-col min-w-0">
-						{/* Header */}
-						<header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-							{isMobile && (
-								<MobileNavTrigger showPeriodSelector={showPeriodSelector} />
-							)}
-							{isMobile && <Separator orientation="vertical" className="h-6" />}
-							<DynamicBreadcrumbs />
-						</header>
+						{/* Main content area */}
+						<div className="flex flex-1 flex-col min-w-0">
+							{/* Header */}
+							<header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+								{isMobile && (
+									<MobileNavTrigger showPeriodSelector={showPeriodSelector} />
+								)}
+								{!isMobile && <DesktopSidebarTrigger />}
+								<Separator orientation="vertical" className="h-6" />
+								<DynamicBreadcrumbs />
+							</header>
 
-						{/* Banners */}
-						{banners && <div className="px-4 py-2 md:px-6">{banners}</div>}
+							{/* Banners */}
+							{banners && <div className="px-4 py-2 md:px-6">{banners}</div>}
 
-						{/* Page content - add bottom padding on mobile for tab bar */}
-						<main className={cn("flex-1 overflow-auto", isMobile && "pb-16")}>
-							<Outlet />
-						</main>
+							{/* Page content - add bottom padding on mobile for tab bar */}
+							<main className={cn("flex-1 overflow-auto", isMobile && "pb-16")}>
+								<Outlet />
+							</main>
+						</div>
+
+						{/* Mobile tab bar */}
+						<MobileTabBar />
 					</div>
-
-					{/* Mobile tab bar */}
-					<MobileTabBar />
-				</div>
+				</SidebarProvider>
 			</TooltipProvider>
 		</RequireAuth>
 	);
