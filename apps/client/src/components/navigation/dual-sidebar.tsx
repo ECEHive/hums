@@ -168,7 +168,7 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 					</button>
 
 					{/* App modules */}
-					<div className="flex flex-col items-center gap-1">
+					<div className="flex flex-1 flex-col items-center gap-1">
 						{visibleModules.map((module) => {
 							const isActive = currentModule?.id === module.id && !isAdmin;
 							return (
@@ -202,6 +202,30 @@ function DesktopSidebar({ showPeriodSelector }: DesktopSidebarProps) {
 							</>
 						)}
 					</div>
+
+					{/* Space Overview at bottom of rail */}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<a
+								href="/overview/"
+								target="_blank"
+								rel="noopener noreferrer"
+								className={cn(
+									"flex h-10 w-10 items-center justify-center rounded-lg transition-all",
+									"hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+									"text-sidebar-foreground/60 hover:text-sidebar-foreground",
+								)}
+							>
+								<LayoutDashboardIcon className="h-5 w-5" />
+							</a>
+						</TooltipTrigger>
+						<TooltipContent side="right" sideOffset={8}>
+							<div className="font-medium">Space Overview</div>
+							<div className="text-xs text-muted-foreground">
+								Opens in new tab
+							</div>
+						</TooltipContent>
+					</Tooltip>
 				</div>
 
 				{/* Main Sidebar */}
@@ -563,12 +587,6 @@ function UserMenu() {
 							My Profile
 						</DropdownMenuItem>
 					</Link>
-					<a href="/overview/" target="_blank" rel="noopener noreferrer">
-						<DropdownMenuItem>
-							<LayoutDashboardIcon className="h-4 w-4" />
-							Space Overview
-						</DropdownMenuItem>
-					</a>
 					<DropdownMenuSeparator />
 					<DropdownMenuLabel>Theme</DropdownMenuLabel>
 					<DropdownMenuItem onSelect={() => setTheme("light")}>
