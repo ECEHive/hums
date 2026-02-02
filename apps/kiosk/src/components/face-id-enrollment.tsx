@@ -53,7 +53,7 @@ interface FaceIdEnrollmentProps {
 
 // Face positioning requirements
 const MIN_FACE_SIZE_RATIO = 0.15; // Face must be at least 15% of frame width (larger = closer)
-const MAX_FACE_SIZE_RATIO = 0.75; // Face must be at most 65% of frame width
+const MAX_FACE_SIZE_RATIO = 0.75; // Face must be at most 75% of frame width
 const MAX_CENTER_OFFSET_RATIO = 0.18; // Face center must be within 18% of frame center (relaxed from 15%)
 const CIRCLE_RADIUS_RATIO = 0.28; // Visual circle is 28% of frame
 
@@ -528,10 +528,7 @@ export function FaceIdEnrollment({
 				} else {
 					// Allow some tolerance for brief position losses
 					badTicksInWindow++;
-					if (
-						badTicksInWindow > MAX_BAD_TICKS_ALLOWED ||
-						goodPositionTicks === 0
-					) {
+					if (badTicksInWindow > MAX_BAD_TICKS_ALLOWED || goodPositionTicks === 0) {
 						if (goodPositionTicks > 0) {
 							console.log("[FaceIdEnrollment] Position lost, resetting timer");
 						}
