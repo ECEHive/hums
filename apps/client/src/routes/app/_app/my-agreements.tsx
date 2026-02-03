@@ -38,6 +38,7 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
+import { Markdown } from "@/components/ui/markdown";
 import { Spinner } from "@/components/ui/spinner";
 
 export const Route = createFileRoute("/app/_app/my-agreements")({
@@ -174,9 +175,9 @@ function MyAgreements() {
 										</div>
 									</CardHeader>
 									<CardContent>
-										<p className="text-sm text-muted-foreground line-clamp-2">
-											{agreement.content}
-										</p>
+										<div className="text-sm text-muted-foreground line-clamp-2">
+											<Markdown>{agreement.content}</Markdown>
+										</div>
 									</CardContent>
 								</Card>
 							);
@@ -203,9 +204,9 @@ function MyAgreements() {
 						</DialogHeader>
 						<div className="space-y-4">
 							<div className="max-h-[400px] overflow-y-auto border rounded-md p-4 bg-muted/30">
-								<div className="whitespace-pre-wrap text-sm">
-									{selectedAgreement?.content}
-								</div>
+								<Markdown className="text-sm">
+									{selectedAgreement?.content ?? ""}
+								</Markdown>
 							</div>
 							<div className="flex items-center space-x-2">
 								<Checkbox
