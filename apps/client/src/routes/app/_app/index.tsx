@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { RequirePermissions, useCurrentUser } from "@/auth";
 import { QuickLinksCard } from "@/components/app/quick-links-card";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
+import { Page, PageContent } from "@/components/layout";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -75,8 +76,8 @@ function AppIndexLayout() {
 		.toUpperCase();
 
 	return (
-		<div className="min-h-svh w-full p-4 md:p-6 pt-0 md:pt-0">
-			<div className="container space-y-6">
+		<Page>
+			<PageContent className="space-y-6">
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 					<Card className="lg:col-span-2">
 						<CardHeader>
@@ -190,7 +191,7 @@ function AppIndexLayout() {
 						</CardContent>
 					</Card>
 				</div>
-			</div>
+			</PageContent>
 
 			<AlertDialog
 				open={showEndSessionDialog}
@@ -225,6 +226,6 @@ function AppIndexLayout() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-		</div>
+		</Page>
 	);
 }
