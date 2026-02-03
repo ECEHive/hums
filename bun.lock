@@ -10,7 +10,7 @@
     },
     "apps/client": {
       "name": "@ecehive/client",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -57,7 +57,7 @@
         "next-themes": "^0.4.6",
         "react": "^19.2.3",
         "react-day-picker": "^9.12.0",
-        "react-dom": "^19.2.3",
+        "react-dom": "^19.2.4",
         "react-resizable-panels": "^4.5.2",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.4.0",
@@ -82,7 +82,7 @@
     },
     "apps/inventory": {
       "name": "@ecehive/inventory",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-label": "^2.1.8",
@@ -104,7 +104,7 @@
         "motion": "^12.27.1",
         "qrcode": "^1.5.4",
         "react": "^19.2.3",
-        "react-dom": "^19.2.3",
+        "react-dom": "^19.2.4",
         "tailwind-merge": "^3.4.0",
         "tslog": "^4.10.2",
         "zod": "^4.3.5",
@@ -128,7 +128,7 @@
     },
     "apps/kiosk": {
       "name": "@ecehive/kiosk",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-separator": "^1.1.8",
@@ -150,7 +150,7 @@
         "motion": "^12.27.1",
         "qrcode": "^1.5.4",
         "react": "^19.2.3",
-        "react-dom": "^19.2.3",
+        "react-dom": "^19.2.4",
         "tailwind-merge": "^3.4.0",
         "tslog": "^4.10.2",
         "zod": "^4.3.5",
@@ -174,7 +174,7 @@
     },
     "apps/overview": {
       "name": "@ecehive/overview",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-checkbox": "^1.3.3",
@@ -200,7 +200,7 @@
         "dayjs": "^1.11.19",
         "lucide-react": "^0.563.0",
         "react": "^19.2.3",
-        "react-dom": "^19.2.3",
+        "react-dom": "^19.2.4",
         "recharts": "3.6.0",
         "tailwind-merge": "^3.4.0",
         "zod": "^4.3.5",
@@ -222,7 +222,7 @@
     },
     "apps/server": {
       "name": "@ecehive/server",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
@@ -241,7 +241,7 @@
     },
     "packages/auth": {
       "name": "@ecehive/auth",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -255,7 +255,7 @@
     },
     "packages/config": {
       "name": "@ecehive/config",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "devDependencies": {
         "@biomejs/biome": "2.3.8",
         "@types/node": "^24.10.1",
@@ -263,14 +263,14 @@
     },
     "packages/email": {
       "name": "@ecehive/email",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.966.0",
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
         "nodemailer": "^7.0.12",
         "react": "^19.2.3",
-        "react-dom": "^19.2.3",
+        "react-dom": "^19.2.4",
       },
       "devDependencies": {
         "@ecehive/config": "workspace:*",
@@ -284,7 +284,7 @@
     },
     "packages/env": {
       "name": "@ecehive/env",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@types/node": "^24.5.2",
         "zod": "^4.3.5",
@@ -296,7 +296,7 @@
     },
     "packages/features": {
       "name": "@ecehive/features",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
@@ -314,7 +314,7 @@
     },
     "packages/ldap": {
       "name": "@ecehive/ldap",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -327,7 +327,7 @@
     },
     "packages/logger": {
       "name": "@ecehive/logger",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "tslog": "^4.9.3",
       },
@@ -337,7 +337,7 @@
     },
     "packages/prisma": {
       "name": "@ecehive/prisma",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@prisma/adapter-pg": "^7.3.0",
@@ -355,7 +355,7 @@
     },
     "packages/rest": {
       "name": "@ecehive/rest",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/features": "workspace:*",
         "@ecehive/prisma": "workspace:*",
@@ -371,7 +371,7 @@
     },
     "packages/trpc": {
       "name": "@ecehive/trpc",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/auth": "workspace:*",
@@ -394,7 +394,7 @@
     },
     "packages/user-data": {
       "name": "@ecehive/user-data",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
@@ -408,7 +408,7 @@
     },
     "packages/workers": {
       "name": "@ecehive/workers",
-      "version": "2.2.0",
+      "version": "2.2.2",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/email": "workspace:*",
@@ -1630,7 +1630,7 @@
 
     "react-day-picker": ["react-day-picker@9.12.0", "", { "dependencies": { "@date-fns/tz": "^1.4.1", "date-fns": "^4.1.0", "date-fns-jalali": "^4.1.0-0" }, "peerDependencies": { "react": ">=16.8.0" } }, "sha512-t8OvG/Zrciso5CQJu5b1A7yzEmebvST+S3pOVQJWxwjjVngyG/CA2htN/D15dLI4uTEuLLkbZyS4YYt480FAtA=="],
 
-    "react-dom": ["react-dom@19.2.3", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.3" } }, "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg=="],
+    "react-dom": ["react-dom@19.2.4", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.4" } }, "sha512-AXJdLo8kgMbimY95O2aKQqsz2iWi9jMgKJhRBAxECE4IFxfcazB2LmzloIoibJI3C12IlY20+KFaLv+71bUJeQ=="],
 
     "react-is": ["react-is@18.3.1", "", {}, "sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg=="],
 

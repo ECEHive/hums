@@ -12,7 +12,7 @@
 		"@ecehive/logger": "workspace:*",
 		"nodemailer": "^7.0.12",
 		"react": "^19.2.3",
-		"react-dom": "^19.2.3"
+		"react-dom": "^19.2.4"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
