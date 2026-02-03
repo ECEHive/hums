@@ -1,15 +1,16 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	AlertTriangleIcon,
-	CheckCircleIcon,
-	ExternalLinkIcon,
-	LockIcon,
-} from "lucide-react";
+import { AlertTriangleIcon, CheckCircleIcon, LockIcon } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/auth/AuthProvider";
-import { Logo } from "@/components/shared/logo";
+import {
+	Page,
+	PageContent,
+	PageDescription,
+	PageHeader,
+	PageTitle,
+} from "@/components/layout";
 import { DynamicTicketForm, type TicketField } from "@/components/tickets";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -85,13 +86,8 @@ function SubmitTicketFormPage() {
 	// Invalid ID
 	if (!isValidId) {
 		return (
-			<div className="min-h-screen bg-background flex flex-col">
-				<header className="border-b">
-					<div className="container mx-auto px-4 py-4">
-						<Logo className="h-8" />
-					</div>
-				</header>
-				<main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+			<Page>
+				<PageContent className="max-w-2xl">
 					<Alert variant="destructive">
 						<AlertTriangleIcon className="h-4 w-4" />
 						<AlertTitle>Invalid Ticket Type</AlertTitle>
@@ -100,25 +96,22 @@ function SubmitTicketFormPage() {
 						</AlertDescription>
 					</Alert>
 					<div className="mt-4">
-						<Link to="/app/tickets/submit">
-							<Button variant="outline">Back to Ticket Types</Button>
+						<Link to="/app/tickets">
+							<Button variant="outline">Back to Tickets</Button>
 						</Link>
 					</div>
-				</main>
-			</div>
+				</PageContent>
+			</Page>
 		);
 	}
 
 	if (isLoadingType) {
 		return (
-			<div className="min-h-screen bg-background flex flex-col">
-				<header className="border-b">
-					<div className="container mx-auto px-4 py-4">
-						<Logo className="h-8" />
-					</div>
-				</header>
-				<main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
-					<Skeleton className="h-8 w-64 mb-2" />
+			<Page>
+				<PageHeader>
+					<Skeleton className="h-8 w-64" />
+				</PageHeader>
+				<PageContent className="max-w-2xl">
 					<Skeleton className="h-4 w-96 mb-8" />
 					<Card>
 						<CardContent className="p-6">
@@ -129,20 +122,15 @@ function SubmitTicketFormPage() {
 							</div>
 						</CardContent>
 					</Card>
-				</main>
-			</div>
+				</PageContent>
+			</Page>
 		);
 	}
 
 	if (typeError || !ticketType) {
 		return (
-			<div className="min-h-screen bg-background flex flex-col">
-				<header className="border-b">
-					<div className="container mx-auto px-4 py-4">
-						<Logo className="h-8" />
-					</div>
-				</header>
-				<main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+			<Page>
+				<PageContent className="max-w-2xl">
 					<Alert variant="destructive">
 						<AlertTriangleIcon className="h-4 w-4" />
 						<AlertTitle>Error</AlertTitle>
@@ -153,12 +141,12 @@ function SubmitTicketFormPage() {
 						</AlertDescription>
 					</Alert>
 					<div className="mt-4">
-						<Link to="/app/tickets/submit">
-							<Button variant="outline">Back to Ticket Types</Button>
+						<Link to="/app/tickets">
+							<Button variant="outline">Back to Tickets</Button>
 						</Link>
 					</div>
-				</main>
-			</div>
+				</PageContent>
+			</Page>
 		);
 	}
 
@@ -178,19 +166,16 @@ function SubmitTicketFormPage() {
 	if (needsLogin) {
 		const loginUrl = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
 		return (
-			<div className="min-h-screen bg-background flex flex-col">
-				<header className="border-b">
-					<div className="container mx-auto px-4 py-4">
-						<Logo className="h-8" />
+			<Page>
+				<PageHeader>
+					<div>
+						<PageTitle>{ticketType.name}</PageTitle>
+						{ticketType.description && (
+							<PageDescription>{ticketType.description}</PageDescription>
+						)}
 					</div>
-				</header>
-				<main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
-					<h1 className="text-2xl font-bold mb-2">{ticketType.name}</h1>
-					{ticketType.description && (
-						<p className="text-muted-foreground mb-8">
-							{ticketType.description}
-						</p>
-					)}
+				</PageHeader>
+				<PageContent className="max-w-2xl">
 					<Card>
 						<CardHeader>
 							<div className="flex items-center gap-2">
@@ -214,29 +199,22 @@ function SubmitTicketFormPage() {
 							</a>
 						</CardContent>
 					</Card>
-				</main>
-			</div>
+				</PageContent>
+			</Page>
 		);
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col">
-			<header className="border-b">
-				<div className="container mx-auto px-4 py-4 flex items-center justify-between">
-					<Logo className="h-8" />
-					{isAuthenticated && (
-						<span className="text-sm text-muted-foreground">
-							Logged in as {user?.name || user?.email}
-						</span>
+		<Page>
+			<PageHeader>
+				<div>
+					<PageTitle>{ticketType.name}</PageTitle>
+					{ticketType.description && (
+						<PageDescription>{ticketType.description}</PageDescription>
 					)}
 				</div>
-			</header>
-			<main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
-				<h1 className="text-2xl font-bold mb-2">{ticketType.name}</h1>
-				{ticketType.description && (
-					<p className="text-muted-foreground mb-8">{ticketType.description}</p>
-				)}
-
+			</PageHeader>
+			<PageContent className="max-w-2xl">
 				{serverError && (
 					<Alert variant="destructive" className="mb-4">
 						<AlertTriangleIcon className="h-4 w-4" />
@@ -269,7 +247,7 @@ function SubmitTicketFormPage() {
 						)}
 					</CardContent>
 				</Card>
-			</main>
+			</PageContent>
 
 			{/* Success Dialog */}
 			<Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
@@ -292,45 +270,22 @@ function SubmitTicketFormPage() {
 						</div>
 					)}
 					<DialogFooter className="flex-col gap-2 sm:flex-col">
-						{isAuthenticated ? (
-							<>
-								<Link to="/app/tickets/my-tickets" className="w-full">
-									<Button className="w-full">View My Tickets</Button>
-								</Link>
-								<Button
-									variant="outline"
-									className="w-full"
-									onClick={() => {
-										setShowSuccessDialog(false);
-										setSubmittedTicketId(null);
-									}}
-								>
-									Submit Another Ticket
-								</Button>
-							</>
-						) : (
-							<>
-								<a href="/login" className="w-full">
-									<Button className="w-full">
-										<ExternalLinkIcon className="mr-2 h-4 w-4" />
-										Log in to HUMS
-									</Button>
-								</a>
-								<Button
-									variant="outline"
-									className="w-full"
-									onClick={() => {
-										setShowSuccessDialog(false);
-										setSubmittedTicketId(null);
-									}}
-								>
-									Submit Another Ticket
-								</Button>
-							</>
-						)}
+						<Link to="/app/tickets/my-tickets" className="w-full">
+							<Button className="w-full">View My Tickets</Button>
+						</Link>
+						<Button
+							variant="outline"
+							className="w-full"
+							onClick={() => {
+								setShowSuccessDialog(false);
+								setSubmittedTicketId(null);
+							}}
+						>
+							Submit Another Ticket
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-		</div>
+		</Page>
 	);
 }
