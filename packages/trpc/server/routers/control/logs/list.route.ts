@@ -2,8 +2,7 @@
  * Control Logs Routes - List
  */
 
-import type { Prisma } from "@ecehive/prisma";
-import { prisma } from "@ecehive/prisma";
+import { listControlLogs } from "@ecehive/features";
 import { z } from "zod";
 
 export const ZListLogsSchema = z.object({
@@ -23,66 +22,5 @@ export async function listLogsHandler({
 }: {
 	input: z.infer<typeof ZListLogsSchema>;
 }) {
-	const where: Prisma.ControlLogWhereInput = {};
-
-	if (input.controlPointId) {
-		where.controlPointId = input.controlPointId;
-	}
-
-	if (input.userId) {
-		where.userId = input.userId;
-	}
-
-	if (input.action) {
-		where.action = input.action;
-	}
-
-	if (input.success !== undefined) {
-		where.success = input.success;
-	}
-
-	if (input.startDate || input.endDate) {
-		where.createdAt = {};
-		if (input.startDate) {
-			where.createdAt.gte = input.startDate;
-		}
-		if (input.endDate) {
-			where.createdAt.lte = input.endDate;
-		}
-	}
-
-	const [logs, total] = await Promise.all([
-		prisma.controlLog.findMany({
-			where,
-			include: {
-				controlPoint: {
-					select: {
-						id: true,
-						name: true,
-						location: true,
-						controlClass: true,
-					},
-				},
-				user: {
-					select: {
-						id: true,
-						name: true,
-						username: true,
-						email: true,
-					},
-				},
-			},
-			orderBy: { createdAt: input.sortOrder },
-			take: input.limit,
-			skip: input.offset,
-		}),
-		prisma.controlLog.count({ where }),
-	]);
-
-	return {
-		logs,
-		total,
-		limit: input.limit,
-		offset: input.offset,
-	};
+	return listControlLogs(input);
 }

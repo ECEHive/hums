@@ -1,10 +1,3 @@
-/**
- * Georgia Tech PLC Control Provider
- *
- * This provider interfaces with the Georgia Tech PLC API to control
- * physical equipment like switches and doors.
- */
-
 import { getLogger } from "@ecehive/logger";
 import type {
 	ControlOperationResult,
@@ -19,9 +12,6 @@ import {
 
 const logger = getLogger("control:georgia-tech-plc");
 
-/**
- * Response structure from the Georgia Tech PLC API
- */
 interface PLCApiResponse {
 	Status_Code: number[];
 	GUID: string[];
@@ -29,9 +19,6 @@ interface PLCApiResponse {
 	Description: string;
 }
 
-/**
- * Georgia Tech PLC Provider Implementation
- */
 export class GeorgiaTechPLCProvider implements IControlProvider {
 	validateProviderConfig(config: unknown): { valid: boolean; error?: string } {
 		const result = GeorgiaTechPLCProviderConfigSchema.safeParse(config);
@@ -120,7 +107,6 @@ export class GeorgiaTechPLCProvider implements IControlProvider {
 				};
 			}
 
-			// Value is returned as string "1" or "0"
 			const state = data.Value[0] === "1";
 
 			return {
@@ -220,7 +206,4 @@ export class GeorgiaTechPLCProvider implements IControlProvider {
 	}
 }
 
-/**
- * Singleton instance of the Georgia Tech PLC provider
- */
 export const georgiaTechPLCProvider = new GeorgiaTechPLCProvider();
