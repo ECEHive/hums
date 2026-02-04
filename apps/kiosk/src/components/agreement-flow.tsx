@@ -101,9 +101,7 @@ export function AgreementFlow({
 								{currentAgreement.title}
 							</h3>
 							<div className="flex-1 w-full rounded-md p-4 bg-neutral-800 overflow-y-auto min-h-0">
-								<Markdown>
-									{currentAgreement.content}
-								</Markdown>
+								<Markdown>{currentAgreement.content}</Markdown>
 							</div>
 						</div>
 

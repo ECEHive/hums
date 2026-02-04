@@ -19,7 +19,9 @@ export type ListControlPointsOptions = {
  * @param options - Filter, pagination, and sorting options
  * @returns Object containing control points array, total count, and pagination info
  */
-export async function listControlPoints(options: ListControlPointsOptions = {}) {
+export async function listControlPoints(
+	options: ListControlPointsOptions = {},
+) {
 	const {
 		search,
 		providerId,

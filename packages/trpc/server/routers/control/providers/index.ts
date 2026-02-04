@@ -1,10 +1,3 @@
-export {
-	controlProviders,
-	getControlProvider,
-	validatePointConfig,
-	validateProviderConfig,
-	georgiaTechPLCProvider,
-} from "@ecehive/features";
 export type {
 	ControlOperationResult,
 	GeorgiaTechPLCPointConfig,
@@ -12,8 +5,13 @@ export type {
 	IControlProvider,
 } from "@ecehive/features";
 export {
+	controlProviders,
 	GeorgiaTechPLCPointConfigSchema,
 	GeorgiaTechPLCProviderConfigSchema,
+	georgiaTechPLCProvider,
+	getControlProvider,
 	PointConfigSchemas,
 	ProviderConfigSchemas,
+	validatePointConfig,
+	validateProviderConfig,
 } from "@ecehive/features";

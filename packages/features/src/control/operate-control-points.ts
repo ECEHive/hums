@@ -137,7 +137,8 @@ export async function operateControlPoint(
 		if (!state) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
-				message: "Door control points can only be unlocked (state must be true)",
+				message:
+					"Door control points can only be unlocked (state must be true)",
 			});
 		}
 		action = "UNLOCK";

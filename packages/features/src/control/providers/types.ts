@@ -11,7 +11,9 @@ export type GeorgiaTechPLCProviderConfig = z.infer<
 
 export const GeorgiaTechPLCPointConfigSchema = z.object({
 	tagName: z.string().min(1),
-	ipAddress: z.string().regex(/^(\d{1,3}\.){3}\d{1,3}$/, "Invalid IPv4 address"),
+	ipAddress: z
+		.string()
+		.regex(/^(\d{1,3}\.){3}\d{1,3}$/, "Invalid IPv4 address"),
 });
 
 export type GeorgiaTechPLCPointConfig = z.infer<

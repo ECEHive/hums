@@ -139,11 +139,7 @@ export const controlPointsRoutes: FastifyPluginAsync = async (fastify) => {
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "Failed to list control points");
-			return badRequestError(
-				reply,
-				"Failed to retrieve control points",
-				error,
-			);
+			return badRequestError(reply, "Failed to retrieve control points", error);
 		}
 	});
 

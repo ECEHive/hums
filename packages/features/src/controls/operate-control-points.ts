@@ -170,7 +170,8 @@ export async function operateControlPoint(
 		if (!state) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
-				message: "Door control points can only be unlocked (state must be true)",
+				message:
+					"Door control points can only be unlocked (state must be true)",
 			});
 		}
 		action = "UNLOCK";
@@ -182,7 +183,7 @@ export async function operateControlPoint(
 	// 8. Perform the control operation
 	// TODO: The actual hardware control will be implemented by another team member
 	// For now, we'll create a log entry and simulate success
-	// 
+	//
 	// Example of how this would work with a real provider:
 	// const provider = getControlProvider(point.provider.providerType as ControlProviderType);
 	// const result = await provider.writeState(
