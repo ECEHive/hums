@@ -6,6 +6,10 @@ import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
 import { useAuth } from "@/auth/AuthProvider";
+import {
+	type ControlPoint,
+	ControlPointMultiSelect,
+} from "@/components/control/control-point-multiselect";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -31,6 +35,8 @@ type Device = {
 	hasKioskAccess: boolean;
 	hasDashboardAccess: boolean;
 	hasInventoryAccess: boolean;
+	hasControlAccess: boolean;
+	controlPoints?: { id: string; name: string }[];
 };
 
 type UpdateDialogProps = {
@@ -52,6 +58,8 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 		hasKioskAccess: z.boolean(),
 		hasDashboardAccess: z.boolean(),
 		hasInventoryAccess: z.boolean(),
+		hasControlAccess: z.boolean(),
+		controlPoints: z.array(z.object({ id: z.string(), name: z.string() })),
 	});
 
 	const updateMutation = useMutation({
@@ -63,6 +71,8 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 			hasKioskAccess: boolean;
 			hasDashboardAccess: boolean;
 			hasInventoryAccess: boolean;
+			hasControlAccess: boolean;
+			controlPointIds: string[];
 		}) => trpc.devices.update.mutate(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["devices"] });
@@ -77,13 +87,19 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 			hasKioskAccess: device.hasKioskAccess,
 			hasDashboardAccess: device.hasDashboardAccess,
 			hasInventoryAccess: device.hasInventoryAccess,
+			hasControlAccess: device.hasControlAccess,
+			controlPoints: (device.controlPoints ?? []) as ControlPoint[],
 		},
 		validators: {
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await updateMutation.mutateAsync({ id: device.id, ...value });
+				await updateMutation.mutateAsync({
+					id: device.id,
+					...value,
+					controlPointIds: value.controlPoints.map((p) => p.id),
+				});
 				setOpen(false);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : String(err);
@@ -94,6 +110,10 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 
 	const isSubmitting = useStore(form.store, (s) => s.isSubmitting);
 	const canSubmit = useStore(form.store, (s) => s.canSubmit);
+	const hasControlAccess = useStore(
+		form.store,
+		(s) => s.values.hasControlAccess,
+	);
 
 	const handleDialogChange = useCallback(
 		(nextOpen: boolean) => {
@@ -241,6 +261,48 @@ export function UpdateDialog({ device }: UpdateDialogProps): JSX.Element {
 								</Field>
 							)}
 						</form.Field>
+
+						<form.Field name="hasControlAccess">
+							{(field) => (
+								<Field>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											checked={field.state.value}
+											onCheckedChange={(checked: boolean) =>
+												field.handleChange(checked)
+											}
+										/>
+										<FieldLabel className="!mt-0">Control Access</FieldLabel>
+									</div>
+									<p className="text-xs text-muted-foreground ml-6">
+										Allow this device to access the control kiosk for equipment
+										control operations
+									</p>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+
+						{hasControlAccess && (
+							<form.Field name="controlPoints">
+								{(field) => (
+									<Field className="ml-6">
+										<FieldLabel>Control Points</FieldLabel>
+										<p className="text-xs text-muted-foreground mb-2">
+											Select which control points this device can operate
+										</p>
+										<ControlPointMultiSelect
+											value={field.state.value}
+											onChange={(points) => field.handleChange(points)}
+											placeholder="Select control points..."
+										/>
+										<FieldError>
+											{field.state.meta.errors.join(", ")}
+										</FieldError>
+									</Field>
+								)}
+							</form.Field>
+						)}
 					</div>{" "}
 					{serverError && (
 						<div className="text-sm text-destructive">{serverError}</div>

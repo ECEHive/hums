@@ -11,9 +11,9 @@ function OverviewLayout() {
 	return (
 		<SidebarProvider>
 			<OverviewSidebar />
-			<SidebarInset>
+			<SidebarInset className="h-svh overflow-hidden flex flex-col">
 				<OverviewHeader />
-				<main className="flex-1 p-4 md:p-6">
+				<main className="flex-1 overflow-auto p-4 md:p-6">
 					<Outlet />
 					<footer className="mt-12 pt-6 border-t border-border">
 						<p className="text-xs text-muted-foreground text-center">

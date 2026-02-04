@@ -58,14 +58,14 @@ export function AppShell({
 		<RequireAuth>
 			<TooltipProvider delayDuration={0}>
 				<SidebarProvider>
-					<div className="flex h-svh w-full bg-background">
+					<div className="flex h-svh w-full overflow-hidden bg-background">
 						{/* Desktop sidebar */}
 						{!isMobile && (
 							<DualSidebar showPeriodSelector={showPeriodSelector} />
 						)}
 
 						{/* Main content area */}
-						<div className="flex flex-1 flex-col min-w-0">
+						<div className="flex flex-1 flex-col min-w-0 overflow-hidden">
 							{/* Header */}
 							<header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
 								{isMobile && (
@@ -76,11 +76,12 @@ export function AppShell({
 								<DynamicBreadcrumbs />
 							</header>
 
-							{/* Banners */}
-							{banners && <div className="px-4 py-2 md:px-6">{banners}</div>}
-
 							{/* Page content - add bottom padding on mobile for tab bar */}
 							<main className={cn("flex-1 overflow-auto", isMobile && "pb-16")}>
+								{/* Banners */}
+								{banners && <div className="px-4 py-2 md:px-6">{banners}</div>}
+
+								{/* Page outlet */}
 								<Outlet />
 							</main>
 						</div>

@@ -20,10 +20,7 @@ import {
 	detectFace,
 	loadFaceApiModels,
 } from "@/lib/face-api";
-import {
-	FaceTracker,
-	type TrackedFace,
-} from "@/lib/face-tracker";
+import { FaceTracker, type TrackedFace } from "@/lib/face-tracker";
 
 // =============================================================================
 // Smart Photo Security System Configuration
@@ -167,7 +164,8 @@ export function CameraProvider({
 	const camera = useCamera({ autoStart: false });
 	const [modelsLoaded, setModelsLoaded] = useState(false);
 	const [isFacePresenceScanning, setIsFacePresenceScanning] = useState(false);
-	const [currentTrackedFace, setCurrentTrackedFace] = useState<TrackedFace | null>(null);
+	const [currentTrackedFace, setCurrentTrackedFace] =
+		useState<TrackedFace | null>(null);
 	const [trackerStats, setTrackerStats] = useState<TrackerStats>({
 		totalFaces: 0,
 		detected: 0,
@@ -624,12 +622,27 @@ export function CameraProvider({
 	/**
 	 * Convert FaceDetectionResult to tracker detection format
 	 */
-	const toTrackerDetection = (detection: { detected: boolean; confidence: number; box: { x: number; y: number; width: number; height: number } | null; descriptor: Float32Array | null; yawAngle: number | null } | null): { confidence: number; box: { x: number; y: number; width: number; height: number }; descriptor: number[] | null; yawAngle: number | null } | null => {
+	const toTrackerDetection = (
+		detection: {
+			detected: boolean;
+			confidence: number;
+			box: { x: number; y: number; width: number; height: number } | null;
+			descriptor: Float32Array | null;
+			yawAngle: number | null;
+		} | null,
+	): {
+		confidence: number;
+		box: { x: number; y: number; width: number; height: number };
+		descriptor: number[] | null;
+		yawAngle: number | null;
+	} | null => {
 		if (!detection?.detected || !detection.box) return null;
 		return {
 			confidence: detection.confidence,
 			box: detection.box,
-			descriptor: detection.descriptor ? Array.from(detection.descriptor) : null,
+			descriptor: detection.descriptor
+				? Array.from(detection.descriptor)
+				: null,
 			yawAngle: detection.yawAngle,
 		};
 	};
@@ -637,7 +650,9 @@ export function CameraProvider({
 	/**
 	 * Get video dimensions
 	 */
-	const getVideoDimensions = (video: HTMLVideoElement): { width: number; height: number } | null => {
+	const getVideoDimensions = (
+		video: HTMLVideoElement,
+	): { width: number; height: number } | null => {
 		if (video.videoWidth === 0 || video.videoHeight === 0) return null;
 		return { width: video.videoWidth, height: video.videoHeight };
 	};
@@ -813,10 +828,7 @@ export function CameraProvider({
 
 	// Capture security snapshot
 	const captureSecuritySnapshot = useCallback(
-		async (
-			eventType: "TAP" | "PRESENCE",
-			userId?: number,
-		) => {
+		async (eventType: "TAP" | "PRESENCE", userId?: number) => {
 			const video = camera.videoRef.current;
 			const videoReady = video && video.readyState >= 2 && video.videoWidth > 0;
 

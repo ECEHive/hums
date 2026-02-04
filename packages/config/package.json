@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/config",
-	"version": "2.2.2",
+	"version": "3.0.0",
 	"type": "module",
 	"types": "./types/index.d.ts",
 	"files": [
@@ -10,7 +10,7 @@
 		"tsconfig/react-lib.json"
 	],
 	"devDependencies": {
-		"@biomejs/biome": "2.3.8",
+		"@biomejs/biome": "2.3.13",
 		"@types/node": "^24.10.1"
 	}
 }

@@ -6,6 +6,7 @@ export * from "./audit-logs/list-audit-logs";
 export * from "./audit-logs/logger";
 export * from "./branding";
 export * from "./config";
+export * from "./control";
 export * from "./db/locking";
 export * from "./open-hours";
 export * from "./periods/access";

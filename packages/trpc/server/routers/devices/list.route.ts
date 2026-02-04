@@ -33,6 +33,14 @@ export async function listHandler(options: TListOptions) {
 			orderBy: { createdAt: "asc" },
 			skip: offset,
 			take: limit,
+			include: {
+				controlPoints: {
+					select: {
+						id: true,
+						name: true,
+					},
+				},
+			},
 		}),
 		prisma.device.count({ where }),
 	]);

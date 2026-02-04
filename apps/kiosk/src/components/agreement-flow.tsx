@@ -4,6 +4,7 @@ import { Check, X } from "lucide-react";
 import { useState } from "react";
 import { formatLog, getLogger } from "@/lib/logging";
 import { Button } from "./ui/button";
+import { Markdown } from "./ui/markdown";
 
 const log = getLogger("agreement-flow");
 
@@ -99,12 +100,8 @@ export function AgreementFlow({
 							<h3 className="text-2xl font-semibold text-center">
 								{currentAgreement.title}
 							</h3>
-							<div className="flex-1 w-full rounded-md p-4 bg-neutral-200 overflow-y-auto min-h-0">
-								<div
-									className="prose text-black"
-									/* biome-ignore lint/security/noDangerouslySetInnerHtml: Agreement content is authored by trusted admins */
-									dangerouslySetInnerHTML={{ __html: currentAgreement.content }}
-								/>
+							<div className="flex-1 w-full rounded-md p-4 bg-neutral-800 overflow-y-auto min-h-0">
+								<Markdown>{currentAgreement.content}</Markdown>
 							</div>
 						</div>
 

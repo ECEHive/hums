@@ -1,4 +1,5 @@
 import {
+	ConfigService,
 	checkMissingAgreements,
 	checkStaffingPermission,
 	endSession,
@@ -43,6 +44,12 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 	const user = await findUserByCard(cardNumber);
 
+	// Get kiosk session type configuration
+	const [regularSessionsEnabled, staffingSessionsEnabled] = await Promise.all([
+		ConfigService.get("kiosk.sessions.regular.enabled"),
+		ConfigService.get("kiosk.sessions.staffing.enabled"),
+	]);
+
 	return await prisma.$transaction(async (tx) => {
 		const now = new Date();
 
@@ -58,6 +65,11 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// If there is no session, or the most recent session has an endedAt, create a new session (tap in)
 		if (!mostRecentSession) {
+			// Check if any session type is allowed on kiosks
+			if (!regularSessionsEnabled && !staffingSessionsEnabled) {
+				throw new Error("Sessions cannot be started from this kiosk");
+			}
+
 			// Check if user is suspended FIRST - they cannot start a new session
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
 			if (activeSuspension) {
@@ -82,9 +94,14 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				};
 			}
 
-			// User with staffing permission must specify session type
+			// User with staffing permission must specify session type (if both types are enabled)
 			// This happens AFTER agreement check
-			if (hasStaffingPermission && !sessionType) {
+			if (
+				hasStaffingPermission &&
+				!sessionType &&
+				regularSessionsEnabled &&
+				staffingSessionsEnabled
+			) {
 				return {
 					status: "choose_session_type" as const,
 					user,
@@ -92,7 +109,42 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			}
 
 			// Determine the session type to create
-			const typeToCreate = sessionType || "regular";
+			let typeToCreate: "regular" | "staffing";
+
+			if (sessionType) {
+				// Validate that the requested session type is allowed
+				if (sessionType === "regular" && !regularSessionsEnabled) {
+					throw new Error("Regular sessions are not allowed on this kiosk");
+				}
+				if (sessionType === "staffing" && !staffingSessionsEnabled) {
+					throw new Error("Staffing sessions are not allowed on this kiosk");
+				}
+				// Verify user has staffing permission when requesting staffing session
+				if (sessionType === "staffing" && !hasStaffingPermission) {
+					throw new Error(
+						"You do not have permission to start staffing sessions",
+					);
+				}
+				typeToCreate = sessionType;
+			} else if (
+				hasStaffingPermission &&
+				staffingSessionsEnabled &&
+				!regularSessionsEnabled
+			) {
+				// Staff user but only staffing sessions allowed
+				typeToCreate = "staffing";
+			} else if (regularSessionsEnabled) {
+				// Default to regular if allowed
+				typeToCreate = "regular";
+			} else {
+				// Only staffing sessions allowed - verify user has permission
+				if (!hasStaffingPermission) {
+					throw new Error(
+						"You do not have permission to start staffing sessions",
+					);
+				}
+				typeToCreate = "staffing";
+			}
 
 			const session = await startSession(tx, user.id, typeToCreate, now);
 
@@ -104,8 +156,13 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 		}
 
 		// Otherwise, handle tap-out or switch
-		// User with staffing permission must specify action
-		if (hasStaffingPermission && !tapAction) {
+		// User with staffing permission must specify action (if both session types are enabled)
+		if (
+			hasStaffingPermission &&
+			!tapAction &&
+			regularSessionsEnabled &&
+			staffingSessionsEnabled
+		) {
 			return {
 				status: "choose_tap_out_action" as const,
 				user,
@@ -115,6 +172,11 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// Handle switch to staffing session
 		if (tapAction === "switch_to_staffing") {
+			// Check if staffing sessions are allowed on this kiosk
+			if (!staffingSessionsEnabled) {
+				throw new Error("Staffing sessions are not allowed on this kiosk");
+			}
+
 			// Check suspension for switches too - they involve starting a new session
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
 			if (activeSuspension) {
@@ -145,6 +207,11 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// Handle switch to regular session
 		if (tapAction === "switch_to_regular") {
+			// Check if regular sessions are allowed on this kiosk
+			if (!regularSessionsEnabled) {
+				throw new Error("Regular sessions are not allowed on this kiosk");
+			}
+
 			// Check suspension for switches too - they involve starting a new session
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
 			if (activeSuspension) {

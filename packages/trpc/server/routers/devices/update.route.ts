@@ -11,6 +11,8 @@ export const ZUpdateSchema = z.object({
 	hasKioskAccess: z.boolean(),
 	hasDashboardAccess: z.boolean(),
 	hasInventoryAccess: z.boolean(),
+	hasControlAccess: z.boolean(),
+	controlPointIds: z.array(z.string().uuid()).optional(),
 });
 
 export type TUpdateSchema = z.infer<typeof ZUpdateSchema>;
@@ -29,6 +31,8 @@ export async function updateHandler(options: TUpdateOptions) {
 		hasKioskAccess,
 		hasDashboardAccess,
 		hasInventoryAccess,
+		hasControlAccess,
+		controlPointIds,
 	} = options.input;
 
 	const updated = await prisma.device.update({
@@ -40,6 +44,18 @@ export async function updateHandler(options: TUpdateOptions) {
 			hasKioskAccess,
 			hasDashboardAccess,
 			hasInventoryAccess,
+			hasControlAccess,
+			// Only update control points if provided
+			...(controlPointIds !== undefined && {
+				controlPoints: {
+					set: controlPointIds.map((cpId) => ({ id: cpId })),
+				},
+			}),
+		},
+		include: {
+			controlPoints: {
+				select: { id: true, name: true },
+			},
 		},
 	});
 
