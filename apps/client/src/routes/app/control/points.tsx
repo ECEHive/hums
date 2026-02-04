@@ -235,15 +235,6 @@ function ControlPointsPage() {
 			},
 		},
 		{
-			accessorKey: "provider",
-			header: "Provider",
-			cell: ({ row }) => (
-				<span className="text-muted-foreground">
-					{row.original.provider.name}
-				</span>
-			),
-		},
-		{
 			id: "actions",
 			header: "Actions",
 			cell: ({ row }) => {
