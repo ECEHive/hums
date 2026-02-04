@@ -41,7 +41,7 @@ export async function endOldSessions(): Promise<void> {
 		// End regular sessions if enabled
 		if (regularEnabled) {
 			const regularCutoff = new Date(
-				now.getTime() - regularHours * 60 * 60 * 1000,
+				now.getTime() - (regularHours as number) * 60 * 60 * 1000,
 			);
 
 			const regularSessions = await prisma.session.findMany({
@@ -69,7 +69,7 @@ export async function endOldSessions(): Promise<void> {
 				totalEnded += ids.length;
 				logger.info("Ended regular sessions due to timeout", {
 					count: ids.length,
-					timeoutHours: regularHours,
+					timeoutHours: regularHours as number,
 				});
 
 				// Queue email notifications if enabled
@@ -84,7 +84,7 @@ export async function endOldSessions(): Promise<void> {
 									sessionType: "regular",
 									startedAt: session.startedAt,
 									endedAt: now,
-									timeoutHours: regularHours,
+									timeoutHours: regularHours as number,
 								},
 							});
 						} catch (error) {
@@ -102,7 +102,7 @@ export async function endOldSessions(): Promise<void> {
 		// End staffing sessions if enabled
 		if (staffingEnabled) {
 			const staffingCutoff = new Date(
-				now.getTime() - staffingHours * 60 * 60 * 1000,
+				now.getTime() - (staffingHours as number) * 60 * 60 * 1000,
 			);
 
 			const staffingSessions = await prisma.session.findMany({
@@ -130,7 +130,7 @@ export async function endOldSessions(): Promise<void> {
 				totalEnded += ids.length;
 				logger.info("Ended staffing sessions due to timeout", {
 					count: ids.length,
-					timeoutHours: staffingHours,
+					timeoutHours: staffingHours as number,
 				});
 
 				// Queue email notifications if enabled
@@ -145,7 +145,7 @@ export async function endOldSessions(): Promise<void> {
 									sessionType: "staffing",
 									startedAt: session.startedAt,
 									endedAt: now,
-									timeoutHours: staffingHours,
+									timeoutHours: staffingHours as number,
 								},
 							});
 						} catch (error) {

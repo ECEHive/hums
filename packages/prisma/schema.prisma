@@ -188,7 +188,9 @@ model Device {
   hasDashboardAccess Boolean            @default(false)
   hasKioskAccess     Boolean            @default(true)
   hasInventoryAccess Boolean            @default(false)
+  hasControlAccess   Boolean            @default(false)
   securitySnapshots  SecuritySnapshot[]
+  controlPoints      ControlPoint[]     @relation("DeviceControlPoints")
 }
 
 model Agreement {
@@ -482,6 +484,7 @@ model ControlPoint {
   authorizedRoles  Role[]            @relation("ControlPointRoles")
   authorizedUsers  User[]            @relation("ControlPointUsers")
   controlLogs      ControlLog[]
+  devices          Device[]          @relation("DeviceControlPoints")
 
   @@index([providerId])
 }

@@ -9,6 +9,8 @@ export const ZCreateSchema = z.object({
 	hasKioskAccess: z.boolean().optional().default(true),
 	hasDashboardAccess: z.boolean().optional().default(false),
 	hasInventoryAccess: z.boolean().optional().default(false),
+	hasControlAccess: z.boolean().optional().default(false),
+	controlPointIds: z.array(z.string().uuid()).optional().default([]),
 });
 
 export type TCreateSchema = z.infer<typeof ZCreateSchema>;
@@ -26,6 +28,8 @@ export async function createHandler(options: TCreateOptions) {
 		hasKioskAccess,
 		hasDashboardAccess,
 		hasInventoryAccess,
+		hasControlAccess,
+		controlPointIds,
 	} = options.input;
 
 	const newDevice = await prisma.device.create({
@@ -36,6 +40,18 @@ export async function createHandler(options: TCreateOptions) {
 			hasKioskAccess,
 			hasDashboardAccess,
 			hasInventoryAccess,
+			hasControlAccess,
+			controlPoints:
+				controlPointIds.length > 0
+					? {
+							connect: controlPointIds.map((id) => ({ id })),
+						}
+					: undefined,
+		},
+		include: {
+			controlPoints: {
+				select: { id: true, name: true },
+			},
 		},
 	});
 

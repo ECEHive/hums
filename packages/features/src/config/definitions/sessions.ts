@@ -57,6 +57,31 @@ export const sessionConfig = defineConfig({
 				},
 			],
 		},
+		{
+			id: "kiosk-sessions",
+			label: "Kiosk Session Types",
+			description:
+				"Configure which session types can be started/ended from kiosks",
+			icon: "Monitor",
+			fields: [
+				{
+					key: "kiosk.sessions.regular.enabled",
+					label: "Allow Regular Sessions on Kiosks",
+					description:
+						"Allow users to start and end regular sessions from kiosk devices",
+					type: "boolean",
+					defaultValue: true,
+				},
+				{
+					key: "kiosk.sessions.staffing.enabled",
+					label: "Allow Staffing Sessions on Kiosks",
+					description:
+						"Allow users to start and end staffing sessions from kiosk devices",
+					type: "boolean",
+					defaultValue: true,
+				},
+			],
+		},
 	],
 } as const);
 

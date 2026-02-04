@@ -217,6 +217,78 @@ export type TKioskProtectedProcedureContext =
 	inferProcedureBuilderResolverOptions<typeof kioskProtectedProcedure>["ctx"];
 
 /**
+ * Include definition for device with control points
+ */
+const deviceWithControlPointsInclude = {
+	controlPoints: {
+		where: { isActive: true },
+		select: {
+			id: true,
+			name: true,
+			description: true,
+			location: true,
+			controlClass: true,
+			currentState: true,
+			isActive: true,
+			canControlOnline: true,
+			providerId: true,
+			providerConfig: true,
+			provider: {
+				select: {
+					id: true,
+					name: true,
+					providerType: true,
+					config: true,
+					isActive: true,
+				},
+			},
+			authorizedRoles: { select: { id: true } },
+			authorizedUsers: { select: { id: true } },
+		},
+	},
+} satisfies Prisma.DeviceInclude;
+
+export type DeviceWithControlPoints = Prisma.DeviceGetPayload<{
+	include: typeof deviceWithControlPointsInclude;
+}>;
+
+/**
+ * A procedure that requires the request to come from a registered device with control access.
+ * Includes the device's control points in the context.
+ */
+export const controlProtectedProcedure = t.procedure.use(async (opts) => {
+	// Get the client IP address from the request
+	const ip = getClientIp(opts.ctx.req);
+
+	// Check if this IP is registered as an active device with control access
+	const device = await prisma.device.findFirst({
+		where: {
+			ipAddress: ip,
+			isActive: true,
+			hasControlAccess: true,
+		},
+		include: deviceWithControlPointsInclude,
+	});
+
+	if (!device) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: `Access denied. IP address ${ip} is not registered as a device with control access.`,
+		});
+	}
+
+	return opts.next({
+		ctx: {
+			...opts.ctx,
+			device,
+		},
+	});
+});
+
+export type TControlProtectedProcedureContext =
+	inferProcedureBuilderResolverOptions<typeof controlProtectedProcedure>["ctx"];
+
+/**
  * A procedure that requires the request to come from a registered device with dashboard access.
  */
 export const dashboardProtectedProcedure = t.procedure.use(async (opts) => {
