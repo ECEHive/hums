@@ -340,7 +340,7 @@ export function CreateControlPointDialog({
 									htmlFor={field.name}
 									className="text-sm font-medium leading-none"
 								>
-									Can control online (via web portal)
+									Can control online
 								</label>
 							</div>
 						)}

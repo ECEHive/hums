@@ -2,14 +2,18 @@
  * Control Kiosk Routes - Tap In/Out
  *
  * This route handles session tap in/out from the control kiosk.
- * Reuses the core session logic from the regular kiosk.
+ * The control kiosk only supports staffing-related session actions:
+ * - Start staffing session (when no active session)
+ * - Switch to staffing (from regular session)
+ * - Switch to regular (from staffing session)
+ *
+ * Regular sessions cannot be started or ended from the control kiosk.
  */
 
 import {
 	ConfigService,
 	checkMissingAgreements,
 	checkStaffingPermission,
-	endSession,
 	findUserByCard,
 	getActiveSuspension,
 	getCurrentSession,
@@ -22,10 +26,10 @@ import type { TControlProtectedProcedureContext } from "../../trpc";
 
 export const ZControlTapInOutSchema = z.object({
 	cardNumber: z.string().regex(/^\d+$/),
-	sessionType: z.enum(["regular", "staffing"]).optional(),
-	tapAction: z
-		.enum(["end_session", "switch_to_staffing", "switch_to_regular"])
-		.optional(),
+	// Control kiosk only supports starting staffing sessions
+	sessionType: z.literal("staffing").optional(),
+	// Control kiosk only supports switching between staffing and regular
+	tapAction: z.enum(["switch_to_staffing", "switch_to_regular"]).optional(),
 });
 
 export type TControlTapInOutSchema = z.infer<typeof ZControlTapInOutSchema>;
@@ -59,11 +63,22 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 		// Get the most recent session for the user
 		const mostRecentSession = await getCurrentSession(tx, user.id);
 
-		// If there is no session, create a new session (tap in)
+		// If there is no session and requesting to start a staffing session
 		if (!mostRecentSession) {
-			// Check if any session type is allowed
-			if (!regularSessionsEnabled && !staffingSessionsEnabled) {
-				throw new Error("Sessions cannot be started from this kiosk");
+			// Control kiosk only allows starting staffing sessions
+			if (!sessionType || sessionType !== "staffing") {
+				throw new Error("Control kiosk can only start staffing sessions");
+			}
+
+			if (!staffingSessionsEnabled) {
+				throw new Error("Staffing sessions are not enabled on this kiosk");
+			}
+
+			// Verify user has staffing permission
+			if (!hasStaffingPermission) {
+				throw new Error(
+					"You do not have permission to start staffing sessions",
+				);
 			}
 
 			// Check if user is suspended
@@ -89,45 +104,7 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 				};
 			}
 
-			// Determine the session type to create
-			let typeToCreate: "regular" | "staffing";
-
-			if (sessionType) {
-				// Validate that the requested session type is allowed
-				if (sessionType === "regular" && !regularSessionsEnabled) {
-					throw new Error("Regular sessions are not allowed on this kiosk");
-				}
-				if (sessionType === "staffing" && !staffingSessionsEnabled) {
-					throw new Error("Staffing sessions are not allowed on this kiosk");
-				}
-				// Verify user has staffing permission when requesting staffing session
-				if (sessionType === "staffing" && !hasStaffingPermission) {
-					throw new Error(
-						"You do not have permission to start staffing sessions",
-					);
-				}
-				typeToCreate = sessionType;
-			} else if (
-				hasStaffingPermission &&
-				staffingSessionsEnabled &&
-				!regularSessionsEnabled
-			) {
-				// Staff user but only staffing sessions allowed
-				typeToCreate = "staffing";
-			} else if (regularSessionsEnabled) {
-				// Default to regular if allowed
-				typeToCreate = "regular";
-			} else {
-				// Only staffing sessions allowed - verify user has permission
-				if (!hasStaffingPermission) {
-					throw new Error(
-						"You do not have permission to start staffing sessions",
-					);
-				}
-				typeToCreate = "staffing";
-			}
-
-			const session = await startSession(tx, user.id, typeToCreate, now);
+			const session = await startSession(tx, user.id, "staffing", now);
 
 			return {
 				status: "tapped_in" as const,
@@ -136,16 +113,25 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 			};
 		}
 
+		// User has an active session - handle switch actions only
+		// Control kiosk does not allow ending sessions directly
+
 		// Handle switch to staffing session
 		if (tapAction === "switch_to_staffing") {
 			if (!staffingSessionsEnabled) {
-				throw new Error("Staffing sessions are not allowed on this kiosk");
+				throw new Error("Staffing sessions are not enabled on this kiosk");
 			}
+
 			// Verify user has staffing permission
 			if (!hasStaffingPermission) {
 				throw new Error(
 					"You do not have permission to start staffing sessions",
 				);
+			}
+
+			// Check if already in a staffing session
+			if (mostRecentSession.sessionType === "staffing") {
+				throw new Error("You are already in a staffing session");
 			}
 
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
@@ -178,7 +164,12 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 		// Handle switch to regular session
 		if (tapAction === "switch_to_regular") {
 			if (!regularSessionsEnabled) {
-				throw new Error("Regular sessions are not allowed on this kiosk");
+				throw new Error("Regular sessions are not enabled on this kiosk");
+			}
+
+			// Check if already in a regular session
+			if (mostRecentSession.sessionType === "regular") {
+				throw new Error("You are already in a regular session");
 			}
 
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
@@ -208,13 +199,10 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 			};
 		}
 
-		// End session (tap out)
-		const endedSession = await endSession(tx, mostRecentSession.id, now);
-
-		return {
-			status: "tapped_out" as const,
-			user,
-			session: endedSession,
-		};
+		// No valid action specified for a user with an active session
+		// Control kiosk cannot end sessions directly
+		throw new Error(
+			"Control kiosk does not support ending sessions. Use switch actions or end your session at the main kiosk.",
+		);
 	});
 }
