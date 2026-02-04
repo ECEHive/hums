@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { registerAuthGuard } from "./auth";
+import { controlPointsRoutes } from "./routes/control-points";
 import { openHoursRoutes } from "./routes/open-hours";
 import { rolesRoutes } from "./routes/roles";
 import { slackRoutes } from "./routes/slack";
@@ -44,6 +45,10 @@ export const restApiRoute: FastifyPluginAsync = async (fastify) => {
 
 		protectedRoutes.register(slackRoutes, {
 			prefix: "/slack",
+		});
+
+		protectedRoutes.register(controlPointsRoutes, {
+			prefix: "/control/points",
 		});
 	});
 };
