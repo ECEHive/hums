@@ -206,7 +206,7 @@ export const appModules: AppModule[] = [
 						title: "Attendance Issues",
 						url: "/app/shifts/attendance-issues",
 						icon: AlertCircleIcon,
-						permissions: { any: ["attendance.manage"] },
+						permissions: { any: ["shift_attendances.excuse"] },
 						description: "Review attendance problems",
 					},
 					{
