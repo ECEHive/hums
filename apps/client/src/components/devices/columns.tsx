@@ -13,6 +13,7 @@ type Device = {
 	hasKioskAccess: boolean;
 	hasDashboardAccess: boolean;
 	hasInventoryAccess: boolean;
+	hasControlAccess: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -48,7 +49,7 @@ export function generateColumns(): ColumnDef<Device>[] {
 			header: "Access",
 			cell: ({ row }) => {
 				return (
-					<div className="flex gap-2">
+					<div className="flex gap-2 flex-wrap">
 						<Badge
 							variant={row.original.hasKioskAccess ? "default" : "outline"}
 							className="flex items-center gap-1"
@@ -81,6 +82,17 @@ export function generateColumns(): ColumnDef<Device>[] {
 								<XCircle className="h-3 w-3" />
 							)}
 							Inventory
+						</Badge>
+						<Badge
+							variant={row.original.hasControlAccess ? "default" : "outline"}
+							className="flex items-center gap-1"
+						>
+							{row.original.hasControlAccess ? (
+								<CheckCircle2 className="h-3 w-3" />
+							) : (
+								<XCircle className="h-3 w-3" />
+							)}
+							Control
 						</Badge>
 					</div>
 				);

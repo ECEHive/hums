@@ -1,3 +1,10 @@
+/**
+ * Control Kiosk Routes - Tap In/Out
+ *
+ * This route handles session tap in/out from the control kiosk.
+ * Reuses the core session logic from the regular kiosk.
+ */
+
 import {
 	ConfigService,
 	checkMissingAgreements,
@@ -6,41 +13,30 @@ import {
 	findUserByCard,
 	getActiveSuspension,
 	getCurrentSession,
-	hasActiveAttendance,
 	startSession,
 	switchSessionType,
 } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
-import type { TKioskProtectedProcedureContext } from "../../trpc";
+import type { TControlProtectedProcedureContext } from "../../trpc";
 
-const EARLY_LEAVE_THRESHOLD_MS = 60000; // 1 minute
-
-export const ZTapInOutSchema = z.object({
+export const ZControlTapInOutSchema = z.object({
 	cardNumber: z.string().regex(/^\d+$/),
 	sessionType: z.enum(["regular", "staffing"]).optional(),
 	tapAction: z
 		.enum(["end_session", "switch_to_staffing", "switch_to_regular"])
 		.optional(),
-	forceEarlyLeave: z.boolean().optional(),
-	forceShiftEarlyLeave: z.boolean().optional(),
 });
 
-export type TTapInOutSchema = z.infer<typeof ZTapInOutSchema>;
+export type TControlTapInOutSchema = z.infer<typeof ZControlTapInOutSchema>;
 
-export type TTapInOutOptions = {
-	ctx: TKioskProtectedProcedureContext;
-	input: TTapInOutSchema;
+export type TControlTapInOutOptions = {
+	ctx: TControlProtectedProcedureContext;
+	input: TControlTapInOutSchema;
 };
 
-export async function tapInOutHandler(options: TTapInOutOptions) {
-	const {
-		cardNumber,
-		sessionType,
-		tapAction,
-		forceEarlyLeave,
-		forceShiftEarlyLeave,
-	} = options.input;
+export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
+	const { cardNumber, sessionType, tapAction } = options.input;
 
 	const user = await findUserByCard(cardNumber);
 
@@ -63,14 +59,14 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 		// Get the most recent session for the user
 		const mostRecentSession = await getCurrentSession(tx, user.id);
 
-		// If there is no session, or the most recent session has an endedAt, create a new session (tap in)
+		// If there is no session, create a new session (tap in)
 		if (!mostRecentSession) {
-			// Check if any session type is allowed on kiosks
+			// Check if any session type is allowed
 			if (!regularSessionsEnabled && !staffingSessionsEnabled) {
 				throw new Error("Sessions cannot be started from this kiosk");
 			}
 
-			// Check if user is suspended FIRST - they cannot start a new session
+			// Check if user is suspended
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
 			if (activeSuspension) {
 				return {
@@ -85,26 +81,11 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 			// Check if user has agreed to all enabled agreements
 			const missingAgreements = await checkMissingAgreements(tx, user.id);
-
 			if (missingAgreements.length > 0) {
 				return {
 					status: "agreements_required" as const,
 					user,
 					missingAgreements,
-				};
-			}
-
-			// User with staffing permission must specify session type (if both types are enabled)
-			// This happens AFTER agreement check
-			if (
-				hasStaffingPermission &&
-				!sessionType &&
-				regularSessionsEnabled &&
-				staffingSessionsEnabled
-			) {
-				return {
-					status: "choose_session_type" as const,
-					user,
 				};
 			}
 
@@ -149,35 +130,24 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			const session = await startSession(tx, user.id, typeToCreate, now);
 
 			return {
-				status: "tapped_in",
+				status: "tapped_in" as const,
 				user,
 				session,
 			};
 		}
 
-		// Otherwise, handle tap-out or switch
-		// User with staffing permission must specify action (if both session types are enabled)
-		if (
-			hasStaffingPermission &&
-			!tapAction &&
-			regularSessionsEnabled &&
-			staffingSessionsEnabled
-		) {
-			return {
-				status: "choose_tap_out_action" as const,
-				user,
-				currentSession: mostRecentSession,
-			};
-		}
-
 		// Handle switch to staffing session
 		if (tapAction === "switch_to_staffing") {
-			// Check if staffing sessions are allowed on this kiosk
 			if (!staffingSessionsEnabled) {
 				throw new Error("Staffing sessions are not allowed on this kiosk");
 			}
+			// Verify user has staffing permission
+			if (!hasStaffingPermission) {
+				throw new Error(
+					"You do not have permission to start staffing sessions",
+				);
+			}
 
-			// Check suspension for switches too - they involve starting a new session
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
 			if (activeSuspension) {
 				return {
@@ -198,7 +168,7 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			);
 
 			return {
-				status: "switched_to_staffing",
+				status: "switched_to_staffing" as const,
 				user,
 				endedSession,
 				newSession,
@@ -207,12 +177,10 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 
 		// Handle switch to regular session
 		if (tapAction === "switch_to_regular") {
-			// Check if regular sessions are allowed on this kiosk
 			if (!regularSessionsEnabled) {
 				throw new Error("Regular sessions are not allowed on this kiosk");
 			}
 
-			// Check suspension for switches too - they involve starting a new session
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);
 			if (activeSuspension) {
 				return {
@@ -225,22 +193,6 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				};
 			}
 
-			// Check if leaving staffing session early (has active attendance)
-			if (
-				mostRecentSession.sessionType === "staffing" &&
-				!forceShiftEarlyLeave
-			) {
-				const hasActive = await hasActiveAttendance(tx, user.id, now);
-				if (hasActive) {
-					return {
-						status: "confirm_shift_early_leave" as const,
-						user,
-						currentSession: mostRecentSession,
-						action: "switch_to_regular" as const,
-					};
-				}
-			}
-
 			const { endedSession, newSession } = await switchSessionType(
 				tx,
 				mostRecentSession.id,
@@ -249,46 +201,20 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			);
 
 			return {
-				status: "switched_to_regular",
+				status: "switched_to_regular" as const,
 				user,
 				endedSession,
 				newSession,
 			};
 		}
 
-		// Default: end session (tap out) - ALLOWED even if suspended
-		// For non-staff users, check if this is an early leave (within 1 minute)
-		if (!hasStaffingPermission && !forceEarlyLeave) {
-			const sessionDuration =
-				now.getTime() - mostRecentSession.startedAt.getTime();
-			if (sessionDuration < EARLY_LEAVE_THRESHOLD_MS) {
-				return {
-					status: "confirm_early_leave" as const,
-					user,
-					currentSession: mostRecentSession,
-				};
-			}
-		}
-
-		// For staff users leaving a staffing session, check if they have active attendance
-		if (mostRecentSession.sessionType === "staffing" && !forceShiftEarlyLeave) {
-			const hasActive = await hasActiveAttendance(tx, user.id, now);
-			if (hasActive) {
-				return {
-					status: "confirm_shift_early_leave" as const,
-					user,
-					currentSession: mostRecentSession,
-					action: "end_session" as const,
-				};
-			}
-		}
-
-		const session = await endSession(tx, mostRecentSession.id, now);
+		// End session (tap out)
+		const endedSession = await endSession(tx, mostRecentSession.id, now);
 
 		return {
-			status: "tapped_out",
+			status: "tapped_out" as const,
 			user,
-			session,
+			session: endedSession,
 		};
 	});
 }

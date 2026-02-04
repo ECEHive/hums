@@ -22,6 +22,23 @@ export async function checkStatusHandler(options: TCheckStatusOptions) {
 			ipAddress: ip,
 			isActive: true,
 		},
+		include: {
+			controlPoints: {
+				where: { isActive: true },
+				select: {
+					id: true,
+					name: true,
+					description: true,
+					location: true,
+					controlClass: true,
+					currentState: true,
+					isActive: true,
+					canControlOnline: true,
+					authorizedRoles: { select: { id: true } },
+					authorizedUsers: { select: { id: true } },
+				},
+			},
+		},
 	});
 
 	if (device) {
