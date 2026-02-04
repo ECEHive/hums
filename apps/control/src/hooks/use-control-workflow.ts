@@ -16,12 +16,28 @@ interface AuthenticatedUser {
 	} | null;
 }
 
+export type SessionAction =
+	| "start_regular"
+	| "start_staffing"
+	| "end_session"
+	| "switch_to_regular"
+	| "switch_to_staffing";
+
+export interface ConfirmationState {
+	action: SessionAction;
+	title: string;
+	message: string;
+	confirmText: string;
+	variant: "warning" | "danger" | "info";
+}
+
 interface ControlKioskState {
 	mode: "idle" | "processing" | "authenticated" | "success" | "error";
 	authenticatedUser: AuthenticatedUser | null;
 	error: string | null;
 	showSessionSelection: boolean;
 	operatingPointId: string | null; // Track which control point is being operated
+	pendingConfirmation: ConfirmationState | null; // Track pending confirmation dialog
 }
 
 interface UseControlWorkflowOptions {
@@ -39,6 +55,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		error: null,
 		showSessionSelection: false,
 		operatingPointId: null,
+		pendingConfirmation: null,
 	});
 
 	// Get control points available on this device
@@ -239,6 +256,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 				error: null,
 				showSessionSelection: false,
 				operatingPointId: null,
+				pendingConfirmation: null,
 			});
 
 			checkPermissionsMutation.mutate({ cardNumber });
@@ -289,6 +307,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 			error: null,
 			showSessionSelection: false,
 			operatingPointId: null,
+			pendingConfirmation: null,
 		});
 	}, []);
 
@@ -302,25 +321,110 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 	}, []);
 
 	const hideSessionSelection = useCallback(() => {
-		setState((prev) => ({ ...prev, showSessionSelection: false }));
+		setState((prev) => ({
+			...prev,
+			showSessionSelection: false,
+			pendingConfirmation: null,
+		}));
 	}, []);
 
-	const handleSessionAction = useCallback(
-		(
-			action:
-				| "start_regular"
-				| "start_staffing"
-				| "end_session"
-				| "switch_to_regular"
-				| "switch_to_staffing",
-		) => {
+	// Get confirmation config for session actions
+	const getConfirmationConfig = useCallback(
+		(action: SessionAction): ConfirmationState | null => {
+			const isStaffing =
+				state.authenticatedUser?.currentSession?.sessionType === "staffing";
+
+			switch (action) {
+				case "end_session":
+					if (isStaffing) {
+						return {
+							action,
+							title: "End Staffing Session?",
+							message:
+								"You are currently on a staffing shift. If you leave now, you may not receive full credit for your attendance.",
+							confirmText: "Yes, Leave",
+							variant: "danger",
+						};
+					}
+					return {
+						action,
+						title: "End Session?",
+						message: "Are you sure you want to end your current session?",
+						confirmText: "Yes, Leave",
+						variant: "warning",
+					};
+				case "switch_to_regular":
+					if (isStaffing) {
+						return {
+							action,
+							title: "Switch to Regular?",
+							message:
+								"You are currently on a staffing shift. If you switch now, you will leave your shift early and may not receive full credit.",
+							confirmText: "Yes, Switch",
+							variant: "danger",
+						};
+					}
+					return null;
+				case "switch_to_staffing":
+					return {
+						action,
+						title: "Switch to Staffing?",
+						message:
+							"Are you sure you want to end your regular session and start a staffing shift?",
+						confirmText: "Yes, Switch",
+						variant: "warning",
+					};
+				case "start_regular":
+				case "start_staffing":
+					// No confirmation needed for starting sessions
+					return null;
+				default:
+					return null;
+			}
+		},
+		[state.authenticatedUser],
+	);
+
+	// Request confirmation for an action
+	const requestSessionAction = useCallback(
+		(action: SessionAction) => {
+			const confirmationConfig = getConfirmationConfig(action);
+			if (confirmationConfig) {
+				setState((prev) => ({
+					...prev,
+					pendingConfirmation: confirmationConfig,
+				}));
+			} else {
+				// No confirmation needed, execute directly
+				executeSessionAction(action);
+			}
+		},
+		[getConfirmationConfig],
+	);
+
+	// Cancel pending confirmation
+	const cancelConfirmation = useCallback(() => {
+		setState((prev) => ({ ...prev, pendingConfirmation: null }));
+	}, []);
+
+	// Confirm and execute pending action
+	const confirmAction = useCallback(() => {
+		if (state.pendingConfirmation) {
+			executeSessionAction(state.pendingConfirmation.action);
+		}
+	}, [state.pendingConfirmation]);
+
+	// Execute session action (internal)
+	const executeSessionAction = useCallback(
+		(action: SessionAction) => {
 			if (!state.authenticatedUser) return;
 
-			// Hide session selection and show processing overlay
+			// Hide session selection and clear confirmation, show processing
 			setState((prev) => ({
 				...prev,
 				mode: "processing",
 				showSessionSelection: false,
+				pendingConfirmation: null,
 			}));
 
 			const cardNumber = state.authenticatedUser.cardNumber;
@@ -352,6 +456,14 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		[state.authenticatedUser, tapInOutMutation],
 	);
 
+	// Legacy function for backward compatibility
+	const handleSessionAction = useCallback(
+		(action: SessionAction) => {
+			requestSessionAction(action);
+		},
+		[requestSessionAction],
+	);
+
 	return {
 		state,
 		controlPoints: (controlPointsQuery.data?.controlPoints ??
@@ -368,6 +480,9 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		showSessionSelection,
 		hideSessionSelection,
 		handleSessionAction,
+		requestSessionAction,
+		cancelConfirmation,
+		confirmAction,
 		refetchControlPoints: () =>
 			queryClient.invalidateQueries({
 				queryKey: ["controlKiosk", "controlPoints"],
