@@ -26,7 +26,9 @@ import {
 	NotebookTextIcon,
 	PackageIcon,
 	PackageSearchIcon,
+	PlugZapIcon,
 	PlusCircleIcon,
+	PowerIcon,
 	ScrollTextIcon,
 	SettingsIcon,
 	ShieldCheckIcon,
@@ -319,6 +321,57 @@ export const appModules: AppModule[] = [
 						icon: SettingsIcon,
 						permissions: ["tickets.types.manage"],
 						description: "Configure ticket types",
+					},
+				],
+			},
+		],
+	},
+	{
+		id: "control",
+		name: "Control",
+		description: "Equipment control",
+		icon: PowerIcon,
+		basePath: "/app/control",
+		color: "text-red-500",
+		permissions: { any: ["control.points.list", "control.points.operate"] },
+		groups: [
+			{
+				name: "Control",
+				items: [
+					{
+						title: "Overview",
+						url: "/app/control",
+						icon: HomeIcon,
+						permissions: {
+							any: ["control.points.list", "control.points.operate"],
+						},
+						description: "Control home",
+					},
+					{
+						title: "Control Points",
+						url: "/app/control/points",
+						icon: PowerIcon,
+						permissions: { any: ["control.points.list"] },
+						description: "View and control equipment",
+					},
+				],
+			},
+			{
+				name: "Administration",
+				items: [
+					{
+						title: "Providers",
+						url: "/app/control/providers",
+						icon: PlugZapIcon,
+						permissions: ["control.providers.list"],
+						description: "Manage control providers",
+					},
+					{
+						title: "Logs",
+						url: "/app/control/logs",
+						icon: HistoryIcon,
+						permissions: ["control.logs.list"],
+						description: "View control logs",
 					},
 				],
 			},

@@ -3,6 +3,7 @@ import { apiTokensRouter } from "./routers/apiTokens/_route";
 import { auditLogsRouter } from "./routers/auditLogs/_route";
 import { authRouter } from "./routers/auth/_route";
 import { configRouter } from "./routers/config/_route";
+import { controlRouter } from "./routers/control/_route";
 import { devicesRouter } from "./routers/devices/_route";
 import { globalReportsRouter } from "./routers/globalReports/_route";
 import { inventoryRouter } from "./routers/inventory/_route";
@@ -29,6 +30,7 @@ export const appRouter = router({
 	apiTokens: apiTokensRouter,
 	auditLogs: auditLogsRouter,
 	config: configRouter,
+	control: controlRouter,
 	overview: overviewRouter,
 	users: usersRouter,
 	roles: rolesRouter,

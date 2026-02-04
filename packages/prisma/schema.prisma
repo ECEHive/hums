@@ -9,44 +9,47 @@ datasource db {
 }
 
 model User {
-  id                    Int                    @id @default(autoincrement())
-  username              String                 @unique
-  name                  String
-  email                 String                 @unique
-  cardNumber            String?                @unique
-  isSystemUser          Boolean                @default(false)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now()) @updatedAt
-  slackUsername         String?                @unique
-  apiTokens             ApiToken[]
-  impersonatedAuditLogs AuditLog[]             @relation("AuditLogImpersonators")
-  auditLogs             AuditLog[]
-  inventoryTransactions InventoryTransaction[]
-  securitySnapshots     SecuritySnapshot[]
-  sessions              Session[]
-  reviewedAttendances   ShiftAttendance[]      @relation("ShiftAttendanceReviewedBy")
-  attendances           ShiftAttendance[]
-  createdSuspensions    Suspension[]           @relation("SuspensionCreatedBy")
-  suspensions           Suspension[]
-  handledTickets        Ticket[]               @relation("TicketHandler")
-  submittedTickets      Ticket[]               @relation("TicketSubmitter")
-  ticketStatusChanges   TicketStatusHistory[]  @relation("TicketStatusChangedBy")
-  userAgreements        UserAgreement[]
-  roles                 Role[]                 @relation("RoleToUser")
-  shiftOccurrences      ShiftOccurrence[]      @relation("ShiftOccurrenceToUser")
-  shiftSchedules        ShiftSchedule[]        @relation("ShiftScheduleToUser")
+  id                       Int                    @id @default(autoincrement())
+  username                 String                 @unique
+  name                     String
+  email                    String                 @unique
+  cardNumber               String?                @unique
+  isSystemUser             Boolean                @default(false)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @default(now()) @updatedAt
+  slackUsername            String?                @unique
+  apiTokens                ApiToken[]
+  impersonatedAuditLogs    AuditLog[]             @relation("AuditLogImpersonators")
+  auditLogs                AuditLog[]
+  inventoryTransactions    InventoryTransaction[]
+  securitySnapshots        SecuritySnapshot[]
+  sessions                 Session[]
+  reviewedAttendances      ShiftAttendance[]      @relation("ShiftAttendanceReviewedBy")
+  attendances              ShiftAttendance[]
+  createdSuspensions       Suspension[]           @relation("SuspensionCreatedBy")
+  suspensions              Suspension[]
+  handledTickets           Ticket[]               @relation("TicketHandler")
+  submittedTickets         Ticket[]               @relation("TicketSubmitter")
+  ticketStatusChanges      TicketStatusHistory[]  @relation("TicketStatusChangedBy")
+  userAgreements           UserAgreement[]
+  roles                    Role[]                 @relation("RoleToUser")
+  shiftOccurrences         ShiftOccurrence[]      @relation("ShiftOccurrenceToUser")
+  shiftSchedules           ShiftSchedule[]        @relation("ShiftScheduleToUser")
+  authorizedControlPoints  ControlPoint[]         @relation("ControlPointUsers")
+  controlLogs              ControlLog[]
 }
 
 model Role {
-  id            Int          @id @default(autoincrement())
-  name          String       @unique
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @default(now()) @updatedAt
-  approvalItems Item[]       @relation("ItemApprovalRoles")
-  periods       Period[]     @relation("PeriodRoles")
-  permissions   Permission[] @relation("PermissionToRole")
-  shiftTypes    ShiftType[]  @relation("RoleToShiftType")
-  users         User[]       @relation("RoleToUser")
+  id                       Int            @id @default(autoincrement())
+  name                     String         @unique
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @default(now()) @updatedAt
+  approvalItems            Item[]         @relation("ItemApprovalRoles")
+  periods                  Period[]       @relation("PeriodRoles")
+  permissions              Permission[]   @relation("PermissionToRole")
+  shiftTypes               ShiftType[]    @relation("RoleToShiftType")
+  users                    User[]         @relation("RoleToUser")
+  authorizedControlPoints  ControlPoint[] @relation("ControlPointRoles")
 }
 
 model Permission {
@@ -446,4 +449,72 @@ enum TicketStatus {
 enum SecurityEventType {
   TAP
   PRESENCE // Snapshot taken when face is detected but no tap event occurs
+}
+
+// ===== Equipment Control System =====
+
+model ControlProvider {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  providerType  ControlProviderType
+  config        Json           @default("{}")
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
+  controlPoints ControlPoint[]
+}
+
+model ControlPoint {
+  id               String            @id @default(uuid())
+  name             String
+  description      String?
+  location         String?
+  controlClass     ControlClass
+  canControlOnline Boolean           @default(true)
+  canControlWithCode Boolean         @default(false)
+  providerConfig   Json              @default("{}")
+  currentState     Boolean           @default(false)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  providerId       Int
+  provider         ControlProvider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  authorizedRoles  Role[]            @relation("ControlPointRoles")
+  authorizedUsers  User[]            @relation("ControlPointUsers")
+  controlLogs      ControlLog[]
+
+  @@index([providerId])
+}
+
+model ControlLog {
+  id             String       @id @default(uuid())
+  controlPointId String
+  userId         Int
+  action         ControlAction
+  previousState  Boolean?
+  newState       Boolean?
+  success        Boolean      @default(true)
+  errorMessage   String?
+  createdAt      DateTime     @default(now())
+  controlPoint   ControlPoint @relation(fields: [controlPointId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([controlPointId, createdAt])
+  @@index([userId, createdAt])
+}
+
+enum ControlProviderType {
+  GEORGIA_TECH_PLC
+}
+
+enum ControlClass {
+  SWITCH  // On/off toggle with persistent state
+  DOOR    // Momentary unlock, no persistent state
+}
+
+enum ControlAction {
+  TURN_ON
+  TURN_OFF
+  UNLOCK
+  READ_STATE
 }

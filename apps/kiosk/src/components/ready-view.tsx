@@ -44,9 +44,7 @@ export function ReadyView({
 					{isProcessing ? (
 						<LoadingIndicator message="Processing..." />
 					) : (
-						<p className="text-2xl text-muted-foreground">
-							Tap your BuzzCard
-						</p>
+						<p className="text-2xl text-muted-foreground">Tap your BuzzCard</p>
 					)}
 				</div>
 			</div>
