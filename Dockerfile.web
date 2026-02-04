@@ -85,7 +85,7 @@ COPY --from=build-client /app/apps/client/dist /usr/share/nginx/html/client
 COPY --from=build-kiosk /app/apps/kiosk/dist /usr/share/nginx/html/kiosk
 COPY --from=build-overview /app/apps/overview/dist /usr/share/nginx/html/overview
 COPY --from=build-inventory /app/apps/inventory/dist /usr/share/nginx/html/inventory
-COPY --from=build-control /app/apps/control/dist /usr/share/nginx/html/control
+COPY --from=build-control /app/apps/control/dist /usr/share/nginx/html/control-kiosk
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
