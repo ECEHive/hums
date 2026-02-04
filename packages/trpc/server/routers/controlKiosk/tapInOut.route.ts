@@ -100,6 +100,12 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 				if (sessionType === "staffing" && !staffingSessionsEnabled) {
 					throw new Error("Staffing sessions are not allowed on this kiosk");
 				}
+				// Verify user has staffing permission when requesting staffing session
+				if (sessionType === "staffing" && !hasStaffingPermission) {
+					throw new Error(
+						"You do not have permission to start staffing sessions",
+					);
+				}
 				typeToCreate = sessionType;
 			} else if (
 				hasStaffingPermission &&
@@ -112,7 +118,12 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 				// Default to regular if allowed
 				typeToCreate = "regular";
 			} else {
-				// Only staffing sessions allowed
+				// Only staffing sessions allowed - verify user has permission
+				if (!hasStaffingPermission) {
+					throw new Error(
+						"You do not have permission to start staffing sessions",
+					);
+				}
 				typeToCreate = "staffing";
 			}
 
@@ -129,6 +140,12 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 		if (tapAction === "switch_to_staffing") {
 			if (!staffingSessionsEnabled) {
 				throw new Error("Staffing sessions are not allowed on this kiosk");
+			}
+			// Verify user has staffing permission
+			if (!hasStaffingPermission) {
+				throw new Error(
+					"You do not have permission to start staffing sessions",
+				);
 			}
 
 			const activeSuspension = await getActiveSuspension(tx, user.id, now);

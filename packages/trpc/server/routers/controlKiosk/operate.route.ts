@@ -6,6 +6,7 @@
  * the specific control point that is assigned to the device.
  */
 
+import { findUserByCard } from "@ecehive/features";
 import type { ControlAction, ControlProviderType } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
@@ -27,20 +28,16 @@ type KioskOperateOptions = {
 export async function kioskOperateHandler({ ctx, input }: KioskOperateOptions) {
 	const { cardNumber, controlPointId, action } = input;
 
-	// Find the user by card number
-	const user = await prisma.user.findFirst({
-		where: { cardNumber },
+	// Find the user by card number using findUserByCard for consistency
+	const user = await findUserByCard(cardNumber);
+
+	// Get user's roles for authorization checks
+	const userWithRoles = await prisma.user.findUniqueOrThrow({
+		where: { id: user.id },
 		include: {
 			roles: { select: { id: true } },
 		},
 	});
-
-	if (!user) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "User not found. Please ensure your card is registered.",
-		});
-	}
 
 	// Verify the control point is assigned to this device
 	const deviceControlPoint = ctx.device.controlPoints.find(
@@ -88,8 +85,8 @@ export async function kioskOperateHandler({ ctx, input }: KioskOperateOptions) {
 	}
 
 	// Check authorization - user must be authorized directly or through a role
-	const userRoleIds = user.roles.map((r) => r.id);
-	const isSystemUser = user.isSystemUser;
+	const userRoleIds = userWithRoles.roles.map((r) => r.id);
+	const isSystemUser = userWithRoles.isSystemUser;
 
 	// System users bypass all authorization checks
 	if (!isSystemUser) {

@@ -5,9 +5,12 @@
  * Also returns session info and staffing permissions for the control kiosk session management.
  */
 
-import { checkStaffingPermission, getCurrentSession } from "@ecehive/features";
+import {
+	checkStaffingPermission,
+	findUserByCard,
+	getCurrentSession,
+} from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import type { TControlProtectedProcedureContext } from "../../trpc";
 
@@ -26,20 +29,16 @@ export async function checkUserPermissionsHandler({
 }: CheckUserPermissionsOptions) {
 	const { cardNumber } = input;
 
-	// Find the user by card number
-	const user = await prisma.user.findFirst({
-		where: { cardNumber },
+	// Find the user by card number using findUserByCard for consistency
+	const user = await findUserByCard(cardNumber);
+
+	// Get user's roles for authorization checks
+	const userWithRoles = await prisma.user.findUniqueOrThrow({
+		where: { id: user.id },
 		include: {
 			roles: { select: { id: true } },
 		},
 	});
-
-	if (!user) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: "User not found. Please ensure your card is registered.",
-		});
-	}
 
 	// Get the control points assigned to this device
 	const deviceControlPointIds = ctx.device.controlPoints.map((cp) => cp.id);
@@ -61,8 +60,8 @@ export async function checkUserPermissionsHandler({
 	});
 
 	// Check which control points the user can control
-	const userRoleIds = user.roles.map((r) => r.id);
-	const isSystemUser = user.isSystemUser;
+	const userRoleIds = userWithRoles.roles.map((r) => r.id);
+	const isSystemUser = userWithRoles.isSystemUser;
 
 	const authorizedControlPoints = deviceControlPoints.filter((point) => {
 		// System users can control everything

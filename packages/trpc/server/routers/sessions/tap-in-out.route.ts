@@ -119,6 +119,12 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				if (sessionType === "staffing" && !staffingSessionsEnabled) {
 					throw new Error("Staffing sessions are not allowed on this kiosk");
 				}
+				// Verify user has staffing permission when requesting staffing session
+				if (sessionType === "staffing" && !hasStaffingPermission) {
+					throw new Error(
+						"You do not have permission to start staffing sessions",
+					);
+				}
 				typeToCreate = sessionType;
 			} else if (
 				hasStaffingPermission &&
@@ -131,7 +137,12 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				// Default to regular if allowed
 				typeToCreate = "regular";
 			} else {
-				// Only staffing sessions allowed
+				// Only staffing sessions allowed - verify user has permission
+				if (!hasStaffingPermission) {
+					throw new Error(
+						"You do not have permission to start staffing sessions",
+					);
+				}
 				typeToCreate = "staffing";
 			}
 
