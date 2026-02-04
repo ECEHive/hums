@@ -15,13 +15,16 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SubmitIndexRouteImport } from './routes/submit/index'
 import { Route as SubmitTicketTypeIdRouteImport } from './routes/submit/$ticketTypeId'
+import { Route as ControlPointIdRouteImport } from './routes/control.$pointId'
 import { Route as AppTicketsRouteImport } from './routes/app/tickets'
 import { Route as AppShiftsRouteImport } from './routes/app/shifts'
 import { Route as AppInventoryRouteImport } from './routes/app/inventory'
+import { Route as AppControlRouteImport } from './routes/app/control'
 import { Route as AppAppRouteImport } from './routes/app/_app'
 import { Route as AppTicketsIndexRouteImport } from './routes/app/tickets/index'
 import { Route as AppShiftsIndexRouteImport } from './routes/app/shifts/index'
 import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
+import { Route as AppControlIndexRouteImport } from './routes/app/control/index'
 import { Route as AppAppIndexRouteImport } from './routes/app/_app/index'
 import { Route as AppTicketsMyTicketsRouteImport } from './routes/app/tickets/my-tickets'
 import { Route as AppShiftsShiftTypesRouteImport } from './routes/app/shifts/shift-types'
@@ -38,6 +41,9 @@ import { Route as AppShiftsAttendanceRouteImport } from './routes/app/shifts/att
 import { Route as AppInventoryTransactionsRouteImport } from './routes/app/inventory/transactions'
 import { Route as AppInventoryMyTransactionsRouteImport } from './routes/app/inventory/my-transactions'
 import { Route as AppInventoryItemsRouteImport } from './routes/app/inventory/items'
+import { Route as AppControlProvidersRouteImport } from './routes/app/control/providers'
+import { Route as AppControlPointsRouteImport } from './routes/app/control/points'
+import { Route as AppControlLogsRouteImport } from './routes/app/control/logs'
 import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
@@ -91,6 +97,11 @@ const SubmitTicketTypeIdRoute = SubmitTicketTypeIdRouteImport.update({
   path: '/submit/$ticketTypeId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ControlPointIdRoute = ControlPointIdRouteImport.update({
+  id: '/control/$pointId',
+  path: '/control/$pointId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppTicketsRoute = AppTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -104,6 +115,11 @@ const AppShiftsRoute = AppShiftsRouteImport.update({
 const AppInventoryRoute = AppInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppControlRoute = AppControlRouteImport.update({
+  id: '/control',
+  path: '/control',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAppRoute = AppAppRouteImport.update({
@@ -124,6 +140,11 @@ const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppControlIndexRoute = AppControlIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppControlRoute,
 } as any)
 const AppAppIndexRoute = AppAppIndexRouteImport.update({
   id: '/',
@@ -209,6 +230,21 @@ const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
   id: '/items',
   path: '/items',
   getParentRoute: () => AppInventoryRoute,
+} as any)
+const AppControlProvidersRoute = AppControlProvidersRouteImport.update({
+  id: '/providers',
+  path: '/providers',
+  getParentRoute: () => AppControlRoute,
+} as any)
+const AppControlPointsRoute = AppControlPointsRouteImport.update({
+  id: '/points',
+  path: '/points',
+  getParentRoute: () => AppControlRoute,
+} as any)
+const AppControlLogsRoute = AppControlLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AppControlRoute,
 } as any)
 const AppAppUsersRoute = AppAppUsersRouteImport.update({
   id: '/users',
@@ -331,9 +367,11 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppAppRouteWithChildren
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
+  '/app/control': typeof AppControlRouteWithChildren
   '/app/inventory': typeof AppInventoryRouteWithChildren
   '/app/shifts': typeof AppShiftsRouteWithChildren
   '/app/tickets': typeof AppTicketsRouteWithChildren
+  '/control/$pointId': typeof ControlPointIdRoute
   '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
   '/submit': typeof SubmitIndexRoute
   '/app/agreements': typeof AppAppAgreementsRoute
@@ -348,6 +386,9 @@ export interface FileRoutesByFullPath {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/control/logs': typeof AppControlLogsRoute
+  '/app/control/points': typeof AppControlPointsRoute
+  '/app/control/providers': typeof AppControlProvidersRoute
   '/app/inventory/items': typeof AppInventoryItemsRoute
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
@@ -364,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
   '/app/tickets/my-tickets': typeof AppTicketsMyTicketsRouteWithChildren
   '/app/': typeof AppAppIndexRoute
+  '/app/control/': typeof AppControlIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
   '/app/tickets/': typeof AppTicketsIndexRoute
@@ -383,6 +425,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppAppIndexRoute
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
+  '/control/$pointId': typeof ControlPointIdRoute
   '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
   '/submit': typeof SubmitIndexRoute
   '/app/agreements': typeof AppAppAgreementsRoute
@@ -397,6 +440,9 @@ export interface FileRoutesByTo {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/control/logs': typeof AppControlLogsRoute
+  '/app/control/points': typeof AppControlPointsRoute
+  '/app/control/providers': typeof AppControlProvidersRoute
   '/app/inventory/items': typeof AppInventoryItemsRoute
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
@@ -410,6 +456,7 @@ export interface FileRoutesByTo {
   '/app/shifts/scheduling': typeof AppShiftsSchedulingRoute
   '/app/shifts/shift-schedules': typeof AppShiftsShiftSchedulesRoute
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
+  '/app/control': typeof AppControlIndexRoute
   '/app/inventory': typeof AppInventoryIndexRoute
   '/app/shifts': typeof AppShiftsIndexRoute
   '/app/tickets': typeof AppTicketsIndexRoute
@@ -431,9 +478,11 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/_app': typeof AppAppRouteWithChildren
+  '/app/control': typeof AppControlRouteWithChildren
   '/app/inventory': typeof AppInventoryRouteWithChildren
   '/app/shifts': typeof AppShiftsRouteWithChildren
   '/app/tickets': typeof AppTicketsRouteWithChildren
+  '/control/$pointId': typeof ControlPointIdRoute
   '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
   '/submit/': typeof SubmitIndexRoute
   '/app/_app/agreements': typeof AppAppAgreementsRoute
@@ -448,6 +497,9 @@ export interface FileRoutesById {
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
   '/app/_app/users': typeof AppAppUsersRoute
+  '/app/control/logs': typeof AppControlLogsRoute
+  '/app/control/points': typeof AppControlPointsRoute
+  '/app/control/providers': typeof AppControlProvidersRoute
   '/app/inventory/items': typeof AppInventoryItemsRoute
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
@@ -464,6 +516,7 @@ export interface FileRoutesById {
   '/app/shifts/shift-types': typeof AppShiftsShiftTypesRoute
   '/app/tickets/my-tickets': typeof AppTicketsMyTicketsRouteWithChildren
   '/app/_app/': typeof AppAppIndexRoute
+  '/app/control/': typeof AppControlIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
   '/app/shifts/': typeof AppShiftsIndexRoute
   '/app/tickets/': typeof AppTicketsIndexRoute
@@ -485,9 +538,11 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/ota-session-login'
+    | '/app/control'
     | '/app/inventory'
     | '/app/shifts'
     | '/app/tickets'
+    | '/control/$pointId'
     | '/submit/$ticketTypeId'
     | '/submit'
     | '/app/agreements'
@@ -502,6 +557,9 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/control/logs'
+    | '/app/control/points'
+    | '/app/control/providers'
     | '/app/inventory/items'
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
@@ -518,6 +576,7 @@ export interface FileRouteTypes {
     | '/app/shifts/shift-types'
     | '/app/tickets/my-tickets'
     | '/app/'
+    | '/app/control/'
     | '/app/inventory/'
     | '/app/shifts/'
     | '/app/tickets/'
@@ -537,6 +596,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/ota-session-login'
+    | '/control/$pointId'
     | '/submit/$ticketTypeId'
     | '/submit'
     | '/app/agreements'
@@ -551,6 +611,9 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/control/logs'
+    | '/app/control/points'
+    | '/app/control/providers'
     | '/app/inventory/items'
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
@@ -564,6 +627,7 @@ export interface FileRouteTypes {
     | '/app/shifts/scheduling'
     | '/app/shifts/shift-schedules'
     | '/app/shifts/shift-types'
+    | '/app/control'
     | '/app/inventory'
     | '/app/shifts'
     | '/app/tickets'
@@ -584,9 +648,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/ota-session-login'
     | '/app/_app'
+    | '/app/control'
     | '/app/inventory'
     | '/app/shifts'
     | '/app/tickets'
+    | '/control/$pointId'
     | '/submit/$ticketTypeId'
     | '/submit/'
     | '/app/_app/agreements'
@@ -601,6 +667,9 @@ export interface FileRouteTypes {
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
     | '/app/_app/users'
+    | '/app/control/logs'
+    | '/app/control/points'
+    | '/app/control/providers'
     | '/app/inventory/items'
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
@@ -617,6 +686,7 @@ export interface FileRouteTypes {
     | '/app/shifts/shift-types'
     | '/app/tickets/my-tickets'
     | '/app/_app/'
+    | '/app/control/'
     | '/app/inventory/'
     | '/app/shifts/'
     | '/app/tickets/'
@@ -637,6 +707,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   OtaSessionLoginRoute: typeof OtaSessionLoginRoute
+  ControlPointIdRoute: typeof ControlPointIdRoute
   SubmitTicketTypeIdRoute: typeof SubmitTicketTypeIdRoute
   SubmitIndexRoute: typeof SubmitIndexRoute
 }
@@ -685,6 +756,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SubmitTicketTypeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/control/$pointId': {
+      id: '/control/$pointId'
+      path: '/control/$pointId'
+      fullPath: '/control/$pointId'
+      preLoaderRoute: typeof ControlPointIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/tickets': {
       id: '/app/tickets'
       path: '/tickets'
@@ -704,6 +782,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/app/inventory'
       preLoaderRoute: typeof AppInventoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/control': {
+      id: '/app/control'
+      path: '/control'
+      fullPath: '/app/control'
+      preLoaderRoute: typeof AppControlRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/_app': {
@@ -733,6 +818,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/inventory/'
       preLoaderRoute: typeof AppInventoryIndexRouteImport
       parentRoute: typeof AppInventoryRoute
+    }
+    '/app/control/': {
+      id: '/app/control/'
+      path: '/'
+      fullPath: '/app/control/'
+      preLoaderRoute: typeof AppControlIndexRouteImport
+      parentRoute: typeof AppControlRoute
     }
     '/app/_app/': {
       id: '/app/_app/'
@@ -845,6 +937,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/inventory/items'
       preLoaderRoute: typeof AppInventoryItemsRouteImport
       parentRoute: typeof AppInventoryRoute
+    }
+    '/app/control/providers': {
+      id: '/app/control/providers'
+      path: '/providers'
+      fullPath: '/app/control/providers'
+      preLoaderRoute: typeof AppControlProvidersRouteImport
+      parentRoute: typeof AppControlRoute
+    }
+    '/app/control/points': {
+      id: '/app/control/points'
+      path: '/points'
+      fullPath: '/app/control/points'
+      preLoaderRoute: typeof AppControlPointsRouteImport
+      parentRoute: typeof AppControlRoute
+    }
+    '/app/control/logs': {
+      id: '/app/control/logs'
+      path: '/logs'
+      fullPath: '/app/control/logs'
+      preLoaderRoute: typeof AppControlLogsRouteImport
+      parentRoute: typeof AppControlRoute
     }
     '/app/_app/users': {
       id: '/app/_app/users'
@@ -1042,6 +1155,24 @@ const AppAppRouteChildren: AppAppRouteChildren = {
 const AppAppRouteWithChildren =
   AppAppRoute._addFileChildren(AppAppRouteChildren)
 
+interface AppControlRouteChildren {
+  AppControlLogsRoute: typeof AppControlLogsRoute
+  AppControlPointsRoute: typeof AppControlPointsRoute
+  AppControlProvidersRoute: typeof AppControlProvidersRoute
+  AppControlIndexRoute: typeof AppControlIndexRoute
+}
+
+const AppControlRouteChildren: AppControlRouteChildren = {
+  AppControlLogsRoute: AppControlLogsRoute,
+  AppControlPointsRoute: AppControlPointsRoute,
+  AppControlProvidersRoute: AppControlProvidersRoute,
+  AppControlIndexRoute: AppControlIndexRoute,
+}
+
+const AppControlRouteWithChildren = AppControlRoute._addFileChildren(
+  AppControlRouteChildren,
+)
+
 interface AppInventoryRouteChildren {
   AppInventoryItemsRoute: typeof AppInventoryItemsRoute
   AppInventoryMyTransactionsRoute: typeof AppInventoryMyTransactionsRoute
@@ -1144,6 +1275,7 @@ const AppTicketsRouteWithChildren = AppTicketsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAppRoute: typeof AppAppRouteWithChildren
+  AppControlRoute: typeof AppControlRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppShiftsRoute: typeof AppShiftsRouteWithChildren
   AppTicketsRoute: typeof AppTicketsRouteWithChildren
@@ -1151,6 +1283,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRouteWithChildren,
+  AppControlRoute: AppControlRouteWithChildren,
   AppInventoryRoute: AppInventoryRouteWithChildren,
   AppShiftsRoute: AppShiftsRouteWithChildren,
   AppTicketsRoute: AppTicketsRouteWithChildren,
@@ -1163,6 +1296,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   OtaSessionLoginRoute: OtaSessionLoginRoute,
+  ControlPointIdRoute: ControlPointIdRoute,
   SubmitTicketTypeIdRoute: SubmitTicketTypeIdRoute,
   SubmitIndexRoute: SubmitIndexRoute,
 }

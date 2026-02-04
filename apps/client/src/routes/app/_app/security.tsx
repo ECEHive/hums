@@ -1420,9 +1420,7 @@ function HistorySnapshotsView() {
 				pageSize,
 				...(selectedEventType &&
 					selectedEventType !== "all" && {
-						eventType: selectedEventType as
-							| "TAP"
-							| "PRESENCE",
+						eventType: selectedEventType as "TAP" | "PRESENCE",
 					}),
 				...(selectedDevice &&
 					selectedDevice !== "all" && {
