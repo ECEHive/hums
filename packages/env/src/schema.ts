@@ -1,19 +1,37 @@
 import z from "zod";
 
+/**
+ * Minimum length for cryptographic secrets.
+ * 32 characters provides at least 256 bits of entropy when using base64.
+ */
+const MIN_SECRET_LENGTH = 32;
+
 const BaseEnvSchema = z.object({
 	NODE_ENV: z
 		.enum(["development", "production", "test"])
 		.default("development"),
 	PORT: z.coerce.number().default(44830),
 	DATABASE_URL: z.url(),
-	AUTH_SECRET: z.string().transform((val) => {
-		const buffer = Buffer.from(val);
-		return new Uint8Array(buffer);
-	}),
-	ICAL_SECRET: z.string().transform((val) => {
-		const buffer = Buffer.from(val);
-		return new Uint8Array(buffer);
-	}),
+	AUTH_SECRET: z
+		.string()
+		.min(
+			MIN_SECRET_LENGTH,
+			`AUTH_SECRET must be at least ${MIN_SECRET_LENGTH} characters. Generate with: openssl rand -base64 32`,
+		)
+		.transform((val) => {
+			const buffer = Buffer.from(val);
+			return new Uint8Array(buffer);
+		}),
+	ICAL_SECRET: z
+		.string()
+		.min(
+			MIN_SECRET_LENGTH,
+			`ICAL_SECRET must be at least ${MIN_SECRET_LENGTH} characters. Generate with: openssl rand -base64 32`,
+		)
+		.transform((val) => {
+			const buffer = Buffer.from(val);
+			return new Uint8Array(buffer);
+		}),
 	AUTH_PROVIDER: z.enum(["CAS", "CAS_PROXIED"]).default("CAS_PROXIED"),
 	AUTH_CAS_SERVER: z.url(),
 	AUTH_CAS_LOGIN_URL: z.string().url().optional(),

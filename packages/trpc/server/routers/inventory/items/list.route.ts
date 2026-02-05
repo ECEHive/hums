@@ -1,4 +1,4 @@
-import { Prisma, prisma } from "@ecehive/prisma";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { Context } from "../../../context";
 
@@ -139,19 +139,11 @@ async function listLowQuantityItems(options: {
 }) {
 	const { search, limit, offset, isActive } = options;
 
-	// Build search conditions for raw SQL
-	const searchCondition = search
-		? `AND (i.name ILIKE '%${search.replace(/'/g, "''")}%' 
-		    OR i.description ILIKE '%${search.replace(/'/g, "''")}%' 
-		    OR i.sku ILIKE '%${search.replace(/'/g, "''")}%' 
-		    OR i.location ILIKE '%${search.replace(/'/g, "''")}%')`
-		: "";
+	// Build parameterized search pattern for ILIKE
+	const searchPattern = search ? `%${search}%` : null;
 
-	const isActiveCondition =
-		isActive !== undefined ? `AND i."isActive" = ${isActive}` : "";
-
-	// Get IDs of items that are below minQuantity threshold
-	// This computes current quantity = snapshot + sum of transactions after snapshot
+	// Use parameterized queries to prevent SQL injection
+	// When search is provided, we filter; when isActive is defined, we filter by that too
 	const lowQuantityItemsRaw = await prisma.$queryRaw<
 		Array<{ id: string; currentQuantity: bigint }>
 	>`
@@ -166,8 +158,13 @@ async function listLowQuantityItems(options: {
 		FROM "Item" i
 		INNER JOIN "InventorySnapshot" s ON i.id = s."itemId"
 		WHERE i."minQuantity" IS NOT NULL
-			${Prisma.raw(searchCondition)}
-			${Prisma.raw(isActiveCondition)}
+			AND (${searchPattern}::text IS NULL OR (
+				i.name ILIKE ${searchPattern}
+				OR i.description ILIKE ${searchPattern}
+				OR i.sku ILIKE ${searchPattern}
+				OR i.location ILIKE ${searchPattern}
+			))
+			AND (${isActive}::boolean IS NULL OR i."isActive" = ${isActive})
 		HAVING (s.quantity + COALESCE(
 			(SELECT SUM(t.quantity) 
 			 FROM "InventoryTransaction" t 
