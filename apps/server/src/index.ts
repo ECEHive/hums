@@ -2,7 +2,7 @@ import { env } from "@ecehive/env";
 import { updateSystemUsers } from "@ecehive/features";
 import { getLogger } from "@ecehive/logger";
 import * as workers from "@ecehive/workers";
-import { server } from "./fastify";
+import { createServer } from "./fastify";
 
 const logger = getLogger("server:startup");
 
@@ -26,7 +26,8 @@ Promise.resolve()
 		logger.fatal("Failed to start background workers", { error: err.message });
 		process.exit(1);
 	})
-	.then(() =>
+	.then(() => createServer())
+	.then((server) =>
 		server.listen({
 			port: env.PORT,
 			host: "0.0.0.0",

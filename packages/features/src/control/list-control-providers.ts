@@ -13,7 +13,14 @@ export interface ListControlProvidersInput {
 }
 
 /**
+ * Placeholder for redacted provider credentials
+ */
+const REDACTED_CONFIG = { _redacted: true };
+
+/**
  * Lists control providers with filtering and pagination
+ * Provider config is redacted to prevent exposure of credentials
+ * (e.g., PLC passwords, API keys)
  */
 export async function listControlProviders(input: ListControlProvidersInput) {
 	const limit = input.limit ?? 25;
@@ -44,8 +51,15 @@ export async function listControlProviders(input: ListControlProvidersInput) {
 		prisma.controlProvider.count({ where }),
 	]);
 
+	// Redact sensitive config field from response
+	// The config field may contain credentials like PLC passwords, API keys, etc.
+	const redactedProviders = providers.map((provider) => ({
+		...provider,
+		config: REDACTED_CONFIG,
+	}));
+
 	return {
-		providers,
+		providers: redactedProviders,
 		total,
 		limit,
 		offset,

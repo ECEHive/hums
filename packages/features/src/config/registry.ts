@@ -2,6 +2,11 @@ import { z } from "zod";
 import type { ConfigDefinition, ConfigField } from "./types";
 
 /**
+ * Placeholder value used when redacting sensitive fields
+ */
+export const REDACTED_PLACEHOLDER = "••••••••";
+
+/**
  * Configuration Registry
  * Central registry for all configuration definitions in the system
  */
@@ -66,6 +71,39 @@ export const ConfigRegistry = {
 			}
 		}
 		return undefined;
+	},
+
+	/**
+	 * Check if a configuration key is a sensitive field (type: "secret")
+	 */
+	isSensitive(key: string): boolean {
+		for (const definition of Array.from(definitions.values())) {
+			for (const group of definition.groups) {
+				for (const field of group.fields) {
+					if (field.key === key) {
+						return field.type === "secret";
+					}
+				}
+			}
+		}
+		return false;
+	},
+
+	/**
+	 * Get all sensitive (secret) field keys
+	 */
+	getSensitiveKeys(): Set<string> {
+		const sensitiveKeys = new Set<string>();
+		for (const definition of Array.from(definitions.values())) {
+			for (const group of definition.groups) {
+				for (const field of group.fields) {
+					if (field.type === "secret") {
+						sensitiveKeys.add(field.key);
+					}
+				}
+			}
+		}
+		return sensitiveKeys;
 	},
 
 	/**

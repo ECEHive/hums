@@ -29,12 +29,14 @@ All environment variables are validated using Zod schemas. See [packages/env](..
 | `DATABASE_URL` | Yes | - | PostgreSQL connection URL (format: `postgresql://user:pass@host:port/db`) |
 | `TZ` | No | `America/New_York` | Primary timezone for the application |
 | `CLIENT_BASE_URL` | Yes | - | Base URL of the client application (no trailing slash) |
+| `CORS_ORIGINS` | Production | - | Comma-separated list of allowed CORS origins. **Required in production.** |
 
 ### Authentication Configuration
 
 | Variable | Required | Default | Description |
 | - | - | - | - |
-| `AUTH_SECRET` | Yes | - | Secret used to sign and validate authentication tokens (generate with `openssl rand -base64 32`) |
+| `AUTH_SECRET` | Yes | - | Secret used to sign authentication tokens. **Must be at least 32 characters.** Generate with `openssl rand -base64 32` |
+| `ICAL_SECRET` | Yes | - | Secret used to sign calendar sync tokens. **Must be at least 32 characters.** Generate with `openssl rand -base64 32` |
 | `AUTH_PROVIDER` | No | `CAS_PROXIED` | Authentication provider: `CAS` (direct) or `CAS_PROXIED` (via proxy) |
 | `AUTH_CAS_SERVER` | Yes | - | Base URL of the CAS server (used to derive default endpoints) |
 | `AUTH_CAS_LOGIN_URL` | No | `<AUTH_CAS_SERVER>/cas/login` | CAS login endpoint URL |
@@ -124,4 +126,4 @@ No additional configuration needed. All email sending will be logged to the cons
 
 ### Example Configurations
 
-See [.env.sample](./env.sample) for complete example configurations with different provider combinations.
+See [.env.sample](./.env.sample) for complete example configurations with different provider combinations.
