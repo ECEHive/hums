@@ -74,7 +74,7 @@ export function KioskHeader({
 						className="gap-2"
 					>
 						<LogOut className="w-4 h-4" />
-						Cancel
+						Done
 					</Button>
 				) : null}
 			</div>
