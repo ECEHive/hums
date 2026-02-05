@@ -467,24 +467,26 @@ model ControlProvider {
 }
 
 model ControlPoint {
-  id               String            @id @default(uuid())
-  name             String
-  description      String?
-  location         String?
-  controlClass     ControlClass
-  canControlOnline Boolean           @default(true)
-  canControlWithCode Boolean         @default(false)
-  providerConfig   Json              @default("{}")
-  currentState     Boolean           @default(false)
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now()) @updatedAt
-  providerId       Int
-  provider         ControlProvider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
-  authorizedRoles  Role[]            @relation("ControlPointRoles")
-  authorizedUsers  User[]            @relation("ControlPointUsers")
-  controlLogs      ControlLog[]
-  devices          Device[]          @relation("DeviceControlPoints")
+  id                  String            @id @default(uuid())
+  name                String
+  description         String?
+  location            String?
+  controlClass        ControlClass
+  canControlOnline    Boolean           @default(true)
+  canControlWithCode  Boolean           @default(false)
+  providerConfig      Json              @default("{}")
+  currentState        Boolean           @default(false)
+  autoTurnOffEnabled  Boolean           @default(false)
+  autoTurnOffMinutes  Int?
+  isActive            Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt
+  providerId          Int
+  provider            ControlProvider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  authorizedRoles     Role[]            @relation("ControlPointRoles")
+  authorizedUsers     User[]            @relation("ControlPointUsers")
+  controlLogs         ControlLog[]
+  devices             Device[]          @relation("DeviceControlPoints")
 
   @@index([providerId])
 }

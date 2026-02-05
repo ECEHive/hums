@@ -19,6 +19,8 @@ export interface UpdateControlPointInput {
 	providerConfig?: Record<string, unknown>;
 	authorizedRoleIds?: number[];
 	authorizedUserIds?: number[];
+	autoTurnOffEnabled?: boolean;
+	autoTurnOffMinutes?: number | null;
 	isActive?: boolean;
 }
 
@@ -79,6 +81,8 @@ export async function updateControlPoint(input: UpdateControlPointInput) {
 		providerConfig: input.providerConfig
 			? (input.providerConfig as unknown as Prisma.InputJsonValue)
 			: undefined,
+		autoTurnOffEnabled: input.autoTurnOffEnabled,
+		autoTurnOffMinutes: input.autoTurnOffMinutes,
 		isActive: input.isActive,
 	};
 

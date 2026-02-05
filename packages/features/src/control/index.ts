@@ -1,5 +1,6 @@
 // Control Points
 
+export * from "./auto-turn-off-control-points";
 export * from "./create-control-point";
 export * from "./create-control-provider";
 export * from "./delete-control-point";
