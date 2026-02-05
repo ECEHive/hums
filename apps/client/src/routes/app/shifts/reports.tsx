@@ -4,15 +4,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertTriangle,
 	Calendar,
-	CheckIcon,
 	ChevronRight,
-	ChevronsUpDownIcon,
 	DownloadIcon,
 	Filter,
 	Loader2,
 	Printer,
 	RefreshCwIcon,
-	XIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from "@/auth/AuthProvider";
@@ -33,7 +30,6 @@ import {
 	type ShiftType,
 	ShiftTypeMultiselect,
 } from "@/components/shift-types/shift-type-multiselect";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -43,19 +39,11 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-	Command,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+	type MultiSelectOption,
+	SearchableMultiSelect,
+} from "@/components/ui/searchable-multi-select";
 import {
 	Select,
 	SelectContent,
@@ -755,91 +743,28 @@ function ReportsPage() {
 								) : periodData?.period?.roles &&
 									periodData.period.roles.length > 0 ? (
 									<>
-										<Popover>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													role="combobox"
-													className="flex-grow justify-between whitespace-normal h-auto w-full"
-												>
-													<div className="flex items-center gap-2 flex-wrap">
-														{selectedStaffingRoles.length === 0 ? (
-															<span className="text-muted-foreground">
-																Select roles to include...
-															</span>
-														) : null}
-														{selectedStaffingRoles.map((r) => (
-															<Badge
-																key={r.id}
-																variant="secondary"
-																className="flex items-center gap-1"
-															>
-																<span>{r.name}</span>
-																<button
-																	type="button"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		setSelectedStaffingRoles(
-																			selectedStaffingRoles.filter(
-																				(role) => role.id !== r.id,
-																			),
-																		);
-																	}}
-																	aria-label={`Remove ${r.name}`}
-																	className="-mr-1"
-																>
-																	<XIcon className="size-3" />
-																</button>
-															</Badge>
-														))}
-													</div>
-													<ChevronsUpDownIcon className="ml-2 size-4" />
-												</Button>
-											</PopoverTrigger>
-											<PopoverContent className="w-[300px] p-0">
-												<Command>
-													<CommandInput placeholder="Search roles..." />
-													<CommandList>
-														<CommandGroup>
-															{periodData.period.roles.map((role) => {
-																const selected = Boolean(
-																	selectedStaffingRoles.find(
-																		(r) => r.id === role.id,
-																	),
-																);
-																return (
-																	<CommandItem
-																		key={role.id}
-																		value={String(role.id)}
-																		onSelect={() => {
-																			if (selected) {
-																				setSelectedStaffingRoles(
-																					selectedStaffingRoles.filter(
-																						(r) => r.id !== role.id,
-																					),
-																				);
-																			} else {
-																				setSelectedStaffingRoles([
-																					...selectedStaffingRoles,
-																					{ id: role.id, name: role.name },
-																				]);
-																			}
-																		}}
-																	>
-																		<CheckIcon
-																			className={`mr-2 size-4 ${
-																				selected ? "opacity-100" : "opacity-0"
-																			}`}
-																		/>
-																		{role.name}
-																	</CommandItem>
-																);
-															})}
-														</CommandGroup>
-													</CommandList>
-												</Command>
-											</PopoverContent>
-										</Popover>
+										<SearchableMultiSelect
+											value={selectedStaffingRoles.map((r) => ({
+												id: r.id,
+												label: r.name,
+											}))}
+											onChange={(options: MultiSelectOption<number>[]) => {
+												setSelectedStaffingRoles(
+													options.map((opt) => ({
+														id: opt.id,
+														name: opt.label,
+													})),
+												);
+											}}
+											options={periodData.period.roles.map((role) => ({
+												id: role.id,
+												label: role.name,
+											}))}
+											placeholder="Select roles to include..."
+											searchPlaceholder="Search roles..."
+											emptyMessage="No roles found."
+											popoverWidth="w-[300px]"
+										/>
 										<p className="text-sm text-muted-foreground">
 											{selectedStaffingRoles.length === 0
 												? "All users will be included"
