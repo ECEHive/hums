@@ -1,21 +1,10 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { CheckIcon, ChevronsUpDownIcon, XIcon } from "lucide-react";
 import * as React from "react";
-import { Button } from "@/components/ui/button";
 import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+	SearchableSelect,
+	type SelectOption,
+} from "@/components/ui/searchable-select";
 import { useDebounce } from "@/lib/debounce";
 
 export type Role = { id: number; name: string };
@@ -31,7 +20,6 @@ export function RoleSelect({
 	onChange,
 	placeholder = "Select role...",
 }: RoleSelectProps) {
-	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState("");
 	const debounced = useDebounce(query, 250);
 
@@ -46,85 +34,41 @@ export function RoleSelect({
 		retry: false,
 	});
 
-	const options: Role[] = (data.roles || []).map((r) => ({
-		id: r.id,
-		name: r.name,
-	}));
+	// Convert to SelectOption format
+	const options: SelectOption<number>[] = React.useMemo(
+		() =>
+			(data.roles || []).map((r) => ({
+				id: r.id,
+				label: r.name,
+			})),
+		[data.roles],
+	);
 
-	function handleSelect(role: Role) {
-		onChange(role);
-		setOpen(false);
-		setQuery("");
-	}
+	// Convert value to SelectOption format
+	const selectedOption: SelectOption<number> | null = value
+		? { id: value.id, label: value.name }
+		: null;
+
+	// Handle selection changes
+	const handleChange = React.useCallback(
+		(option: SelectOption<number> | null) => {
+			onChange(option ? { id: option.id, name: option.label } : null);
+		},
+		[onChange],
+	);
 
 	return (
-		<div className="flex items-center gap-3">
-			<Popover open={open} onOpenChange={setOpen}>
-				<PopoverTrigger asChild>
-					<Button
-						variant="outline"
-						role="combobox"
-						aria-expanded={open}
-						className="flex-grow justify-between whitespace-normal h-auto"
-					>
-						<div className="flex items-center gap-2">
-							{value ? (
-								<span className="truncate">{value.name}</span>
-							) : (
-								<span className="text-muted-foreground">{placeholder}</span>
-							)}
-						</div>
-						<ChevronsUpDownIcon className="ml-2 size-4" />
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent className="w-[300px] p-0">
-					<Command>
-						<CommandInput
-							placeholder="Search roles..."
-							value={query}
-							onValueChange={setQuery}
-						/>
-						<CommandList>
-							{isLoading ? (
-								<CommandEmpty>Loading...</CommandEmpty>
-							) : options.length === 0 ? (
-								<CommandEmpty>No roles found.</CommandEmpty>
-							) : (
-								<CommandGroup>
-									{options.map((role) => {
-										const selected = Boolean(value && value.id === role.id);
-										return (
-											<CommandItem
-												key={role.id}
-												value={String(role.id)}
-												onSelect={() => handleSelect(role)}
-											>
-												{selected ? (
-													<CheckIcon className="mr-2 size-4" />
-												) : (
-													<span className="mr-2 w-4" />
-												)}
-												{role.name}
-											</CommandItem>
-										);
-									})}
-								</CommandGroup>
-							)}
-						</CommandList>
-					</Command>
-				</PopoverContent>
-			</Popover>
-
-			{/* Clear button when a value is selected */}
-			{value ? (
-				<Button
-					variant="outline"
-					aria-label="Clear role"
-					onClick={() => onChange(null)}
-				>
-					<XIcon className="w-4 h-4" />
-				</Button>
-			) : null}
-		</div>
+		<SearchableSelect
+			value={selectedOption}
+			onChange={handleChange}
+			options={options}
+			placeholder={placeholder}
+			searchPlaceholder="Search roles..."
+			emptyMessage="No roles found."
+			isLoading={isLoading}
+			searchValue={query}
+			onSearchChange={setQuery}
+			popoverWidth="w-[300px]"
+		/>
 	);
 }
