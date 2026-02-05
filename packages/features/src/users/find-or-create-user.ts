@@ -1,9 +1,14 @@
-import { type CreateUserData, createUser } from "./create-user";
+import {
+	type CreateUserData,
+	type CreateUserOptions,
+	createUser,
+} from "./create-user";
 import { findUser } from "./find-user";
 
 export async function findOrCreateUser(
 	username: string,
 	options?: Omit<CreateUserData, "username">,
+	createOptions?: CreateUserOptions,
 ) {
 	// Find or create the user
 	const existingUser = await findUser(username);
@@ -12,6 +17,6 @@ export async function findOrCreateUser(
 	}
 
 	// Create the user if not found
-	const newUser = await createUser({ username, ...options });
+	const newUser = await createUser({ username, ...options }, createOptions);
 	return newUser;
 }
