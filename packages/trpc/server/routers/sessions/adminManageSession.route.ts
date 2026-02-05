@@ -4,6 +4,7 @@ import {
 	getCurrentSession,
 	startSession,
 	switchSessionType,
+	validateCanEndSession,
 } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
@@ -123,6 +124,9 @@ export async function adminManageSessionHandler(
 							message: "User is not currently in a session",
 						});
 					}
+
+					// Check if user has any active control points that need to be turned off first
+					await validateCanEndSession(tx, userId);
 
 					const session = await endSession(tx, currentSession.id, now);
 

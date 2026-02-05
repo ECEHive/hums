@@ -2,6 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { formatLog, getLogger } from "@/lib/logging";
+import { calculateReadingDuration } from "@/lib/utils";
 import type { TapEvent } from "@/types";
 
 const SESSION_TYPE_TIMEOUT_MS = 15000;
@@ -292,14 +293,18 @@ export function useTapWorkflow() {
 		}, NOTIFICATION_DISPLAY_DURATION_MS);
 	}, [dispatch]);
 
-	const scheduleErrorHide = useCallback(() => {
-		errorTimeoutRef.current = setTimeout(() => {
-			dispatch({ type: "error_exit_start" });
-			errorExitTimeoutRef.current = setTimeout(() => {
-				dispatch({ type: "error_clear" });
-			}, FADE_OUT_DURATION_MS);
-		}, NOTIFICATION_DISPLAY_DURATION_MS);
-	}, [dispatch]);
+	const scheduleErrorHide = useCallback(
+		(message: string) => {
+			const displayDuration = calculateReadingDuration(message);
+			errorTimeoutRef.current = setTimeout(() => {
+				dispatch({ type: "error_exit_start" });
+				errorExitTimeoutRef.current = setTimeout(() => {
+					dispatch({ type: "error_clear" });
+				}, FADE_OUT_DURATION_MS);
+			}, displayDuration);
+		},
+		[dispatch],
+	);
 
 	const showError = useCallback(
 		(message: string) => {
@@ -310,11 +315,11 @@ export function useTapWorkflow() {
 				dispatch({ type: "error_exit_start" });
 				errorExitTimeoutRef.current = setTimeout(() => {
 					dispatch({ type: "error_show", payload: message });
-					scheduleErrorHide();
+					scheduleErrorHide(message);
 				}, FADE_OUT_TRIGGER_DELAY_MS);
 			} else {
 				dispatch({ type: "error_show", payload: message });
-				scheduleErrorHide();
+				scheduleErrorHide(message);
 			}
 		},
 		[dispatch, errorDialog.message, scheduleErrorHide],
