@@ -15,7 +15,6 @@ import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
 import { reportsRouter } from "./routers/reports/_route";
 import { rolesRouter } from "./routers/roles/_route";
-import { securityRouter } from "./routers/security/_route";
 import { sessionsRouter } from "./routers/sessions/_route";
 import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
@@ -52,7 +51,6 @@ export const appRouter = router({
 	inventory: inventoryRouter,
 	globalReports: globalReportsRouter,
 	tickets: ticketsRouter,
-	security: securityRouter,
 });
 
 export type AppRouter = typeof appRouter;
