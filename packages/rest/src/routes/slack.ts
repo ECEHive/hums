@@ -4,6 +4,7 @@ import {
 	getCurrentSession,
 	startSession,
 	switchSessionType,
+	validateCanEndSession,
 } from "@ecehive/features";
 import { prisma, type User } from "@ecehive/prisma";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
@@ -217,6 +218,21 @@ async function updateUserSession(
 							reply,
 							"No active staffing session",
 							`User ${targetUser.username} is not currently in a staffing session.`,
+						);
+					}
+
+					// Check if user has any active control points that need to be turned off first
+					try {
+						await validateCanEndSession(tx, targetUser.id);
+					} catch (error) {
+						const message =
+							error instanceof Error
+								? error.message
+								: "Cannot end session while control points are active";
+						return slackError(
+							reply,
+							"Active control points",
+							`Cannot end session for ${targetUser.username}: ${message}`,
 						);
 					}
 

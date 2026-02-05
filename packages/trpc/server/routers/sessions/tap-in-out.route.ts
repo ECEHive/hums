@@ -9,6 +9,7 @@ import {
 	hasActiveAttendance,
 	startSession,
 	switchSessionType,
+	validateCanEndSession,
 } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
@@ -282,6 +283,9 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 				};
 			}
 		}
+
+		// Check if user has any active control points that need to be turned off first
+		await validateCanEndSession(tx, user.id);
 
 		const session = await endSession(tx, mostRecentSession.id, now);
 

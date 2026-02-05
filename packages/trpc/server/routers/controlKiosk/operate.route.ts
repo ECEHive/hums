@@ -6,7 +6,7 @@
  * the specific control point that is assigned to the device.
  */
 
-import { findUserByCard } from "@ecehive/features";
+import { findUserByCard, requireActiveSession } from "@ecehive/features";
 import type { ControlAction, ControlProviderType } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
@@ -30,6 +30,9 @@ export async function kioskOperateHandler({ ctx, input }: KioskOperateOptions) {
 
 	// Find the user by card number using findUserByCard for consistency
 	const user = await findUserByCard(cardNumber);
+
+	// Verify the user has an active session before allowing control point operations
+	await requireActiveSession(prisma, user.id);
 
 	// Get user's roles for authorization checks
 	const userWithRoles = await prisma.user.findUniqueOrThrow({

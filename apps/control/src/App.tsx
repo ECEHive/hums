@@ -16,7 +16,6 @@ import { AuthenticatedHeader, IdleHeader } from "./components/kiosk-header";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
 import { Card } from "./components/ui/card";
-import { Separator } from "./components/ui/separator";
 import { useCardReader } from "./hooks/use-card-reader";
 import { useControlWorkflow } from "./hooks/use-control-workflow";
 import { getLogoDataUrl, useBranding, useLogo } from "./hooks/useBranding";
@@ -79,11 +78,11 @@ function ControlPointStatusCard({
 						/>
 					</div>
 					<div className="min-w-0 w-full">
-						<h3 className="font-semibold truncate text-sm">
+						<h3 className="font-semibold truncate text-lg">
 							{controlPoint.name}
 						</h3>
 						{controlPoint.location && (
-							<p className="text-xs text-muted-foreground truncate">
+							<p className="text-md text-muted-foreground truncate">
 								{controlPoint.location}
 							</p>
 						)}
@@ -201,11 +200,11 @@ function ControlPointButton({
 					/>
 				</div>
 				<div className="text-center">
-					<h3 className="font-semibold truncate max-w-full text-sm">
+					<h3 className="font-semibold truncate max-w-full text-lg">
 						{point.name}
 					</h3>
 					{point.location && (
-						<p className="text-xs text-muted-foreground truncate">
+						<p className="text-md text-muted-foreground truncate">
 							{point.location}
 						</p>
 					)}
@@ -472,8 +471,6 @@ function ControlKioskApp() {
 							)}
 						</section>
 					)}
-
-					{showSessionControls && <Separator className="mb-6" />}
 
 					{/* Control Points */}
 					<section>

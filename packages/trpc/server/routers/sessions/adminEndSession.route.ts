@@ -1,4 +1,4 @@
-import { endSession } from "@ecehive/features";
+import { endSession, validateCanEndSession } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -54,6 +54,9 @@ export async function adminEndSessionHandler(options: TAdminEndSessionOptions) {
 					message: "Session has already ended",
 				});
 			}
+
+			// Check if user has any active control points that need to be turned off first
+			await validateCanEndSession(tx, existingSession.user.id);
 
 			// End the session using shared utility
 			const updatedSession = await endSession(tx, sessionId, now);
