@@ -16,6 +16,8 @@ export const ZCreatePointSchema = z.object({
 	providerConfig: z.record(z.string(), z.unknown()),
 	authorizedRoleIds: z.array(z.number().int()).optional(),
 	authorizedUserIds: z.array(z.number().int()).optional(),
+	autoTurnOffEnabled: z.boolean().optional(),
+	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),
 	isActive: z.boolean().optional(),
 });
 

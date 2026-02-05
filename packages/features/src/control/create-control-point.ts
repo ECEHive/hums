@@ -18,6 +18,8 @@ export interface CreateControlPointInput {
 	providerConfig: Record<string, unknown>;
 	authorizedRoleIds?: number[];
 	authorizedUserIds?: number[];
+	autoTurnOffEnabled?: boolean;
+	autoTurnOffMinutes?: number | null;
 	isActive?: boolean;
 }
 
@@ -59,6 +61,8 @@ export async function createControlPoint(input: CreateControlPointInput) {
 			canControlWithCode: input.canControlWithCode ?? false,
 			providerId: input.providerId,
 			providerConfig: input.providerConfig as unknown as Prisma.InputJsonValue,
+			autoTurnOffEnabled: input.autoTurnOffEnabled ?? false,
+			autoTurnOffMinutes: input.autoTurnOffMinutes ?? null,
 			isActive: input.isActive ?? true,
 			authorizedRoles: input.authorizedRoleIds?.length
 				? { connect: input.authorizedRoleIds.map((id) => ({ id })) }
