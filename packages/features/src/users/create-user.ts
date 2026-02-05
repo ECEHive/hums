@@ -1,12 +1,15 @@
 import { queueEmail } from "@ecehive/email";
 import { env } from "@ecehive/env";
 import { getLogger } from "@ecehive/logger";
-import { type Prisma, prisma } from "@ecehive/prisma";
+import { type Prisma, type PrismaClient, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { ConfigService } from "../config";
 import { fetchUserInfo } from "./fetch-user-info";
 
 const logger = getLogger("features:users");
+
+// Type alias for database client (transaction or regular prisma)
+type DbClient = Prisma.TransactionClient | PrismaClient;
 
 export type CreateUserData = {
 	username: string;
@@ -18,6 +21,11 @@ export type CreateUserData = {
 	roleIds?: number[];
 };
 
+export type CreateUserOptions = {
+	/** Optional transaction client to use for the database operation */
+	tx?: DbClient;
+};
+
 /**
  * Unified user creation function that handles:
  * - User data normalization and defaults
@@ -27,8 +35,17 @@ export type CreateUserData = {
  *
  * This is the single source of truth for creating users in the system.
  * All user creation should use this function for consistency.
+ *
+ * @param data - User data for creation
+ * @param options - Optional settings including transaction client
  */
-export async function createUser(data: CreateUserData) {
+export async function createUser(
+	data: CreateUserData,
+	options?: CreateUserOptions,
+) {
+	// Use provided transaction client or fall back to global prisma
+	const db = options?.tx ?? prisma;
+
 	try {
 		const { username, roleIds, ...providedData } = data;
 		let name = providedData.name ?? username;
@@ -71,7 +88,7 @@ export async function createUser(data: CreateUserData) {
 				: {}),
 		};
 
-		const newUser = await prisma.user.create({
+		const newUser = await db.user.create({
 			data: createData,
 			include: {
 				roles: true,
