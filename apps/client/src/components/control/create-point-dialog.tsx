@@ -45,6 +45,8 @@ const formSchema = z.object({
 	providerId: z.number().int().positive("Provider is required"),
 	tagName: z.string().min(1, "Tag name is required"),
 	ipAddress: z.ipv4({ message: "Invalid IPv4 address" }),
+	autoTurnOffEnabled: z.boolean(),
+	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),
 	isActive: z.boolean(),
 });
 
@@ -83,6 +85,8 @@ export function CreateControlPointDialog({
 			providerId: number;
 			providerConfig: Record<string, unknown>;
 			authorizedRoleIds?: number[];
+			autoTurnOffEnabled?: boolean;
+			autoTurnOffMinutes?: number | null;
 			isActive: boolean;
 		}) => trpc.control.points.create.mutate(input),
 		onSuccess: () => {
@@ -101,6 +105,8 @@ export function CreateControlPointDialog({
 			providerId: 0,
 			tagName: "",
 			ipAddress: "",
+			autoTurnOffEnabled: false,
+			autoTurnOffMinutes: null,
 			isActive: true,
 		},
 		validators: {
@@ -121,6 +127,10 @@ export function CreateControlPointDialog({
 						ipAddress: value.ipAddress,
 					},
 					authorizedRoleIds: authorizedRoles.map((r) => r.id),
+					autoTurnOffEnabled: value.autoTurnOffEnabled,
+					autoTurnOffMinutes: value.autoTurnOffEnabled
+						? value.autoTurnOffMinutes
+						: null,
 					isActive: value.isActive,
 				});
 				setOpen(false);
@@ -365,6 +375,67 @@ export function CreateControlPointDialog({
 							</div>
 						)}
 					</form.Field>
+
+					<div className="border rounded-lg p-4 space-y-4">
+						<h4 className="font-medium text-sm">Auto Turn-Off Settings</h4>
+						<p className="text-xs text-muted-foreground">
+							When enabled, this control point will automatically turn off after
+							the specified duration if left on.
+						</p>
+
+						<form.Field name="autoTurnOffEnabled">
+							{(field) => (
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(checked) =>
+											field.handleChange(checked === true)
+										}
+									/>
+									<label
+										htmlFor={field.name}
+										className="text-sm font-medium leading-none"
+									>
+										Enable auto turn-off
+									</label>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="autoTurnOffMinutes">
+							{(field) => (
+								<form.Subscribe
+									selector={(state) => state.values.autoTurnOffEnabled}
+								>
+									{(autoTurnOffEnabled) => (
+										<Field>
+											<FieldLabel htmlFor={field.name}>
+												Auto turn-off after (minutes)
+											</FieldLabel>
+											<Input
+												id={field.name}
+												type="number"
+												min={1}
+												value={field.state.value ?? ""}
+												onChange={(e) =>
+													field.handleChange(
+														e.target.value ? Number(e.target.value) : null,
+													)
+												}
+												onBlur={field.handleBlur}
+												disabled={!autoTurnOffEnabled}
+												placeholder="Enter minutes"
+											/>
+											<FieldError>
+												{field.state.meta.errors.join(", ")}
+											</FieldError>
+										</Field>
+									)}
+								</form.Subscribe>
+							)}
+						</form.Field>
+					</div>
 
 					<form.Field name="isActive">
 						{(field) => (

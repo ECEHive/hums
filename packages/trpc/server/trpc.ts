@@ -218,6 +218,8 @@ export type TKioskProtectedProcedureContext =
 
 /**
  * Include definition for device with control points
+ * Provider config is excluded from context to prevent accidental exposure
+ * Control operations should fetch the full provider config when needed
  */
 const deviceWithControlPointsInclude = {
 	controlPoints: {
@@ -238,7 +240,8 @@ const deviceWithControlPointsInclude = {
 					id: true,
 					name: true,
 					providerType: true,
-					config: true,
+					// Config is intentionally excluded - contains credentials
+					// Fetch it separately in control operations when needed
 					isActive: true,
 				},
 			},

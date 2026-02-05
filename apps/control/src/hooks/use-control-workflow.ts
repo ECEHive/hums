@@ -2,6 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { logger } from "../lib/logging";
+import { calculateReadingDuration } from "../lib/utils";
 import type { ControlPointWithStatus } from "../types";
 
 interface AuthenticatedUser {
@@ -71,16 +72,15 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 			trpc.controlKiosk.checkUserPermissions.query(input),
 		onSuccess: (data, variables) => {
 			if (data.authorizedControlPoints.length === 0) {
+				const errorMsg =
+					"You don't have permission to control any points on this device";
 				setState((prev) => ({
 					...prev,
 					mode: "error",
-					error:
-						"You don't have permission to control any points on this device",
+					error: errorMsg,
 				}));
-				onError?.(
-					"You don't have permission to control any points on this device",
-				);
-				setTimeout(() => resetToIdle(), 3000);
+				onError?.(errorMsg);
+				setTimeout(() => resetToIdle(), calculateReadingDuration(errorMsg));
 			} else {
 				setState((prev) => ({
 					...prev,
@@ -108,13 +108,14 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		},
 		onError: (error: Error) => {
 			logger.error("Failed to check permissions:", error);
+			const errorMsg = error.message || "Failed to verify permissions";
 			setState((prev) => ({
 				...prev,
 				mode: "error",
-				error: error.message || "Failed to verify permissions",
+				error: errorMsg,
 			}));
-			onError?.(error.message || "Failed to verify permissions");
-			setTimeout(() => resetToIdle(), 3000);
+			onError?.(errorMsg);
+			setTimeout(() => resetToIdle(), calculateReadingDuration(errorMsg));
 		},
 	});
 
@@ -140,12 +141,13 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		},
 		onError: (error: Error) => {
 			logger.error("Control point operation failed:", error);
+			const errorMsg = error.message || "Operation failed";
 			setState((prev) => ({
 				...prev,
 				operatingPointId: null,
-				error: error.message || "Operation failed",
+				error: errorMsg,
 			}));
-			onError?.(error.message || "Operation failed");
+			onError?.(errorMsg);
 			// Clear error after showing it
 			setTimeout(
 				() =>
@@ -153,7 +155,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 						...prev,
 						error: null,
 					})),
-				3000,
+				calculateReadingDuration(errorMsg),
 			);
 		},
 	});
@@ -226,13 +228,14 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		},
 		onError: (error: Error) => {
 			logger.error("Session action failed:", error);
+			const errorMsg = error.message || "Session action failed";
 			setState((prev) => ({
 				...prev,
 				mode: "error",
-				error: error.message || "Session action failed",
+				error: errorMsg,
 				showSessionSelection: false,
 			}));
-			onError?.(error.message || "Session action failed");
+			onError?.(errorMsg);
 			setTimeout(
 				() =>
 					setState((prev) => ({
@@ -240,7 +243,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 						mode: "authenticated",
 						error: null,
 					})),
-				3000,
+				calculateReadingDuration(errorMsg),
 			);
 		},
 	});

@@ -1,4 +1,8 @@
-import { endSession, getCurrentSession } from "@ecehive/features";
+import {
+	endSession,
+	getCurrentSession,
+	validateCanEndSession,
+} from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -43,6 +47,9 @@ export async function endMySessionHandler(options: TEndMySessionOptions) {
 						"Staffing sessions cannot be ended using this method. Please use a kiosk to scan your card.",
 				});
 			}
+
+			// Check if user has any active control points that need to be turned off first
+			await validateCanEndSession(tx, userId);
 
 			// End the current session using shared utility
 			const session = await endSession(tx, currentSession.id, now);

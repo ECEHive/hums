@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type { RestrictedItem } from "@/components/approval-dialog";
 import { formatLog, getLogger } from "@/lib/logging";
+import { calculateReadingDuration } from "@/lib/utils";
 
 // Agreements are not used in the inventory kiosk
 const NOTIFICATION_DISPLAY_DURATION_MS = 1500;
@@ -259,13 +260,14 @@ export function useInventoryWorkflow() {
 		}, NOTIFICATION_DISPLAY_DURATION_MS * 2); // Show success longer
 	}, []);
 
-	const scheduleErrorHide = useCallback(() => {
+	const scheduleErrorHide = useCallback((message: string) => {
+		const displayDuration = calculateReadingDuration(message);
 		errorTimeoutRef.current = setTimeout(() => {
 			dispatch({ type: "error_exit_start" });
 			errorExitTimeoutRef.current = setTimeout(() => {
 				dispatch({ type: "error_clear" });
 			}, FADE_OUT_DURATION_MS);
-		}, NOTIFICATION_DISPLAY_DURATION_MS);
+		}, displayDuration);
 	}, []);
 
 	const showError = useCallback(
@@ -277,11 +279,11 @@ export function useInventoryWorkflow() {
 				dispatch({ type: "error_exit_start" });
 				errorExitTimeoutRef.current = setTimeout(() => {
 					dispatch({ type: "error_show", payload: message });
-					scheduleErrorHide();
+					scheduleErrorHide(message);
 				}, FADE_OUT_TRIGGER_DELAY_MS);
 			} else {
 				dispatch({ type: "error_show", payload: message });
-				scheduleErrorHide();
+				scheduleErrorHide(message);
 			}
 		},
 		[errorDialog.message, scheduleErrorHide],

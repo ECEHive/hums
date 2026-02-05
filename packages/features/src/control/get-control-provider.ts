@@ -6,7 +6,13 @@ import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 
 /**
+ * Placeholder for redacted provider credentials
+ */
+const REDACTED_CONFIG = { _redacted: true };
+
+/**
  * Gets a control provider record by ID with its associated control points
+ * Provider config is redacted to prevent exposure of credentials
  */
 export async function getControlProviderById(id: number) {
 	const provider = await prisma.controlProvider.findUnique({
@@ -31,14 +37,19 @@ export async function getControlProviderById(id: number) {
 		});
 	}
 
-	return provider;
+	// Redact sensitive config field
+	return {
+		...provider,
+		config: REDACTED_CONFIG,
+	};
 }
 
 /**
  * Finds a control provider record by ID without throwing an error if not found
+ * Provider config is redacted to prevent exposure of credentials
  */
 export async function findControlProviderById(id: number) {
-	return prisma.controlProvider.findUnique({
+	const provider = await prisma.controlProvider.findUnique({
 		where: { id },
 		include: {
 			controlPoints: {
@@ -52,4 +63,14 @@ export async function findControlProviderById(id: number) {
 			},
 		},
 	});
+
+	if (!provider) {
+		return null;
+	}
+
+	// Redact sensitive config field
+	return {
+		...provider,
+		config: REDACTED_CONFIG,
+	};
 }

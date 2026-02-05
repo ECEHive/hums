@@ -1,7 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { CameraProvider, useCameraContext } from "@/components/camera-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
@@ -22,9 +21,6 @@ function AppContent() {
 	const tapWorkflow = useTapWorkflow();
 	const { data: config } = useConfig();
 
-	// Camera context for snapshots and face presence detection
-	const cameraContext = useCameraContext();
-
 	const { data: deviceStatusData, isLoading: deviceStatusLoading } = useQuery({
 		queryKey: ["deviceStatus"],
 		queryFn: async () => {
@@ -44,56 +40,13 @@ function AppContent() {
 		checking: deviceStatusLoading,
 	};
 
-	// Enhanced tap handler that captures snapshots (non-blocking)
-	const handleTapWithSnapshot = useCallback(
-		async (cardNumber: string) => {
-			console.log("[App] handleTapWithSnapshot called");
-
-			// Cancel any pending presence snapshots since user is tapping
-			cameraContext.notifyTapEvent();
-
-			// Start camera if not already running (don't wait for it to be fully ready)
-			if (!cameraContext.isCameraReady) {
-				console.log("[App] Camera not ready, starting in background...");
-				// Start camera but don't block on it
-				void cameraContext.startCamera();
-			}
-
-			// Look up the user by card number first (quick query) for the snapshot
-			// This happens in parallel with the tap - don't block the main flow
-			console.log("[App] Looking up user for snapshot...");
-			const lookupAndCapture = async () => {
-				try {
-					const result = await trpc.security.lookupUserByCard.query({
-						cardNumber,
-					});
-					console.log("[App] User lookup result:", result);
-					const userId = result.found ? result.userId : undefined;
-					await cameraContext.captureSecuritySnapshot("TAP", userId);
-				} catch (err) {
-					console.warn("[App] User lookup or snapshot failed:", err);
-					// Fallback: capture without userId
-					await cameraContext.captureSecuritySnapshot("TAP").catch((err2) => {
-						console.warn("[App] Fallback snapshot also failed:", err2);
-					});
-				}
-			};
-			void lookupAndCapture();
-
-			// Process the tap immediately without waiting for snapshot
-			console.log("[App] Processing tap workflow");
-			await tapWorkflow.handleTap(cardNumber);
-		},
-		[cameraContext, tapWorkflow],
-	);
-
 	// Card handler for tap events
 	const handleCardScan = useCallback(
 		(cardNumber: string) => {
-			console.log("[App] Card scan routed to regular tap workflow");
-			void handleTapWithSnapshot(cardNumber);
+			console.log("[App] Card scan received");
+			void tapWorkflow.handleTap(cardNumber);
 		},
-		[handleTapWithSnapshot],
+		[tapWorkflow],
 	);
 
 	const { connectionStatus, connect } = useCardReader({
@@ -102,39 +55,6 @@ function AppContent() {
 		onInvalidScan: () =>
 			tapWorkflow.showError("Unable to read card. Please tap again."),
 	});
-
-	// Start camera when connected
-	useEffect(() => {
-		if (connectionStatus === "connected" && kioskStatus.isKiosk) {
-			console.log("[App] Connection ready, starting camera");
-			void cameraContext.startCamera();
-		}
-	}, [connectionStatus, kioskStatus.isKiosk, cameraContext.startCamera]);
-
-	// Start face presence detection when camera is ready and models are loaded
-	useEffect(() => {
-		const shouldScan =
-			cameraContext.isCameraReady &&
-			cameraContext.modelsLoaded &&
-			!cameraContext.isFacePresenceScanning;
-
-		console.log("[App] Face presence scan check:", {
-			cameraReady: cameraContext.isCameraReady,
-			modelsLoaded: cameraContext.modelsLoaded,
-			isFacePresenceScanning: cameraContext.isFacePresenceScanning,
-			shouldScan,
-		});
-
-		if (shouldScan) {
-			console.log("[App] Starting face presence scanning");
-			cameraContext.startFacePresenceScanning();
-		}
-	}, [
-		cameraContext.isCameraReady,
-		cameraContext.modelsLoaded,
-		cameraContext.isFacePresenceScanning,
-		cameraContext.startFacePresenceScanning,
-	]);
 
 	const toggleFullscreen = async () => {
 		if (!document.fullscreenElement) {
@@ -256,11 +176,7 @@ function AppContent() {
 }
 
 function App() {
-	return (
-		<CameraProvider enabled>
-			<AppContent />
-		</CameraProvider>
-	);
+	return <AppContent />;
 }
 
 export default App;

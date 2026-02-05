@@ -2,6 +2,7 @@ import type { ControlAction, ControlProviderType } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { getControlProvider } from "./providers";
+import { requireActiveSession } from "./session-control-validation";
 
 export type OperateControlPointOptions = {
 	controlPointId: string;
@@ -73,6 +74,12 @@ export async function operateControlPoint(
 	const { controlPointId, username, state } = options;
 
 	const user = await validateUserExists(username);
+
+	// Verify the user has an active session before allowing control point operations
+	// System users are exempt from this check
+	if (!user.isSystemUser) {
+		await requireActiveSession(prisma, user.id);
+	}
 
 	const point = await prisma.controlPoint.findUnique({
 		where: { id: controlPointId },
@@ -198,6 +205,12 @@ export async function operateControlPointByUserId(
 	options: OperateControlPointByUserIdOptions,
 ): Promise<OperateControlPointResult> {
 	const { controlPointId, userId, isSystemUser, username, action } = options;
+
+	// Verify the user has an active session before allowing control point operations
+	// System users are exempt from this check
+	if (!isSystemUser) {
+		await requireActiveSession(prisma, userId);
+	}
 
 	const point = await prisma.controlPoint.findUnique({
 		where: { id: controlPointId },

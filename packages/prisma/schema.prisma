@@ -22,7 +22,6 @@ model User {
   impersonatedAuditLogs    AuditLog[]             @relation("AuditLogImpersonators")
   auditLogs                AuditLog[]
   inventoryTransactions    InventoryTransaction[]
-  securitySnapshots        SecuritySnapshot[]
   sessions                 Session[]
   reviewedAttendances      ShiftAttendance[]      @relation("ShiftAttendanceReviewedBy")
   attendances              ShiftAttendance[]
@@ -189,7 +188,6 @@ model Device {
   hasKioskAccess     Boolean            @default(true)
   hasInventoryAccess Boolean            @default(false)
   hasControlAccess   Boolean            @default(false)
-  securitySnapshots  SecuritySnapshot[]
   controlPoints      ControlPoint[]     @relation("DeviceControlPoints")
 }
 
@@ -384,25 +382,6 @@ model TicketStatusHistory {
   @@index([createdAt])
 }
 
-model SecuritySnapshot {
-  id             String            @id @default(uuid())
-  deviceId       Int?
-  userId         Int?
-  eventType      SecurityEventType
-  imagePath      String
-  capturedAt     DateTime          @default(now())
-  faceDetected   Boolean           @default(false)
-  faceConfidence Float?
-  createdAt      DateTime          @default(now())
-  device         Device?           @relation(fields: [deviceId], references: [id])
-  user           User?             @relation(fields: [userId], references: [id])
-
-  @@index([deviceId])
-  @@index([userId])
-  @@index([capturedAt])
-  @@index([eventType])
-}
-
 enum ShiftTypeRoleRequirement {
   disabled
   all
@@ -448,11 +427,6 @@ enum TicketStatus {
   cancelled
 }
 
-enum SecurityEventType {
-  TAP
-  PRESENCE // Snapshot taken when face is detected but no tap event occurs
-}
-
 // ===== Equipment Control System =====
 
 model ControlProvider {
@@ -467,24 +441,26 @@ model ControlProvider {
 }
 
 model ControlPoint {
-  id               String            @id @default(uuid())
-  name             String
-  description      String?
-  location         String?
-  controlClass     ControlClass
-  canControlOnline Boolean           @default(true)
-  canControlWithCode Boolean         @default(false)
-  providerConfig   Json              @default("{}")
-  currentState     Boolean           @default(false)
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now()) @updatedAt
-  providerId       Int
-  provider         ControlProvider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
-  authorizedRoles  Role[]            @relation("ControlPointRoles")
-  authorizedUsers  User[]            @relation("ControlPointUsers")
-  controlLogs      ControlLog[]
-  devices          Device[]          @relation("DeviceControlPoints")
+  id                  String            @id @default(uuid())
+  name                String
+  description         String?
+  location            String?
+  controlClass        ControlClass
+  canControlOnline    Boolean           @default(true)
+  canControlWithCode  Boolean           @default(false)
+  providerConfig      Json              @default("{}")
+  currentState        Boolean           @default(false)
+  autoTurnOffEnabled  Boolean           @default(false)
+  autoTurnOffMinutes  Int?
+  isActive            Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt
+  providerId          Int
+  provider            ControlProvider   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  authorizedRoles     Role[]            @relation("ControlPointRoles")
+  authorizedUsers     User[]            @relation("ControlPointUsers")
+  controlLogs         ControlLog[]
+  devices             Device[]          @relation("DeviceControlPoints")
 
   @@index([providerId])
 }

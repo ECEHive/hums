@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/kiosk",
-	"version": "3.0.1",
+	"version": "3.1.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -20,7 +20,6 @@
 		"@trpc/client": "11.9.0",
 		"@trpc/tanstack-react-query": "11.8.1",
 		"@vitejs/plugin-basic-ssl": "^2.1.4",
-		"@vladmandic/face-api": "^1.7.15",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",
