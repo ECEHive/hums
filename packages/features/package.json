@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/features",
-	"version": "3.1.1",
+	"version": "3.2.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -19,6 +19,6 @@
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.15"
+		"vitest": "^4.0.18"
 	}
 }

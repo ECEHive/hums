@@ -178,10 +178,7 @@ export function OverviewHeatmapGrid({
 							{visibleDays.map((day) => (
 								<th
 									key={day.value}
-									className={cn(
-										"sticky top-0 z-20 bg-background p-2 border-b",
-										day.value === currentTime.dayOfWeek && "bg-primary/5",
-									)}
+									className="sticky top-0 z-20 bg-background p-2 border-b"
 								>
 									<div className="text-center py-1">
 										<div className="hidden sm:block text-sm font-semibold">
@@ -202,21 +199,15 @@ export function OverviewHeatmapGrid({
 					</thead>
 					<tbody>
 						{timeBlockStarts.map((blockStart) => {
-							const isCurrentTimeRow =
-								currentTime.dayOfWeek >= 0 &&
-								currentTime.timeMinutes >= blockStart &&
-								currentTime.timeMinutes < blockStart + blockSize;
-
 							return (
 								<tr key={blockStart}>
-									<td
-										className={cn(
-											"sticky left-0 z-10 bg-background p-2 border-r",
-											isCurrentTimeRow && "bg-primary/5",
-										)}
-									>
-										<div className="flex items-center justify-end pr-1 text-xs text-muted-foreground font-medium whitespace-nowrap">
+									<td className="sticky left-0 z-10 bg-background p-2 border-r">
+										<div className="flex items-center justify-end flex-wrap pr-1 text-xs text-muted-foreground font-medium whitespace-nowrap">
 											{formatCompactTime(blockStart)}
+											{blockStart <= currentTime.timeMinutes &&
+												currentTime.timeMinutes < blockStart + blockSize && (
+													<span className="ml-1 text-primary">(Now)</span>
+												)}
 										</div>
 									</td>
 									{visibleDays.map((day) => {

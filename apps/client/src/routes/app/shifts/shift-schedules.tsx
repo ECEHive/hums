@@ -25,6 +25,7 @@ import { DataTable, TablePaginationFooter } from "@/components/shared";
 import { BulkCreateShiftScheduleSheet } from "@/components/shift-schedules/bulk-create-shift-schedule-sheet";
 import { BulkDeleteShiftScheduleSheet } from "@/components/shift-schedules/bulk-delete-shift-schedule-sheet";
 import { generateColumns as generateShiftScheduleColumns } from "@/components/shift-schedules/columns";
+import { CreateShiftScheduleSheet } from "@/components/shift-schedules/create-shift-schedule-sheet";
 import { EditShiftScheduleSheet } from "@/components/shift-schedules/edit-shift-schedule-sheet";
 import { ShiftScheduleTimelineView } from "@/components/shift-schedules/shift-schedule-timeline-view";
 import { Button } from "@/components/ui/button";
@@ -249,6 +250,12 @@ function ShiftSchedulesPage() {
 						)}
 					</CardContent>
 				</Card>
+
+				<CreateShiftScheduleSheet
+					periodId={Number(periodId)}
+					open={_createOpen}
+					onOpenChange={setCreateOpen}
+				/>
 
 				<BulkCreateShiftScheduleSheet
 					periodId={Number(periodId)}

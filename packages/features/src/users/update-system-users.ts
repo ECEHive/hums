@@ -1,5 +1,6 @@
 import { env } from "@ecehive/env";
 import { prisma } from "@ecehive/prisma";
+import { normalizeCardNumber } from "@ecehive/user-data";
 import { createUser } from "./create-user";
 import { fetchUserInfo } from "./fetch-user-info";
 
@@ -19,9 +20,6 @@ export async function updateSystemUsers() {
 	// Add or update system users in the database
 	for (const username of systemUsers) {
 		const userInfo = await fetchUserInfo(username);
-		const cardNumberData = userInfo.cardNumber
-			? { cardNumber: userInfo.cardNumber }
-			: {};
 
 		// Check if user exists
 		const existingUser = await prisma.user.findUnique({
@@ -36,18 +34,40 @@ export async function updateSystemUsers() {
 					isSystemUser: true,
 					name: userInfo.name,
 					email: userInfo.email,
-					...cardNumberData,
 				},
 			});
+
+			// Persist card number as a credential if available
+			if (userInfo.cardNumber) {
+				const normalized = normalizeCardNumber(userInfo.cardNumber);
+				if (normalized) {
+					await prisma.credential.upsert({
+						where: { value: normalized },
+						update: { userId: existingUser.id },
+						create: { value: normalized, userId: existingUser.id },
+					});
+				}
+			}
 		} else {
 			// Create new system user using unified function
-			await createUser({
+			const newUser = await createUser({
 				username: userInfo.username,
 				name: userInfo.name,
 				email: userInfo.email,
-				cardNumber: userInfo.cardNumber,
 				isSystemUser: true,
 			});
+
+			// Persist card number as a credential if available
+			if (userInfo.cardNumber) {
+				const normalized = normalizeCardNumber(userInfo.cardNumber);
+				if (normalized) {
+					await prisma.credential.upsert({
+						where: { value: normalized },
+						update: { userId: newUser.id },
+						create: { value: normalized, userId: newUser.id },
+					});
+				}
+			}
 		}
 	}
 

@@ -15,7 +15,6 @@ export type CreateUserData = {
 	username: string;
 	name?: string | null;
 	email?: string | null;
-	cardNumber?: string | null;
 	slackUsername?: string | null;
 	isSystemUser?: boolean;
 	roleIds?: number[];
@@ -24,6 +23,14 @@ export type CreateUserData = {
 export type CreateUserOptions = {
 	/** Optional transaction client to use for the database operation */
 	tx?: DbClient;
+	/**
+	 * Skip fetching user info from the external data provider.
+	 * Use this when the caller already has the profile data (e.g. from a prior
+	 * provider lookup) to avoid a redundant HTTP call—especially important when
+	 * createUser is invoked inside a Prisma interactive transaction whose timeout
+	 * could be exceeded by the network round-trip.
+	 */
+	skipProviderFetch?: boolean;
 };
 
 /**
@@ -53,22 +60,23 @@ export async function createUser(
 			providedData.email ?? `${username}@${env.FALLBACK_EMAIL_DOMAIN}`;
 		const slackUsername: string | undefined =
 			providedData.slackUsername || undefined;
-		let cardNumber: string | undefined = providedData.cardNumber ?? undefined;
 		const isSystemUser = providedData.isSystemUser ?? false;
 
 		// Attempt to fetch user information from the configured provider
 		// This enriches the user data with info from external systems (LDAP, BuzzAPI, etc.)
-		try {
-			const userInfo = await fetchUserInfo(username);
-			name = userInfo.name ?? name;
-			email = userInfo.email ?? email;
-			cardNumber = userInfo.cardNumber ?? cardNumber ?? undefined;
-		} catch (error) {
-			// If fetch fails, proceed with defaults
-			logger.warn("User data fetch failed, using defaults", {
-				username,
-				error: error instanceof Error ? error.message : String(error),
-			});
+		// Skipped when the caller already supplied provider data (e.g. findUserByCard)
+		if (!options?.skipProviderFetch) {
+			try {
+				const userInfo = await fetchUserInfo(username);
+				name = userInfo.name ?? name;
+				email = userInfo.email ?? email;
+			} catch (error) {
+				// If fetch fails, proceed with defaults
+				logger.warn("User data fetch failed, using defaults", {
+					username,
+					error: error instanceof Error ? error.message : String(error),
+				});
+			}
 		}
 
 		// Build the Prisma create data
@@ -78,7 +86,6 @@ export async function createUser(
 			email,
 			slackUsername,
 			isSystemUser,
-			...(cardNumber ? { cardNumber } : {}),
 			...(roleIds && roleIds.length > 0
 				? {
 						roles: {

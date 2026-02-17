@@ -25,7 +25,6 @@ export interface GlobalUsersReport {
 	username: string;
 	name: string;
 	email: string;
-	cardNumber: string | null;
 	slackUsername: string | null;
 	isSystemUser: boolean;
 	createdAt: Date;
