@@ -124,13 +124,6 @@ export const controlPointsRoutes: FastifyPluginAsync = async (fastify) => {
 				sortOrder: "asc",
 			});
 
-			await logRestAction(request, "rest.control.points.list", {
-				skip,
-				take,
-				count: result.points.length,
-				total: result.total,
-			});
-
 			return listResponse(result.points.map(serializeControlPoint), {
 				total: result.total,
 				skip,
@@ -162,10 +155,6 @@ export const controlPointsRoutes: FastifyPluginAsync = async (fastify) => {
 			if (!controlPoint) {
 				return notFoundError(reply, "Control point", id);
 			}
-
-			await logRestAction(request, "rest.control.points.get", {
-				controlPointId: id,
-			});
 
 			return successResponse(serializeControlPoint(controlPoint));
 		} catch (error) {
