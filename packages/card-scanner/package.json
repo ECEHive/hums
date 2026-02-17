@@ -1,0 +1,24 @@
+{
+	"name": "@ecehive/card-scanner",
+	"version": "3.1.0",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./react": "./src/react.ts"
+	},
+	"dependencies": {
+		"tslog": "^4.10.2"
+	},
+	"peerDependencies": {
+		"react": "^19.0.0"
+	},
+	"peerDependenciesMeta": {
+		"react": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"@types/w3c-web-serial": "^1.0.8"
+	}
+}

@@ -1,8 +1,4 @@
-export type ConnectionStatus =
-	| "disconnected"
-	| "connecting"
-	| "connected"
-	| "error";
+export type { ConnectionStatus } from "@ecehive/card-scanner";
 
 export type TapResponse =
 	| {

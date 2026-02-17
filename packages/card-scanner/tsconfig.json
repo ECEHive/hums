@@ -1,0 +1,4 @@
+{
+	"extends": "@ecehive/config/tsconfig/react.json",
+	"include": ["src", "../config/types/**/*.d.ts"]
+}

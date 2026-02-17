@@ -19,9 +19,6 @@ export async function updateSystemUsers() {
 	// Add or update system users in the database
 	for (const username of systemUsers) {
 		const userInfo = await fetchUserInfo(username);
-		const cardNumberData = userInfo.cardNumber
-			? { cardNumber: userInfo.cardNumber }
-			: {};
 
 		// Check if user exists
 		const existingUser = await prisma.user.findUnique({
@@ -36,18 +33,34 @@ export async function updateSystemUsers() {
 					isSystemUser: true,
 					name: userInfo.name,
 					email: userInfo.email,
-					...cardNumberData,
 				},
 			});
+
+			// Persist card number as a credential if available
+			if (userInfo.cardNumber) {
+				await prisma.credential.upsert({
+					where: { value: userInfo.cardNumber },
+					update: {},
+					create: { value: userInfo.cardNumber, userId: existingUser.id },
+				});
+			}
 		} else {
 			// Create new system user using unified function
-			await createUser({
+			const newUser = await createUser({
 				username: userInfo.username,
 				name: userInfo.name,
 				email: userInfo.email,
-				cardNumber: userInfo.cardNumber,
 				isSystemUser: true,
 			});
+
+			// Persist card number as a credential if available
+			if (userInfo.cardNumber) {
+				await prisma.credential.upsert({
+					where: { value: userInfo.cardNumber },
+					update: {},
+					create: { value: userInfo.cardNumber, userId: newUser.id },
+				});
+			}
 		}
 	}
 
