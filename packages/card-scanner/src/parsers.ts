@@ -2,6 +2,8 @@ import type { CardFormatParser } from "./types";
 
 const CARD_NUMBER_LENGTH = 9;
 const IIN_LENGTH = 6;
+const MOBILE_CREDENTIAL_LENGTH = 16;
+const MOBILE_CREDENTIAL_IIN = "601770";
 
 /**
  * Normalize a digit string to a zero-padded card number of `length` digits.
@@ -19,13 +21,40 @@ function normalizeDigits(
 }
 
 /**
+ * Mobile credential format.
+ *
+ * Matches 16-digit mobile credentials that start with the IIN "601770".
+ * Returns the entire credential value without truncation.
+ *
+ * Example:
+ *   "6000000010000000\r"  → "6000000010000000"
+ */
+const mobileCredentialParser: CardFormatParser = {
+	name: "mobile-credential",
+	parse(raw: string): string | null {
+		const s = raw.trim();
+		if (!s || s.includes("=")) return null;
+		const digits = s.replace(/\D/g, "");
+
+		// Check if it matches mobile credential format: 16 digits starting with IIN
+		if (
+			digits.length === MOBILE_CREDENTIAL_LENGTH &&
+			digits.startsWith(MOBILE_CREDENTIAL_IIN)
+		) {
+			return digits;
+		}
+
+		return null;
+	},
+};
+
+/**
  * Traditional 9-digit card number format.
  *
  * Matches raw strings that consist only of digits (possibly with whitespace)
  * and returns the last 9 digits, zero-padded.
  *
  * Examples:
- *   "000788997\r"  → "000788997"
  *   "12345"        → "000012345"
  */
 const traditionalParser: CardFormatParser = {
@@ -45,8 +74,8 @@ const traditionalParser: CardFormatParser = {
  * trailing Luhn checksum digit, then returns the last 9 digits.
  *
  * Example:
- *   "...=...=6017700001234560\r"
- *   → IIN "601770", account+check "0001234560", account "000123456"
+ *   "...=...=6000000001234560\r"
+ *   → IIN "600000", account+check "0001234560", account "000123456"
  */
 const magstripeParser: CardFormatParser = {
 	name: "magstripe",
@@ -73,6 +102,7 @@ const magstripeParser: CardFormatParser = {
  * Built-in card format parsers, tried in order.
  */
 export const builtinParsers: CardFormatParser[] = [
+	mobileCredentialParser,
 	magstripeParser,
 	traditionalParser,
 ];
