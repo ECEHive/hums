@@ -1,5 +1,6 @@
 import { env } from "@ecehive/env";
 import { prisma } from "@ecehive/prisma";
+import { normalizeCardNumber } from "@ecehive/user-data";
 import { createUser } from "./create-user";
 import { fetchUserInfo } from "./fetch-user-info";
 
