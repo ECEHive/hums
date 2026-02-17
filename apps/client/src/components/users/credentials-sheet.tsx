@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
 	Sheet,
-	SheetClose,
 	SheetContent,
 	SheetDescription,
 	SheetFooter,
@@ -50,8 +49,10 @@ export function CredentialsSheet({
 	const queryClient = useQueryClient();
 
 	const currentUser = useAuth().user;
-	const canView = currentUser && checkPermissions(currentUser, ["credentials.list"]);
-	const canEdit = currentUser && checkPermissions(currentUser, ["credentials.update"]);
+	const canView =
+		currentUser && checkPermissions(currentUser, ["credentials.list"]);
+	const canEdit =
+		currentUser && checkPermissions(currentUser, ["credentials.update"]);
 
 	const fetchCredentials = useCallback(async () => {
 		if (!canView) return;
@@ -117,7 +118,7 @@ export function CredentialsSheet({
 		}
 	};
 
-	if (!canView) return <></>;
+	if (!canView) return null;
 
 	return (
 		<Sheet open={open} onOpenChange={handleOpenChange}>
@@ -159,12 +160,17 @@ export function CredentialsSheet({
 									className="flex items-center justify-between gap-2 rounded-md border px-3 py-2"
 								>
 									<div className="flex items-center gap-2 min-w-0">
-										<Badge variant="secondary" className="font-mono text-xs truncate">
+										<Badge
+											variant="secondary"
+											className="font-mono text-xs truncate"
+										>
 											{cred.value}
 										</Badge>
 									</div>
 									{canEdit && (
-										<Button										type="button"											variant="ghost"
+										<Button
+											type="button"
+											variant="ghost"
 											size="icon"
 											className="shrink-0 text-destructive hover:text-destructive"
 											disabled={deletingId === cred.id}

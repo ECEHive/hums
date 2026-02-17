@@ -46,9 +46,7 @@ export async function connectSerial(
 		const defaultVendorId = 0x09d8;
 		const baudRate = options?.baudRate ?? 9600;
 		const filters = options?.filters ?? [{ usbVendorId: defaultVendorId }];
-		const parseCardData = createCardParser(
-			options?.parsers ?? builtinParsers,
-		);
+		const parseCardData = createCardParser(options?.parsers ?? builtinParsers);
 
 		const existingPorts: SerialPort[] = await (
 			navigator as Navigator & { serial: Serial }
@@ -61,10 +59,8 @@ export async function connectSerial(
 					if (!info) return false;
 					return filters.some(
 						(f) =>
-							(f.usbVendorId == null ||
-								info.usbVendorId === f.usbVendorId) &&
-							(f.usbProductId == null ||
-								info.usbProductId === f.usbProductId),
+							(f.usbVendorId == null || info.usbVendorId === f.usbVendorId) &&
+							(f.usbProductId == null || info.usbProductId === f.usbProductId),
 					);
 				} catch {
 					return false;
@@ -126,11 +122,7 @@ export async function connectSerial(
 						const idxN = bufferParts.buf.indexOf("\n");
 						if (idxR === -1 && idxN === -1) break;
 						const idx =
-							idxR === -1
-								? idxN
-								: idxN === -1
-									? idxR
-									: Math.min(idxR, idxN);
+							idxR === -1 ? idxN : idxN === -1 ? idxR : Math.min(idxR, idxN);
 						const chunk = bufferParts.buf.slice(0, idx);
 						bufferParts.buf = bufferParts.buf.slice(idx + 1);
 
@@ -146,9 +138,7 @@ export async function connectSerial(
 								timestamp: new Date(),
 							});
 						} else {
-							log.warn(
-								formatLog("Card parse failed", { raw: trimmed }),
-							);
+							log.warn(formatLog("Card parse failed", { raw: trimmed }));
 							options?.onInvalidScan?.(trimmed);
 						}
 					}

@@ -866,11 +866,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return notFoundError(reply, "User", params.data.username);
 		}
 
-		const {
-			roles: roleNames,
-			slackUsername,
-			...userData
-		} = body.data;
+		const { roles: roleNames, slackUsername, ...userData } = body.data;
 
 		// Validate roles if provided
 		let roles: Array<{ id: number; name: string }> | null = null;

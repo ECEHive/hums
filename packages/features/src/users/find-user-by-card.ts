@@ -1,5 +1,5 @@
-import { type Prisma, prisma } from "@ecehive/prisma";
 import { getLogger } from "@ecehive/logger";
+import { type Prisma, prisma } from "@ecehive/prisma";
 import { getUserDataProvider, normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
 import { createUser } from "./create-user";
@@ -149,7 +149,7 @@ async function ensureCredential(
 	try {
 		await tx.credential.upsert({
 			where: { value },
-			update: {},
+			update: { userId },
 			create: { value, userId },
 		});
 	} catch (error) {

@@ -5,6 +5,7 @@ import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 export const ZDeleteSchema = z.object({
 	id: z.number().min(1),
+	userId: z.number().min(1).optional(), // Optional: if provided, verify ownership
 });
 
 export type TDeleteSchema = z.infer<typeof ZDeleteSchema>;
@@ -15,7 +16,7 @@ export type TDeleteOptions = {
 };
 
 export async function deleteHandler(options: TDeleteOptions) {
-	const { id } = options.input;
+	const { id, userId } = options.input;
 
 	const credential = await prisma.credential.findUnique({ where: { id } });
 
@@ -23,6 +24,14 @@ export async function deleteHandler(options: TDeleteOptions) {
 		throw new TRPCError({
 			code: "NOT_FOUND",
 			message: "Credential not found",
+		});
+	}
+
+	// If userId is provided, verify the credential belongs to that user
+	if (userId !== undefined && credential.userId !== userId) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "Credential belongs to a different user",
 		});
 	}
 

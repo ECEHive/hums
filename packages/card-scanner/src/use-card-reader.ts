@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Logger } from "tslog";
-import {
-	connectSerial,
-	disconnectSerial,
-} from "./scanner";
+import { connectSerial, disconnectSerial } from "./scanner";
 import type {
 	CardFormatParser,
 	ConnectionStatus,
@@ -64,8 +61,7 @@ export function useCardReader({
 			new Logger({
 				name: "card-reader",
 				type: "pretty",
-				prettyLogTemplate:
-					"{{dateIsoStr}} {{logLevelName}} [{{name}}] ",
+				prettyLogTemplate: "{{dateIsoStr}} {{logLevelName}} [{{name}}] ",
 			}),
 		[],
 	);
@@ -122,10 +118,7 @@ export function useCardReader({
 						maybePromise.catch((error) => {
 							log.error(
 								formatLog("Card scan handler failed", {
-									error:
-										error instanceof Error
-											? error.message
-											: String(error),
+									error: error instanceof Error ? error.message : String(error),
 								}),
 							);
 						});
@@ -133,10 +126,7 @@ export function useCardReader({
 				} catch (error) {
 					log.error(
 						formatLog("Card scan handler failed", {
-							error:
-								error instanceof Error
-									? error.message
-									: String(error),
+							error: error instanceof Error ? error.message : String(error),
 						}),
 					);
 				}
@@ -171,9 +161,7 @@ export function useCardReader({
 		const checkConnection = setInterval(() => {
 			if (!serialRef.current?.port.readable) {
 				log.warn("Card reader disconnected - device unplugged");
-				void handleFatalError(
-					"Kiosk disconnected - card reader was unplugged",
-				);
+				void handleFatalError("Kiosk disconnected - card reader was unplugged");
 			}
 		}, SERIAL_CONNECTION_CHECK_INTERVAL_MS);
 

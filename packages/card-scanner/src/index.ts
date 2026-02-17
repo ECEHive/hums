@@ -1,3 +1,9 @@
-export type { CardFormatParser, CardScan, SerialSession, ConnectSerialOptions, ConnectionStatus } from "./types";
+export { builtinParsers, createCardParser } from "./parsers";
 export { connectSerial, disconnectSerial } from "./scanner";
-export { createCardParser, builtinParsers } from "./parsers";
+export type {
+	CardFormatParser,
+	CardScan,
+	ConnectionStatus,
+	ConnectSerialOptions,
+	SerialSession,
+} from "./types";

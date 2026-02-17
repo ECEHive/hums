@@ -1,13 +1,13 @@
-export {
-connectSerial,
-disconnectSerial,
-createCardParser,
-builtinParsers,
-} from "@ecehive/card-scanner";
 export type {
-CardScan,
-SerialSession,
-ConnectSerialOptions,
-CardFormatParser,
-ConnectionStatus,
+	CardFormatParser,
+	CardScan,
+	ConnectionStatus,
+	ConnectSerialOptions,
+	SerialSession,
+} from "@ecehive/card-scanner";
+export {
+	builtinParsers,
+	connectSerial,
+	createCardParser,
+	disconnectSerial,
 } from "@ecehive/card-scanner";

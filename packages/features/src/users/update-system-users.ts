@@ -38,11 +38,14 @@ export async function updateSystemUsers() {
 
 			// Persist card number as a credential if available
 			if (userInfo.cardNumber) {
-				await prisma.credential.upsert({
-					where: { value: userInfo.cardNumber },
-					update: {},
-					create: { value: userInfo.cardNumber, userId: existingUser.id },
-				});
+				const normalized = normalizeCardNumber(userInfo.cardNumber);
+				if (normalized) {
+					await prisma.credential.upsert({
+						where: { value: normalized },
+						update: { userId: existingUser.id },
+						create: { value: normalized, userId: existingUser.id },
+					});
+				}
 			}
 		} else {
 			// Create new system user using unified function
@@ -55,11 +58,14 @@ export async function updateSystemUsers() {
 
 			// Persist card number as a credential if available
 			if (userInfo.cardNumber) {
-				await prisma.credential.upsert({
-					where: { value: userInfo.cardNumber },
-					update: {},
-					create: { value: userInfo.cardNumber, userId: newUser.id },
-				});
+				const normalized = normalizeCardNumber(userInfo.cardNumber);
+				if (normalized) {
+					await prisma.credential.upsert({
+						where: { value: normalized },
+						update: { userId: newUser.id },
+						create: { value: normalized, userId: newUser.id },
+					});
+				}
 			}
 		}
 	}

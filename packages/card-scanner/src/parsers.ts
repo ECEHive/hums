@@ -7,7 +7,10 @@ const IIN_LENGTH = 6;
  * Normalize a digit string to a zero-padded card number of `length` digits.
  * Strips all non-digit characters first.
  */
-function normalizeDigits(raw: string, length = CARD_NUMBER_LENGTH): string | null {
+function normalizeDigits(
+	raw: string,
+	length = CARD_NUMBER_LENGTH,
+): string | null {
 	const digits = raw.replace(/\D/g, "");
 	if (!digits) return null;
 	return digits.length >= length

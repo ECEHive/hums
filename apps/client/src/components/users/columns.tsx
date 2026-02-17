@@ -103,9 +103,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 				return (
 					<div className="flex gap-2 items-center justify-end">
 						<UserUpdateDialog user={row.original} />
-						{canViewCredentials && (
-							<CredentialsSheet user={row.original} />
-						)}
+						{canViewCredentials && <CredentialsSheet user={row.original} />}
 						{canImpersonateUsers && (
 							<ImpersonateUserButton
 								userId={row.original.id}
