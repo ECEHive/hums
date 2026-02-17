@@ -1,30 +1,107 @@
 # Docker Deployment Guide
 
-This document describes how to deploy HUMS using Docker.
+This guide provides comprehensive instructions for deploying HUMS (Hive Unified Management System) using Docker.
 
-## Architecture
+## Table of Contents
 
-HUMS is deployed as two Docker images:
+- [Architecture Overview](#architecture-overview)
+- [Prerequisites](#prerequisites)
+- [Pre-built Docker Images](#pre-built-docker-images)
+- [Quick Start](#quick-start)
+- [Docker Compose Configuration](#docker-compose-configuration)
+- [Building Images Locally](#building-images-locally)
+- [NGINX Reverse Proxy](#nginx-reverse-proxy)
+- [Database Migrations](#database-migrations)
+- [Health Checks](#health-checks)
+- [Multi-Platform Support](#multi-platform-support)
+- [Networking](#networking)
+- [Volumes and Persistence](#volumes-and-persistence)
+- [Troubleshooting](#troubleshooting)
 
-1. **hums-server** - The API server (Bun + Fastify)
-2. **hums-web** - NGINX serving the client and kiosk static files
+---
 
-Additionally, the server image includes a `prisma-migrate` target for running database migrations.
+## Architecture Overview
 
-## Database Requirements
+HUMS is deployed as a multi-container application with the following components:
 
-HUMS requires PostgreSQL 16+ with the **pgvector** extension for Face ID recognition. The Face ID system uses pgvector for efficient vector similarity search to match face embeddings.
+| Container | Image | Description |
+|-----------|-------|-------------|
+| `hums-server` | `ghcr.io/ecehive/hums-server` | API server (Bun + Fastify) |
+| `hums-web` | `ghcr.io/ecehive/hums-web` | NGINX serving static files + reverse proxy |
+| `hums-migrate` | `ghcr.io/ecehive/hums-migrate` | One-shot Prisma migration runner |
+| `hums-db` | `pgvector/pgvector:pg16` | PostgreSQL 16 with pgvector extension |
+
+### Container Relationships
+
+```
+                    ┌─────────────────┐
+                    │    hums-web     │
+                    │    (NGINX)      │
+                    │   Port: 4483    │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+              ▼              ▼              ▼
+      Static Files    /api routes    /kiosk, /inventory, etc.
+      (client SPA)         │
+                           │
+                    ┌──────▼──────┐
+                    │ hums-server │
+                    │ Port: 44830 │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │   hums-db   │
+                    │ Port: 5432  │
+                    └─────────────┘
+```
+
+### Web Application Routes
+
+The NGINX container serves multiple Single Page Applications (SPAs):
+
+| Route | Application | Description |
+|-------|-------------|-------------|
+| `/` | Client | Main management dashboard |
+| `/kiosk` | Kiosk | Check-in/check-out kiosk |
+| `/inventory` | Inventory | Inventory management kiosk |
+| `/overview` | Overview | Public overview display |
+| `/control-kiosk` | Control | Control point management |
+
+---
+
+## Prerequisites
+
+### System Requirements
+
+- **Docker**: Version 20.10 or higher
+- **Docker Compose**: Version 2.0 or higher (included with Docker Desktop)
+- **Memory**: Minimum 2GB RAM available for containers
+- **Disk**: At least 2GB free space for images and database
+
+### Database Requirements
+
+HUMS requires **PostgreSQL 16+** with the **pgvector** extension installed for Face ID functionality.
 
 The default `docker-compose.sample.yml` uses the `pgvector/pgvector:pg16` image which includes the extension pre-installed.
 
-If you're using an external PostgreSQL database:
+**If using an external PostgreSQL database:**
+
 1. Ensure PostgreSQL 16 or higher is installed
-2. Install the pgvector extension: `CREATE EXTENSION IF NOT EXISTS vector;`
-3. This is handled automatically by database migrations when running `prisma migrate deploy`
+2. Install the pgvector extension:
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+3. The migration runner will handle the rest automatically
 
-## Pre-built Images
+---
 
-Docker images are automatically built and published to GitHub Container Registry (ghcr.io) on each release:
+## Pre-built Docker Images
+
+Docker images are automatically built and published to GitHub Container Registry (ghcr.io) on each release.
+
+### Available Images
 
 ```bash
 # Server image (API)
@@ -35,108 +112,450 @@ ghcr.io/ecehive/hums-server:v1.0.0  # specific version
 ghcr.io/ecehive/hums-migrate:latest
 ghcr.io/ecehive/hums-migrate:v1.0.0  # specific version
 
-# Web image (NGINX + client + kiosk)
+# Web image (NGINX + all frontend SPAs)
 ghcr.io/ecehive/hums-web:latest
 ghcr.io/ecehive/hums-web:v1.0.0  # specific version
 ```
 
-## Quick Start with Docker Compose
+### Pulling Images
 
-1. Create your environment file:
+```bash
+docker pull ghcr.io/ecehive/hums-server:latest
+docker pull ghcr.io/ecehive/hums-migrate:latest
+docker pull ghcr.io/ecehive/hums-web:latest
+```
+
+---
+
+## Quick Start
+
+### 1. Create Environment File
 
 ```bash
 cp .env.sample .env
-# Edit .env with your configuration
 ```
 
-2. Start the services:
+Edit `.env` with your configuration. At minimum, you must set:
+
+- `AUTH_SECRET` - Authentication token signing secret (min 32 characters)
+- `ICAL_SECRET` - Calendar sync token signing secret (min 32 characters)
+- `DATABASE_URL` - PostgreSQL connection string
+- `AUTH_CAS_SERVER` - CAS authentication server URL
+- `CLIENT_BASE_URL` - Public URL of your deployment
+- `CORS_ORIGINS` - Allowed CORS origins for API requests
+
+Generate secure secrets with:
 
 ```bash
+openssl rand -base64 32
+```
+
+### 2. Start Services
+
+```bash
+# Using docker-compose.sample.yml as reference
+cp docker-compose.sample.yml docker-compose.yml
 docker compose up -d
 ```
 
-This will:
-- Start a PostgreSQL database
-- Run database migrations
-- Start the API server
-- Start the NGINX web server
+### 3. Verify Deployment
 
-## Configuration
+```bash
+# Check all containers are running
+docker compose ps
 
-### Environment Variables
+# View logs
+docker compose logs -f
 
-The server is configured via environment variables. See [.env.sample](../.env.sample) for all available options.
+# Check server health
+curl http://localhost:4483/api
+```
 
-Key configuration areas:
-- **Database**: `DATABASE_URL`
-- **Authentication**: `AUTH_PROVIDER`, `AUTH_CAS_*`
-- **Email**: `EMAIL_PROVIDER`, `EMAIL_*`
-- **Observability**: `CLIENT_SENTRY_DSN`, `KIOSK_SENTRY_DSN`
+The application should be available at `http://localhost:4483`.
 
-### Client Configuration
+---
 
-Unlike traditional Vite applications, HUMS does **not** use `VITE_*` environment variables at build time. Instead, the client and kiosk fetch their configuration at runtime from the `/api/config` endpoint.
+## Docker Compose Configuration
 
-This design allows:
-- Pre-built Docker images that work in any environment
-- No rebuild needed when changing configuration
-- Simpler deployment pipeline
+### Sample Configuration
 
-The `/api/config` endpoint exposes these values (configured on the server):
-- `authProvider` - Authentication method (CAS or CAS_PROXIED)
-- `casLoginUrl` - CAS login URL
-- `casProxyUrl` - CAS proxy URL (for proxied auth)
-- `clientSentryDsn` - Sentry DSN for client error tracking
-- `kioskSentryDsn` - Sentry DSN for kiosk error tracking
-- `timezone` - Application timezone
-- `clientBaseUrl` - Base URL for the client application
+```yaml
+services:
+  # PostgreSQL Database with pgvector extension
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: hums-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hums
+      POSTGRES_USER: hums
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hums-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hums"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prisma migration runner (one-shot)
+  migrate:
+    image: ghcr.io/ecehive/hums-migrate:latest
+    container_name: hums-migrate
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+    networks:
+      - hums-network
+
+  # Server application
+  server:
+    image: ghcr.io/ecehive/hums-server:latest
+    container_name: hums-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+      NODE_ENV: production
+      PORT: 44830
+    expose:
+      - "44830"
+    networks:
+      - hums-network
+
+  # NGINX reverse proxy with all frontend SPAs
+  web:
+    image: ghcr.io/ecehive/hums-web:latest
+    container_name: hums-web
+    restart: unless-stopped
+    ports:
+      - "4483:80"
+    depends_on:
+      - server
+    networks:
+      - hums-network
+
+networks:
+  hums-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+```
+
+### Using Specific Version Tags
+
+For production deployments, pin to specific versions:
+
+```yaml
+services:
+  migrate:
+    image: ghcr.io/ecehive/hums-migrate:v1.0.0
+  server:
+    image: ghcr.io/ecehive/hums-server:v1.0.0
+  web:
+    image: ghcr.io/ecehive/hums-web:v1.0.0
+```
+
+---
 
 ## Building Images Locally
 
-If you need to build images locally:
+If you need to build images from source:
+
+### Build Server Image
 
 ```bash
-# Build server image
 docker build -f Dockerfile.server --target server -t hums-server .
+```
 
-# Build migration image
+### Build Migration Image
+
+```bash
 docker build -f Dockerfile.server --target prisma-migrate -t hums-migrate .
+```
 
-# Build web image
+### Build Web Image
+
+```bash
 docker build -f Dockerfile.web --target web -t hums-web .
 ```
 
-## Using Pre-built Images
-
-To use pre-built images instead of building locally, set these environment variables:
+### Build All Images
 
 ```bash
-export SERVER_IMAGE=ghcr.io/ecehive/hums-server:v1.0.0
-export MIGRATE_IMAGE=ghcr.io/ecehive/hums-migrate:v1.0.0
-export WEB_IMAGE=ghcr.io/ecehive/hums-web:v1.0.0
-docker compose up -d
+# Build all images in parallel
+docker build -f Dockerfile.server --target server -t hums-server . &
+docker build -f Dockerfile.server --target prisma-migrate -t hums-migrate . &
+docker build -f Dockerfile.web --target web -t hums-web . &
+wait
 ```
+
+### Multi-Stage Build Process
+
+The Dockerfiles use multi-stage builds for optimal image size:
+
+**Dockerfile.server stages:**
+1. `base` - Bun runtime (Alpine)
+2. `deps` - Install all dependencies
+3. `prisma-generate` - Generate Prisma client
+4. `build` - Build the server
+5. `prod-deps` - Production dependencies only
+6. `prisma-migrate` - Migration runner image
+7. `server` - Final production server image
+
+**Dockerfile.web stages:**
+1. `base` - Bun runtime for building
+2. `deps` - Install all dependencies
+3. `build-client` - Build client SPA
+4. `build-kiosk` - Build kiosk SPA
+5. `build-overview` - Build overview SPA
+6. `build-inventory` - Build inventory SPA
+7. `build-control` - Build control SPA
+8. `web` - Final NGINX image with all SPAs
+
+---
+
+## NGINX Reverse Proxy
+
+The web container uses NGINX to:
+
+1. **Serve static files** for all frontend SPAs with proper caching
+2. **Proxy API requests** to the server container
+3. **Handle SPA routing** with fallback to `index.html`
+
+### Key NGINX Configuration
+
+```nginx
+# API requests are proxied to the server
+location /api {
+    proxy_pass http://server:44830;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# Static assets with long cache duration
+location /assets/ {
+    root /usr/share/nginx/html/client;
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+# SPA routing - fallback to index.html
+location / {
+    root /usr/share/nginx/html/client;
+    try_files $uri $uri/ /index.html;
+}
+```
+
+### Gzip Compression
+
+The NGINX configuration includes gzip compression for optimal performance:
+
+```nginx
+gzip on;
+gzip_vary on;
+gzip_proxied any;
+gzip_comp_level 6;
+gzip_types text/plain text/css text/xml text/javascript 
+           application/json application/javascript 
+           application/xml+rss application/rss+xml 
+           font/truetype font/opentype 
+           application/vnd.ms-fontobject image/svg+xml;
+```
+
+### Client Max Body Size
+
+File uploads are limited to 10MB:
+
+```nginx
+client_max_body_size 10M;
+```
+
+---
+
+## Database Migrations
+
+### Automatic Migrations
+
+The `hums-migrate` container runs automatically before the server starts:
+
+```yaml
+migrate:
+  image: ghcr.io/ecehive/hums-migrate:latest
+  restart: "no"
+  depends_on:
+    db:
+      condition: service_healthy
+
+server:
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+```
+
+### Manual Migration
+
+To run migrations manually:
+
+```bash
+docker compose run --rm migrate
+```
+
+### Checking Migration Status
+
+```bash
+docker compose logs migrate
+```
+
+A successful migration shows exit code 0:
+```
+hums-migrate exited with code 0
+```
+
+---
 
 ## Health Checks
 
-Both images include health checks:
+### Server Health Check
 
-- **Server**: `GET /api` (returns 200 when healthy)
-- **Web**: `GET /` (returns 200 when NGINX is serving)
+The server container includes a health check:
 
-## Ports
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:44830/api || exit 1
+```
 
-- **80**: NGINX (client + kiosk + API proxy)
-- **44830**: Server (internal, not exposed by default)
-- **5432**: PostgreSQL (internal, not exposed by default)
+### Web Health Check
+
+The web container includes a health check:
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+```
+
+### Database Health Check
+
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "pg_isready -U hums"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+```
+
+### Checking Health Status
+
+```bash
+docker compose ps
+# Shows health status for each container
+
+docker inspect --format='{{.State.Health.Status}}' hums-server
+```
+
+---
 
 ## Multi-Platform Support
 
-Images are built for both `linux/amd64` and `linux/arm64` architectures.
+All images are built for both:
+
+- `linux/amd64` (Intel/AMD 64-bit)
+- `linux/arm64` (Apple Silicon, ARM servers)
+
+Docker will automatically pull the correct architecture for your system.
+
+---
+
+## Networking
+
+### Internal Network
+
+All containers communicate over the `hums-network` bridge network:
+
+- Database: `db:5432`
+- Server: `server:44830`
+- Web: `web:80`
+
+### Exposed Ports
+
+By default, only the web container exposes a port to the host:
+
+| Container | Internal Port | Host Port | Description |
+|-----------|---------------|-----------|-------------|
+| web | 80 | 4483 | HTTP access |
+
+### Custom Port Mapping
+
+To change the exposed port:
+
+```yaml
+web:
+  ports:
+    - "8080:80"  # Access at http://localhost:8080
+```
+
+### HTTPS/TLS
+
+For production, place a reverse proxy (like Traefik, Caddy, or another NGINX) in front of the web container to handle TLS termination:
+
+```yaml
+web:
+  ports: []  # Don't expose directly
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.hums.rule=Host(`hums.example.com`)"
+    - "traefik.http.routers.hums.tls=true"
+```
+
+---
+
+## Volumes and Persistence
+
+### Database Volume
+
+PostgreSQL data is persisted in a named volume:
+
+```yaml
+volumes:
+  postgres_data:
+    driver: local
+```
+
+### Backup Database
+
+```bash
+docker compose exec db pg_dump -U hums hums > backup.sql
+```
+
+### Restore Database
+
+```bash
+docker compose exec -T db psql -U hums hums < backup.sql
+```
+
+---
 
 ## Troubleshooting
 
-### Checking logs
+### Viewing Logs
 
 ```bash
 # All services
@@ -144,23 +563,90 @@ docker compose logs -f
 
 # Specific service
 docker compose logs -f server
-docker compose logs -f nginx
+docker compose logs -f web
+docker compose logs -f db
 ```
 
-### Database connection issues
-
-Ensure the database is healthy before the server starts:
+### Container Status
 
 ```bash
 docker compose ps
 ```
 
-The `prisma-migrate` service should show "Exited (0)" and the `server` should be "Up".
+### Database Connection Issues
 
-### Client not loading configuration
+1. Check database is healthy:
+   ```bash
+   docker compose exec db pg_isready -U hums
+   ```
 
-Check that the server is reachable from the NGINX container:
+2. Verify DATABASE_URL format:
+   ```
+   postgresql://username:password@host:port/database
+   ```
+
+3. Check network connectivity:
+   ```bash
+   docker compose exec server ping db
+   ```
+
+### Server Won't Start
+
+1. Check migration completed:
+   ```bash
+   docker compose logs migrate
+   ```
+
+2. Verify environment variables:
+   ```bash
+   docker compose exec server env | grep -E 'DATABASE|AUTH|NODE_ENV'
+   ```
+
+### Client Not Loading Configuration
+
+The frontend apps fetch configuration from `/api/config`. Verify it's accessible:
 
 ```bash
-docker compose exec nginx wget -qO- http://server:44830/api/config
+docker compose exec web wget -qO- http://server:44830/api/config
 ```
+
+### CORS Errors
+
+Ensure `CORS_ORIGINS` is set correctly in `.env`:
+
+```bash
+CORS_ORIGINS=https://your-domain.com
+```
+
+### Resetting Everything
+
+```bash
+# Stop and remove containers, networks, volumes
+docker compose down -v
+
+# Rebuild and start fresh
+docker compose up -d --build
+```
+
+### Checking Image Versions
+
+```bash
+docker compose images
+```
+
+---
+
+## Production Checklist
+
+Before going to production, ensure:
+
+- [ ] `NODE_ENV=production` is set
+- [ ] `AUTH_SECRET` and `ICAL_SECRET` are unique, random, 32+ character strings
+- [ ] `CORS_ORIGINS` is set to your actual domain(s)
+- [ ] `CLIENT_BASE_URL` matches your public URL
+- [ ] Database password is changed from default
+- [ ] TLS/HTTPS is configured (via reverse proxy)
+- [ ] Database backups are configured
+- [ ] Log aggregation is set up
+- [ ] Monitoring/alerting is configured
+- [ ] Resource limits are set for containers

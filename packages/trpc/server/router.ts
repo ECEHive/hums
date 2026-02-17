@@ -5,6 +5,7 @@ import { authRouter } from "./routers/auth/_route";
 import { configRouter } from "./routers/config/_route";
 import { controlRouter } from "./routers/control/_route";
 import { controlKioskRouter } from "./routers/controlKiosk/_route";
+import { credentialsRouter } from "./routers/credentials/_route";
 import { devicesRouter } from "./routers/devices/_route";
 import { globalReportsRouter } from "./routers/globalReports/_route";
 import { inventoryRouter } from "./routers/inventory/_route";
@@ -32,6 +33,7 @@ export const appRouter = router({
 	config: configRouter,
 	control: controlRouter,
 	controlKiosk: controlKioskRouter,
+	credentials: credentialsRouter,
 	overview: overviewRouter,
 	users: usersRouter,
 	roles: rolesRouter,

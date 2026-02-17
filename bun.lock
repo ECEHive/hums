@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@ecehive/hums",
@@ -87,6 +86,7 @@
       "name": "@ecehive/control",
       "version": "3.1.1",
       "dependencies": {
+        "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-scroll-area": "^1.2.9",
         "@radix-ui/react-separator": "^1.1.8",
@@ -133,6 +133,7 @@
       "name": "@ecehive/inventory",
       "version": "3.1.1",
       "dependencies": {
+        "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-label": "^2.1.8",
         "@radix-ui/react-separator": "^1.1.8",
@@ -179,6 +180,7 @@
       "name": "@ecehive/kiosk",
       "version": "3.1.1",
       "dependencies": {
+        "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-separator": "^1.1.8",
         "@radix-ui/react-slot": "^1.2.4",
@@ -302,6 +304,23 @@
         "@ecehive/config": "workspace:*",
         "typescript": "^5.9.2",
       },
+    },
+    "packages/card-scanner": {
+      "name": "@ecehive/card-scanner",
+      "version": "3.1.0",
+      "dependencies": {
+        "tslog": "^4.10.2",
+      },
+      "devDependencies": {
+        "@ecehive/config": "workspace:*",
+        "@types/w3c-web-serial": "^1.0.8",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "packages/config": {
       "name": "@ecehive/config",
@@ -641,6 +660,8 @@
     "@dnd-kit/utilities": ["@dnd-kit/utilities@3.2.2", "", { "dependencies": { "tslib": "^2.0.0" }, "peerDependencies": { "react": ">=16.8.0" } }, "sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg=="],
 
     "@ecehive/auth": ["@ecehive/auth@workspace:packages/auth"],
+
+    "@ecehive/card-scanner": ["@ecehive/card-scanner@workspace:packages/card-scanner"],
 
     "@ecehive/client": ["@ecehive/client@workspace:apps/client"],
 

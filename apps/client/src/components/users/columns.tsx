@@ -4,6 +4,7 @@ import type { AuthUser } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { checkPermissions } from "@/lib/permissions";
 import { Button } from "../ui/button";
+import { CredentialsSheet } from "./credentials-sheet";
 import { ImpersonateUserButton } from "./impersonate-button";
 import { RolesDialog } from "./roles-dialog";
 import { UserUpdateDialog } from "./update-dialog";
@@ -27,6 +28,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 
 	const canManageRoles = checkPermissions(user, ["users.update"]);
 	const canImpersonateUsers = checkPermissions(user, ["users.impersonate"]);
+	const canViewCredentials = checkPermissions(user, ["credentials.list"]);
 
 	return [
 		{
@@ -101,6 +103,7 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 				return (
 					<div className="flex gap-2 items-center justify-end">
 						<UserUpdateDialog user={row.original} />
+						{canViewCredentials && <CredentialsSheet user={row.original} />}
 						{canImpersonateUsers && (
 							<ImpersonateUserButton
 								userId={row.original.id}

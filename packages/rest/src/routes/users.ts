@@ -1,6 +1,5 @@
 import { createUser, findUserByCard } from "@ecehive/features";
 import { Prisma, prisma } from "@ecehive/prisma";
-import { normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
@@ -49,7 +48,6 @@ const CreateUserSchema = z.object({
 	username: UsernameValidationSchema,
 	name: z.string().trim().max(255).optional(),
 	email: z.email().max(255).optional(),
-	cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
 	slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 	roles: z.array(z.string().trim().min(1)).optional().default([]),
 });
@@ -57,7 +55,6 @@ const CreateUserSchema = z.object({
 const UpdateUserSchema = z.object({
 	name: z.string().trim().min(1).max(255).optional(),
 	email: z.string().email().max(255).optional(),
-	cardNumber: z.string().trim().min(1).max(50).optional(),
 	slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 	roles: z.array(z.string().trim().min(1)).optional(),
 });
@@ -69,7 +66,6 @@ const BulkCreateUsersSchema = z.object({
 				username: UsernameValidationSchema,
 				name: z.string().trim().max(255).optional(),
 				email: z.email().max(255).optional(),
-				cardNumber: z.string().trim().min(1).max(50).optional(),
 				slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 				roles: z.array(z.string().trim().min(1)).optional().default([]),
 			}),
@@ -85,7 +81,6 @@ const BulkUpsertUsersSchema = z.object({
 				username: UsernameValidationSchema,
 				name: z.string().trim().min(1).max(255).optional(),
 				email: z.string().email().max(255).optional(),
-				cardNumber: z.string().trim().min(1).max(50).optional().nullable(),
 				slackUsername: z.string().trim().min(1).max(100).optional().nullable(),
 				roles: z.array(z.string().trim().min(1)).optional(),
 			}),
@@ -124,7 +119,6 @@ type SerializedUser = {
 	username: string;
 	name: string;
 	email: string;
-	cardNumber: string | null;
 	slackUsername: string | null;
 	roles?: string[];
 	createdAt: Date;
@@ -142,7 +136,6 @@ function serializeUser(
 		username: user.username,
 		name: user.name,
 		email: user.email,
-		cardNumber: user.cardNumber,
 		slackUsername: user.slackUsername,
 		createdAt: user.createdAt,
 		updatedAt: user.updatedAt,
@@ -246,26 +239,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 				const finalUserData = { ...data };
 
-				// Normalize card number
-				let normalizedCard: string | null | undefined;
-				if (finalUserData.cardNumber !== undefined) {
-					if (finalUserData.cardNumber === null) {
-						normalizedCard = null;
-					} else {
-						const normalizedResult = normalizeCardNumber(
-							finalUserData.cardNumber,
-						);
-						if (normalizedResult === null || normalizedResult === undefined) {
-							failed.push({
-								item: userData,
-								error: "Invalid card number format",
-							});
-							continue;
-						}
-						normalizedCard = normalizedResult;
-					}
-				}
-
 				// Validate roles using pre-fetched data
 				let roles: Array<{ id: number; name: string }> | null = null;
 				if (roleNames) {
@@ -309,12 +282,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				if (finalUserData.email) {
 					(upsertData.update as Prisma.UserUpdateInput).email =
 						finalUserData.email;
-				}
-				// Only add cardNumber to update/create if it has a concrete value (null or string)
-				if (normalizedCard !== undefined) {
-					(upsertData.update as Prisma.UserUpdateInput).cardNumber =
-						normalizedCard;
-					upsertData.create.cardNumber = normalizedCard;
 				}
 				// Only add slackUsername to update/create if it has a concrete value (null or string)
 				if (finalUserData.slackUsername !== undefined) {
@@ -417,14 +384,12 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			username: string;
 			name?: string;
 			email?: string;
-			cardNumber: string | null | undefined;
 			slackUsername?: string | null;
 			roleIds: number[];
 			originalData: {
 				username: string;
 				name?: string;
 				email?: string;
-				cardNumber?: string | null;
 				slackUsername?: string | null;
 				roles?: string[];
 			};
@@ -442,24 +407,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					error: `User '${username}' already exists`,
 				});
 				continue;
-			}
-
-			// Normalize card number
-			let normalizedCard: string | null | undefined;
-			if (data.cardNumber !== undefined) {
-				if (data.cardNumber === null) {
-					normalizedCard = null;
-				} else {
-					const normalizedResult = normalizeCardNumber(data.cardNumber);
-					if (normalizedResult === null || normalizedResult === undefined) {
-						failed.push({
-							item: userData,
-							error: "Invalid card number format",
-						});
-						continue;
-					}
-					normalizedCard = normalizedResult;
-				}
 			}
 
 			// Validate roles using pre-fetched data
@@ -487,7 +434,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				username,
 				name: data.name,
 				email: data.email,
-				cardNumber: normalizedCard,
 				slackUsername: data.slackUsername,
 				roleIds,
 				originalData: userData,
@@ -503,7 +449,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 							username: userData.username,
 							name: userData.name || undefined,
 							email: userData.email || undefined,
-							cardNumber: userData.cardNumber ?? undefined,
 							slackUsername: userData.slackUsername,
 							roleIds: userData.roleIds,
 						}),
@@ -521,7 +466,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 							username: userData.username,
 							name: userData.name,
 							email: userData.email,
-							cardNumber: userData.cardNumber ?? undefined,
 							slackUsername: userData.slackUsername,
 							roleIds: userData.roleIds,
 						});
@@ -877,15 +821,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return conflictError(reply, `User '${username}' already exists`);
 		}
 
-		// Normalize card number
-		let normalizedCard: string | null = null;
-		if (userData.cardNumber !== null && userData.cardNumber !== undefined) {
-			normalizedCard = normalizeCardNumber(userData.cardNumber) || null;
-			if (!normalizedCard) {
-				return badRequestError(reply, "Invalid card number format");
-			}
-		}
-
 		// Validate roles
 		const { roles, missing } = await validateRoles(roleNames || []);
 		if (roles === null) {
@@ -897,7 +832,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			username,
 			name: userData.name || undefined,
 			email: userData.email || undefined,
-			cardNumber: normalizedCard,
 			slackUsername: userData.slackUsername,
 			roleIds: roles.map((r) => r.id),
 		});
@@ -932,25 +866,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 			return notFoundError(reply, "User", params.data.username);
 		}
 
-		const {
-			roles: roleNames,
-			cardNumber,
-			slackUsername,
-			...userData
-		} = body.data;
-
-		// Normalize card number if provided
-		let normalizedCard: string | null | undefined;
-		if (cardNumber !== undefined) {
-			if (cardNumber === null) {
-				normalizedCard = null;
-			} else {
-				normalizedCard = normalizeCardNumber(cardNumber);
-				if (!normalizedCard) {
-					return badRequestError(reply, "Invalid card number format");
-				}
-			}
-		}
+		const { roles: roleNames, slackUsername, ...userData } = body.data;
 
 		// Validate roles if provided
 		let roles: Array<{ id: number; name: string }> | null = null;
@@ -969,9 +885,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		const updateData: Prisma.UserUpdateInput = {
 			...userData,
 		};
-		if (normalizedCard !== undefined) {
-			updateData.cardNumber = normalizedCard;
-		}
 		if (slackUsername !== undefined) {
 			updateData.slackUsername = slackUsername;
 		}
