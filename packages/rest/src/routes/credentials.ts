@@ -118,7 +118,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 			const requestUserId = getUserId(request);
 			if (
 				!requestUserId ||
-				!(await hasPermission(requestUserId, "credentials.update"))
+				!(await hasPermission(requestUserId, "credentials.create"))
 			) {
 				return reply.code(403).send({
 					error: "forbidden",
@@ -205,7 +205,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 		const requestUserId = getUserId(request);
 		if (
 			!requestUserId ||
-			!(await hasPermission(requestUserId, "credentials.update"))
+			!(await hasPermission(requestUserId, "credentials.delete"))
 		) {
 			return reply.code(403).send({
 				error: "forbidden",
