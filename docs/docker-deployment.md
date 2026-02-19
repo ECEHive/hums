@@ -1,6 +1,6 @@
-# Docker Deployment Guide
+# Docker Deployment
 
-This guide provides comprehensive instructions for deploying HUMS (Hive Unified Management System) using Docker.
+This guide provides instructions for deploying HUMS using Docker.
 
 ## Table of Contents
 
@@ -9,7 +9,6 @@ This guide provides comprehensive instructions for deploying HUMS (Hive Unified 
 - [Pre-built Docker Images](#pre-built-docker-images)
 - [Quick Start](#quick-start)
 - [Docker Compose Configuration](#docker-compose-configuration)
-- [Building Images Locally](#building-images-locally)
 - [NGINX Reverse Proxy](#nginx-reverse-proxy)
 - [Database Migrations](#database-migrations)
 - [Health Checks](#health-checks)
@@ -30,32 +29,6 @@ HUMS is deployed as a multi-container application with the following components:
 | `hums-web` | `ghcr.io/ecehive/hums-web` | NGINX serving static files + reverse proxy |
 | `hums-migrate` | `ghcr.io/ecehive/hums-migrate` | One-shot Prisma migration runner |
 | `hums-db` | `pgvector/pgvector:pg16` | PostgreSQL 16 with pgvector extension |
-
-### Container Relationships
-
-```
-                    ┌─────────────────┐
-                    │    hums-web     │
-                    │    (NGINX)      │
-                    │   Port: 4483    │
-                    └────────┬────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
-              ▼              ▼              ▼
-      Static Files    /api routes    /kiosk, /inventory, etc.
-      (client SPA)         │
-                           │
-                    ┌──────▼──────┐
-                    │ hums-server │
-                    │ Port: 44830 │
-                    └──────┬──────┘
-                           │
-                    ┌──────▼──────┐
-                    │   hums-db   │
-                    │ Port: 5432  │
-                    └─────────────┘
-```
 
 ### Web Application Routes
 
@@ -82,9 +55,9 @@ The NGINX container serves multiple Single Page Applications (SPAs):
 
 ### Database Requirements
 
-HUMS requires **PostgreSQL 16+** with the **pgvector** extension installed for Face ID functionality.
+HUMS requires **PostgreSQL 16+**.
 
-The default `docker-compose.sample.yml` uses the `pgvector/pgvector:pg16` image which includes the extension pre-installed.
+The default `docker-compose.sample.yml` uses the `pgvector/pgvector:pg16` image which includes the vector extension pre-installed.
 
 **If using an external PostgreSQL database:**
 
@@ -93,7 +66,7 @@ The default `docker-compose.sample.yml` uses the `pgvector/pgvector:pg16` image 
    ```sql
    CREATE EXTENSION IF NOT EXISTS vector;
    ```
-3. The migration runner will handle the rest automatically
+3. The migration runner should handle the rest automatically
 
 ---
 
@@ -268,63 +241,6 @@ services:
   web:
     image: ghcr.io/ecehive/hums-web:v1.0.0
 ```
-
----
-
-## Building Images Locally
-
-If you need to build images from source:
-
-### Build Server Image
-
-```bash
-docker build -f Dockerfile.server --target server -t hums-server .
-```
-
-### Build Migration Image
-
-```bash
-docker build -f Dockerfile.server --target prisma-migrate -t hums-migrate .
-```
-
-### Build Web Image
-
-```bash
-docker build -f Dockerfile.web --target web -t hums-web .
-```
-
-### Build All Images
-
-```bash
-# Build all images in parallel
-docker build -f Dockerfile.server --target server -t hums-server . &
-docker build -f Dockerfile.server --target prisma-migrate -t hums-migrate . &
-docker build -f Dockerfile.web --target web -t hums-web . &
-wait
-```
-
-### Multi-Stage Build Process
-
-The Dockerfiles use multi-stage builds for optimal image size:
-
-**Dockerfile.server stages:**
-1. `base` - Bun runtime (Alpine)
-2. `deps` - Install all dependencies
-3. `prisma-generate` - Generate Prisma client
-4. `build` - Build the server
-5. `prod-deps` - Production dependencies only
-6. `prisma-migrate` - Migration runner image
-7. `server` - Final production server image
-
-**Dockerfile.web stages:**
-1. `base` - Bun runtime for building
-2. `deps` - Install all dependencies
-3. `build-client` - Build client SPA
-4. `build-kiosk` - Build kiosk SPA
-5. `build-overview` - Build overview SPA
-6. `build-inventory` - Build inventory SPA
-7. `build-control` - Build control SPA
-8. `web` - Final NGINX image with all SPAs
 
 ---
 
@@ -525,6 +441,8 @@ web:
     - "traefik.http.routers.hums.tls=true"
 ```
 
+For our current production deployment, we use a Cloudflare tunnel which handles HTTPS for us.
+
 ---
 
 ## Volumes and Persistence
@@ -590,18 +508,6 @@ docker compose ps
    docker compose exec server ping db
    ```
 
-### Server Won't Start
-
-1. Check migration completed:
-   ```bash
-   docker compose logs migrate
-   ```
-
-2. Verify environment variables:
-   ```bash
-   docker compose exec server env | grep -E 'DATABASE|AUTH|NODE_ENV'
-   ```
-
 ### Client Not Loading Configuration
 
 The frontend apps fetch configuration from `/api/config`. Verify it's accessible:
@@ -633,20 +539,3 @@ docker compose up -d --build
 ```bash
 docker compose images
 ```
-
----
-
-## Production Checklist
-
-Before going to production, ensure:
-
-- [ ] `NODE_ENV=production` is set
-- [ ] `AUTH_SECRET` and `ICAL_SECRET` are unique, random, 32+ character strings
-- [ ] `CORS_ORIGINS` is set to your actual domain(s)
-- [ ] `CLIENT_BASE_URL` matches your public URL
-- [ ] Database password is changed from default
-- [ ] TLS/HTTPS is configured (via reverse proxy)
-- [ ] Database backups are configured
-- [ ] Log aggregation is set up
-- [ ] Monitoring/alerting is configured
-- [ ] Resource limits are set for containers
