@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { credentialPreview, hashCredential } from "./hash";
 import { createHmac } from "node:crypto";
 import { env } from "@ecehive/env";
+import { describe, expect, it } from "vitest";
+import { credentialPreview, hashCredential } from "./hash";
 
 describe("hashCredential", () => {
 	it("produces a lowercase hex-encoded HMAC-SHA256 hash", () => {
