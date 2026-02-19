@@ -1,3 +1,4 @@
+import { credentialPreview, hashCredential } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
@@ -20,9 +21,11 @@ export async function createHandler(options: TCreateOptions) {
 	const { userId, value } = options.input;
 
 	const normalized = normalizeCardNumber(value) ?? value.trim();
+	const hash = hashCredential(normalized);
+	const preview = credentialPreview(normalized);
 
 	const existing = await prisma.credential.findUnique({
-		where: { value: normalized },
+		where: { hash },
 	});
 
 	if (existing) {
@@ -44,7 +47,7 @@ export async function createHandler(options: TCreateOptions) {
 	}
 
 	const credential = await prisma.credential.create({
-		data: { value: normalized, userId },
+		data: { hash, preview, userId },
 	});
 
 	return { credential };

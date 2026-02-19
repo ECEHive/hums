@@ -1,3 +1,4 @@
+import { credentialPreview, hashCredential } from "@ecehive/features";
 import type { User } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { normalizeCardNumber } from "@ecehive/user-data";
@@ -103,7 +104,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 			const credentials = await prisma.credential.findMany({
 				where: { userId },
 				orderBy: { createdAt: "desc" },
-				select: { id: true, value: true, createdAt: true, updatedAt: true },
+				select: { id: true, preview: true, createdAt: true, updatedAt: true },
 			});
 
 			return listResponse(credentials);
@@ -139,6 +140,8 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 			const { userId } = params.data;
 			const normalized =
 				normalizeCardNumber(body.data.value) ?? body.data.value.trim();
+			const hash = hashCredential(normalized);
+			const preview = credentialPreview(normalized);
 
 			const user = await prisma.user.findUnique({ where: { id: userId } });
 			if (!user) {
@@ -146,7 +149,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 			}
 
 			const existing = await prisma.credential.findUnique({
-				where: { value: normalized },
+				where: { hash },
 			});
 			if (existing) {
 				return conflictError(
@@ -159,7 +162,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 
 			try {
 				const credential = await prisma.credential.create({
-					data: { value: normalized, userId },
+					data: { hash, preview, userId },
 				});
 
 				await logRestAction(request, "credentials.create", {
@@ -169,7 +172,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 
 				return successResponse({
 					id: credential.id,
-					value: credential.value,
+					preview: credential.preview,
 					createdAt: credential.createdAt,
 					updatedAt: credential.updatedAt,
 				});
@@ -183,7 +186,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 				) {
 					// Re-check ownership
 					const nowExisting = await prisma.credential.findUnique({
-						where: { value: normalized },
+						where: { hash },
 					});
 					return conflictError(
 						reply,
