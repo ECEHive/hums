@@ -19,6 +19,7 @@ export async function listHandler(options: TListOptions) {
 	const credentials = await prisma.credential.findMany({
 		where: { userId },
 		orderBy: { createdAt: "desc" },
+		select: { id: true, preview: true, createdAt: true, updatedAt: true },
 	});
 
 	return { credentials };

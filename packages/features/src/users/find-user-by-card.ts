@@ -2,6 +2,7 @@ import { getLogger } from "@ecehive/logger";
 import { type Prisma, prisma } from "@ecehive/prisma";
 import { getUserDataProvider, normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
+import { credentialPreview, hashCredential } from "../credentials/hash";
 import { createUser } from "./create-user";
 
 const logger = getLogger("features:find-user-by-card");
@@ -32,8 +33,9 @@ export async function findUserByCard(cardNumber: string) {
 	}
 
 	// ── Step 1: Quick credential lookup (no transaction needed) ──────────
+	const hash = hashCredential(normalized);
 	const credential = await prisma.credential.findUnique({
-		where: { value: normalized },
+		where: { hash },
 		include: { user: true },
 	});
 
@@ -72,7 +74,7 @@ export async function findUserByCard(cardNumber: string) {
 		// request that may have already created it while we were calling the
 		// provider.
 		const existingCred = await tx.credential.findUnique({
-			where: { value: normalized },
+			where: { hash },
 			include: { user: true },
 		});
 		if (existingCred) {
@@ -131,7 +133,7 @@ export async function findUserByCard(cardNumber: string) {
 		}
 
 		// Persist credential for the resolved user
-		await ensureCredential(tx, user.id, normalized);
+		await ensureCredential(tx, user.id, hash, credentialPreview(normalized));
 
 		return user;
 	});
@@ -144,13 +146,14 @@ export async function findUserByCard(cardNumber: string) {
 async function ensureCredential(
 	tx: Prisma.TransactionClient,
 	userId: number,
-	value: string,
+	hash: string,
+	preview: string,
 ): Promise<void> {
 	try {
 		await tx.credential.upsert({
-			where: { value },
+			where: { hash },
 			update: { userId },
-			create: { value, userId },
+			create: { hash, preview, userId },
 		});
 	} catch (error) {
 		if (

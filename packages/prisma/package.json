@@ -7,6 +7,7 @@
 		"generate": "prisma generate",
 		"migrate": "prisma migrate deploy",
 		"migrate:dev": "prisma migrate dev",
+		"migrate:deploy": "bun ./migrate-deploy.ts",
 		"reset": "prisma migrate reset",
 		"typecheck": "tsc --noEmit"
 	},

@@ -502,7 +502,8 @@ enum ControlAction {
 
 model Credential {
   id        Int      @id @default(autoincrement())
-  value     String   @unique
+  hash      String   @unique
+  preview   String
   userId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

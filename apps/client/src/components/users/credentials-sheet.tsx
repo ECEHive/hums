@@ -21,7 +21,7 @@ import { checkPermissions } from "@/lib/permissions";
 
 type Credential = {
 	id: number;
-	value: string;
+	preview: string;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -166,7 +166,7 @@ export function CredentialsSheet({
 											variant="secondary"
 											className="font-mono text-xs truncate"
 										>
-											{cred.value}
+											•••••{cred.preview}
 										</Badge>
 									</div>
 									{canDelete && (
@@ -177,7 +177,7 @@ export function CredentialsSheet({
 											className="shrink-0 text-destructive hover:text-destructive"
 											disabled={deletingId === cred.id}
 											onClick={() => handleDelete(cred.id)}
-											aria-label={`Delete credential ${cred.value}`}
+											aria-label={`Delete credential ending in ${cred.preview}`}
 										>
 											{deletingId === cred.id ? (
 												<Spinner />
