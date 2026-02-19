@@ -31,6 +31,8 @@ async function setDatabaseSetting(secret: string): Promise<string> {
 
 	// ALTER DATABASE ... SET does not support parameterized queries,
 	// so we escape single quotes manually to prevent SQL injection.
+	// Note: dbName is safe from injection because it is retrieved from the
+	// database itself via SELECT current_database(), not from user input.
 	const escaped = secret.replace(/'/g, "''");
 	await client.query(
 		`ALTER DATABASE "${dbName}" SET "credential.hmac_secret" = '${escaped}'`,

@@ -15,7 +15,14 @@ export function hashCredential(value: string): string {
 
 /**
  * Extract a preview (last 4 characters) from a credential value.
+ *
+ * For credentials shorter than 4 characters, returns a fixed masked value
+ * to avoid leaking the full credential.
  */
 export function credentialPreview(value: string): string {
-	return value.slice(-4);
+	if (value.length >= 4) {
+		return value.slice(-4);
+	}
+
+	return "****";
 }

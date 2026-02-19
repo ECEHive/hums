@@ -36,7 +36,10 @@ BEGIN
   END IF;
 
   UPDATE "Credential" SET
-    "preview" = RIGHT("value", 4),
+    "preview" = CASE
+      WHEN length("value") >= 4 THEN RIGHT("value", 4)
+      ELSE '****'
+    END,
     "hash" = encode(hmac("value"::bytea, _secret::bytea, 'sha256'), 'hex');
 END $$;
 
@@ -45,6 +48,8 @@ ALTER TABLE "Credential" ALTER COLUMN "hash" SET NOT NULL;
 ALTER TABLE "Credential" ALTER COLUMN "preview" SET NOT NULL;
 
 -- Step 4: Remove plaintext value column and its unique index
+-- WARNING: This step is irreversible. Take a database backup before running
+-- this migration. The plaintext values cannot be recovered after this point.
 DROP INDEX "Credential_value_key";
 ALTER TABLE "Credential" DROP COLUMN "value";
 
