@@ -37,6 +37,7 @@ export async function listHandler(options: TListOptions) {
 			orderBy: { createdAt: "desc" },
 			skip: offset,
 			take: limit,
+			include: { permissions: { orderBy: { name: "asc" } } },
 		}),
 		prisma.apiToken.count({ where }),
 	]);

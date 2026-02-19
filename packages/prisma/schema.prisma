@@ -52,11 +52,12 @@ model Role {
 }
 
 model Permission {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  roles     Role[]   @relation("PermissionToRole")
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  roles     Role[]     @relation("PermissionToRole")
+  apiTokens ApiToken[] @relation("ApiTokenToPermission")
 }
 
 model Period {
@@ -216,17 +217,18 @@ model UserAgreement {
 }
 
 model ApiToken {
-  id          Int        @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
   description String?
-  prefix      String     @unique
-  hashedKey   String     @unique
+  prefix      String       @unique
+  hashedKey   String       @unique
   createdById Int?
   expiresAt   DateTime?
   lastUsedAt  DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now()) @updatedAt
-  createdBy   User?      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  permissions Permission[] @relation("ApiTokenToPermission")
   auditLogs   AuditLog[]
 }
 

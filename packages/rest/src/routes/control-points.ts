@@ -6,6 +6,7 @@ import {
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
+import { requirePermission } from "../shared/permissions";
 import { listResponse, successResponse } from "../shared/responses";
 import {
 	badRequestError,
@@ -108,6 +109,8 @@ export const controlPointsRoutes: FastifyPluginAsync = async (fastify) => {
 	 * Retrieve all control points with pagination
 	 */
 	fastify.get("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "control.points.list")) return;
+
 		// Validate query parameters
 		const parsedQuery = ListControlPointsQuerySchema.safeParse(request.query);
 		if (!parsedQuery.success) {
@@ -141,6 +144,8 @@ export const controlPointsRoutes: FastifyPluginAsync = async (fastify) => {
 	 * Retrieve a specific control point by ID
 	 */
 	fastify.get("/:id", async (request, reply) => {
+		if (await requirePermission(request, reply, "control.points.get")) return;
+
 		// Validate params
 		const parsedParams = ControlPointIdParamsSchema.safeParse(request.params);
 		if (!parsedParams.success) {
@@ -176,6 +181,9 @@ export const controlPointsRoutes: FastifyPluginAsync = async (fastify) => {
 	 * - Username must exist in the system
 	 */
 	fastify.put("/:id/operate", async (request, reply) => {
+		if (await requirePermission(request, reply, "control.points.update"))
+			return;
+
 		const parsedParams = ControlPointIdParamsSchema.safeParse(request.params);
 		if (!parsedParams.success) {
 			return validationError(reply, parsedParams.error);
