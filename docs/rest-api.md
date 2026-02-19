@@ -499,6 +499,126 @@ curl -X PUT "https://your-domain.com/api/rest/users/jsmith3/roles" \
 
 ---
 
+### Lookup User by Credential
+**`POST /api/rest/users/credential/lookup`**
+
+Find a user by a credential value (e.g. card number). If a user with the given credential exists, returns their info. If no local match is found, attempts to resolve the user from the external data provider, creates a local user record, and persists the credential for future lookups.
+
+**Required Permission:** `users.get`
+
+**Request Body:**
+```json
+{
+  "value": "123456789"
+}
+```
+
+**Fields:**
+- `value` (string, required): The credential value to look up (e.g. card number)
+
+**Example:**
+```bash
+curl -X POST "https://your-domain.com/api/rest/users/credential/lookup" \
+  -H "X-API-Key: your_api_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "123456789"}'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "username": "jsmith3",
+    "name": "John Smith",
+    "email": "jsmith3@gatech.edu",
+    "slackUsername": null,
+    "roles": ["member"],
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-15T12:30:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request` — Invalid credential value
+- `404 Not Found` — No user found for the provided credential
+
+---
+
+### Add Credential to User
+**`POST /api/rest/users/:username/credentials`**
+
+Add a credential (e.g. card number) to a user. The credential value is hashed before storage; only a preview (last 4 characters) is retained in plain text.
+
+**Required Permission:** `credentials.create`
+
+**Request Body:**
+```json
+{
+  "value": "123456789"
+}
+```
+
+**Fields:**
+- `value` (string, required): The credential value to associate with the user
+
+**Example:**
+```bash
+curl -X POST "https://your-domain.com/api/rest/users/jsmith3/credentials" \
+  -H "X-API-Key: your_api_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "123456789"}'
+```
+
+**Response:** (HTTP 201)
+```json
+{
+  "success": true,
+  "data": {
+    "id": 42,
+    "preview": "6789",
+    "createdAt": "2025-01-15T12:30:00.000Z",
+    "updatedAt": "2025-01-15T12:30:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- `404 Not Found` — User not found
+- `409 Conflict` — Credential already associated with this or another user
+
+---
+
+### Remove Credential from User
+**`DELETE /api/rest/users/:username/credentials/:credentialId`**
+
+Remove a specific credential from a user.
+
+**Required Permission:** `credentials.delete`
+
+**Example:**
+```bash
+curl -X DELETE "https://your-domain.com/api/rest/users/jsmith3/credentials/42" \
+  -H "X-API-Key: your_api_token_here"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "deleted": true
+  }
+}
+```
+
+**Error Responses:**
+- `404 Not Found` — User or credential not found
+
+---
+
 ### Bulk Upsert Users
 **`POST /api/rest/users/bulk/upsert`**
 
