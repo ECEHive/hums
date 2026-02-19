@@ -3,9 +3,12 @@ import type { ApiToken } from "@ecehive/prisma";
 export type ApiTokenDTO = Omit<ApiToken, "hashedKey"> & {
 	preview: string;
 	isExpired: boolean;
+	permissions: { id: number; name: string }[];
 };
 
-export function toApiTokenDTO(token: ApiToken): ApiTokenDTO {
+export function toApiTokenDTO(
+	token: ApiToken & { permissions?: { id: number; name: string }[] },
+): ApiTokenDTO {
 	return {
 		id: token.id,
 		name: token.name,
@@ -18,5 +21,9 @@ export function toApiTokenDTO(token: ApiToken): ApiTokenDTO {
 		updatedAt: token.updatedAt,
 		preview: `${token.prefix}…`,
 		isExpired: Boolean(token.expiresAt && token.expiresAt < new Date()),
+		permissions: (token.permissions ?? []).map((p) => ({
+			id: p.id,
+			name: p.name,
+		})),
 	};
 }

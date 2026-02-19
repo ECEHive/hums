@@ -10,4 +10,5 @@ export type ApiTokenRow = {
 	createdAt: Date;
 	updatedAt: Date;
 	isExpired: boolean;
+	permissions: { id: number; name: string }[];
 };

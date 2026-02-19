@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
+import { requirePermission } from "../shared/permissions";
 import {
 	bulkResponse,
 	listResponse,
@@ -194,6 +195,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk upsert users (create or update)
 	fastify.post("/bulk/upsert", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.create")) return;
+
 		const parsed = BulkUpsertUsersSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -350,6 +353,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk create users
 	fastify.post("/bulk/create", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.create")) return;
+
 		const parsed = BulkCreateUsersSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -491,6 +496,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk role operations (set, add, remove)
 	fastify.post("/bulk/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const parsed = BulkRoleOperationsSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -684,6 +691,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 	// If user exists with this card, return their info
 	// If not, attempt to find and create user from external data provider
 	fastify.get("/card/:cardNumber", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.get")) return;
+
 		const parsed = CardNumberParamsSchema.safeParse(request.params);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -729,6 +738,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// List all users
 	fastify.get("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.list")) return;
+
 		const parsed = ListUsersQuerySchema.safeParse(request.query);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -786,6 +797,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Get a specific user by username
 	fastify.get("/:username", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.get")) return;
+
 		const parsed = UsernameParamsSchema.safeParse(request.params);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -805,6 +818,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Create a new user
 	fastify.post("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.create")) return;
+
 		const parsed = CreateUserSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -847,6 +862,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Update a user
 	fastify.patch("/:username", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);
@@ -911,6 +928,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Add roles to a user
 	fastify.post("/:username/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);
@@ -956,6 +975,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Remove roles from a user
 	fastify.delete("/:username/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);
@@ -1001,6 +1022,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Replace all roles for a user
 	fastify.put("/:username/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);

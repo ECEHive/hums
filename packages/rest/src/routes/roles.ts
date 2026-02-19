@@ -2,6 +2,7 @@ import { Prisma, prisma } from "@ecehive/prisma";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
+import { requirePermission } from "../shared/permissions";
 import {
 	bulkResponse,
 	listResponse,
@@ -174,6 +175,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk create roles
 	fastify.post("/bulk/create", async (request, reply) => {
+		if (await requirePermission(request, reply, "roles.create")) return;
+
 		const parsed = BulkCreateRolesSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -329,6 +332,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk update roles
 	fastify.post("/bulk/update", async (request, reply) => {
+		if (await requirePermission(request, reply, "roles.update")) return;
+
 		const parsed = BulkUpdateRolesSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -485,6 +490,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// List all roles
 	fastify.get("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "roles.list")) return;
+
 		const parsed = ListRolesQuerySchema.safeParse(request.query);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -523,6 +530,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Get a specific role by name
 	fastify.get("/:name", async (request, reply) => {
+		if (await requirePermission(request, reply, "roles.get")) return;
+
 		const parsed = RoleNameParamsSchema.safeParse(request.params);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -542,6 +551,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Create a new role
 	fastify.post("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "roles.create")) return;
+
 		const parsed = CreateRoleSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -589,6 +600,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Update a role
 	fastify.patch("/:name", async (request, reply) => {
+		if (await requirePermission(request, reply, "roles.update")) return;
+
 		const params = RoleNameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);
@@ -662,6 +675,8 @@ export const rolesRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Delete a role
 	fastify.delete("/:name", async (request, reply) => {
+		if (await requirePermission(request, reply, "roles.delete")) return;
+
 		const parsed = RoleNameParamsSchema.safeParse(request.params);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
