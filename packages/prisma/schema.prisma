@@ -52,11 +52,12 @@ model Role {
 }
 
 model Permission {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  roles     Role[]   @relation("PermissionToRole")
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  roles     Role[]     @relation("PermissionToRole")
+  apiTokens ApiToken[] @relation("ApiTokenToPermission")
 }
 
 model Period {
@@ -216,17 +217,18 @@ model UserAgreement {
 }
 
 model ApiToken {
-  id          Int        @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
   description String?
-  prefix      String     @unique
-  hashedKey   String     @unique
+  prefix      String       @unique
+  hashedKey   String       @unique
   createdById Int?
   expiresAt   DateTime?
   lastUsedAt  DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @default(now()) @updatedAt
-  createdBy   User?      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  permissions Permission[] @relation("ApiTokenToPermission")
   auditLogs   AuditLog[]
 }
 
@@ -461,6 +463,7 @@ model ControlPoint {
   authorizedUsers     User[]            @relation("ControlPointUsers")
   controlLogs         ControlLog[]
   devices             Device[]          @relation("DeviceControlPoints")
+  gatewayActions      ControlGatewayAction[]
 
   @@index([providerId])
 }
@@ -498,11 +501,42 @@ enum ControlAction {
   READ_STATE
 }
 
+// ===== Control Gateways =====
+
+model ControlGateway {
+  id          Int                    @id @default(autoincrement())
+  name        String
+  description String?
+  accessToken String                 @unique
+  isActive    Boolean                @default(true)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @default(now()) @updatedAt
+  actions     ControlGatewayAction[]
+
+  @@index([accessToken])
+}
+
+model ControlGatewayAction {
+  id             Int              @id @default(autoincrement())
+  gatewayId      Int
+  controlPointId String
+  action         ControlAction
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+  gateway        ControlGateway   @relation(fields: [gatewayId], references: [id], onDelete: Cascade)
+  controlPoint   ControlPoint     @relation(fields: [controlPointId], references: [id], onDelete: Cascade)
+
+  @@unique([gatewayId, controlPointId, action])
+  @@index([gatewayId])
+  @@index([controlPointId])
+}
+
 // ===== Credentials =====
 
 model Credential {
   id        Int      @id @default(autoincrement())
-  value     String   @unique
+  hash      String   @unique
+  preview   String
   userId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

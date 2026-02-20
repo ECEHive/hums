@@ -6,6 +6,24 @@
  */
 
 import { permissionProtectedProcedure, router } from "../../trpc";
+// Gateway routes
+import {
+	createGatewayHandler,
+	ZCreateGatewaySchema,
+} from "./gateways/create.route";
+import {
+	deleteGatewayHandler,
+	ZDeleteGatewaySchema,
+} from "./gateways/delete.route";
+import { getGatewayHandler, ZGetGatewaySchema } from "./gateways/get.route";
+import {
+	listGatewaysHandler,
+	ZListGatewaysSchema,
+} from "./gateways/list.route";
+import {
+	updateGatewayHandler,
+	ZUpdateGatewaySchema,
+} from "./gateways/update.route";
 // Log routes
 import { listLogsHandler, ZListLogsSchema } from "./logs/list.route";
 // Control point routes
@@ -90,5 +108,24 @@ export const controlRouter = router({
 		list: permissionProtectedProcedure("control.logs.list")
 			.input(ZListLogsSchema)
 			.query(listLogsHandler),
+	}),
+
+	// Control Gateways
+	gateways: router({
+		list: permissionProtectedProcedure("control.gateways.list")
+			.input(ZListGatewaysSchema)
+			.query(listGatewaysHandler),
+		get: permissionProtectedProcedure("control.gateways.get")
+			.input(ZGetGatewaySchema)
+			.query(getGatewayHandler),
+		create: permissionProtectedProcedure("control.gateways.create")
+			.input(ZCreateGatewaySchema)
+			.mutation(createGatewayHandler),
+		update: permissionProtectedProcedure("control.gateways.update")
+			.input(ZUpdateGatewaySchema)
+			.mutation(updateGatewayHandler),
+		delete: permissionProtectedProcedure("control.gateways.delete")
+			.input(ZDeleteGatewaySchema)
+			.mutation(deleteGatewayHandler),
 	}),
 });

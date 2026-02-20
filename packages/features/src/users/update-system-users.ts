@@ -1,6 +1,7 @@
 import { env } from "@ecehive/env";
 import { prisma } from "@ecehive/prisma";
 import { normalizeCardNumber } from "@ecehive/user-data";
+import { credentialPreview, hashCredential } from "../credentials/hash";
 import { createUser } from "./create-user";
 import { fetchUserInfo } from "./fetch-user-info";
 
@@ -41,10 +42,12 @@ export async function updateSystemUsers() {
 			if (userInfo.cardNumber) {
 				const normalized = normalizeCardNumber(userInfo.cardNumber);
 				if (normalized) {
+					const hash = hashCredential(normalized);
+					const preview = credentialPreview(normalized);
 					await prisma.credential.upsert({
-						where: { value: normalized },
+						where: { hash },
 						update: { userId: existingUser.id },
-						create: { value: normalized, userId: existingUser.id },
+						create: { hash, preview, userId: existingUser.id },
 					});
 				}
 			}
@@ -61,10 +64,12 @@ export async function updateSystemUsers() {
 			if (userInfo.cardNumber) {
 				const normalized = normalizeCardNumber(userInfo.cardNumber);
 				if (normalized) {
+					const hash = hashCredential(normalized);
+					const preview = credentialPreview(normalized);
 					await prisma.credential.upsert({
-						where: { value: normalized },
+						where: { hash },
 						update: { userId: newUser.id },
-						create: { value: normalized, userId: newUser.id },
+						create: { hash, preview, userId: newUser.id },
 					});
 				}
 			}

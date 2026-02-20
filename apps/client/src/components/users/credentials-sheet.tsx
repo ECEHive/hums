@@ -21,7 +21,7 @@ import { checkPermissions } from "@/lib/permissions";
 
 type Credential = {
 	id: number;
-	value: string;
+	preview: string;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -51,8 +51,10 @@ export function CredentialsSheet({
 	const currentUser = useAuth().user;
 	const canView =
 		currentUser && checkPermissions(currentUser, ["credentials.list"]);
-	const canEdit =
-		currentUser && checkPermissions(currentUser, ["credentials.update"]);
+	const canCreate =
+		currentUser && checkPermissions(currentUser, ["credentials.create"]);
+	const canDelete =
+		currentUser && checkPermissions(currentUser, ["credentials.delete"]);
 
 	const fetchCredentials = useCallback(async () => {
 		if (!canView) return;
@@ -164,10 +166,10 @@ export function CredentialsSheet({
 											variant="secondary"
 											className="font-mono text-xs truncate"
 										>
-											{cred.value}
+											•••••{cred.preview}
 										</Badge>
 									</div>
-									{canEdit && (
+									{canDelete && (
 										<Button
 											type="button"
 											variant="ghost"
@@ -175,7 +177,7 @@ export function CredentialsSheet({
 											className="shrink-0 text-destructive hover:text-destructive"
 											disabled={deletingId === cred.id}
 											onClick={() => handleDelete(cred.id)}
-											aria-label={`Delete credential ${cred.value}`}
+											aria-label={`Delete credential ending in ${cred.preview}`}
 										>
 											{deletingId === cred.id ? (
 												<Spinner />
@@ -193,7 +195,7 @@ export function CredentialsSheet({
 				</div>
 
 				<SheetFooter>
-					{canEdit && (
+					{canCreate && (
 						<div className="flex w-full gap-2">
 							<Input
 								placeholder="Add credential value"

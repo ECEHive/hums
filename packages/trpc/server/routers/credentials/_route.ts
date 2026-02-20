@@ -7,10 +7,10 @@ export const credentialsRouter = router({
 	list: permissionProtectedProcedure("credentials.list")
 		.input(ZListSchema)
 		.query(listHandler),
-	create: permissionProtectedProcedure("credentials.update")
+	create: permissionProtectedProcedure("credentials.create")
 		.input(ZCreateSchema)
 		.mutation(createHandler),
-	delete: permissionProtectedProcedure("credentials.update")
+	delete: permissionProtectedProcedure("credentials.delete")
 		.input(ZDeleteSchema)
 		.mutation(deleteHandler),
 });

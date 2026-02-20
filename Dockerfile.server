@@ -91,7 +91,7 @@ RUN chown -R bun:bun /app
 
 USER bun
 
-CMD ["bun", "x", "prisma", "migrate", "deploy"]
+CMD ["bun", "run", "migrate-deploy.ts"]
 
 # =============================================================================
 # Production Server Image

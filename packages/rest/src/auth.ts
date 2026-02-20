@@ -1,11 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { AuditLogger } from "@ecehive/features";
+import type { ApiTokenWithPermissions, AuditLogger } from "@ecehive/features";
 import {
 	ConfigService,
 	createAuditLogger,
 	verifyApiToken,
 } from "@ecehive/features";
-import type { ApiToken, User } from "@ecehive/prisma";
+import type { User } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { slackError } from "./shared/validation";
@@ -245,7 +245,7 @@ export function registerAuthGuard(instance: FastifyInstance) {
 
 declare module "fastify" {
 	interface FastifyRequest {
-		apiToken?: ApiToken;
+		apiToken?: ApiTokenWithPermissions;
 		audit?: AuditLogger;
 		rawBody?: string;
 		user?: User;

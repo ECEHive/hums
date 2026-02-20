@@ -1,12 +1,13 @@
 {
 	"name": "@ecehive/prisma",
-	"version": "3.2.0",
+	"version": "3.3.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
 		"generate": "prisma generate",
 		"migrate": "prisma migrate deploy",
 		"migrate:dev": "prisma migrate dev",
+		"migrate:deploy": "bun ./migrate-deploy.ts",
 		"reset": "prisma migrate reset",
 		"typecheck": "tsc --noEmit"
 	},

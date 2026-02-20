@@ -11,6 +11,7 @@ import { useCallback, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
 import { createTokenColumns } from "@/components/api-tokens/columns";
+import { RenameTokenDialog } from "@/components/api-tokens/rename-dialog";
 import type { ApiTokenRow } from "@/components/api-tokens/types";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
@@ -128,11 +129,14 @@ function ApiTokensPage() {
 		() =>
 			createTokenColumns({
 				renderActions: (token) => (
-					<DeleteTokenButton
-						token={token}
-						onConfirm={() => handleDelete(token.id)}
-						disabled={!canDelete || deleteMutation.isPending}
-					/>
+					<>
+						<RenameTokenDialog token={token} />
+						<DeleteTokenButton
+							token={token}
+							onConfirm={() => handleDelete(token.id)}
+							disabled={!canDelete || deleteMutation.isPending}
+						/>
+					</>
 				),
 			}),
 		[canDelete, deleteMutation.isPending, handleDelete],

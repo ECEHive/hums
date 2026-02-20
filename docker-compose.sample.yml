@@ -32,6 +32,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://hums:${DB_PASSWORD:-changeme}@db:5432/hums
+      CREDENTIAL_HMAC_SECRET: ${CREDENTIAL_HMAC_SECRET}
     networks:
       - hums-network
 

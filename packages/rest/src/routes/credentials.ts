@@ -1,58 +1,16 @@
-import type { User } from "@ecehive/prisma";
+import { credentialPreview, hashCredential } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { normalizeCardNumber } from "@ecehive/user-data";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
+import { requirePermission } from "../shared/permissions";
 import { listResponse, successResponse } from "../shared/responses";
 import {
 	conflictError,
 	notFoundError,
 	validationError,
 } from "../shared/validation";
-
-// ===== Helper Functions =====
-
-/**
- * Check if a user (from Slack auth or API token) has a specific permission.
- * System users bypass all permission checks.
- */
-async function hasPermission(
-	userId: number,
-	permissionName: string,
-): Promise<boolean> {
-	const user = await prisma.user.findUnique({
-		where: { id: userId },
-		include: {
-			roles: {
-				include: {
-					permissions: {
-						where: { name: permissionName },
-						select: { name: true },
-					},
-				},
-			},
-		},
-	});
-
-	if (!user) return false;
-	if (user.isSystemUser) return true;
-
-	// Check if user has the permission through any role
-	return user.roles.some((role) => role.permissions.length > 0);
-}
-
-/**
- * Get user ID from request (handles both Slack and API token auth).
- */
-function getUserId(request: {
-	user?: User;
-	apiToken?: { createdById: number | null };
-}): number | null {
-	if (request.user) return request.user.id;
-	if (request.apiToken?.createdById) return request.apiToken.createdById;
-	return null;
-}
 
 // ===== Validation Schemas =====
 
@@ -77,15 +35,15 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 		"/:userId/credentials",
 		async (request, reply) => {
 			// Check permissions
-			const requestUserId = getUserId(request);
 			if (
-				!requestUserId ||
-				!(await hasPermission(requestUserId, "credentials.list"))
+				await requirePermission(
+					request,
+					reply,
+					"credentials.list",
+					"You do not have permission to list credentials",
+				)
 			) {
-				return reply.code(403).send({
-					error: "forbidden",
-					message: "You do not have permission to list credentials",
-				});
+				return;
 			}
 
 			const params = UserIdParamsSchema.safeParse(request.params);
@@ -103,7 +61,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 			const credentials = await prisma.credential.findMany({
 				where: { userId },
 				orderBy: { createdAt: "desc" },
-				select: { id: true, value: true, createdAt: true, updatedAt: true },
+				select: { id: true, preview: true, createdAt: true, updatedAt: true },
 			});
 
 			return listResponse(credentials);
@@ -115,15 +73,15 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 		"/:userId/credentials",
 		async (request, reply) => {
 			// Check permissions
-			const requestUserId = getUserId(request);
 			if (
-				!requestUserId ||
-				!(await hasPermission(requestUserId, "credentials.update"))
+				await requirePermission(
+					request,
+					reply,
+					"credentials.create",
+					"You do not have permission to create credentials",
+				)
 			) {
-				return reply.code(403).send({
-					error: "forbidden",
-					message: "You do not have permission to create credentials",
-				});
+				return;
 			}
 
 			const params = UserIdParamsSchema.safeParse(request.params);
@@ -139,6 +97,8 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 			const { userId } = params.data;
 			const normalized =
 				normalizeCardNumber(body.data.value) ?? body.data.value.trim();
+			const hash = hashCredential(normalized);
+			const preview = credentialPreview(normalized);
 
 			const user = await prisma.user.findUnique({ where: { id: userId } });
 			if (!user) {
@@ -146,7 +106,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 			}
 
 			const existing = await prisma.credential.findUnique({
-				where: { value: normalized },
+				where: { hash },
 			});
 			if (existing) {
 				return conflictError(
@@ -159,7 +119,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 
 			try {
 				const credential = await prisma.credential.create({
-					data: { value: normalized, userId },
+					data: { hash, preview, userId },
 				});
 
 				await logRestAction(request, "credentials.create", {
@@ -169,7 +129,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 
 				return successResponse({
 					id: credential.id,
-					value: credential.value,
+					preview: credential.preview,
 					createdAt: credential.createdAt,
 					updatedAt: credential.updatedAt,
 				});
@@ -183,7 +143,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 				) {
 					// Re-check ownership
 					const nowExisting = await prisma.credential.findUnique({
-						where: { value: normalized },
+						where: { hash },
 					});
 					return conflictError(
 						reply,
@@ -202,15 +162,15 @@ export const credentialsRoutes: FastifyPluginAsync = async (fastify) => {
 		Params: { userId: string; credentialId: string };
 	}>("/:userId/credentials/:credentialId", async (request, reply) => {
 		// Check permissions
-		const requestUserId = getUserId(request);
 		if (
-			!requestUserId ||
-			!(await hasPermission(requestUserId, "credentials.update"))
+			await requirePermission(
+				request,
+				reply,
+				"credentials.delete",
+				"You do not have permission to delete credentials",
+			)
 		) {
-			return reply.code(403).send({
-				error: "forbidden",
-				message: "You do not have permission to delete credentials",
-			});
+			return;
 		}
 
 		const params = CredentialIdParamsSchema.safeParse(request.params);

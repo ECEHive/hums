@@ -1,9 +1,16 @@
-import { createUser, findUserByCard } from "@ecehive/features";
+import {
+	createUser,
+	credentialPreview,
+	findUserByCard,
+	hashCredential,
+} from "@ecehive/features";
 import { Prisma, prisma } from "@ecehive/prisma";
+import { normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { logRestAction } from "../shared/audit";
+import { requirePermission } from "../shared/permissions";
 import {
 	bulkResponse,
 	listResponse,
@@ -15,6 +22,15 @@ import {
 	notFoundError,
 	validationError,
 } from "../shared/validation";
+
+const CreateCredentialSchema = z.object({
+	value: z.string().trim().min(1, "Credential value is required"),
+});
+
+const CredentialIdParamsSchema = z.object({
+	username: z.string().trim().min(1),
+	credentialId: z.coerce.number().int().min(1),
+});
 
 // ===== Validation Schemas =====
 
@@ -106,10 +122,6 @@ const RoleOperationSchema = z.object({
 	roles: z.array(z.string().trim().min(1)).min(1),
 });
 
-const CardNumberParamsSchema = z.object({
-	cardNumber: z.string().trim().min(1),
-});
-
 // ===== Helper Types =====
 
 type UserWithRoles = Prisma.UserGetPayload<{ include: { roles: true } }>;
@@ -194,6 +206,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk upsert users (create or update)
 	fastify.post("/bulk/upsert", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.create")) return;
+
 		const parsed = BulkUpsertUsersSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -350,6 +364,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk create users
 	fastify.post("/bulk/create", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.create")) return;
+
 		const parsed = BulkCreateUsersSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -491,6 +507,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Bulk role operations (set, add, remove)
 	fastify.post("/bulk/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const parsed = BulkRoleOperationsSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -678,23 +696,22 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		return bulkResponse([], updated, failed);
 	});
 
-	// ===== Card Number Lookup =====
+	// ===== Credential Operations =====
 
-	// Get or create user by card number (like kiosk tap-in)
-	// If user exists with this card, return their info
+	// Find user by credential value (e.g. card number)
+	// If user exists with this credential, return their info
 	// If not, attempt to find and create user from external data provider
-	fastify.get("/card/:cardNumber", async (request, reply) => {
-		const parsed = CardNumberParamsSchema.safeParse(request.params);
-		if (!parsed.success) {
-			return validationError(reply, parsed.error);
+	fastify.post("/credential/lookup", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.get")) return;
+
+		const body = CreateCredentialSchema.safeParse(request.body);
+		if (!body.success) {
+			return validationError(reply, body.error);
 		}
 
-		console.log("Looking up user by card number:", parsed.data.cardNumber);
-
 		try {
-			const user = await findUserByCard(parsed.data.cardNumber);
+			const user = await findUserByCard(body.data.value);
 
-			// Fetch user with roles for serialization
 			const userWithRoles = await prisma.user.findUnique({
 				where: { id: user.id },
 				include: { roles: true },
@@ -704,10 +721,9 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 				return notFoundError(reply, "User");
 			}
 
-			await logRestAction(request, "rest.users.card.lookup", {
+			await logRestAction(request, "rest.users.credential.lookup", {
 				userId: user.id,
 				username: user.username,
-				cardNumber: parsed.data.cardNumber,
 			});
 
 			return successResponse(serializeUser(userWithRoles));
@@ -717,7 +733,7 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 					return badRequestError(reply, error.message);
 				}
 				if (error.code === "NOT_FOUND") {
-					return notFoundError(reply, "User", `card:${parsed.data.cardNumber}`);
+					return notFoundError(reply, "User");
 				}
 			}
 
@@ -725,10 +741,131 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 		}
 	});
 
+	// Add a credential to a user
+	fastify.post("/:username/credentials", async (request, reply) => {
+		if (await requirePermission(request, reply, "credentials.create")) return;
+
+		const params = UsernameParamsSchema.safeParse(request.params);
+		if (!params.success) {
+			return validationError(reply, params.error);
+		}
+
+		const body = CreateCredentialSchema.safeParse(request.body);
+		if (!body.success) {
+			return validationError(reply, body.error);
+		}
+
+		const user = await prisma.user.findUnique({
+			where: { username: params.data.username },
+		});
+
+		if (!user) {
+			return notFoundError(reply, "User", params.data.username);
+		}
+
+		const normalized =
+			normalizeCardNumber(body.data.value) ?? body.data.value.trim();
+		const hash = hashCredential(normalized);
+		const preview = credentialPreview(normalized);
+
+		const existing = await prisma.credential.findUnique({
+			where: { hash },
+		});
+		if (existing) {
+			return conflictError(
+				reply,
+				existing.userId === user.id
+					? "This credential is already associated with this user"
+					: "This credential is already associated with another user",
+			);
+		}
+
+		try {
+			const credential = await prisma.credential.create({
+				data: { hash, preview, userId: user.id },
+			});
+
+			await logRestAction(request, "rest.users.credentials.create", {
+				userId: user.id,
+				username: user.username,
+				credentialId: credential.id,
+			});
+
+			return reply.code(201).send(
+				successResponse({
+					id: credential.id,
+					preview: credential.preview,
+					createdAt: credential.createdAt,
+					updatedAt: credential.updatedAt,
+				}),
+			);
+		} catch (error) {
+			if (
+				error instanceof Error &&
+				"code" in error &&
+				(error as { code: string }).code === "P2002"
+			) {
+				const nowExisting = await prisma.credential.findUnique({
+					where: { hash },
+				});
+				return conflictError(
+					reply,
+					nowExisting?.userId === user.id
+						? "This credential is already associated with this user"
+						: "This credential is already associated with another user",
+				);
+			}
+			throw error;
+		}
+	});
+
+	// Remove a credential from a user
+	fastify.delete(
+		"/:username/credentials/:credentialId",
+		async (request, reply) => {
+			if (await requirePermission(request, reply, "credentials.delete")) return;
+
+			const params = CredentialIdParamsSchema.safeParse(request.params);
+			if (!params.success) {
+				return validationError(reply, params.error);
+			}
+
+			const user = await prisma.user.findUnique({
+				where: { username: params.data.username },
+			});
+
+			if (!user) {
+				return notFoundError(reply, "User", params.data.username);
+			}
+
+			const credential = await prisma.credential.findUnique({
+				where: { id: params.data.credentialId },
+			});
+
+			if (!credential || credential.userId !== user.id) {
+				return notFoundError(reply, "Credential not found");
+			}
+
+			await prisma.credential.delete({
+				where: { id: params.data.credentialId },
+			});
+
+			await logRestAction(request, "rest.users.credentials.delete", {
+				userId: user.id,
+				username: user.username,
+				credentialId: params.data.credentialId,
+			});
+
+			return successResponse({ deleted: true });
+		},
+	);
+
 	// ===== Standard Operations =====
 
 	// List all users
 	fastify.get("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.list")) return;
+
 		const parsed = ListUsersQuerySchema.safeParse(request.query);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -786,6 +923,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Get a specific user by username
 	fastify.get("/:username", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.get")) return;
+
 		const parsed = UsernameParamsSchema.safeParse(request.params);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -805,6 +944,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Create a new user
 	fastify.post("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.create")) return;
+
 		const parsed = CreateUserSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return validationError(reply, parsed.error);
@@ -847,6 +988,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Update a user
 	fastify.patch("/:username", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);
@@ -911,6 +1054,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Add roles to a user
 	fastify.post("/:username/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);
@@ -956,6 +1101,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Remove roles from a user
 	fastify.delete("/:username/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);
@@ -1001,6 +1148,8 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
 
 	// Replace all roles for a user
 	fastify.put("/:username/roles", async (request, reply) => {
+		if (await requirePermission(request, reply, "users.update")) return;
+
 		const params = UsernameParamsSchema.safeParse(request.params);
 		if (!params.success) {
 			return validationError(reply, params.error);

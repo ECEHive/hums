@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { formatInAppTimezone } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
+import { EditTokenPermissionsSheet } from "./edit-permissions-sheet";
 import type { ApiTokenRow } from "./types";
 
 export function createTokenColumns(options: {
 	renderActions?: (token: ApiTokenRow) => ReactNode;
+	canEditPermissions?: boolean;
 }): ColumnDef<ApiTokenRow>[] {
 	return [
 		{
@@ -37,6 +39,11 @@ export function createTokenColumns(options: {
 					{row.original.isExpired ? "Expired" : "Active"}
 				</Badge>
 			),
+		},
+		{
+			id: "permissions",
+			header: "Permissions",
+			cell: ({ row }) => <EditTokenPermissionsSheet token={row.original} />,
 		},
 		{
 			accessorKey: "lastUsedAt",
