@@ -463,6 +463,7 @@ model ControlPoint {
   authorizedUsers     User[]            @relation("ControlPointUsers")
   controlLogs         ControlLog[]
   devices             Device[]          @relation("DeviceControlPoints")
+  gatewayActions      ControlGatewayAction[]
 
   @@index([providerId])
 }
@@ -498,6 +499,36 @@ enum ControlAction {
   TURN_OFF
   UNLOCK
   READ_STATE
+}
+
+// ===== Control Gateways =====
+
+model ControlGateway {
+  id          Int                    @id @default(autoincrement())
+  name        String
+  description String?
+  accessToken String                 @unique
+  isActive    Boolean                @default(true)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @default(now()) @updatedAt
+  actions     ControlGatewayAction[]
+
+  @@index([accessToken])
+}
+
+model ControlGatewayAction {
+  id             Int              @id @default(autoincrement())
+  gatewayId      Int
+  controlPointId String
+  action         ControlAction
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+  gateway        ControlGateway   @relation(fields: [gatewayId], references: [id], onDelete: Cascade)
+  controlPoint   ControlPoint     @relation(fields: [controlPointId], references: [id], onDelete: Cascade)
+
+  @@unique([gatewayId, controlPointId, action])
+  @@index([gatewayId])
+  @@index([controlPointId])
 }
 
 // ===== Credentials =====

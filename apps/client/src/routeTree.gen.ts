@@ -44,6 +44,7 @@ import { Route as AppInventoryItemsRouteImport } from './routes/app/inventory/it
 import { Route as AppControlProvidersRouteImport } from './routes/app/control/providers'
 import { Route as AppControlPointsRouteImport } from './routes/app/control/points'
 import { Route as AppControlLogsRouteImport } from './routes/app/control/logs'
+import { Route as AppControlGatewaysRouteImport } from './routes/app/control/gateways'
 import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
@@ -245,6 +246,11 @@ const AppControlLogsRoute = AppControlLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => AppControlRoute,
 } as any)
+const AppControlGatewaysRoute = AppControlGatewaysRouteImport.update({
+  id: '/gateways',
+  path: '/gateways',
+  getParentRoute: () => AppControlRoute,
+} as any)
 const AppAppUsersRoute = AppAppUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -379,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
   '/app/control/providers': typeof AppControlProvidersRoute
@@ -432,6 +439,7 @@ export interface FileRoutesByTo {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
   '/app/control/providers': typeof AppControlProvidersRoute
@@ -488,6 +496,7 @@ export interface FileRoutesById {
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
   '/app/_app/users': typeof AppAppUsersRoute
+  '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
   '/app/control/providers': typeof AppControlProvidersRoute
@@ -547,6 +556,7 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
     | '/app/control/providers'
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
     | '/app/control/providers'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
     | '/app/_app/users'
+    | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
     | '/app/control/providers'
@@ -947,6 +959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppControlLogsRouteImport
       parentRoute: typeof AppControlRoute
     }
+    '/app/control/gateways': {
+      id: '/app/control/gateways'
+      path: '/gateways'
+      fullPath: '/app/control/gateways'
+      preLoaderRoute: typeof AppControlGatewaysRouteImport
+      parentRoute: typeof AppControlRoute
+    }
     '/app/_app/users': {
       id: '/app/_app/users'
       path: '/users'
@@ -1135,6 +1154,7 @@ const AppAppRouteWithChildren =
   AppAppRoute._addFileChildren(AppAppRouteChildren)
 
 interface AppControlRouteChildren {
+  AppControlGatewaysRoute: typeof AppControlGatewaysRoute
   AppControlLogsRoute: typeof AppControlLogsRoute
   AppControlPointsRoute: typeof AppControlPointsRoute
   AppControlProvidersRoute: typeof AppControlProvidersRoute
@@ -1142,6 +1162,7 @@ interface AppControlRouteChildren {
 }
 
 const AppControlRouteChildren: AppControlRouteChildren = {
+  AppControlGatewaysRoute: AppControlGatewaysRoute,
   AppControlLogsRoute: AppControlLogsRoute,
   AppControlPointsRoute: AppControlPointsRoute,
   AppControlProvidersRoute: AppControlProvidersRoute,

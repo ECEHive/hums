@@ -8,6 +8,7 @@
 
 - [Periods](./periods.md)
 - [Attendance Tracking](./attendance-tracking.md)
+- [Control Gateways](./control-gateways.md)
 
 ## Usage
 
