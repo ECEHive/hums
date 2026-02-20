@@ -7,16 +7,16 @@ import { createServer } from "./fastify";
 const logger = getLogger("server:startup");
 
 Promise.resolve()
-	.then(() => {
+	.then(async () => {
 		logger.info("Starting server initialization");
-		return updateSystemUsers();
-	})
-	.then(() => {
-		logger.info("System users synchronized");
-	})
-	.catch((err) => {
-		logger.fatal("Failed to update system users", { error: err.message });
-		process.exit(1);
+		try {
+			await updateSystemUsers();
+			logger.info("System users synchronized");
+		} catch (err) {
+			logger.warn("Failed to update system users, skipping", {
+				error: err instanceof Error ? err.message : String(err),
+			});
+		}
 	})
 	.then(() => workers.start())
 	.then(() => {
