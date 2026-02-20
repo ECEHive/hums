@@ -22,6 +22,7 @@ import {
 	LaptopMinimalCheckIcon,
 	LayoutDashboardIcon,
 	ListIcon,
+	NetworkIcon,
 	NotebookTextIcon,
 	PackageIcon,
 	PackageSearchIcon,
@@ -364,6 +365,13 @@ export const appModules: AppModule[] = [
 						icon: PlugZapIcon,
 						permissions: ["control.providers.list"],
 						description: "Manage control providers",
+					},
+					{
+						title: "Gateways",
+						url: "/app/control/gateways",
+						icon: NetworkIcon,
+						permissions: ["control.gateways.list"],
+						description: "Manage control gateways",
 					},
 					{
 						title: "Logs",

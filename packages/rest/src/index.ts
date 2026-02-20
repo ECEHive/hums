@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { registerAuthGuard } from "./auth";
+import { controlGatewayRoutes } from "./routes/control-gateways";
 import { controlPointsRoutes } from "./routes/control-points";
 import { openHoursRoutes } from "./routes/open-hours";
 import { rolesRoutes } from "./routes/roles";
@@ -27,6 +28,11 @@ export const restApiRoute: FastifyPluginAsync = async (fastify) => {
 	// These routes are registered before the auth guard is applied
 	fastify.register(openHoursRoutes, {
 		prefix: "/open-hours",
+	});
+
+	// Control gateway invocation uses its own access token authentication
+	fastify.register(controlGatewayRoutes, {
+		prefix: "/control/gateways",
 	});
 
 	// ===== Protected Routes (authentication required) =====
