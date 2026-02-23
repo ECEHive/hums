@@ -5,6 +5,7 @@ import {
 } from "../../trpc";
 import { bulkCreateHandler, ZBulkCreateSchema } from "./bulkCreate.route";
 import { bulkDeleteHandler, ZBulkDeleteSchema } from "./bulkDelete.route";
+import { bulkRegisterHandler, ZBulkRegisterSchema } from "./bulkRegister.route";
 import { createHandler, ZCreateSchema } from "./create.route";
 import { deleteHandler, ZDeleteSchema } from "./delete.route";
 import {
@@ -100,6 +101,9 @@ export const shiftSchedulesRouter = router({
 		.input(ZForceUnregisterSchema)
 		.mutation(forceUnregisterHandler),
 	register: protectedProcedure.input(ZRegisterSchema).mutation(registerHandler),
+	bulkRegister: protectedProcedure
+		.input(ZBulkRegisterSchema)
+		.mutation(bulkRegisterHandler),
 	unregister: protectedProcedure
 		.input(ZUnregisterSchema)
 		.mutation(unregisterHandler),

@@ -462,3 +462,20 @@ export function applyOptimisticUnregister(
 
 	return applyScheduleDelta(currentData, optimisticEvent, currentUser.id);
 }
+
+/**
+ * Apply optimistic updates for bulk registration.
+ * Applies each registration sequentially so overlap/balancing/max checks
+ * are correctly accumulated.
+ */
+export function applyOptimisticBulkRegister(
+	currentData: SchedulesData,
+	shiftScheduleIds: number[],
+	currentUser: DeltaUser,
+): SchedulesData {
+	let data = currentData;
+	for (const shiftScheduleId of shiftScheduleIds) {
+		data = applyOptimisticRegister(data, shiftScheduleId, currentUser);
+	}
+	return data;
+}
