@@ -5,12 +5,12 @@
     "": {
       "name": "@ecehive/hums",
       "devDependencies": {
-        "@biomejs/biome": "2.3.13",
+        "@biomejs/biome": "2.4.4",
       },
     },
     "apps/client": {
       "name": "@ecehive/client",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -85,7 +85,7 @@
     },
     "apps/control": {
       "name": "@ecehive/control",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -132,7 +132,7 @@
     },
     "apps/inventory": {
       "name": "@ecehive/inventory",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -179,7 +179,7 @@
     },
     "apps/kiosk": {
       "name": "@ecehive/kiosk",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -227,7 +227,7 @@
     },
     "apps/overview": {
       "name": "@ecehive/overview",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-checkbox": "^1.3.3",
@@ -275,7 +275,7 @@
     },
     "apps/server": {
       "name": "@ecehive/server",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
@@ -294,7 +294,7 @@
     },
     "packages/auth": {
       "name": "@ecehive/auth",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -308,7 +308,7 @@
     },
     "packages/card-scanner": {
       "name": "@ecehive/card-scanner",
-      "version": "3.1.0",
+      "version": "3.3.1",
       "dependencies": {
         "tslog": "^4.10.2",
       },
@@ -325,15 +325,15 @@
     },
     "packages/config": {
       "name": "@ecehive/config",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "devDependencies": {
-        "@biomejs/biome": "2.3.13",
+        "@biomejs/biome": "2.4.4",
         "@types/node": "^24.10.1",
       },
     },
     "packages/email": {
       "name": "@ecehive/email",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.966.0",
         "@ecehive/env": "workspace:*",
@@ -354,7 +354,7 @@
     },
     "packages/env": {
       "name": "@ecehive/env",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@types/node": "^24.5.2",
         "zod": "^4.3.5",
@@ -366,7 +366,7 @@
     },
     "packages/features": {
       "name": "@ecehive/features",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
@@ -384,7 +384,7 @@
     },
     "packages/ldap": {
       "name": "@ecehive/ldap",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -397,7 +397,7 @@
     },
     "packages/logger": {
       "name": "@ecehive/logger",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "tslog": "^4.9.3",
       },
@@ -407,7 +407,7 @@
     },
     "packages/prisma": {
       "name": "@ecehive/prisma",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@prisma/adapter-pg": "^7.3.0",
@@ -425,7 +425,7 @@
     },
     "packages/rest": {
       "name": "@ecehive/rest",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/features": "workspace:*",
         "@ecehive/prisma": "workspace:*",
@@ -441,7 +441,7 @@
     },
     "packages/trpc": {
       "name": "@ecehive/trpc",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/auth": "workspace:*",
@@ -464,7 +464,7 @@
     },
     "packages/user-data": {
       "name": "@ecehive/user-data",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
@@ -478,7 +478,7 @@
     },
     "packages/workers": {
       "name": "@ecehive/workers",
-      "version": "3.1.1",
+      "version": "3.3.1",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/email": "workspace:*",
@@ -622,23 +622,23 @@
 
     "@babel/types": ["@babel/types@7.28.5", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA=="],
 
-    "@biomejs/biome": ["@biomejs/biome@2.3.13", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.3.13", "@biomejs/cli-darwin-x64": "2.3.13", "@biomejs/cli-linux-arm64": "2.3.13", "@biomejs/cli-linux-arm64-musl": "2.3.13", "@biomejs/cli-linux-x64": "2.3.13", "@biomejs/cli-linux-x64-musl": "2.3.13", "@biomejs/cli-win32-arm64": "2.3.13", "@biomejs/cli-win32-x64": "2.3.13" }, "bin": { "biome": "bin/biome" } }, "sha512-Fw7UsV0UAtWIBIm0M7g5CRerpu1eKyKAXIazzxhbXYUyMkwNrkX/KLkGI7b+uVDQ5cLUMfOC9vR60q9IDYDstA=="],
+    "@biomejs/biome": ["@biomejs/biome@2.4.4", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.4.4", "@biomejs/cli-darwin-x64": "2.4.4", "@biomejs/cli-linux-arm64": "2.4.4", "@biomejs/cli-linux-arm64-musl": "2.4.4", "@biomejs/cli-linux-x64": "2.4.4", "@biomejs/cli-linux-x64-musl": "2.4.4", "@biomejs/cli-win32-arm64": "2.4.4", "@biomejs/cli-win32-x64": "2.4.4" }, "bin": { "biome": "bin/biome" } }, "sha512-tigwWS5KfJf0cABVd52NVaXyAVv4qpUXOWJ1rxFL8xF1RVoeS2q/LK+FHgYoKMclJCuRoCWAPy1IXaN9/mS61Q=="],
 
-    "@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@2.3.13", "", { "os": "darwin", "cpu": "arm64" }, "sha512-0OCwP0/BoKzyJHnFdaTk/i7hIP9JHH9oJJq6hrSCPmJPo8JWcJhprK4gQlhFzrwdTBAW4Bjt/RmCf3ZZe59gwQ=="],
+    "@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@2.4.4", "", { "os": "darwin", "cpu": "arm64" }, "sha512-jZ+Xc6qvD6tTH5jM6eKX44dcbyNqJHssfl2nnwT6vma6B1sj7ZLTGIk6N5QwVBs5xGN52r3trk5fgd3sQ9We9A=="],
 
-    "@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@2.3.13", "", { "os": "darwin", "cpu": "x64" }, "sha512-AGr8OoemT/ejynbIu56qeil2+F2WLkIjn2d8jGK1JkchxnMUhYOfnqc9sVzcRxpG9Ycvw4weQ5sprRvtb7Yhcw=="],
+    "@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@2.4.4", "", { "os": "darwin", "cpu": "x64" }, "sha512-Dh1a/+W+SUCXhEdL7TiX3ArPTFCQKJTI1mGncZNWfO+6suk+gYA4lNyJcBB+pwvF49uw0pEbUS49BgYOY4hzUg=="],
 
-    "@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@2.3.13", "", { "os": "linux", "cpu": "arm64" }, "sha512-xvOiFkrDNu607MPMBUQ6huHmBG1PZLOrqhtK6pXJW3GjfVqJg0Z/qpTdhXfcqWdSZHcT+Nct2fOgewZvytESkw=="],
+    "@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@2.4.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-V/NFfbWhsUU6w+m5WYbBenlEAz8eYnSqRMDMAW3K+3v0tYVkNyZn8VU0XPxk/lOqNXLSCCrV7FmV/u3SjCBShg=="],
 
-    "@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@2.3.13", "", { "os": "linux", "cpu": "arm64" }, "sha512-TUdDCSY+Eo/EHjhJz7P2GnWwfqet+lFxBZzGHldrvULr59AgahamLs/N85SC4+bdF86EhqDuuw9rYLvLFWWlXA=="],
+    "@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@2.4.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-+sPAXq3bxmFwhVFJnSwkSF5Rw2ZAJMH3MF6C9IveAEOdSpgajPhoQhbbAK12SehN9j2QrHpk4J/cHsa/HqWaYQ=="],
 
-    "@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@2.3.13", "", { "os": "linux", "cpu": "x64" }, "sha512-s+YsZlgiXNq8XkgHs6xdvKDFOj/bwTEevqEY6rC2I3cBHbxXYU1LOZstH3Ffw9hE5tE1sqT7U23C00MzkXztMw=="],
+    "@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@2.4.4", "", { "os": "linux", "cpu": "x64" }, "sha512-R4+ZCDtG9kHArasyBO+UBD6jr/FcFCTH8QkNTOCu0pRJzCWyWC4EtZa2AmUZB5h3e0jD7bRV2KvrENcf8rndBg=="],
 
-    "@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@2.3.13", "", { "os": "linux", "cpu": "x64" }, "sha512-0bdwFVSbbM//Sds6OjtnmQGp4eUjOTt6kHvR/1P0ieR9GcTUAlPNvPC3DiavTqq302W34Ae2T6u5VVNGuQtGlQ=="],
+    "@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@2.4.4", "", { "os": "linux", "cpu": "x64" }, "sha512-gGvFTGpOIQDb5CQ2VC0n9Z2UEqlP46c4aNgHmAMytYieTGEcfqhfCFnhs6xjt0S3igE6q5GLuIXtdQt3Izok+g=="],
 
-    "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.3.13", "", { "os": "win32", "cpu": "arm64" }, "sha512-QweDxY89fq0VvrxME+wS/BXKmqMrOTZlN9SqQ79kQSIc3FrEwvW/PvUegQF6XIVaekncDykB5dzPqjbwSKs9DA=="],
+    "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.4.4", "", { "os": "win32", "cpu": "arm64" }, "sha512-trzCqM7x+Gn832zZHgr28JoYagQNX4CZkUZhMUac2YxvvyDRLJDrb5m9IA7CaZLlX6lTQmADVfLEKP1et1Ma4Q=="],
 
-    "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.3.13", "", { "os": "win32", "cpu": "x64" }, "sha512-trDw2ogdM2lyav9WFQsdsfdVy1dvZALymRpgmWsvSez0BJzBjulhOT/t+wyKeh3pZWvwP3VMs1SoOKwO3wecMQ=="],
+    "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.4.4", "", { "os": "win32", "cpu": "x64" }, "sha512-gnOHKVPFAAPrpoPt2t+Q6FZ7RPry/FDV3GcpU53P3PtLNnQjBmKyN2Vh/JtqXet+H4pme8CC76rScwdjDcT1/A=="],
 
     "@chevrotain/cst-dts-gen": ["@chevrotain/cst-dts-gen@10.5.0", "", { "dependencies": { "@chevrotain/gast": "10.5.0", "@chevrotain/types": "10.5.0", "lodash": "4.17.21" } }, "sha512-lhmC/FyqQ2o7pGK4Om+hzuDrm9rhFYIJ/AXoQBeongmn870Xeb0L6oGEiuR8nohFNL5sMaQEJWCxr1oIVIVXrw=="],
 
