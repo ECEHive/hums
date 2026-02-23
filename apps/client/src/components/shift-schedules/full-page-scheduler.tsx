@@ -111,7 +111,8 @@ export function FullPageScheduler({
 	const [bulkMode, setBulkMode] = useState(false);
 	const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set());
 	const isMobile = useIsMobile();
-	const { bulkRegisterMutation } = useShiftMutations(periodId);
+	const { registerMutation, bulkRegisterMutation } =
+		useShiftMutations(periodId);
 
 	// Bulk mode handlers
 	const handleToggleBulkMode = useCallback((enabled: boolean) => {
@@ -192,6 +193,31 @@ export function FullPageScheduler({
 	const blocks = useMemo(
 		() => groupSchedulesByDayAndTimeBlock(filteredSchedules, blockSize),
 		[filteredSchedules, blockSize],
+	);
+
+	// Double-click: auto-register if exactly one registerable shift type in the slot
+	const handleDoubleClick = useCallback(
+		(dayOfWeek: number, timeBlock: number) => {
+			if (!isWithinSignupWindow || registerMutation.isPending) return;
+
+			const key = `${dayOfWeek}-${timeBlock}`;
+			const blockData = blocks.get(key);
+			if (!blockData) return;
+
+			// Find schedules the user can register for and isn't already registered
+			const registerable = blockData.schedules.filter(
+				(s) => s.canRegister && s.availableSlots > 0 && !s.isRegistered,
+			);
+			if (registerable.length === 0) return;
+
+			// Check if all registerable schedules belong to the same shift type
+			const uniqueShiftTypes = new Set(registerable.map((s) => s.shiftTypeId));
+			if (uniqueShiftTypes.size !== 1) return;
+
+			// Auto-register for the first available schedule of that shift type
+			registerMutation.mutate(registerable[0].id);
+		},
+		[blocks, isWithinSignupWindow, registerMutation],
 	);
 
 	// Determine visible days
@@ -492,6 +518,7 @@ export function FullPageScheduler({
 													selectedBlocks={selectedBlocks}
 													onToggleBulkBlock={handleToggleBulkBlock}
 													onShiftClick={handleShiftClick}
+													onDoubleClick={handleDoubleClick}
 												/>
 											</>
 										)}
@@ -563,6 +590,7 @@ export function FullPageScheduler({
 														selectedBlocks={selectedBlocks}
 														onToggleBulkBlock={handleToggleBulkBlock}
 														onShiftClick={handleShiftClick}
+														onDoubleClick={handleDoubleClick}
 													/>
 												</>
 											)}

@@ -13,6 +13,7 @@ interface SchedulerGridProps {
 	selectedBlocks: Set<string>;
 	onToggleBulkBlock: (dayOfWeek: number, timeBlock: number) => void;
 	onShiftClick: (dayOfWeek: number, timeBlock: number) => void;
+	onDoubleClick?: (dayOfWeek: number, timeBlock: number) => void;
 }
 
 /**
@@ -135,6 +136,7 @@ export function SchedulerGrid({
 	selectedBlocks,
 	onToggleBulkBlock,
 	onShiftClick,
+	onDoubleClick,
 }: SchedulerGridProps) {
 	const isDarkMode = useIsDarkMode();
 
@@ -241,11 +243,18 @@ export function SchedulerGrid({
 										}
 									};
 
+									const handleDoubleClick = () => {
+										if (!bulkMode && onDoubleClick) {
+											onDoubleClick(day.value, blockStart);
+										}
+									};
+
 									return (
 										<td key={key} className="p-1">
 											<button
 												type="button"
 												onClick={handleClick}
+												onDoubleClick={handleDoubleClick}
 												aria-label={
 													bulkMode
 														? isBulkSelected
