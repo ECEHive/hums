@@ -30,6 +30,7 @@ import {
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
 import type { RequiredPermissions } from "@/lib/permissions";
+import { formatDecimalHours } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/shifts/attendance")({
 	component: () => (
@@ -140,7 +141,7 @@ function AttendancePage() {
 								{statsData?.timeOnShiftPercentage ?? 0}%
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{statsData?.totalHoursWorked ?? 0}h logged
+								{formatDecimalHours(statsData?.totalHoursWorked ?? 0)} logged
 							</p>
 						</CardContent>
 					</Card>
