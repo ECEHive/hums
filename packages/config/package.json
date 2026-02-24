@@ -10,7 +10,7 @@
 		"tsconfig/react-lib.json"
 	],
 	"devDependencies": {
-		"@types/node": "^25.3.0"
-		"@biomejs/biome": "2.4.4",
+		"@types/node": "^25.3.0",
+		"@biomejs/biome": "2.4.4"
 	}
 }

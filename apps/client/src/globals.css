@@ -180,6 +180,65 @@
 	}
 }
 
+/* ── Login page – glass & background ── */
+
+/* Apple Liquid Glass card */
+.login-glass {
+	background: linear-gradient(
+		135deg,
+		rgba(255, 255, 255, 0.12) 0%,
+		rgba(255, 255, 255, 0.06) 50%,
+		rgba(255, 255, 255, 0.1) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+		inset 0 -1px 0 0 rgba(255, 255, 255, 0.05),
+		0 8px 32px rgba(0, 0, 0, 0.25),
+		0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Mouse-reactive shimmer highlight on the glass surface */
+.login-glass::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background: radial-gradient(
+		600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+		rgba(255, 255, 255, 0.12) 0%,
+		rgba(255, 255, 255, 0.04) 30%,
+		transparent 70%
+	);
+	opacity: var(--shimmer-opacity, 0);
+	transition: opacity 0.4s ease;
+	pointer-events: none;
+}
+
+/* Login button inner glow on hover */
+.login-btn {
+	position: relative;
+	overflow: hidden;
+}
+
+.login-btn::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	opacity: 0;
+	background: radial-gradient(
+		circle at 50% 50%,
+		rgba(255, 255, 255, 0.15),
+		transparent 70%
+	);
+	transition: opacity 0.4s ease;
+	pointer-events: none;
+}
+
+.login-btn:hover::before {
+	opacity: 1;
+}
+
 /* Safe area inset for iOS devices with home indicator */
 .safe-area-inset-bottom {
 	padding-bottom: env(safe-area-inset-bottom, 0px);
