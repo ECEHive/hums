@@ -1,8 +1,12 @@
 /**
- * Format a number as hours with 2 decimal places
+ * Format a decimal hour value into h:mm format.
+ * @param hours - Hours as a decimal number (e.g. 1.25)
+ * @returns Formatted string (e.g. "1:15")
  */
 export function formatHours(hours: number): string {
-	return `${hours.toFixed(2)} hrs`;
+	const h = Math.floor(hours);
+	const m = Math.round((hours - h) * 60);
+	return `${h}:${m.toString().padStart(2, "0")}`;
 }
 
 /**

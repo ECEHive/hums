@@ -37,6 +37,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
+import { formatDecimalHours } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/_app/me/sessions")({
 	component: () => RequireAuth({ children: <MySessionsPage /> }),
@@ -149,7 +150,7 @@ function MySessionsPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{statsData?.totalHours ?? 0}
+								{formatDecimalHours(statsData?.totalHours ?? 0)}
 							</div>
 							<p className="text-xs text-muted-foreground">hours logged</p>
 						</CardContent>
@@ -164,7 +165,7 @@ function MySessionsPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{statsData?.averageSessionHours ?? 0}
+								{formatDecimalHours(statsData?.averageSessionHours ?? 0)}
 							</div>
 							<p className="text-xs text-muted-foreground">hours per session</p>
 						</CardContent>

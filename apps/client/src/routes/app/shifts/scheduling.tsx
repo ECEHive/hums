@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/table";
 import type { RequiredPermissions } from "@/lib/permissions";
 import { formatInAppTimezone, formatTimeRange } from "@/lib/timezone";
+import { formatDecimalHours } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/shifts/scheduling")({
 	component: () => (
@@ -270,15 +271,21 @@ function Scheduling() {
 		? requirementUnitLabels[requirementUnit]
 		: null;
 	const requirementFormatter =
-		requirementUnit === null
+		requirementUnit === null || requirementUnit === "hours"
 			? null
 			: new Intl.NumberFormat(undefined, {
-					maximumFractionDigits: requirementUnit === "hours" ? 1 : 0,
+					maximumFractionDigits: 0,
 					minimumFractionDigits: 0,
 				});
 
 	const formatRequirementValue = (value: number | null | undefined) => {
-		if (value === null || value === undefined || !requirementFormatter) {
+		if (value === null || value === undefined) {
+			return null;
+		}
+		if (requirementUnit === "hours") {
+			return formatDecimalHours(value);
+		}
+		if (!requirementFormatter) {
 			return null;
 		}
 		return requirementFormatter.format(value);

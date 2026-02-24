@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { formatDecimalHours } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/_app/")({
 	component: () =>
@@ -170,7 +171,7 @@ function AppIndexLayout() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{sessionStats?.totalHours ?? 0}
+								{formatDecimalHours(sessionStats?.totalHours ?? 0)}
 							</div>
 							<p className="text-xs text-muted-foreground">hours logged</p>
 						</CardContent>
@@ -185,7 +186,7 @@ function AppIndexLayout() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{sessionStats?.averageSessionHours ?? 0}
+								{formatDecimalHours(sessionStats?.averageSessionHours ?? 0)}
 							</div>
 							<p className="text-xs text-muted-foreground">hours per session</p>
 						</CardContent>
