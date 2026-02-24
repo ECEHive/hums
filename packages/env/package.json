@@ -11,7 +11,7 @@
 		"typescript": "^5.9.2"
 	},
 	"dependencies": {
-		"@types/node": "^24.5.2",
+		"@types/node": "^25.3.0",
 		"zod": "^4.3.5"
 	}
 }
