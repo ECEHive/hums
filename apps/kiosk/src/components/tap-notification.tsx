@@ -55,7 +55,7 @@ const welcomeOverrides: Record<
 	etracy8: {
 		text: "Photo Taken",
 		icon: null,
-	}
+	},
 };
 
 const goodbyeOverrides: Record<
@@ -68,7 +68,7 @@ const goodbyeOverrides: Record<
 	},
 	wcastro8: {
 		text: "Welcome",
-		icon: null
+		icon: null,
 	},
 	chartigan6: {
 		text: "buh bye",
@@ -85,7 +85,7 @@ const goodbyeOverrides: Record<
 	etracy8: {
 		text: "Photo Taken",
 		icon: null,
-	}
+	},
 };
 
 function AnimatedIcon({
