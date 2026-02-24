@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { FlowOverlays } from "@/components/flow-overlays";
 import { KioskContainer } from "@/components/kiosk-container";
@@ -12,7 +12,10 @@ import { useCardReader } from "@/hooks/use-card-reader";
 import { useTapWorkflow } from "@/hooks/use-tap-workflow";
 import { useBranding } from "@/hooks/useBranding";
 import { useConfig } from "@/hooks/useConfig";
+import { getLogger } from "@/lib/logging";
 import type { KioskStatus } from "@/types";
+
+const log = getLogger("app");
 
 function AppContent() {
 	// Load and apply branding
@@ -30,23 +33,26 @@ function AppContent() {
 		refetchOnWindowFocus: false,
 	});
 
-	const kioskStatus: KioskStatus = {
-		isKiosk: !!(
-			deviceStatusData?.status && deviceStatusData.device?.hasKioskAccess
-		),
-		ip: deviceStatusData?.status
-			? deviceStatusData.device?.ipAddress
-			: deviceStatusData?.ip,
-		checking: deviceStatusLoading,
-	};
+	const kioskStatus: KioskStatus = useMemo(
+		() => ({
+			isKiosk: !!(
+				deviceStatusData?.status && deviceStatusData.device?.hasKioskAccess
+			),
+			ip: deviceStatusData?.status
+				? deviceStatusData.device?.ipAddress
+				: deviceStatusData?.ip,
+			checking: deviceStatusLoading,
+		}),
+		[deviceStatusData, deviceStatusLoading],
+	);
 
 	// Card handler for tap events
 	const handleCardScan = useCallback(
 		(cardNumber: string) => {
-			console.log("[App] Card scan received");
+			log.info("Card scan received");
 			void tapWorkflow.handleTap(cardNumber);
 		},
-		[tapWorkflow],
+		[tapWorkflow.handleTap],
 	);
 
 	const { connectionStatus, connect } = useCardReader({
@@ -91,7 +97,10 @@ function AppContent() {
 
 	// Determine the client base URL for one-time login
 	// Use runtime config clientBaseUrl, otherwise fall back to current page's origin
-	const clientBaseUrl = config?.clientBaseUrl || window.location.origin;
+	const clientBaseUrl = useMemo(
+		() => config?.clientBaseUrl || window.location.origin,
+		[config?.clientBaseUrl],
+	);
 
 	const isPreConnection =
 		!kioskStatus.isKiosk ||

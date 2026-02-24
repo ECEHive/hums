@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import dayjs from "dayjs";
 import { BanIcon } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -13,7 +13,7 @@ export function SuspensionDialog({
 	endDate,
 	isExiting,
 }: SuspensionDialogProps) {
-	const formattedEndDate = format(endDate, "MMMM d, yyyy 'at' h:mm a");
+	const formattedEndDate = dayjs(endDate).format("MMMM D, YYYY [at] h:mm A");
 
 	return (
 		<motion.div

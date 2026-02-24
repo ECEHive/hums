@@ -6,6 +6,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useMemo } from "react";
 import { getLogoDataUrl, useBranding } from "@/hooks/useBranding";
 import type { ConnectionStatus, KioskStatus } from "@/types";
 import { Badge } from "./ui/badge";
@@ -25,7 +26,7 @@ export function KioskHeader({
 	onToggleFullscreen,
 }: KioskHeaderProps) {
 	const { data: branding } = useBranding();
-	const getStatusConfig = () => {
+	const getStatusConfig = useMemo(() => {
 		switch (connectionStatus) {
 			case "connected":
 				return {
@@ -64,13 +65,16 @@ export function KioskHeader({
 					spin: false,
 				};
 		}
-	};
+	}, [connectionStatus]);
 
-	const statusConfig = getStatusConfig();
+	const statusConfig = getStatusConfig;
 	const StatusIcon = statusConfig.icon;
 
 	// Dark mode kiosks use dark logo
-	const logoSrc = branding ? getLogoDataUrl(branding.logos.dark) : undefined;
+	const logoSrc = useMemo(
+		() => (branding ? getLogoDataUrl(branding.logos.dark) : undefined),
+		[branding],
+	);
 
 	return (
 		<div className="flex-none">
