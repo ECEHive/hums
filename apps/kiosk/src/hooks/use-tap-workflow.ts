@@ -263,6 +263,13 @@ export function useTapWorkflow() {
 		currentTapEventRef.current = tapNotification.event;
 	}, [tapNotification.event]);
 
+	// Use a ref for errorDialog.message so showError doesn't depend on it,
+	// preventing cascading callback recreations throughout the hook
+	const errorMessageRef = useRef(errorDialog.message);
+	useEffect(() => {
+		errorMessageRef.current = errorDialog.message;
+	}, [errorDialog.message]);
+
 	const tapEventTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -311,7 +318,7 @@ export function useTapWorkflow() {
 			clearTimer(errorTimeoutRef);
 			clearTimer(errorExitTimeoutRef);
 
-			if (errorDialog.message) {
+			if (errorMessageRef.current) {
 				dispatch({ type: "error_exit_start" });
 				errorExitTimeoutRef.current = setTimeout(() => {
 					dispatch({ type: "error_show", payload: message });
@@ -322,7 +329,7 @@ export function useTapWorkflow() {
 				scheduleErrorHide(message);
 			}
 		},
-		[dispatch, errorDialog.message, scheduleErrorHide],
+		[dispatch, scheduleErrorHide],
 	);
 
 	const resetAgreementTimeout = useCallback(() => {

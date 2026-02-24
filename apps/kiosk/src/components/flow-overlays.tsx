@@ -1,5 +1,5 @@
 import { Clock, LogOut, RefreshCw, Users } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { AgreementFlow } from "@/components/agreement-flow";
 import { EarlyLeaveConfirmation } from "@/components/early-leave-confirmation";
 import { ErrorDialog } from "@/components/error-dialog";
@@ -67,14 +67,25 @@ export function FlowOverlays({
 	onAgreementError,
 	onAgreementProgress,
 }: FlowOverlaysProps) {
-	const hasBlockingOverlay =
-		!!errorDialog.message ||
-		!!pendingAgreement ||
-		!!sessionTypeSelection ||
-		!!tapOutActionSelection ||
-		!!earlyLeaveConfirmation ||
-		!!shiftEarlyLeaveConfirmation ||
-		!!suspension;
+	const hasBlockingOverlay = useMemo(
+		() =>
+			!!errorDialog.message ||
+			!!pendingAgreement ||
+			!!sessionTypeSelection ||
+			!!tapOutActionSelection ||
+			!!earlyLeaveConfirmation ||
+			!!shiftEarlyLeaveConfirmation ||
+			!!suspension,
+		[
+			errorDialog.message,
+			pendingAgreement,
+			sessionTypeSelection,
+			tapOutActionSelection,
+			earlyLeaveConfirmation,
+			shiftEarlyLeaveConfirmation,
+			suspension,
+		],
+	);
 
 	type OverlayConfig = {
 		key: "session" | "tapout";
@@ -83,7 +94,7 @@ export function FlowOverlays({
 		onCancel: () => void;
 	} | null;
 
-	const overlayConfig: OverlayConfig = (() => {
+	const overlayConfig: OverlayConfig = useMemo(() => {
 		if (sessionTypeSelection) {
 			const options: SelectionOverlayOption[] = [
 				{
@@ -180,7 +191,14 @@ export function FlowOverlays({
 		}
 
 		return null;
-	})();
+	}, [
+		sessionTypeSelection,
+		tapOutActionSelection,
+		onSessionTypeSelect,
+		onSessionTypeCancel,
+		onTapOutActionSelect,
+		onTapOutActionCancel,
+	]);
 
 	return (
 		<>

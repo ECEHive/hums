@@ -69,6 +69,7 @@ export function useCardReader({
 	const [connectionStatus, setConnectionStatus] =
 		useState<ConnectionStatus>("disconnected");
 	const serialRef = useRef<SerialSession | null>(null);
+	const connectingRef = useRef(false);
 
 	const onScanRef = useRef(onScan);
 	const onFatalErrorRef = useRef(onFatalError);
@@ -87,6 +88,7 @@ export function useCardReader({
 	}, [onInvalidScan]);
 
 	const disconnect = useCallback(async () => {
+		connectingRef.current = false;
 		if (!serialRef.current) {
 			setConnectionStatus("disconnected");
 			return;
@@ -107,6 +109,12 @@ export function useCardReader({
 	);
 
 	const connect = useCallback(async () => {
+		// Guard against concurrent connect calls to prevent serial port leaks
+		if (connectingRef.current || serialRef.current) {
+			log.warn("Connect called while already connecting or connected");
+			return;
+		}
+		connectingRef.current = true;
 		setConnectionStatus("connecting");
 		log.info("Connecting to card reader");
 
@@ -145,9 +153,11 @@ export function useCardReader({
 
 		if (session) {
 			serialRef.current = session;
+			connectingRef.current = false;
 			setConnectionStatus("connected");
 			log.info("Card reader connected successfully");
 		} else {
+			connectingRef.current = false;
 			setConnectionStatus("error");
 			log.error("Failed to connect to card reader");
 		}
@@ -158,8 +168,9 @@ export function useCardReader({
 			return;
 		}
 
+		const port = serialRef.current.port;
 		const checkConnection = setInterval(() => {
-			if (!serialRef.current?.port.readable) {
+			if (!port.readable) {
 				log.warn("Card reader disconnected - device unplugged");
 				void handleFatalError("Kiosk disconnected - card reader was unplugged");
 			}
