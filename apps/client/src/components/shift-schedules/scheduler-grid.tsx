@@ -9,6 +9,11 @@ interface SchedulerGridProps {
 	blocks: Map<string, TimeBlock>;
 	selectedBlock: { dayOfWeek: number; timeBlock: number } | null;
 	onSelectBlock: (dayOfWeek: number, timeBlock: number) => void;
+	bulkMode: boolean;
+	selectedBlocks: Set<string>;
+	onToggleBulkBlock: (dayOfWeek: number, timeBlock: number) => void;
+	onShiftClick: (dayOfWeek: number, timeBlock: number) => void;
+	onDoubleClick?: (dayOfWeek: number, timeBlock: number) => void;
 }
 
 /**
@@ -127,6 +132,11 @@ export function SchedulerGrid({
 	blocks,
 	selectedBlock,
 	onSelectBlock,
+	bulkMode,
+	selectedBlocks,
+	onToggleBulkBlock,
+	onShiftClick,
+	onDoubleClick,
 }: SchedulerGridProps) {
 	const isDarkMode = useIsDarkMode();
 
@@ -194,6 +204,7 @@ export function SchedulerGrid({
 									const isSelected =
 										selectedBlock?.dayOfWeek === day.value &&
 										selectedBlock?.timeBlock === blockStart;
+									const isBulkSelected = selectedBlocks.has(key);
 
 									// Check if all schedules are truly full (no available slots)
 									const isTrulyFull = blockData.schedules.every(
@@ -219,40 +230,82 @@ export function SchedulerGrid({
 												s.hasTimeOverlap,
 										);
 
+									const handleClick = (e: React.MouseEvent) => {
+										if (e.shiftKey && !bulkMode) {
+											// Shift-click activates bulk mode and selects this block
+											onShiftClick(day.value, blockStart);
+											return;
+										}
+										if (bulkMode) {
+											onToggleBulkBlock(day.value, blockStart);
+										} else {
+											onSelectBlock(day.value, blockStart);
+										}
+									};
+
+									const handleDoubleClick = () => {
+										if (!bulkMode && onDoubleClick) {
+											onDoubleClick(day.value, blockStart);
+										}
+									};
+
 									return (
 										<td key={key} className="p-1">
 											<button
 												type="button"
-												onClick={() => onSelectBlock(day.value, blockStart)}
+												onClick={handleClick}
+												onDoubleClick={handleDoubleClick}
 												aria-label={
-													isRegistered
-														? "You are registered for this shift"
-														: hasAvailable
-															? availabilityStyles.ariaLabel
-															: isTrulyFull
-																? "This shift is full"
-																: "This shift is unavailable due to restrictions"
+													bulkMode
+														? isBulkSelected
+															? "Selected for bulk registration. Click to deselect."
+															: "Click to select for bulk registration"
+														: isRegistered
+															? "You are registered for this shift"
+															: hasAvailable
+																? availabilityStyles.ariaLabel
+																: isTrulyFull
+																	? "This shift is full"
+																	: "This shift is unavailable due to restrictions"
 												}
-												aria-pressed={isSelected}
+												aria-pressed={bulkMode ? isBulkSelected : isSelected}
 												className={cn(
 													"w-full h-12 rounded-lg border-2 transition-all flex items-center justify-center gap-2 px-2 active:scale-[0.98]",
-													isSelected && "ring-2 ring-offset-2 ring-primary",
-													isRegistered
+													!bulkMode &&
+														isSelected &&
+														"ring-2 ring-offset-2 ring-primary",
+													bulkMode &&
+														isBulkSelected &&
+														"ring-2 ring-offset-2 ring-primary border-primary bg-primary/15 dark:bg-primary/25",
+													bulkMode &&
+														!isBulkSelected &&
+														"opacity-80 hover:opacity-100",
+													!bulkMode && isRegistered
 														? "border-primary bg-primary text-primary-foreground hover:scale-[1.02]"
-														: hasAvailable
+														: !bulkMode && hasAvailable
 															? availabilityStyles.className
-															: hasRestrictions
+															: !bulkMode && hasRestrictions
 																? "border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 hover:scale-[1.02]"
-																: availabilityStyles.className,
+																: !bulkMode
+																	? availabilityStyles.className
+																	: undefined,
 												)}
 												style={
+													!bulkMode &&
 													!isRegistered &&
 													(hasAvailable || (!hasRestrictions && isTrulyFull))
 														? availabilityStyles.style
 														: undefined
 												}
 											>
-												{isRegistered ? (
+												{bulkMode && isBulkSelected ? (
+													<span
+														className="text-lg font-bold text-primary"
+														aria-hidden="true"
+													>
+														✓
+													</span>
+												) : isRegistered && !bulkMode ? (
 													<span
 														className="text-lg font-bold"
 														aria-hidden="true"

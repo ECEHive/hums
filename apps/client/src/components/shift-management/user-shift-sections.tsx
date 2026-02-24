@@ -22,6 +22,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
+import { formatDecimalHours } from "@/lib/utils";
 
 const DAYS_OF_WEEK = [
 	"Sunday",
@@ -166,8 +167,8 @@ export function AttendanceStatsSummary({
 	stats: AttendanceStatsSnapshot;
 }) {
 	const coveragePercent = stats.attendanceCoveragePercent;
-	const scheduledHoursLabel = `${stats.totalScheduledHours.toFixed(1)}h`;
-	const actualHoursLabel = `${stats.totalActualHours.toFixed(1)}h`;
+	const scheduledHoursLabel = formatDecimalHours(stats.totalScheduledHours);
+	const actualHoursLabel = formatDecimalHours(stats.totalActualHours);
 
 	return (
 		<div className="space-y-3">
@@ -778,11 +779,11 @@ export function AttendanceSection({
 								const statusLabel = formatStatusLabel(record.status);
 								const scheduledDisplay =
 									typeof record.scheduledHours === "number"
-										? `${record.scheduledHours.toFixed(1)}h`
+										? formatDecimalHours(record.scheduledHours)
 										: "–";
 								const actualDisplay =
 									typeof record.actualHours === "number"
-										? `${record.actualHours.toFixed(1)}h`
+										? formatDecimalHours(record.actualHours)
 										: "–";
 								return (
 									<TableRow key={record.id}>

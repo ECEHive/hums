@@ -2,6 +2,8 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { cn } from "@/lib/utils";
 
+const rehypePlugins = [rehypeSanitize] as const;
+
 interface MarkdownProps {
 	children: string;
 	className?: string;
@@ -14,7 +16,7 @@ interface MarkdownProps {
 export function Markdown({ children, className }: MarkdownProps) {
 	return (
 		<div className={cn("prose prose-sm dark:prose-invert max-w-none", className)}>
-			<ReactMarkdown rehypePlugins={[rehypeSanitize]}>
+			<ReactMarkdown rehypePlugins={rehypePlugins}>
 				{children}
 			</ReactMarkdown>
 		</div>

@@ -1,6 +1,6 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { CalendarDays, ChevronLeft, Filter } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarDays, ChevronLeft, Filter, Layers } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogPortal } from "@/components/ui/dialog";
@@ -19,8 +19,14 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Spinner } from "@/components/ui/spinner";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { BulkRegistrationSidebar } from "./bulk-registration-sidebar";
 import type { ConnectionState } from "./connection-status";
 import { ConnectionStatus } from "./connection-status";
 import {
@@ -37,6 +43,7 @@ import {
 	type RequirementProgress,
 	type ShiftSchedule,
 } from "./shift-scheduler-utils";
+import { useShiftMutations } from "./use-shift-mutations";
 
 interface FullPageSchedulerProps {
 	open: boolean;
@@ -51,9 +58,15 @@ interface FullPageSchedulerProps {
 }
 
 // Legend Component
-function SchedulerLegend() {
+function SchedulerLegend({ bulkMode }: { bulkMode: boolean }) {
 	return (
 		<div className="flex flex-wrap items-center gap-4 text-xs">
+			{bulkMode && (
+				<div className="flex items-center gap-1.5">
+					<div className="w-3 h-3 rounded border-2 border-primary bg-primary/15" />
+					<span>Selected</span>
+				</div>
+			)}
 			<div className="flex items-center gap-1.5">
 				<div className="w-3 h-3 rounded bg-primary" />
 				<span>Registered</span>
@@ -95,7 +108,54 @@ export function FullPageScheduler({
 	);
 	const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
 	const [showOnlyRegistered, setShowOnlyRegistered] = useState(false);
+	const [bulkMode, setBulkMode] = useState(false);
+	const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set());
 	const isMobile = useIsMobile();
+	const { registerMutation, bulkRegisterMutation } =
+		useShiftMutations(periodId);
+
+	// Bulk mode handlers
+	const handleToggleBulkMode = useCallback((enabled: boolean) => {
+		setBulkMode(enabled);
+		if (!enabled) {
+			setSelectedBlocks(new Set());
+		}
+		// Clear single-select when entering bulk mode
+		if (enabled) {
+			setSelectedBlock(null);
+		}
+	}, []);
+
+	const handleToggleBulkBlock = useCallback(
+		(dayOfWeek: number, timeBlock: number) => {
+			const key = `${dayOfWeek}-${timeBlock}`;
+			setSelectedBlocks((prev) => {
+				const next = new Set(prev);
+				if (next.has(key)) {
+					next.delete(key);
+				} else {
+					next.add(key);
+				}
+				return next;
+			});
+		},
+		[],
+	);
+
+	const handleShiftClick = useCallback(
+		(dayOfWeek: number, timeBlock: number) => {
+			// Shift-click activates bulk mode and selects the clicked block
+			setBulkMode(true);
+			setSelectedBlock(null);
+			const key = `${dayOfWeek}-${timeBlock}`;
+			setSelectedBlocks(new Set([key]));
+		},
+		[],
+	);
+
+	const handleClearSelection = useCallback(() => {
+		setSelectedBlocks(new Set());
+	}, []);
 
 	// Get unique shift types for filter
 	const shiftTypes = useMemo(() => {
@@ -133,6 +193,31 @@ export function FullPageScheduler({
 	const blocks = useMemo(
 		() => groupSchedulesByDayAndTimeBlock(filteredSchedules, blockSize),
 		[filteredSchedules, blockSize],
+	);
+
+	// Double-click: auto-register if exactly one registerable shift type in the slot
+	const handleDoubleClick = useCallback(
+		(dayOfWeek: number, timeBlock: number) => {
+			if (!isWithinSignupWindow || registerMutation.isPending) return;
+
+			const key = `${dayOfWeek}-${timeBlock}`;
+			const blockData = blocks.get(key);
+			if (!blockData) return;
+
+			// Find schedules the user can register for and isn't already registered
+			const registerable = blockData.schedules.filter(
+				(s) => s.canRegister && s.availableSlots > 0 && !s.isRegistered,
+			);
+			if (registerable.length === 0) return;
+
+			// Check if all registerable schedules belong to the same shift type
+			const uniqueShiftTypes = new Set(registerable.map((s) => s.shiftTypeId));
+			if (uniqueShiftTypes.size !== 1) return;
+
+			// Auto-register for the first available schedule of that shift type
+			registerMutation.mutate(registerable[0].id);
+		},
+		[blocks, isWithinSignupWindow, registerMutation],
 	);
 
 	// Determine visible days
@@ -224,6 +309,38 @@ export function FullPageScheduler({
 										state={connectionState}
 										onReconnect={onReconnect}
 									/>
+
+									{/* Bulk mode toggle */}
+									{!isMobile && (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant={bulkMode ? "default" : "outline"}
+													size="sm"
+													className="gap-1.5"
+													onClick={() => handleToggleBulkMode(!bulkMode)}
+												>
+													<Layers className="h-4 w-4" />
+													<span className="hidden sm:inline">Bulk</span>
+													{bulkMode && selectedBlocks.size > 0 && (
+														<Badge
+															variant="secondary"
+															className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+														>
+															{selectedBlocks.size}
+														</Badge>
+													)}
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												<p>
+													{bulkMode
+														? "Exit bulk registration mode"
+														: "Enable bulk registration mode (or Shift+Click any slot)"}
+												</p>
+											</TooltipContent>
+										</Tooltip>
+									)}
 
 									{/* Filter button */}
 									<DropdownMenu open={filterOpen} onOpenChange={setFilterOpen}>
@@ -385,7 +502,7 @@ export function FullPageScheduler({
 											<>
 												{/* Legend */}
 												<div className="shrink-0 px-4 py-2 border-b bg-muted/30">
-													<SchedulerLegend />
+													<SchedulerLegend bulkMode={false} />
 												</div>
 
 												{/* Scrollable Grid */}
@@ -397,6 +514,11 @@ export function FullPageScheduler({
 													onSelectBlock={(dayOfWeek, timeBlock) =>
 														setSelectedBlock({ dayOfWeek, timeBlock })
 													}
+													bulkMode={false}
+													selectedBlocks={selectedBlocks}
+													onToggleBulkBlock={handleToggleBulkBlock}
+													onShiftClick={handleShiftClick}
+													onDoubleClick={handleDoubleClick}
 												/>
 											</>
 										)}
@@ -452,7 +574,7 @@ export function FullPageScheduler({
 												<>
 													{/* Legend */}
 													<div className="shrink-0 px-4 py-2 border-b bg-muted/30">
-														<SchedulerLegend />
+														<SchedulerLegend bulkMode={bulkMode} />
 													</div>
 
 													{/* Scrollable Grid */}
@@ -464,6 +586,11 @@ export function FullPageScheduler({
 														onSelectBlock={(dayOfWeek, timeBlock) =>
 															setSelectedBlock({ dayOfWeek, timeBlock })
 														}
+														bulkMode={bulkMode}
+														selectedBlocks={selectedBlocks}
+														onToggleBulkBlock={handleToggleBulkBlock}
+														onShiftClick={handleShiftClick}
+														onDoubleClick={handleDoubleClick}
 													/>
 												</>
 											)}
@@ -478,7 +605,16 @@ export function FullPageScheduler({
 										maxSize={1000}
 									>
 										<aside className="h-full bg-card flex flex-col overflow-hidden">
-											{selectedBlock ? (
+											{bulkMode ? (
+												<BulkRegistrationSidebar
+													selectedBlocks={selectedBlocks}
+													blocks={blocks}
+													isWithinSignupWindow={isWithinSignupWindow}
+													bulkRegisterMutation={bulkRegisterMutation}
+													onClearSelection={handleClearSelection}
+													onExitBulkMode={() => handleToggleBulkMode(false)}
+												/>
+											) : selectedBlock ? (
 												<DesktopShiftSidebar
 													schedules={selectedBlockSchedules}
 													dayOfWeek={selectedBlock.dayOfWeek}

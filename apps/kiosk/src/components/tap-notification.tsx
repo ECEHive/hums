@@ -28,6 +28,66 @@ const pingLoopTransition = {
 	ease: "easeOut",
 } as const;
 
+const welcomeOverrides: Record<
+	string,
+	{ text: string; icon: LucideIcon | null }
+> = {
+	alemons8: {
+		text: "Meow",
+		icon: CatIcon,
+	},
+	wcastro8: {
+		text: "Goodbye",
+		icon: null,
+	},
+	chartigan6: {
+		text: "buh card found thx",
+		icon: null,
+	},
+	jdudik6: {
+		text: `${Math.floor(Math.random() * 100)} attendance issues`,
+		icon: null,
+	},
+	awang409: {
+		text: "You came back?!",
+		icon: null,
+	},
+	etracy8: {
+		text: "Photo Taken",
+		icon: null,
+	},
+};
+
+const goodbyeOverrides: Record<
+	string,
+	{ text: string; icon: LucideIcon | null }
+> = {
+	alemons8: {
+		text: "Good Boy",
+		icon: null,
+	},
+	wcastro8: {
+		text: "Welcome",
+		icon: null,
+	},
+	chartigan6: {
+		text: "buh bye",
+		icon: null,
+	},
+	jdudik6: {
+		text: "SLACKER ALERT",
+		icon: null,
+	},
+	awang409: {
+		text: "Graduating?",
+		icon: null,
+	},
+	etracy8: {
+		text: "Photo Taken",
+		icon: null,
+	},
+};
+
 function AnimatedIcon({
 	icon: Icon,
 	colorClass,
@@ -64,29 +124,11 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 	const isSwitchToStaffing = event.status === "switched_to_staffing";
 	const isSwitchToRegular = event.status === "switched_to_regular";
 
-	const welcomeOverrides = {
-		alemons8: {
-			text: "Meow",
-			icon: CatIcon,
-		},
-	};
-
-	const goodbyeOverrides = {
-		alemons8: {
-			text: "Good Boy",
-			icon: null,
-		},
-	};
-
 	const notificationContent = useMemo(() => {
 		if (isTapIn) {
 			return {
-				icon:
-					welcomeOverrides[event.user.username as keyof typeof welcomeOverrides]
-						?.icon || LogIn,
-				title:
-					welcomeOverrides[event.user.username as keyof typeof welcomeOverrides]
-						?.text || "Welcome",
+				icon: welcomeOverrides[event.user.username]?.icon || LogIn,
+				title: welcomeOverrides[event.user.username]?.text || "Welcome",
 				color: "text-green-500",
 				subtitle: event.user.name,
 			};
@@ -111,12 +153,8 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 		}
 
 		return {
-			icon:
-				goodbyeOverrides[event.user.username as keyof typeof goodbyeOverrides]
-					?.icon || LogOut,
-			title:
-				goodbyeOverrides[event.user.username as keyof typeof goodbyeOverrides]
-					?.text || "Goodbye",
+			icon: goodbyeOverrides[event.user.username]?.icon || LogOut,
+			title: goodbyeOverrides[event.user.username]?.text || "Goodbye",
 			color: "text-blue-500",
 			subtitle: event.user.name,
 		};

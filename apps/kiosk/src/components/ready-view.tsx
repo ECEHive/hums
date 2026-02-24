@@ -1,4 +1,5 @@
 import { Maximize } from "lucide-react";
+import { useMemo } from "react";
 import { KioskClock } from "@/components/kiosk-clock";
 import { LoadingIndicator } from "@/components/loading-indicator";
 import { getLogoDataUrl, useBranding } from "@/hooks/useBranding";
@@ -16,7 +17,10 @@ export function ReadyView({
 	onToggleFullscreen,
 }: ReadyViewProps) {
 	const { data: branding } = useBranding();
-	const logoSrc = branding ? getLogoDataUrl(branding.logos.dark) : undefined;
+	const logoSrc = useMemo(
+		() => (branding ? getLogoDataUrl(branding.logos.dark) : undefined),
+		[branding],
+	);
 
 	return (
 		<div className="min-w-full h-full flex items-center justify-center overflow-hidden relative">

@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 import { formatInAppTimezone } from "@/lib/timezone";
+import { formatDecimalHours } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/shifts/period-details")({
 	component: () =>
@@ -263,7 +264,9 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.min !== null
-											? `${period.min} ${unitLabel}`
+											? period.minMaxUnit === "hours"
+												? `${formatDecimalHours(period.min)} ${unitLabel}`
+												: `${period.min} ${unitLabel}`
 											: "Not set"}
 									</div>
 								</div>
@@ -273,7 +276,9 @@ function PeriodDetail() {
 									</div>
 									<div>
 										{period.max !== null
-											? `${period.max} ${unitLabel}`
+											? period.minMaxUnit === "hours"
+												? `${formatDecimalHours(period.max)} ${unitLabel}`
+												: `${period.max} ${unitLabel}`
 											: "Not set"}
 									</div>
 								</div>
