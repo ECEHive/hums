@@ -34,6 +34,7 @@ const formSchema = z.object({
 	minQuantity: z.number().int().min(0).optional(),
 	link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
+	isConsumable: z.boolean().optional(),
 	initialQuantity: z.number().int().min(0).optional(),
 });
 
@@ -72,6 +73,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		minQuantity?: number;
 		link?: string;
 		isActive?: boolean;
+		isConsumable?: boolean;
 		initialQuantity?: number;
 		approvalRoleIds?: number[];
 	};
@@ -95,6 +97,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			minQuantity: undefined,
 			link: "",
 			isActive: true,
+			isConsumable: false,
 			initialQuantity: undefined,
 		},
 		validators: {
@@ -341,6 +344,28 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								</div>
 								<p className="text-xs text-muted-foreground">
 									Inactive items will be hidden by default.
+								</p>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
+					<form.Field name="isConsumable">
+						{(field) => (
+							<Field>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(checked) => field.handleChange(!!checked)}
+										onBlur={field.handleBlur}
+									/>
+									<FieldLabel htmlFor={field.name} className="!mt-0">
+										Consumable
+									</FieldLabel>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									Net balances are not shown for consumable items.
 								</p>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>

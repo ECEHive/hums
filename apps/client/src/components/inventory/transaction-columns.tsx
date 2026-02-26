@@ -1,6 +1,13 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
+import { CookieIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatInAppTimezone } from "@/lib/timezone";
 
 type Transaction = {
@@ -15,6 +22,7 @@ type Transaction = {
 		id: string;
 		name: string;
 		sku: string | null;
+		isConsumable: boolean;
 	};
 	user: {
 		id: number;
@@ -35,6 +43,7 @@ type MyTransaction = {
 		id: string;
 		name: string;
 		sku: string | null;
+		isConsumable: boolean;
 	};
 };
 
@@ -87,7 +96,17 @@ export function generateColumns(): ColumnDef<Transaction>[] {
 				const item = row.original.item;
 				return (
 					<div className="flex flex-col">
-						<span>{item.name}</span>
+						<span className="flex items-center gap-2">
+							{item.name}
+							{item.isConsumable && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<CookieIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>Consumable item, no return needed</TooltipContent>
+								</Tooltip>
+							)}
+						</span>
 						{item.sku && (
 							<span className="text-xs text-muted-foreground">{item.sku}</span>
 						)}
@@ -173,7 +192,17 @@ export function generateMyTransactionColumns(): ColumnDef<MyTransaction>[] {
 				const item = row.original.item;
 				return (
 					<div className="flex flex-col">
-						<span>{item.name}</span>
+						<span className="flex items-center gap-2">
+							{item.name}
+							{item.isConsumable && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<CookieIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>Consumable item, no return needed</TooltipContent>
+								</Tooltip>
+							)}
+						</span>
 						{item.sku && (
 							<span className="text-xs text-muted-foreground">{item.sku}</span>
 						)}

@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
-import { EllipsisIcon, LinkIcon, LockIcon } from "lucide-react";
+import { CookieIcon, EllipsisIcon, LinkIcon, LockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,12 +48,18 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 								<TooltipContent>Copy link to clipboard</TooltipContent>
 							</Tooltip>
 						) : null}
+						{row.isConsumable ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<CookieIcon className="h-4 w-4 text-muted-foreground" />
+								</TooltipTrigger>
+								<TooltipContent>Consumable item, no return needed</TooltipContent>
+							</Tooltip>
+						) : null}
 						{row.approvalRoles && row.approvalRoles.length > 0 ? (
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<div className="flex items-center">
-										<LockIcon className="h-4 w-4 text-amber-500" />
-									</div>
+									<LockIcon className="h-4 w-4 text-amber-500" />
 								</TooltipTrigger>
 								<TooltipContent>
 									<div className="text-sm">

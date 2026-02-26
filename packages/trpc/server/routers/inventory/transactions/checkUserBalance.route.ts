@@ -22,17 +22,22 @@ export async function checkUserBalanceHandler(
 ) {
 	const { userId } = options.input;
 
-	// Use aggregate query to efficiently check if any item has negative balance
-	// This lets the DB do the work instead of loading all transactions into memory
+	// Use aggregate query to efficiently check if any (non-consumable) item has
+	// negative balance.
+	//
+	// This lets the DB do the work instead of loading all transactions into
+	// memory.
 	const result = await prisma.$queryRaw<Array<{ has_checked_out: boolean }>>`
 		SELECT EXISTS (
 			SELECT 1
 			FROM (
-				SELECT "itemId", SUM(quantity) as net_quantity
-				FROM "InventoryTransaction"
-				WHERE "userId" = ${userId}
-				GROUP BY "itemId"
-				HAVING SUM(quantity) < 0
+				SELECT it."itemId", SUM(it.quantity) as net_quantity
+				FROM "InventoryTransaction" it
+				INNER JOIN "Item" i ON it."itemId" = i.id
+				WHERE it."userId" = ${userId}
+				  AND i."isConsumable" = FALSE
+				GROUP BY it."itemId"
+				HAVING SUM(it.quantity) < 0
 			) AS items_with_negative_balance
 		) AS has_checked_out
 	`;
