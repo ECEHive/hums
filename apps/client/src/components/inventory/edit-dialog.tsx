@@ -15,6 +15,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Sheet,
 	SheetClose,
 	SheetContent,
@@ -48,7 +55,7 @@ type EditDialogProps = {
 		minQuantity?: number | null;
 		link?: string | null;
 		isActive: boolean;
-		isConsumable: boolean;
+		itemType: "multiple" | "single" | "consumable";
 		approvalRoles?: { id: number; name: string }[];
 	};
 	onUpdate?: () => void;
@@ -72,7 +79,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		minQuantity?: number;
 		link?: string;
 		isActive?: boolean;
-		isConsumable?: boolean;
+		itemType?: "multiple" | "single" | "consumable";
 		approvalRoleIds?: number[];
 	};
 
@@ -105,7 +112,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 			link: item.link ?? "",
 			quantity: undefined,
 			isActive: item.isActive,
-			isConsumable: item.isConsumable,
+			itemType: item.itemType,
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -364,23 +371,33 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 						)}
 					</form.Field>
 
-					<form.Field name="isConsumable">
+					<form.Field name="itemType">
 						{(field) => (
 							<Field>
-								<div className="flex items-center space-x-2">
-									<Checkbox
-										id={field.name}
-										checked={field.state.value}
-										onCheckedChange={(checked) => field.handleChange(!!checked)}
-										onBlur={field.handleBlur}
-									/>
-									<FieldLabel htmlFor={field.name} className="!mt-0">
-										Consumable
-									</FieldLabel>
-								</div>
-								<p className="text-xs text-muted-foreground">
-									Net balances are not shown for consumable items.
-								</p>
+								<FieldLabel htmlFor={field.name}>Item Type</FieldLabel>
+								<Select
+									value={field.state.value}
+									onValueChange={(value) =>
+										field.handleChange(
+											value as "multiple" | "single" | "consumable",
+										)
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select item type" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="multiple">
+											Multiple (tracked by quantity)
+										</SelectItem>
+										<SelectItem value="single">
+											Single (individual item)
+										</SelectItem>
+										<SelectItem value="consumable">
+											Consumable (no return needed)
+										</SelectItem>
+									</SelectContent>
+								</Select>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>
 						)}

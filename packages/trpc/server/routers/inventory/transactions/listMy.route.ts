@@ -38,7 +38,7 @@ export async function listMyHandler(options: TListMyOptions) {
 			take: limit,
 			include: {
 				item: {
-					select: { id: true, name: true, sku: true, isConsumable: true },
+					select: { id: true, name: true, sku: true, itemType: true },
 				},
 			},
 		}),

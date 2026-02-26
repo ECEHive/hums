@@ -7,7 +7,7 @@ export type ItemRow = {
 	minQuantity?: number | null;
 	link?: string | null;
 	isActive: boolean;
-	isConsumable: boolean;
+	itemType: "multiple" | "single" | "consumable";
 	snapshot?: { quantity: number } | null;
 	currentQuantity?: number | null;
 	createdAt?: string | null;

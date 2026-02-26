@@ -10,7 +10,9 @@ export const ZCreateItemSchema = z.object({
 	minQuantity: z.number().int().min(0).optional(),
 	link: z.string().url().optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
-	isConsumable: z.boolean().optional(),
+	itemType: z
+		.enum(["multiple", "single", "consumable"])
+		.optional(),
 	initialQuantity: z.number().int().min(0).optional(),
 	approvalRoleIds: z.array(z.number().int()).optional(),
 });
@@ -29,6 +31,7 @@ export async function createItemHandler(options: TCreateItemOptions) {
 		const newItem = await tx.item.create({
 			data: {
 				...itemData,
+				// prisma default will apply if itemType is undefined
 				approvalRoles: approvalRoleIds?.length
 					? { connect: approvalRoleIds.map((id) => ({ id })) }
 					: undefined,

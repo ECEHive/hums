@@ -1,8 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
-import { CookieIcon } from "lucide-react";
+import { CookieIcon, PackageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
 	TooltipContent,
@@ -22,7 +21,7 @@ type Transaction = {
 		id: string;
 		name: string;
 		sku: string | null;
-		isConsumable: boolean;
+		itemType: "multiple" | "single" | "consumable";
 	};
 	user: {
 		id: number;
@@ -43,7 +42,7 @@ type MyTransaction = {
 		id: string;
 		name: string;
 		sku: string | null;
-		isConsumable: boolean;
+		itemType: "multiple" | "single" | "consumable";
 	};
 };
 
@@ -98,12 +97,22 @@ export function generateColumns(): ColumnDef<Transaction>[] {
 					<div className="flex flex-col">
 						<span className="flex items-center gap-2">
 							{item.name}
-							{item.isConsumable && (
+							{item.itemType === "consumable" && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<CookieIcon className="h-4 w-4 text-muted-foreground" />
 									</TooltipTrigger>
-									<TooltipContent>Consumable item, no return needed</TooltipContent>
+									<TooltipContent>
+										Consumable item, no return needed
+									</TooltipContent>
+								</Tooltip>
+							)}
+							{item.itemType === "single" && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<PackageIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>Individual item</TooltipContent>
 								</Tooltip>
 							)}
 						</span>
@@ -194,12 +203,22 @@ export function generateMyTransactionColumns(): ColumnDef<MyTransaction>[] {
 					<div className="flex flex-col">
 						<span className="flex items-center gap-2">
 							{item.name}
-							{item.isConsumable && (
+							{item.itemType === "consumable" && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<CookieIcon className="h-4 w-4 text-muted-foreground" />
 									</TooltipTrigger>
-									<TooltipContent>Consumable item, no return needed</TooltipContent>
+									<TooltipContent>
+										Consumable item, no return needed
+									</TooltipContent>
+								</Tooltip>
+							)}
+							{item.itemType === "single" && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<PackageIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>Individual item</TooltipContent>
 								</Tooltip>
 							)}
 						</span>

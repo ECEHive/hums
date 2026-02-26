@@ -35,7 +35,7 @@ export async function checkUserBalanceHandler(
 				FROM "InventoryTransaction" it
 				INNER JOIN "Item" i ON it."itemId" = i.id
 				WHERE it."userId" = ${userId}
-				  AND i."isConsumable" = FALSE
+			  AND i."itemType" <> 'consumable'
 				GROUP BY it."itemId"
 				HAVING SUM(it.quantity) < 0
 			) AS items_with_negative_balance

@@ -12,7 +12,9 @@ export const ZUpdateItemSchema = z.object({
 	minQuantity: z.number().int().min(0).optional(),
 	link: z.string().url().optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
-	isConsumable: z.boolean().optional(),
+	itemType: z
+		.enum(["multiple", "single", "consumable"])
+		.optional(),
 	approvalRoleIds: z.array(z.number().int()).optional(),
 });
 

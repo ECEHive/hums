@@ -291,6 +291,12 @@ model Suspension {
   @@index([emailSentAt, startDate])
 }
 
+enum ItemType {
+  multiple
+  single
+  consumable
+}
+
 model Item {
   id            String                 @id @default(uuid())
   name          String
@@ -299,7 +305,7 @@ model Item {
   location      String?
   minQuantity   Int?
   isActive      Boolean                @default(true)
-  isConsumable  Boolean                @default(false)
+  itemType      ItemType               @default(multiple)
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @default(now()) @updatedAt
   link          String?

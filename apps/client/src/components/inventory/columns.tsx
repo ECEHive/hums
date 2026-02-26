@@ -1,6 +1,12 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
-import { CookieIcon, EllipsisIcon, LinkIcon, LockIcon } from "lucide-react";
+import {
+	CookieIcon,
+	EllipsisIcon,
+	LinkIcon,
+	LockIcon,
+	PackageIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,12 +54,22 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 								<TooltipContent>Copy link to clipboard</TooltipContent>
 							</Tooltip>
 						) : null}
-						{row.isConsumable ? (
+						{row.itemType === "consumable" ? (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<CookieIcon className="h-4 w-4 text-muted-foreground" />
 								</TooltipTrigger>
-								<TooltipContent>Consumable item, no return needed</TooltipContent>
+								<TooltipContent>
+									Consumable item, no return needed
+								</TooltipContent>
+							</Tooltip>
+						) : null}
+						{row.itemType === "single" ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<PackageIcon className="h-4 w-4 text-muted-foreground" />
+								</TooltipTrigger>
+								<TooltipContent>Individual item</TooltipContent>
 							</Tooltip>
 						) : null}
 						{row.approvalRoles && row.approvalRoles.length > 0 ? (
