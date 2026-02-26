@@ -336,11 +336,13 @@ export function useInventoryWorkflow() {
 					await trpc.inventory.transactions.checkOut.mutate({
 						userId,
 						items,
+						approverId: result.user.id,
 					});
 				} else {
 					await trpc.inventory.transactions.checkIn.mutate({
 						userId,
 						items,
+						approverId: result.user.id,
 					});
 				}
 

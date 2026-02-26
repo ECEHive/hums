@@ -129,6 +129,12 @@ export function generateColumns(): ColumnDef<Transaction>[] {
 			cell: ({ row }) => {
 				const quantity = row.original.quantity;
 				const action = row.original.action;
+				const isSingle = row.original.item.itemType === "single";
+
+				if (isSingle) {
+					return <span className="text-muted-foreground">—</span>;
+				}
+
 				const displayQuantity =
 					action === "CHECK_IN" ? `+${quantity}` : `-${Math.abs(quantity)}`;
 				return (
@@ -235,6 +241,12 @@ export function generateMyTransactionColumns(): ColumnDef<MyTransaction>[] {
 			cell: ({ row }) => {
 				const quantity = row.original.quantity;
 				const action = row.original.action;
+				const isSingle = row.original.item.itemType === "single";
+
+				if (isSingle) {
+					return <span className="text-muted-foreground">—</span>;
+				}
+
 				const displayQuantity =
 					action === "CHECK_IN" ? `+${quantity}` : `-${Math.abs(quantity)}`;
 				return (

@@ -37,5 +37,18 @@ export async function getBySkuItemHandler(options: TGetBySkuItemOptions) {
 		});
 	}
 
-	return item;
+	// For single items, include whether the item is currently checked out
+	if (item.itemType === "single") {
+		const balanceResult = await prisma.$queryRaw<
+			Array<{ netQuantity: bigint }>
+		>`
+			SELECT COALESCE(SUM(quantity), 0)::bigint as "netQuantity"
+			FROM "InventoryTransaction"
+			WHERE "itemId" = ${item.id}
+		`;
+		const netQuantity = Number(balanceResult[0]?.netQuantity ?? 0);
+		return { ...item, isCheckedOut: netQuantity < 0 };
+	}
+
+	return { ...item, isCheckedOut: false };
 }

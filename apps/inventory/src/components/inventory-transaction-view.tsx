@@ -20,6 +20,7 @@ type TransactionItem = {
 	name: string;
 	sku: string;
 	quantity: number;
+	itemType: "multiple" | "single" | "consumable";
 };
 
 export function InventoryTransactionView({
@@ -82,6 +83,10 @@ export function InventoryTransactionView({
 		setItems((prevItems) => {
 			const existingItem = prevItems.find((item) => item.sku === sku);
 			if (existingItem) {
+				// Single items cannot have quantity incremented
+				if (existingItem.itemType === "single") {
+					return prevItems;
+				}
 				// Item exists, increment quantity
 				return prevItems.map((item) =>
 					item.sku === sku ? { ...item, quantity: item.quantity + 1 } : item,
@@ -109,11 +114,31 @@ export function InventoryTransactionView({
 						onError("Cannot add inactive item");
 						return;
 					}
+					// For single items during checkout, check if already checked out
+					if (item.itemType === "single" && mode === "checkout") {
+						if (item.isCheckedOut) {
+							onError(
+								`"${item.name}" is currently checked out and must be returned before it can be checked out again`,
+							);
+							return;
+						}
+					}
+					// For single items during return, check if it's actually checked out
+					if (item.itemType === "single" && mode === "return") {
+						if (!item.isCheckedOut) {
+							onError(`"${item.name}" is not currently checked out`);
+							return;
+						}
+					}
 					if (item.name) {
 						// Use functional update to avoid stale closure
 						setItems((prevItems) => {
 							// Double-check the item wasn't added while we were fetching
 							if (prevItems.some((i) => i.sku === sku)) {
+								// For single items, don't increment quantity
+								if (item.itemType === "single") {
+									return prevItems;
+								}
 								return prevItems.map((i) =>
 									i.sku === sku ? { ...i, quantity: i.quantity + 1 } : i,
 								);
@@ -125,6 +150,7 @@ export function InventoryTransactionView({
 									name: item.name,
 									sku,
 									quantity: 1,
+									itemType: item.itemType,
 								},
 							];
 						});
@@ -298,25 +324,33 @@ export function InventoryTransactionView({
 															{item.name}
 														</p>
 													</div>
-													<div className="flex items-center gap-2">
-														<Button
-															size="icon"
-															variant="outline"
-															onClick={() => handleUpdateQuantity(item.id, -1)}
-														>
-															<Minus className="h-4 w-4" />
-														</Button>
-														<span className="text-2xl font-bold w-12 text-center">
-															{item.quantity}
+													{item.itemType === "single" ? (
+														<span className="text-lg text-muted-foreground">
+															Individual item
 														</span>
-														<Button
-															size="icon"
-															variant="outline"
-															onClick={() => handleUpdateQuantity(item.id, 1)}
-														>
-															<Plus className="h-4 w-4" />
-														</Button>
-													</div>
+													) : (
+														<div className="flex items-center gap-2">
+															<Button
+																size="icon"
+																variant="outline"
+																onClick={() =>
+																	handleUpdateQuantity(item.id, -1)
+																}
+															>
+																<Minus className="h-4 w-4" />
+															</Button>
+															<span className="text-2xl font-bold w-12 text-center">
+																{item.quantity}
+															</span>
+															<Button
+																size="icon"
+																variant="outline"
+																onClick={() => handleUpdateQuantity(item.id, 1)}
+															>
+																<Plus className="h-4 w-4" />
+															</Button>
+														</div>
+													)}
 													<Button
 														size="icon"
 														variant="ghost"

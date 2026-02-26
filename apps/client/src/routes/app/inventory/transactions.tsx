@@ -161,9 +161,7 @@ function Transactions() {
 										</Label>
 										<Select
 											value={itemTypeFilter}
-											onValueChange={(
-												value: "all" | "multiple" | "single",
-											) => {
+											onValueChange={(value: "all" | "multiple" | "single") => {
 												setItemTypeFilter(value);
 											}}
 										>

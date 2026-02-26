@@ -57,6 +57,25 @@ export function generateSummaryColumns(): ColumnDef<TransactionSummary>[] {
 			header: "Net Balance",
 			cell: ({ row }) => {
 				const quantity = row.original.netQuantity;
+				const isSingle = row.original.itemType === "single";
+
+				if (isSingle) {
+					return (
+						<div className="flex items-center gap-2">
+							<Badge
+								variant={quantity < 0 ? "default" : "secondary"}
+								className={
+									quantity < 0
+										? "bg-blue-600 hover:bg-blue-700 text-foreground"
+										: "bg-green-600 hover:bg-green-700 text-foreground"
+								}
+							>
+								{quantity < 0 ? "Checked Out" : "Available"}
+							</Badge>
+						</div>
+					);
+				}
+
 				return (
 					<div className="flex items-center gap-2">
 						<span
@@ -121,6 +140,25 @@ export function generateMySummaryColumns(): ColumnDef<MyTransactionSummary>[] {
 			header: "Net Balance",
 			cell: ({ row }) => {
 				const quantity = row.original.netQuantity;
+				const isSingle = row.original.itemType === "single";
+
+				if (isSingle) {
+					return (
+						<div className="flex items-center gap-2">
+							<Badge
+								variant={quantity < 0 ? "default" : "secondary"}
+								className={
+									quantity < 0
+										? "bg-blue-600 hover:bg-blue-700 text-foreground"
+										: "bg-green-600 hover:bg-green-700 text-foreground"
+								}
+							>
+								{quantity < 0 ? "Checked Out" : "In Possession"}
+							</Badge>
+						</div>
+					);
+				}
+
 				return (
 					<div className="flex items-center gap-2">
 						<span
