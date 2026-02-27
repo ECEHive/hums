@@ -42,8 +42,39 @@ export async function getControlPointsHandler({
 		orderBy: { name: "asc" },
 	});
 
+	// For control points that are currently on, find who last turned them on
+	const activePointIds = controlPoints
+		.filter((cp) => cp.currentState)
+		.map((cp) => cp.id);
+
+	const lastTurnOnLogs =
+		activePointIds.length > 0
+			? await prisma.controlLog.findMany({
+					where: {
+						controlPointId: { in: activePointIds },
+						action: "TURN_ON",
+						success: true,
+					},
+					orderBy: { createdAt: "desc" },
+					distinct: ["controlPointId"],
+					select: {
+						controlPointId: true,
+						user: { select: { name: true } },
+					},
+				})
+			: [];
+
+	const lastUserByPointId = new Map(
+		lastTurnOnLogs.map((log) => [log.controlPointId, log.user.name]),
+	);
+
+	const controlPointsWithUser = controlPoints.map((cp) => ({
+		...cp,
+		currentUserName: lastUserByPointId.get(cp.id) ?? null,
+	}));
+
 	return {
-		controlPoints,
+		controlPoints: controlPointsWithUser,
 		deviceName: ctx.device.name,
 	};
 }

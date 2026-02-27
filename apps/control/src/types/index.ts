@@ -137,6 +137,7 @@ export type ControlPointWithStatus = {
 	canControlOnline: boolean;
 	authorizedRoles: { id: number; name: string }[];
 	authorizedUsers: { id: number; name: string }[];
+	currentUserName: string | null;
 };
 
 export type AuthenticatedUser = {
