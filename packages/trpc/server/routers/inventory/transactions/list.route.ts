@@ -42,7 +42,7 @@ export async function listHandler(options: TListOptions) {
 			take: limit,
 			include: {
 				item: {
-					select: { id: true, name: true, sku: true },
+					select: { id: true, name: true, sku: true, itemType: true },
 				},
 				user: {
 					select: { id: true, name: true, username: true },

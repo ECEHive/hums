@@ -1,6 +1,12 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
+import { CookieIcon, PackageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatInAppTimezone } from "@/lib/timezone";
 
 type Transaction = {
@@ -15,6 +21,7 @@ type Transaction = {
 		id: string;
 		name: string;
 		sku: string | null;
+		itemType: "multiple" | "single" | "consumable";
 	};
 	user: {
 		id: number;
@@ -35,6 +42,7 @@ type MyTransaction = {
 		id: string;
 		name: string;
 		sku: string | null;
+		itemType: "multiple" | "single" | "consumable";
 	};
 };
 
@@ -87,7 +95,27 @@ export function generateColumns(): ColumnDef<Transaction>[] {
 				const item = row.original.item;
 				return (
 					<div className="flex flex-col">
-						<span>{item.name}</span>
+						<span className="flex items-center gap-2">
+							{item.name}
+							{item.itemType === "consumable" && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<CookieIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>
+										Consumable item, no return needed
+									</TooltipContent>
+								</Tooltip>
+							)}
+							{item.itemType === "single" && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<PackageIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>Individual item</TooltipContent>
+								</Tooltip>
+							)}
+						</span>
 						{item.sku && (
 							<span className="text-xs text-muted-foreground">{item.sku}</span>
 						)}
@@ -101,6 +129,12 @@ export function generateColumns(): ColumnDef<Transaction>[] {
 			cell: ({ row }) => {
 				const quantity = row.original.quantity;
 				const action = row.original.action;
+				const isSingle = row.original.item.itemType === "single";
+
+				if (isSingle) {
+					return <span className="text-muted-foreground">—</span>;
+				}
+
 				const displayQuantity =
 					action === "CHECK_IN" ? `+${quantity}` : `-${Math.abs(quantity)}`;
 				return (
@@ -173,7 +207,27 @@ export function generateMyTransactionColumns(): ColumnDef<MyTransaction>[] {
 				const item = row.original.item;
 				return (
 					<div className="flex flex-col">
-						<span>{item.name}</span>
+						<span className="flex items-center gap-2">
+							{item.name}
+							{item.itemType === "consumable" && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<CookieIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>
+										Consumable item, no return needed
+									</TooltipContent>
+								</Tooltip>
+							)}
+							{item.itemType === "single" && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<PackageIcon className="h-4 w-4 text-muted-foreground" />
+									</TooltipTrigger>
+									<TooltipContent>Individual item</TooltipContent>
+								</Tooltip>
+							)}
+						</span>
 						{item.sku && (
 							<span className="text-xs text-muted-foreground">{item.sku}</span>
 						)}
@@ -187,6 +241,12 @@ export function generateMyTransactionColumns(): ColumnDef<MyTransaction>[] {
 			cell: ({ row }) => {
 				const quantity = row.original.quantity;
 				const action = row.original.action;
+				const isSingle = row.original.item.itemType === "single";
+
+				if (isSingle) {
+					return <span className="text-muted-foreground">—</span>;
+				}
+
 				const displayQuantity =
 					action === "CHECK_IN" ? `+${quantity}` : `-${Math.abs(quantity)}`;
 				return (
