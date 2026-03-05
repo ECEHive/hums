@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
 		plugins: [
 			devtools({
 				eventBusConfig: {
-					port: 42068,
+					port: 42065,
 				},
 			}),
 			tsConfigPaths(),
