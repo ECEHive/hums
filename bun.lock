@@ -41,7 +41,7 @@
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
         "@tanstack/react-form": "^1.28.0",
-        "@tanstack/react-query": "^5.90.20",
+        "@tanstack/react-query": "^5.90.21",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@tanstack/react-router": "^1.140.0",
         "@tanstack/react-table": "^8.21.3",
@@ -95,7 +95,7 @@
         "@sentry/react": "^10.32.1",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
-        "@tanstack/react-query": "^5.90.20",
+        "@tanstack/react-query": "^5.90.21",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@trpc/client": "11.10.0",
         "@trpc/tanstack-react-query": "11.10.0",
@@ -142,7 +142,7 @@
         "@sentry/react": "^10.32.1",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
-        "@tanstack/react-query": "^5.90.20",
+        "@tanstack/react-query": "^5.90.21",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@trpc/client": "11.10.0",
         "@trpc/tanstack-react-query": "11.10.0",
@@ -188,7 +188,7 @@
         "@sentry/react": "^10.32.1",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
-        "@tanstack/react-query": "^5.90.20",
+        "@tanstack/react-query": "^5.90.21",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@trpc/client": "11.10.0",
         "@trpc/tanstack-react-query": "11.10.0",
@@ -242,7 +242,7 @@
         "@sentry/react": "^10.32.1",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
-        "@tanstack/react-query": "^5.90.20",
+        "@tanstack/react-query": "^5.90.21",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@tanstack/react-router": "^1.140.0",
         "@trpc/client": "11.10.0",
@@ -1138,7 +1138,7 @@
 
     "@tanstack/react-form": ["@tanstack/react-form@1.28.0", "", { "dependencies": { "@tanstack/form-core": "1.28.0", "@tanstack/react-store": "^0.8.0" }, "peerDependencies": { "react": "^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-ibLcf5QkTogV0Ly944CuqGxWTpHyreNA4Cy8Wtky7zE9wtE3HVapQt4/hUuXo51zihfTkv5URiXpoTSKF5Xosg=="],
 
-    "@tanstack/react-query": ["@tanstack/react-query@5.90.20", "", { "dependencies": { "@tanstack/query-core": "5.90.20" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-vXBxa+qeyveVO7OA0jX1z+DeyCA4JKnThKv411jd5SORpBKgkcVnYKCiBgECvADvniBX7tobwBmg01qq9JmMJw=="],
+    "@tanstack/react-query": ["@tanstack/react-query@5.90.21", "", { "dependencies": { "@tanstack/query-core": "5.90.20" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-0Lu6y5t+tvlTJMTO7oh5NSpJfpg/5D41LlThfepTixPYkJ0sE2Jj0m0f6yYqujBwIXlId87e234+MxG3D3g7kg=="],
 
     "@tanstack/react-query-devtools": ["@tanstack/react-query-devtools@5.91.2", "", { "dependencies": { "@tanstack/query-devtools": "5.92.0" }, "peerDependencies": { "@tanstack/react-query": "^5.90.14", "react": "^18 || ^19" } }, "sha512-ZJ1503ay5fFeEYFUdo7LMNFzZryi6B0Cacrgr2h1JRkvikK1khgIq6Nq2EcblqEdIlgB/r7XDW8f8DQ89RuUgg=="],
 
