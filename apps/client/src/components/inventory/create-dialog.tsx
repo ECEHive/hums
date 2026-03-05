@@ -14,6 +14,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Sheet,
 	SheetClose,
 	SheetContent,
@@ -34,6 +41,7 @@ const formSchema = z.object({
 	minQuantity: z.number().int().min(0).optional(),
 	link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
+	itemType: z.enum(["multiple", "single", "consumable"]).optional(),
 	initialQuantity: z.number().int().min(0).optional(),
 });
 
@@ -72,6 +80,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		minQuantity?: number;
 		link?: string;
 		isActive?: boolean;
+		itemType?: "multiple" | "single" | "consumable";
 		initialQuantity?: number;
 		approvalRoleIds?: number[];
 	};
@@ -95,6 +104,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			minQuantity: undefined,
 			link: "",
 			isActive: true,
+			itemType: "multiple",
 			initialQuantity: undefined,
 		},
 		validators: {
@@ -142,9 +152,9 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 					link: "",
 					isActive: true,
 					initialQuantity: undefined,
+					itemType: "multiple",
 				});
 				setApprovalRoles([]);
-				setServerError(null);
 				return;
 			}
 
@@ -342,6 +352,38 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 								<p className="text-xs text-muted-foreground">
 									Inactive items will be hidden by default.
 								</p>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
+					<form.Field name="itemType">
+						{(field) => (
+							<Field>
+								<FieldLabel htmlFor={field.name}>Item Type</FieldLabel>
+								<Select
+									value={field.state.value}
+									onValueChange={(value) =>
+										field.handleChange(
+											value as "multiple" | "single" | "consumable",
+										)
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select item type" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="multiple">
+											Multiple (tracked by quantity)
+										</SelectItem>
+										<SelectItem value="single">
+											Single (individual item)
+										</SelectItem>
+										<SelectItem value="consumable">
+											Consumable (no return needed)
+										</SelectItem>
+									</SelectContent>
+								</Select>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>
 						)}

@@ -2,8 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	AlertCircle,
 	CheckCircle2,
+	Clock,
 	DoorOpen,
 	Loader2,
+	LogOut,
 	RefreshCw,
 	Usb,
 	Users,
@@ -99,6 +101,11 @@ function ControlPointStatusCard({
 						/>
 						<span className="text-xs font-medium">{getStatusText()}</span>
 					</div>
+					{isOn && isActive && controlPoint.currentUserName && (
+						<p className="text-xs text-muted-foreground truncate">
+							{controlPoint.currentUserName}
+						</p>
+					)}
 				</div>
 			</Card>
 		</motion.div>
@@ -212,6 +219,11 @@ function ControlPointButton({
 				<Badge variant={isOn ? "success" : "secondary"} className="text-xs">
 					{actionText}
 				</Badge>
+				{isOn && point.currentUserName && (
+					<p className="text-xs text-muted-foreground truncate max-w-full">
+						{point.currentUserName}
+					</p>
+				)}
 			</div>
 		</motion.button>
 	);
@@ -401,14 +413,6 @@ function ControlKioskApp() {
 			state.authenticatedUser.currentSession?.sessionType === "regular";
 		const hasStaffingPermission = state.authenticatedUser.hasStaffingPermission;
 
-		// Determine which session actions to show based on current state and permissions
-		// Control kiosk only allows staffing-related actions:
-		// - Start staffing (if no session and has permission)
-		// - Switch to staffing (if in regular session and has permission)
-		// - Switch to regular (if in staffing session and has permission)
-		// Only users with staffing permission can see session controls
-		const showSessionControls = hasStaffingPermission;
-
 		return (
 			<div className="h-svh bg-background flex flex-col overflow-hidden">
 				{/* Header with logo, user name (centered), and cancel */}
@@ -421,56 +425,76 @@ function ControlKioskApp() {
 
 				{/* Main content */}
 				<main className="flex-1 overflow-auto p-4 px-8">
-					{/* Session Controls - only show for staff or when in staffing session */}
-					{showSessionControls && (
-						<section className="mb-6">
-							<h2 className="text-lg font-bold mb-3">
-								{isInSession ? "Session Controls" : "Start Staffing"}
-							</h2>
-							<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-								{!isInSession && hasStaffingPermission && (
-									<SessionActionCard
-										title="Start Staffing"
-										description="Begin your staffing shift"
-										icon={
-											<Users className="w-8 h-8 md:w-10 md:h-10 text-purple-500" />
-										}
-										colorClass="text-purple-500"
-										onClick={() => handleSessionAction("start_staffing")}
-									/>
-								)}
-								{isRegular && hasStaffingPermission && (
-									<SessionActionCard
-										title="Switch to Staffing"
-										description="End regular and start staffing"
-										icon={
-											<RefreshCw className="w-8 h-8 md:w-10 md:h-10 text-purple-500" />
-										}
-										colorClass="text-purple-500"
-										onClick={() => handleSessionAction("switch_to_staffing")}
-									/>
-								)}
-								{isStaffing && (
-									<SessionActionCard
-										title="Switch to Regular"
-										description="End staffing and start regular"
-										icon={
-											<RefreshCw className="w-8 h-8 md:w-10 md:h-10 text-orange-500" />
-										}
-										colorClass="text-orange-500"
-										onClick={() => handleSessionAction("switch_to_regular")}
-									/>
-								)}
-							</div>
-							{isInSession && (
-								<div className="flex items-center gap-2 mt-3">
-									<Badge variant="outline" className="text-xs">
-										{isStaffing ? "Staffing Session" : "Regular Session"}
-									</Badge>
-								</div>
+					{/* Session Controls */}
+					<section className="mb-6">
+						<h2 className="text-lg font-bold mb-3">
+							{isInSession ? "Session Controls" : "Start a Session"}
+						</h2>
+						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+							{!isInSession && (
+								<SessionActionCard
+									title="Start Session"
+									description="Begin a regular session"
+									icon={
+										<Clock className="w-8 h-8 md:w-10 md:h-10 text-orange-500" />
+									}
+									colorClass="text-orange-500"
+									onClick={() => handleSessionAction("start_regular")}
+								/>
 							)}
-						</section>
-					)}
+							{!isInSession && hasStaffingPermission && (
+								<SessionActionCard
+									title="Start Staffing"
+									description="Begin your staffing shift"
+									icon={
+										<Users className="w-8 h-8 md:w-10 md:h-10 text-purple-500" />
+									}
+									colorClass="text-purple-500"
+									onClick={() => handleSessionAction("start_staffing")}
+								/>
+							)}
+							{isInSession && (
+								<SessionActionCard
+									title="End Session"
+									description="End your current session"
+									icon={
+										<LogOut className="w-8 h-8 md:w-10 md:h-10 text-blue-500" />
+									}
+									colorClass="text-blue-500"
+									onClick={() => handleSessionAction("end_session")}
+								/>
+							)}
+							{isRegular && hasStaffingPermission && (
+								<SessionActionCard
+									title="Switch to Staffing"
+									description="End regular and start staffing"
+									icon={
+										<RefreshCw className="w-8 h-8 md:w-10 md:h-10 text-purple-500" />
+									}
+									colorClass="text-purple-500"
+									onClick={() => handleSessionAction("switch_to_staffing")}
+								/>
+							)}
+							{isStaffing && (
+								<SessionActionCard
+									title="Switch to Regular"
+									description="End staffing and start regular"
+									icon={
+										<RefreshCw className="w-8 h-8 md:w-10 md:h-10 text-orange-500" />
+									}
+									colorClass="text-orange-500"
+									onClick={() => handleSessionAction("switch_to_regular")}
+								/>
+							)}
+						</div>
+						{isInSession && (
+							<div className="flex items-center gap-2 mt-3">
+								<Badge variant="outline" className="text-xs">
+									{isStaffing ? "Staffing Session" : "Regular Session"}
+								</Badge>
+							</div>
+						)}
+					</section>
 
 					{/* Control Points */}
 					<section>
@@ -554,9 +578,27 @@ function ControlKioskApp() {
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
 						>
-							<div className="text-center">
+							<div className="text-center max-w-lg px-6">
 								<AlertCircle className="w-24 h-24 mx-auto text-destructive mb-4" />
-								<p className="text-2xl text-destructive">{state.error}</p>
+								<p className="text-2xl text-destructive text-balance">
+									{state.error}
+								</p>
+							</div>
+						</motion.div>
+					)}
+
+					{state.mode === "authenticated" && state.error && (
+						<motion.div
+							className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+						>
+							<div className="text-center max-w-lg px-6">
+								<AlertCircle className="w-24 h-24 mx-auto text-destructive mb-4" />
+								<p className="text-2xl text-destructive text-balance">
+									{state.error}
+								</p>
 							</div>
 						</motion.div>
 					)}
@@ -601,9 +643,11 @@ function ControlKioskApp() {
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
 						>
-							<div className="text-center">
+							<div className="text-center max-w-lg px-6">
 								<AlertCircle className="w-20 h-20 mx-auto text-destructive" />
-								<p className="text-2xl text-destructive mt-6">{state.error}</p>
+								<p className="text-2xl text-destructive mt-6 text-balance">
+									{state.error}
+								</p>
 							</div>
 						</motion.div>
 					) : state.mode === "success" ? (

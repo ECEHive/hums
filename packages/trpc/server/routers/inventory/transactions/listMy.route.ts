@@ -37,7 +37,9 @@ export async function listMyHandler(options: TListMyOptions) {
 			skip: offset,
 			take: limit,
 			include: {
-				item: { select: { id: true, name: true, sku: true } },
+				item: {
+					select: { id: true, name: true, sku: true, itemType: true },
+				},
 			},
 		}),
 		prisma.inventoryTransaction.count({ where }),

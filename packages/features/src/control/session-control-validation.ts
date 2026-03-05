@@ -32,7 +32,7 @@ export async function requireActiveSession(
 		throw new TRPCError({
 			code: "PRECONDITION_FAILED",
 			message:
-				"You must have an active session to operate control points. Please tap in at a kiosk first.",
+				"You must have an active general or staffing session to operate control points.",
 		});
 	}
 }

@@ -1,4 +1,4 @@
-import { prisma } from "@ecehive/prisma";
+import { Prisma, prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TInventoryProtectedProcedureContext } from "../../../trpc";
@@ -70,6 +70,46 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 			code: "BAD_REQUEST",
 			message: `Cannot check out from inactive item: ${inactive.id}`,
 		});
+	}
+
+	// Validate single items: quantity must be 1 and the item must not already be checked out
+	const singleItems = foundItems.filter((i) => i.itemType === "single");
+	if (singleItems.length > 0) {
+		// Enforce quantity of 1 for single items
+		for (const singleItem of singleItems) {
+			const requested = items.find((i) => i.itemId === singleItem.id);
+			if (requested && requested.quantity !== 1) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `"${singleItem.name}" is an individual item and can only be checked out with a quantity of 1`,
+				});
+			}
+		}
+
+		// Check if any single items are already checked out (net balance < 0)
+		const singleItemIds = singleItems.map((i) => i.id);
+		const balances = await prisma.$queryRaw<
+			Array<{ itemId: string; netQuantity: bigint }>
+		>`
+			SELECT "itemId", SUM(quantity)::bigint as "netQuantity"
+			FROM "InventoryTransaction"
+			WHERE "itemId" IN (${Prisma.join(singleItemIds)})
+			GROUP BY "itemId"
+		`;
+
+		const balanceMap = new Map<string, number>(
+			balances.map((b) => [b.itemId, Number(b.netQuantity)]),
+		);
+
+		for (const singleItem of singleItems) {
+			const balance = balanceMap.get(singleItem.id) ?? 0;
+			if (balance < 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `"${singleItem.name}" is currently checked out and must be returned before it can be checked out again`,
+				});
+			}
+		}
 	}
 
 	// Check for items that require approval

@@ -21,6 +21,14 @@ import {
 } from "@/components/layout";
 import { SearchInput, TablePaginationFooter } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
@@ -52,6 +60,10 @@ function Transactions() {
 		resetToFirstPage,
 	} = useTableState();
 
+	const [itemTypeFilter, setItemTypeFilter] = React.useState<
+		"all" | "multiple" | "single"
+	>("all");
+
 	const queryParams = React.useMemo(() => {
 		return {
 			search:
@@ -73,13 +85,17 @@ function Transactions() {
 		retry: false,
 	});
 
-	// Fetch net balance data separately
+	// Fetch net balance data (excludes consumables, optionally filtered by type)
 	const summaryQueryParams = React.useMemo(() => {
 		return {
 			search:
 				debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
+			itemType:
+				itemTypeFilter === "all"
+					? undefined
+					: (itemTypeFilter as "multiple" | "single"),
 		};
-	}, [debouncedSearch]);
+	}, [debouncedSearch, itemTypeFilter]);
 
 	const { data: summaryData = [] } = useQuery({
 		queryKey: ["inventory", "transactions", "netBalance", summaryQueryParams],
@@ -135,6 +151,34 @@ function Transactions() {
 										}}
 									/>
 								</TableSearchInput>
+								<div className="flex items-center gap-4">
+									<div className="flex items-center gap-2">
+										<Label
+											htmlFor="item-type-filter"
+											className="text-sm font-medium"
+										>
+											Type:
+										</Label>
+										<Select
+											value={itemTypeFilter}
+											onValueChange={(value: "all" | "multiple" | "single") => {
+												setItemTypeFilter(value);
+											}}
+										>
+											<SelectTrigger
+												id="item-type-filter"
+												className="w-[180px]"
+											>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="all">All items</SelectItem>
+												<SelectItem value="multiple">Multiple only</SelectItem>
+												<SelectItem value="single">Single only</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
 							</TableToolbar>
 
 							<TransactionSummaryDataTable
@@ -149,7 +193,7 @@ function Transactions() {
 								}
 							/>
 						</TableContainer>
-					</TabsContent>{" "}
+					</TabsContent>
 					<TabsContent value="history" className="mt-0">
 						<TableContainer>
 							<TableToolbar>

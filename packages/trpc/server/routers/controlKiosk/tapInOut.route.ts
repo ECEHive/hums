@@ -2,23 +2,25 @@
  * Control Kiosk Routes - Tap In/Out
  *
  * This route handles session tap in/out from the control kiosk.
- * The control kiosk only supports staffing-related session actions:
- * - Start staffing session (when no active session)
+ * The control kiosk supports all session actions:
+ * - Start regular session (when no active session)
+ * - Start staffing session (when no active session, requires permission)
+ * - End session
  * - Switch to staffing (from regular session)
  * - Switch to regular (from staffing session)
- *
- * Regular sessions cannot be started or ended from the control kiosk.
  */
 
 import {
 	ConfigService,
 	checkMissingAgreements,
 	checkStaffingPermission,
+	endSession,
 	findUserByCard,
 	getActiveSuspension,
 	getCurrentSession,
 	startSession,
 	switchSessionType,
+	validateCanEndSession,
 } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import z from "zod";
@@ -26,10 +28,10 @@ import type { TControlProtectedProcedureContext } from "../../trpc";
 
 export const ZControlTapInOutSchema = z.object({
 	cardNumber: z.string().regex(/^\d+$/),
-	// Control kiosk only supports starting staffing sessions
-	sessionType: z.literal("staffing").optional(),
-	// Control kiosk only supports switching between staffing and regular
-	tapAction: z.enum(["switch_to_staffing", "switch_to_regular"]).optional(),
+	sessionType: z.enum(["regular", "staffing"]).optional(),
+	tapAction: z
+		.enum(["end_session", "switch_to_staffing", "switch_to_regular"])
+		.optional(),
 });
 
 export type TControlTapInOutSchema = z.infer<typeof ZControlTapInOutSchema>;
@@ -63,22 +65,26 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 		// Get the most recent session for the user
 		const mostRecentSession = await getCurrentSession(tx, user.id);
 
-		// If there is no session and requesting to start a staffing session
+		// If there is no session and requesting to start a session
 		if (!mostRecentSession) {
-			// Control kiosk only allows starting staffing sessions
-			if (!sessionType || sessionType !== "staffing") {
-				throw new Error("Control kiosk can only start staffing sessions");
+			if (!sessionType) {
+				throw new Error("Please select a session type to start");
 			}
 
-			if (!staffingSessionsEnabled) {
-				throw new Error("Staffing sessions are not enabled on this kiosk");
-			}
+			if (sessionType === "staffing") {
+				if (!staffingSessionsEnabled) {
+					throw new Error("Staffing sessions are not enabled on this kiosk");
+				}
 
-			// Verify user has staffing permission
-			if (!hasStaffingPermission) {
-				throw new Error(
-					"You do not have permission to start staffing sessions",
-				);
+				if (!hasStaffingPermission) {
+					throw new Error(
+						"You do not have permission to start staffing sessions",
+					);
+				}
+			} else {
+				if (!regularSessionsEnabled) {
+					throw new Error("Regular sessions are not enabled on this kiosk");
+				}
 			}
 
 			// Check if user is suspended
@@ -104,7 +110,7 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 				};
 			}
 
-			const session = await startSession(tx, user.id, "staffing", now);
+			const session = await startSession(tx, user.id, sessionType, now);
 
 			return {
 				status: "tapped_in" as const,
@@ -113,8 +119,20 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 			};
 		}
 
-		// User has an active session - handle switch actions only
-		// Control kiosk does not allow ending sessions directly
+		// User has an active session - handle session actions
+
+		// Handle end session
+		if (tapAction === "end_session") {
+			await validateCanEndSession(tx, user.id);
+
+			const session = await endSession(tx, mostRecentSession.id, now);
+
+			return {
+				status: "tapped_out" as const,
+				user,
+				session,
+			};
+		}
 
 		// Handle switch to staffing session
 		if (tapAction === "switch_to_staffing") {
@@ -200,9 +218,6 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 		}
 
 		// No valid action specified for a user with an active session
-		// Control kiosk cannot end sessions directly
-		throw new Error(
-			"Control kiosk does not support ending sessions. Use switch actions or end your session at the main kiosk.",
-		);
+		throw new Error("Please select an action for your current session.");
 	});
 }
