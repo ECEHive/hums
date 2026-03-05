@@ -2,12 +2,14 @@ import { agreementsRouter } from "./routers/agreements/_route";
 import { apiTokensRouter } from "./routers/apiTokens/_route";
 import { auditLogsRouter } from "./routers/auditLogs/_route";
 import { authRouter } from "./routers/auth/_route";
+import { bookingsRouter } from "./routers/bookings/_route";
 import { configRouter } from "./routers/config/_route";
 import { controlRouter } from "./routers/control/_route";
 import { controlKioskRouter } from "./routers/controlKiosk/_route";
 import { credentialsRouter } from "./routers/credentials/_route";
 import { devicesRouter } from "./routers/devices/_route";
 import { globalReportsRouter } from "./routers/globalReports/_route";
+import { instantEventTypesRouter } from "./routers/instantEventTypes/_route";
 import { inventoryRouter } from "./routers/inventory/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
 import { overviewRouter } from "./routers/overview/_route";
@@ -16,6 +18,7 @@ import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
 import { reportsRouter } from "./routers/reports/_route";
 import { rolesRouter } from "./routers/roles/_route";
+import { schedulerAvailabilityRouter } from "./routers/schedulerAvailability/_route";
 import { sessionsRouter } from "./routers/sessions/_route";
 import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
@@ -30,6 +33,7 @@ export const appRouter = router({
 	auth: authRouter,
 	apiTokens: apiTokensRouter,
 	auditLogs: auditLogsRouter,
+	bookings: bookingsRouter,
 	config: configRouter,
 	control: controlRouter,
 	controlKiosk: controlKioskRouter,
@@ -41,6 +45,8 @@ export const appRouter = router({
 	agreements: agreementsRouter,
 	periods: periodsRouter,
 	periodExceptions: periodExceptionsRouter,
+	instantEventTypes: instantEventTypesRouter,
+	schedulerAvailability: schedulerAvailabilityRouter,
 	shiftTypes: shiftTypesRouter,
 	shiftSchedules: shiftSchedulesRouter,
 	shiftOccurrences: shiftOccurrencesRouter,

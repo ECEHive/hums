@@ -8,6 +8,7 @@
 import {
 	AlertCircleIcon,
 	BanIcon,
+	BookOpenCheckIcon,
 	CalendarCheckIcon,
 	CalendarIcon,
 	CalendarXIcon,
@@ -215,6 +216,69 @@ export const appModules: AppModule[] = [
 						icon: NotebookTextIcon,
 						permissions: { any: ["period.reports"] },
 						description: "Shift reports and analytics",
+					},
+				],
+			},
+		],
+	},
+	{
+		id: "booking",
+		name: "Booking",
+		description: "Book and manage instant events",
+		icon: BookOpenCheckIcon,
+		basePath: "/app/booking",
+		color: "text-teal-500",
+		permissions: [],
+		groups: [
+			{
+				name: "Bookings",
+				items: [
+					{
+						title: "Book Event",
+						url: "/app/booking/book",
+						icon: PlusCircleIcon,
+						permissions: [],
+						description: "Book an instant event",
+					},
+					{
+						title: "My Bookings",
+						url: "/app/booking/my-bookings",
+						icon: CalendarCheckIcon,
+						permissions: [],
+						description: "View your bookings",
+					},
+					{
+						title: "My Availability",
+						url: "/app/booking/my-availability",
+						icon: ClockIcon,
+						permissions: [],
+						description: "Set your scheduler availability",
+					},
+				],
+			},
+			{
+				name: "Administration",
+				items: [
+					{
+						title: "Event Types",
+						url: "/app/booking/event-types",
+						icon: ListIcon,
+						permissions: { any: ["scheduling.event_types.list"] },
+						description: "Configure instant event types",
+					},
+					{
+						title: "Availability",
+						url: "/app/booking/availability",
+						icon: ClockIcon,
+						permissions: { any: ["scheduling.availability.list"] },
+						description: "Manage scheduler availability",
+					},
+					{
+						title: "All Bookings",
+						url: "/app/booking/bookings",
+						icon: CalendarIcon,
+						permissions: { any: ["scheduling.bookings.list"] },
+						description: "View and manage all bookings",
 					},
 				],
 			},

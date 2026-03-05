@@ -36,6 +36,9 @@ model User {
   authorizedControlPoints ControlPoint[]         @relation("ControlPointUsers")
   controlLogs             ControlLog[]
   credentials             Credential[]
+  availabilities          UserAvailability[]
+  instantEventBookings    InstantEventBooking[]  @relation("InstantEventBookingRequestor")
+  assignedBookings        InstantEventBooking[]  @relation("InstantEventBookingSchedulers")
 }
 
 model Role {
@@ -48,7 +51,10 @@ model Role {
   permissions             Permission[]   @relation("PermissionToRole")
   shiftTypes              ShiftType[]    @relation("RoleToShiftType")
   users                   User[]         @relation("RoleToUser")
-  authorizedControlPoints ControlPoint[] @relation("ControlPointRoles")
+  authorizedControlPoints  ControlPoint[]      @relation("ControlPointRoles")
+  schedulerEventTypes     InstantEventType[]   @relation("InstantEventTypeSchedulerRoles")
+  participantEventTypes   InstantEventType[]   @relation("InstantEventTypeParticipantRoles")
+  requiredEventTypes      InstantEventType[]   @relation("InstantEventTypeRequiredRoles")
 }
 
 model Permission {
@@ -434,6 +440,63 @@ enum TicketStatus {
   resolved
   closed
   cancelled
+}
+
+// ===== Instant Event Scheduling =====
+
+enum LoadBalancingStrategy {
+  none
+  round_robin
+  even_distribution
+}
+
+model InstantEventType {
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  description          String?
+  isActive             Boolean                @default(true)
+  durationMinutes      Int
+  minSchedulers        Int                    @default(1)
+  bookingWindowStart   DateTime?
+  bookingWindowEnd     DateTime?
+  loadBalancing        LoadBalancingStrategy  @default(none)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @default(now()) @updatedAt
+  schedulerRoles       Role[]                 @relation("InstantEventTypeSchedulerRoles")
+  participantRoles     Role[]                 @relation("InstantEventTypeParticipantRoles")
+  requiredRoles        Role[]                 @relation("InstantEventTypeRequiredRoles")
+  bookings             InstantEventBooking[]
+}
+
+model InstantEventBooking {
+  id                  Int               @id @default(autoincrement())
+  instantEventTypeId  Int
+  requestorId         Int
+  startTime           DateTime
+  endTime             DateTime
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt
+  instantEventType    InstantEventType  @relation(fields: [instantEventTypeId], references: [id], onDelete: Cascade)
+  requestor           User              @relation("InstantEventBookingRequestor", fields: [requestorId], references: [id], onDelete: Cascade)
+  schedulers          User[]            @relation("InstantEventBookingSchedulers")
+
+  @@index([instantEventTypeId])
+  @@index([requestorId])
+  @@index([startTime, endTime])
+}
+
+model UserAvailability {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek, startTime])
+  @@index([userId])
 }
 
 // ===== Equipment Control System =====

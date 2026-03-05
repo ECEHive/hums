@@ -2,6 +2,16 @@ import { getLogger } from "@ecehive/logger";
 import { renderToStaticMarkup } from "react-dom/server";
 import { getEmailLogosAsync } from "./logo-loader";
 import {
+	BookingCancellationEmail,
+	type BookingCancellationEmailProps,
+	BookingCancellationEmailSubject,
+} from "./templates/BookingCancellationEmail";
+import {
+	BookingConfirmationEmail,
+	type BookingConfirmationEmailProps,
+	BookingConfirmationEmailSubject,
+} from "./templates/BookingConfirmationEmail";
+import {
 	getSessionAutoLogoutSubject,
 	SessionAutoLogoutEmail,
 	type SessionAutoLogoutEmailProps,
@@ -37,6 +47,8 @@ const logger = getLogger("email:renderer");
 
 // Re-export template props for external use
 export type {
+	BookingCancellationEmailProps,
+	BookingConfirmationEmailProps,
 	SessionAutoLogoutEmailProps,
 	SuspensionNoticeEmailProps,
 	TicketAssignmentEmailProps,
@@ -46,6 +58,14 @@ export type {
 };
 
 export type RenderEmailOptions =
+	| {
+			template: "booking-confirmation";
+			data: BookingConfirmationEmailProps;
+	  }
+	| {
+			template: "booking-cancellation";
+			data: BookingCancellationEmailProps;
+	  }
 	| {
 			template: "welcome";
 			data: WelcomeEmailProps;
@@ -93,6 +113,22 @@ export async function renderEmail(
 		let subject: string;
 
 		switch (options.template) {
+			case "booking-confirmation": {
+				html = renderToStaticMarkup(
+					<BookingConfirmationEmail {...options.data} logos={logos} />,
+				);
+				subject = BookingConfirmationEmailSubject;
+				break;
+			}
+
+			case "booking-cancellation": {
+				html = renderToStaticMarkup(
+					<BookingCancellationEmail {...options.data} logos={logos} />,
+				);
+				subject = BookingCancellationEmailSubject;
+				break;
+			}
+
 			case "welcome": {
 				html = renderToStaticMarkup(
 					<WelcomeEmail {...options.data} logos={logos} />,

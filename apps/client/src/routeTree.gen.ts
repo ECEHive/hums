@@ -20,6 +20,7 @@ import { Route as AppTicketsRouteImport } from './routes/app/tickets'
 import { Route as AppShiftsRouteImport } from './routes/app/shifts'
 import { Route as AppInventoryRouteImport } from './routes/app/inventory'
 import { Route as AppControlRouteImport } from './routes/app/control'
+import { Route as AppBookingRouteImport } from './routes/app/booking'
 import { Route as AppAppRouteImport } from './routes/app/_app'
 import { Route as AppTicketsIndexRouteImport } from './routes/app/tickets/index'
 import { Route as AppShiftsIndexRouteImport } from './routes/app/shifts/index'
@@ -45,6 +46,12 @@ import { Route as AppControlProvidersRouteImport } from './routes/app/control/pr
 import { Route as AppControlPointsRouteImport } from './routes/app/control/points'
 import { Route as AppControlLogsRouteImport } from './routes/app/control/logs'
 import { Route as AppControlGatewaysRouteImport } from './routes/app/control/gateways'
+import { Route as AppBookingMyBookingsRouteImport } from './routes/app/booking/my-bookings'
+import { Route as AppBookingMyAvailabilityRouteImport } from './routes/app/booking/my-availability'
+import { Route as AppBookingEventTypesRouteImport } from './routes/app/booking/event-types'
+import { Route as AppBookingBookingsRouteImport } from './routes/app/booking/bookings'
+import { Route as AppBookingBookRouteImport } from './routes/app/booking/book'
+import { Route as AppBookingAvailabilityRouteImport } from './routes/app/booking/availability'
 import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
@@ -59,12 +66,14 @@ import { Route as AppAppAgreementsRouteImport } from './routes/app/_app/agreemen
 import { Route as AppTicketsMyTicketsIndexRouteImport } from './routes/app/tickets/my-tickets/index'
 import { Route as AppTicketsAdminIndexRouteImport } from './routes/app/tickets/admin/index'
 import { Route as AppShiftsManageUsersIndexRouteImport } from './routes/app/shifts/manage-users.index'
+import { Route as AppBookingBookIndexRouteImport } from './routes/app/booking/book.index'
 import { Route as AppAppMeIndexRouteImport } from './routes/app/_app/me/index'
 import { Route as AppTicketsSubmitTicketTypeIdRouteImport } from './routes/app/tickets/submit.$ticketTypeId'
 import { Route as AppTicketsMyTicketsTicketIdRouteImport } from './routes/app/tickets/my-tickets/$ticketId'
 import { Route as AppTicketsAdminTypesRouteImport } from './routes/app/tickets/admin/types'
 import { Route as AppTicketsAdminTicketIdRouteImport } from './routes/app/tickets/admin/$ticketId'
 import { Route as AppShiftsManageUsersUserIdRouteImport } from './routes/app/shifts/manage-users.$userId'
+import { Route as AppBookingBookEventTypeIdRouteImport } from './routes/app/booking/book.$eventTypeId'
 import { Route as AppAppMeSessionsRouteImport } from './routes/app/_app/me/sessions'
 
 const OtaSessionLoginRoute = OtaSessionLoginRouteImport.update({
@@ -120,6 +129,11 @@ const AppInventoryRoute = AppInventoryRouteImport.update({
 const AppControlRoute = AppControlRouteImport.update({
   id: '/control',
   path: '/control',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBookingRoute = AppBookingRouteImport.update({
+  id: '/booking',
+  path: '/booking',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAppRoute = AppAppRouteImport.update({
@@ -251,6 +265,37 @@ const AppControlGatewaysRoute = AppControlGatewaysRouteImport.update({
   path: '/gateways',
   getParentRoute: () => AppControlRoute,
 } as any)
+const AppBookingMyBookingsRoute = AppBookingMyBookingsRouteImport.update({
+  id: '/my-bookings',
+  path: '/my-bookings',
+  getParentRoute: () => AppBookingRoute,
+} as any)
+const AppBookingMyAvailabilityRoute =
+  AppBookingMyAvailabilityRouteImport.update({
+    id: '/my-availability',
+    path: '/my-availability',
+    getParentRoute: () => AppBookingRoute,
+  } as any)
+const AppBookingEventTypesRoute = AppBookingEventTypesRouteImport.update({
+  id: '/event-types',
+  path: '/event-types',
+  getParentRoute: () => AppBookingRoute,
+} as any)
+const AppBookingBookingsRoute = AppBookingBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AppBookingRoute,
+} as any)
+const AppBookingBookRoute = AppBookingBookRouteImport.update({
+  id: '/book',
+  path: '/book',
+  getParentRoute: () => AppBookingRoute,
+} as any)
+const AppBookingAvailabilityRoute = AppBookingAvailabilityRouteImport.update({
+  id: '/availability',
+  path: '/availability',
+  getParentRoute: () => AppBookingRoute,
+} as any)
 const AppAppUsersRoute = AppAppUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -323,6 +368,11 @@ const AppShiftsManageUsersIndexRoute =
     path: '/',
     getParentRoute: () => AppShiftsManageUsersRoute,
   } as any)
+const AppBookingBookIndexRoute = AppBookingBookIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppBookingBookRoute,
+} as any)
 const AppAppMeIndexRoute = AppAppMeIndexRouteImport.update({
   id: '/me/',
   path: '/me/',
@@ -356,6 +406,12 @@ const AppShiftsManageUsersUserIdRoute =
     path: '/$userId',
     getParentRoute: () => AppShiftsManageUsersRoute,
   } as any)
+const AppBookingBookEventTypeIdRoute =
+  AppBookingBookEventTypeIdRouteImport.update({
+    id: '/$eventTypeId',
+    path: '/$eventTypeId',
+    getParentRoute: () => AppBookingBookRoute,
+  } as any)
 const AppAppMeSessionsRoute = AppAppMeSessionsRouteImport.update({
   id: '/me/sessions',
   path: '/me/sessions',
@@ -367,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppAppRouteWithChildren
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
+  '/app/booking': typeof AppBookingRouteWithChildren
   '/app/control': typeof AppControlRouteWithChildren
   '/app/inventory': typeof AppInventoryRouteWithChildren
   '/app/shifts': typeof AppShiftsRouteWithChildren
@@ -385,6 +442,12 @@ export interface FileRoutesByFullPath {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/booking/availability': typeof AppBookingAvailabilityRoute
+  '/app/booking/book': typeof AppBookingBookRouteWithChildren
+  '/app/booking/bookings': typeof AppBookingBookingsRoute
+  '/app/booking/event-types': typeof AppBookingEventTypesRoute
+  '/app/booking/my-availability': typeof AppBookingMyAvailabilityRoute
+  '/app/booking/my-bookings': typeof AppBookingMyBookingsRoute
   '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
@@ -410,12 +473,14 @@ export interface FileRoutesByFullPath {
   '/app/shifts/': typeof AppShiftsIndexRoute
   '/app/tickets/': typeof AppTicketsIndexRoute
   '/app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/booking/book/$eventTypeId': typeof AppBookingBookEventTypeIdRoute
   '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
   '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
   '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/me': typeof AppAppMeIndexRoute
+  '/app/booking/book/': typeof AppBookingBookIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
   '/app/tickets/admin': typeof AppTicketsAdminIndexRoute
   '/app/tickets/my-tickets/': typeof AppTicketsMyTicketsIndexRoute
@@ -425,6 +490,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppAppIndexRoute
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
+  '/app/booking': typeof AppBookingRouteWithChildren
   '/control/$pointId': typeof ControlPointIdRoute
   '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
   '/submit': typeof SubmitIndexRoute
@@ -439,6 +505,11 @@ export interface FileRoutesByTo {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/booking/availability': typeof AppBookingAvailabilityRoute
+  '/app/booking/bookings': typeof AppBookingBookingsRoute
+  '/app/booking/event-types': typeof AppBookingEventTypesRoute
+  '/app/booking/my-availability': typeof AppBookingMyAvailabilityRoute
+  '/app/booking/my-bookings': typeof AppBookingMyBookingsRoute
   '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
@@ -461,12 +532,14 @@ export interface FileRoutesByTo {
   '/app/shifts': typeof AppShiftsIndexRoute
   '/app/tickets': typeof AppTicketsIndexRoute
   '/app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/booking/book/$eventTypeId': typeof AppBookingBookEventTypeIdRoute
   '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
   '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
   '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/me': typeof AppAppMeIndexRoute
+  '/app/booking/book': typeof AppBookingBookIndexRoute
   '/app/shifts/manage-users': typeof AppShiftsManageUsersIndexRoute
   '/app/tickets/admin': typeof AppTicketsAdminIndexRoute
   '/app/tickets/my-tickets': typeof AppTicketsMyTicketsIndexRoute
@@ -478,6 +551,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/_app': typeof AppAppRouteWithChildren
+  '/app/booking': typeof AppBookingRouteWithChildren
   '/app/control': typeof AppControlRouteWithChildren
   '/app/inventory': typeof AppInventoryRouteWithChildren
   '/app/shifts': typeof AppShiftsRouteWithChildren
@@ -496,6 +570,12 @@ export interface FileRoutesById {
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
   '/app/_app/users': typeof AppAppUsersRoute
+  '/app/booking/availability': typeof AppBookingAvailabilityRoute
+  '/app/booking/book': typeof AppBookingBookRouteWithChildren
+  '/app/booking/bookings': typeof AppBookingBookingsRoute
+  '/app/booking/event-types': typeof AppBookingEventTypesRoute
+  '/app/booking/my-availability': typeof AppBookingMyAvailabilityRoute
+  '/app/booking/my-bookings': typeof AppBookingMyBookingsRoute
   '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
@@ -521,12 +601,14 @@ export interface FileRoutesById {
   '/app/shifts/': typeof AppShiftsIndexRoute
   '/app/tickets/': typeof AppTicketsIndexRoute
   '/app/_app/me/sessions': typeof AppAppMeSessionsRoute
+  '/app/booking/book/$eventTypeId': typeof AppBookingBookEventTypeIdRoute
   '/app/shifts/manage-users/$userId': typeof AppShiftsManageUsersUserIdRoute
   '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
   '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/_app/me/': typeof AppAppMeIndexRoute
+  '/app/booking/book/': typeof AppBookingBookIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
   '/app/tickets/admin/': typeof AppTicketsAdminIndexRoute
   '/app/tickets/my-tickets/': typeof AppTicketsMyTicketsIndexRoute
@@ -538,6 +620,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/ota-session-login'
+    | '/app/booking'
     | '/app/control'
     | '/app/inventory'
     | '/app/shifts'
@@ -556,6 +639,12 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/booking/availability'
+    | '/app/booking/book'
+    | '/app/booking/bookings'
+    | '/app/booking/event-types'
+    | '/app/booking/my-availability'
+    | '/app/booking/my-bookings'
     | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
@@ -581,12 +670,14 @@ export interface FileRouteTypes {
     | '/app/shifts/'
     | '/app/tickets/'
     | '/app/me/sessions'
+    | '/app/booking/book/$eventTypeId'
     | '/app/shifts/manage-users/$userId'
     | '/app/tickets/admin/$ticketId'
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
     | '/app/tickets/submit/$ticketTypeId'
     | '/app/me'
+    | '/app/booking/book/'
     | '/app/shifts/manage-users/'
     | '/app/tickets/admin'
     | '/app/tickets/my-tickets/'
@@ -596,6 +687,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/ota-session-login'
+    | '/app/booking'
     | '/control/$pointId'
     | '/submit/$ticketTypeId'
     | '/submit'
@@ -610,6 +702,11 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/booking/availability'
+    | '/app/booking/bookings'
+    | '/app/booking/event-types'
+    | '/app/booking/my-availability'
+    | '/app/booking/my-bookings'
     | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
@@ -632,12 +729,14 @@ export interface FileRouteTypes {
     | '/app/shifts'
     | '/app/tickets'
     | '/app/me/sessions'
+    | '/app/booking/book/$eventTypeId'
     | '/app/shifts/manage-users/$userId'
     | '/app/tickets/admin/$ticketId'
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
     | '/app/tickets/submit/$ticketTypeId'
     | '/app/me'
+    | '/app/booking/book'
     | '/app/shifts/manage-users'
     | '/app/tickets/admin'
     | '/app/tickets/my-tickets'
@@ -648,6 +747,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/ota-session-login'
     | '/app/_app'
+    | '/app/booking'
     | '/app/control'
     | '/app/inventory'
     | '/app/shifts'
@@ -666,6 +766,12 @@ export interface FileRouteTypes {
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
     | '/app/_app/users'
+    | '/app/booking/availability'
+    | '/app/booking/book'
+    | '/app/booking/bookings'
+    | '/app/booking/event-types'
+    | '/app/booking/my-availability'
+    | '/app/booking/my-bookings'
     | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
@@ -691,12 +797,14 @@ export interface FileRouteTypes {
     | '/app/shifts/'
     | '/app/tickets/'
     | '/app/_app/me/sessions'
+    | '/app/booking/book/$eventTypeId'
     | '/app/shifts/manage-users/$userId'
     | '/app/tickets/admin/$ticketId'
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
     | '/app/tickets/submit/$ticketTypeId'
     | '/app/_app/me/'
+    | '/app/booking/book/'
     | '/app/shifts/manage-users/'
     | '/app/tickets/admin/'
     | '/app/tickets/my-tickets/'
@@ -789,6 +897,13 @@ declare module '@tanstack/react-router' {
       path: '/control'
       fullPath: '/app/control'
       preLoaderRoute: typeof AppControlRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/booking': {
+      id: '/app/booking'
+      path: '/booking'
+      fullPath: '/app/booking'
+      preLoaderRoute: typeof AppBookingRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/_app': {
@@ -966,6 +1081,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppControlGatewaysRouteImport
       parentRoute: typeof AppControlRoute
     }
+    '/app/booking/my-bookings': {
+      id: '/app/booking/my-bookings'
+      path: '/my-bookings'
+      fullPath: '/app/booking/my-bookings'
+      preLoaderRoute: typeof AppBookingMyBookingsRouteImport
+      parentRoute: typeof AppBookingRoute
+    }
+    '/app/booking/my-availability': {
+      id: '/app/booking/my-availability'
+      path: '/my-availability'
+      fullPath: '/app/booking/my-availability'
+      preLoaderRoute: typeof AppBookingMyAvailabilityRouteImport
+      parentRoute: typeof AppBookingRoute
+    }
+    '/app/booking/event-types': {
+      id: '/app/booking/event-types'
+      path: '/event-types'
+      fullPath: '/app/booking/event-types'
+      preLoaderRoute: typeof AppBookingEventTypesRouteImport
+      parentRoute: typeof AppBookingRoute
+    }
+    '/app/booking/bookings': {
+      id: '/app/booking/bookings'
+      path: '/bookings'
+      fullPath: '/app/booking/bookings'
+      preLoaderRoute: typeof AppBookingBookingsRouteImport
+      parentRoute: typeof AppBookingRoute
+    }
+    '/app/booking/book': {
+      id: '/app/booking/book'
+      path: '/book'
+      fullPath: '/app/booking/book'
+      preLoaderRoute: typeof AppBookingBookRouteImport
+      parentRoute: typeof AppBookingRoute
+    }
+    '/app/booking/availability': {
+      id: '/app/booking/availability'
+      path: '/availability'
+      fullPath: '/app/booking/availability'
+      preLoaderRoute: typeof AppBookingAvailabilityRouteImport
+      parentRoute: typeof AppBookingRoute
+    }
     '/app/_app/users': {
       id: '/app/_app/users'
       path: '/users'
@@ -1064,6 +1221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShiftsManageUsersIndexRouteImport
       parentRoute: typeof AppShiftsManageUsersRoute
     }
+    '/app/booking/book/': {
+      id: '/app/booking/book/'
+      path: '/'
+      fullPath: '/app/booking/book/'
+      preLoaderRoute: typeof AppBookingBookIndexRouteImport
+      parentRoute: typeof AppBookingBookRoute
+    }
     '/app/_app/me/': {
       id: '/app/_app/me/'
       path: '/me'
@@ -1105,6 +1269,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/shifts/manage-users/$userId'
       preLoaderRoute: typeof AppShiftsManageUsersUserIdRouteImport
       parentRoute: typeof AppShiftsManageUsersRoute
+    }
+    '/app/booking/book/$eventTypeId': {
+      id: '/app/booking/book/$eventTypeId'
+      path: '/$eventTypeId'
+      fullPath: '/app/booking/book/$eventTypeId'
+      preLoaderRoute: typeof AppBookingBookEventTypeIdRouteImport
+      parentRoute: typeof AppBookingBookRoute
     }
     '/app/_app/me/sessions': {
       id: '/app/_app/me/sessions'
@@ -1152,6 +1323,42 @@ const AppAppRouteChildren: AppAppRouteChildren = {
 
 const AppAppRouteWithChildren =
   AppAppRoute._addFileChildren(AppAppRouteChildren)
+
+interface AppBookingBookRouteChildren {
+  AppBookingBookEventTypeIdRoute: typeof AppBookingBookEventTypeIdRoute
+  AppBookingBookIndexRoute: typeof AppBookingBookIndexRoute
+}
+
+const AppBookingBookRouteChildren: AppBookingBookRouteChildren = {
+  AppBookingBookEventTypeIdRoute: AppBookingBookEventTypeIdRoute,
+  AppBookingBookIndexRoute: AppBookingBookIndexRoute,
+}
+
+const AppBookingBookRouteWithChildren = AppBookingBookRoute._addFileChildren(
+  AppBookingBookRouteChildren,
+)
+
+interface AppBookingRouteChildren {
+  AppBookingAvailabilityRoute: typeof AppBookingAvailabilityRoute
+  AppBookingBookRoute: typeof AppBookingBookRouteWithChildren
+  AppBookingBookingsRoute: typeof AppBookingBookingsRoute
+  AppBookingEventTypesRoute: typeof AppBookingEventTypesRoute
+  AppBookingMyAvailabilityRoute: typeof AppBookingMyAvailabilityRoute
+  AppBookingMyBookingsRoute: typeof AppBookingMyBookingsRoute
+}
+
+const AppBookingRouteChildren: AppBookingRouteChildren = {
+  AppBookingAvailabilityRoute: AppBookingAvailabilityRoute,
+  AppBookingBookRoute: AppBookingBookRouteWithChildren,
+  AppBookingBookingsRoute: AppBookingBookingsRoute,
+  AppBookingEventTypesRoute: AppBookingEventTypesRoute,
+  AppBookingMyAvailabilityRoute: AppBookingMyAvailabilityRoute,
+  AppBookingMyBookingsRoute: AppBookingMyBookingsRoute,
+}
+
+const AppBookingRouteWithChildren = AppBookingRoute._addFileChildren(
+  AppBookingRouteChildren,
+)
 
 interface AppControlRouteChildren {
   AppControlGatewaysRoute: typeof AppControlGatewaysRoute
@@ -1275,6 +1482,7 @@ const AppTicketsRouteWithChildren = AppTicketsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAppRoute: typeof AppAppRouteWithChildren
+  AppBookingRoute: typeof AppBookingRouteWithChildren
   AppControlRoute: typeof AppControlRouteWithChildren
   AppInventoryRoute: typeof AppInventoryRouteWithChildren
   AppShiftsRoute: typeof AppShiftsRouteWithChildren
@@ -1283,6 +1491,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRouteWithChildren,
+  AppBookingRoute: AppBookingRouteWithChildren,
   AppControlRoute: AppControlRouteWithChildren,
   AppInventoryRoute: AppInventoryRouteWithChildren,
   AppShiftsRoute: AppShiftsRouteWithChildren,

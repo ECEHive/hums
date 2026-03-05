@@ -3,6 +3,8 @@ export { getEmailProvider } from "./providers";
 export type { QueueEmailParams } from "./queue";
 export { clearQueue, getQueueStatus, queueEmail, queueEmails } from "./queue";
 export type {
+	BookingCancellationEmailProps,
+	BookingConfirmationEmailProps,
 	RenderEmailOptions,
 	RenderedEmail,
 	TicketAssignmentEmailProps,
