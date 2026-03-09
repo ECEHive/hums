@@ -23,7 +23,7 @@
 		"@ecehive/prisma": "workspace:*",
 		"@trpc/client": "11.10.0",
 		"@trpc/server": "11.8.0",
-		"fastify": "^5.6.2",
+		"fastify": "^5.8.2",
 		"nanoid": "^5.1.6",
 		"superjson": "^2.2.6",
 		"zod": "^4.3.5"
