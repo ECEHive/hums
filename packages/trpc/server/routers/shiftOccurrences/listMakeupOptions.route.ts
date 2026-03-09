@@ -12,20 +12,39 @@ import { isWithinModifyWindow } from "./utils";
 export const ZListMakeupOptionsSchema = z.object({
 	periodId: z.number().min(1),
 	shiftTypeId: z.number().min(1).optional(),
+	dateFrom: z.coerce.date().optional(),
+	dateTo: z.coerce.date().optional(),
+	startHourFrom: z.number().int().min(0).max(23).optional(),
+	collapseSlots: z.boolean().optional(),
 	limit: z.number().min(1).max(50).optional(),
 	offset: z.number().min(0).optional(),
 });
 
+export const ZListMakeupStartHoursSchema = z.object({
+	periodId: z.number().min(1),
+	shiftTypeId: z.number().min(1).optional(),
+});
+
 export type TListMakeupOptionsSchema = z.infer<typeof ZListMakeupOptionsSchema>;
+export type TListMakeupStartHoursSchema = z.infer<
+	typeof ZListMakeupStartHoursSchema
+>;
 
 export type TListMakeupOptions = {
 	ctx: TProtectedProcedureContext;
 	input: TListMakeupOptionsSchema;
 };
 
-export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
-	const { periodId, shiftTypeId, limit = 10, offset = 0 } = options.input;
-	const userId = options.ctx.user.id;
+export type TListMakeupStartHours = {
+	ctx: TProtectedProcedureContext;
+	input: TListMakeupStartHoursSchema;
+};
+
+async function getAccessiblePeriod(
+	ctx: TProtectedProcedureContext,
+	periodId: number,
+) {
+	const userId = ctx.user.id;
 
 	const [period, user] = await Promise.all([
 		prisma.period.findUnique({
@@ -62,8 +81,64 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 		roles: period.roles,
 	};
 	assertCanAccessPeriod(periodForAccess, userRoleIds, {
-		isSystemUser: options.ctx.user.isSystemUser,
+		isSystemUser: ctx.user.isSystemUser,
 	});
+
+	return period;
+}
+
+function getHourFromTimeString(time: string) {
+	const [hourValue] = time.split(":");
+	const parsedHour = Number.parseInt(hourValue ?? "", 10);
+	return Number.isNaN(parsedHour) ? null : parsedHour;
+}
+
+export async function listMakeupStartHoursHandler(
+	options: TListMakeupStartHours,
+) {
+	const { periodId, shiftTypeId } = options.input;
+
+	await getAccessiblePeriod(options.ctx, periodId);
+
+	const schedules = await prisma.shiftSchedule.findMany({
+		where: {
+			shiftType: {
+				periodId,
+				canSelfAssign: true,
+				...(shiftTypeId ? { id: shiftTypeId } : {}),
+			},
+		},
+		select: {
+			startTime: true,
+		},
+		distinct: ["startTime"],
+		orderBy: {
+			startTime: "asc",
+		},
+	});
+
+	const startHours = schedules
+		.map((schedule) => getHourFromTimeString(schedule.startTime))
+		.filter((hour): hour is number => hour !== null)
+		.filter((hour, index, array) => array.indexOf(hour) === index)
+		.sort((a, b) => a - b);
+
+	return { startHours };
+}
+
+export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
+	const {
+		periodId,
+		shiftTypeId,
+		dateFrom,
+		dateTo,
+		startHourFrom,
+		collapseSlots = false,
+		limit = 10,
+		offset = 0,
+	} = options.input;
+	const userId = options.ctx.user.id;
+	const period = await getAccessiblePeriod(options.ctx, periodId);
 
 	const now = new Date();
 
@@ -84,14 +159,27 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 		(occurrence) => occurrence.timestamp,
 	);
 
+	const startTimeFilter =
+		typeof startHourFrom === "number"
+			? {
+					gte: `${startHourFrom.toString().padStart(2, "0")}:00`,
+					lt: `${Math.min(startHourFrom + 1, 24)
+						.toString()
+						.padStart(2, "0")}:00`,
+				}
+			: undefined;
+
 	const where: Prisma.ShiftOccurrenceWhereInput = {
 		timestamp: {
 			gt: now,
+			...(dateFrom ? { gte: dateFrom > now ? dateFrom : now } : {}),
+			...(dateTo ? { lte: dateTo } : {}),
 		},
 		users: {
 			none: {},
 		},
 		shiftSchedule: {
+			...(startTimeFilter ? { startTime: startTimeFilter } : {}),
 			shiftType: {
 				periodId,
 				canSelfAssign: true,
@@ -108,24 +196,48 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 		};
 	}
 
-	const [occurrences, total] = await Promise.all([
-		prisma.shiftOccurrence.findMany({
-			where,
-			orderBy: { timestamp: "asc" },
-			skip: offset,
-			take: limit,
-			include: {
-				shiftSchedule: {
-					include: {
-						shiftType: true,
-					},
+	const allOccurrences = await prisma.shiftOccurrence.findMany({
+		where,
+		orderBy: [{ timestamp: "asc" }, { slot: "asc" }],
+		include: {
+			shiftSchedule: {
+				include: {
+					shiftType: true,
 				},
 			},
-		}),
-		prisma.shiftOccurrence.count({ where }),
-	]);
+		},
+	});
 
-	const occurrencesForClient = occurrences.map((occurrence) => ({
+	const normalizedOccurrences = collapseSlots
+		? Array.from(
+				allOccurrences
+					.reduce((map, occurrence) => {
+						const key = [
+							occurrence.shiftScheduleId,
+							occurrence.shiftSchedule.shiftType.id,
+							occurrence.timestamp.toISOString(),
+							occurrence.shiftSchedule.startTime,
+							occurrence.shiftSchedule.endTime,
+						].join(":");
+
+						const existing = map.get(key);
+						if (!existing || occurrence.slot < existing.slot) {
+							map.set(key, occurrence);
+						}
+
+						return map;
+					}, new Map<number | string, (typeof allOccurrences)[number]>())
+					.values(),
+			)
+		: allOccurrences;
+
+	const total = normalizedOccurrences.length;
+	const paginatedOccurrences = normalizedOccurrences.slice(
+		offset,
+		offset + limit,
+	);
+
+	const occurrencesForClient = paginatedOccurrences.map((occurrence) => ({
 		id: occurrence.id,
 		timestamp: occurrence.timestamp,
 		slot: occurrence.slot,
