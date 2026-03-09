@@ -13,7 +13,7 @@
 		"@ecehive/trpc": "workspace:*",
 		"@radix-ui/react-separator": "^1.1.8",
 		"@radix-ui/react-slot": "^1.2.4",
-		"@sentry/react": "^10.32.1",
+		"@sentry/react": "^10.42.0",
 		"@tanstack/devtools-vite": "^0.3.11",
 		"@tanstack/react-devtools": "^0.9.6",
 		"@tanstack/react-query": "^5.90.21",
