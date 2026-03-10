@@ -63,7 +63,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarSyncButton } from "@/components/user/calendar-sync-button";
-import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
+import { loadFilters, saveFilters } from "@/lib/filter-storage";
 import type { RequiredPermissions } from "@/lib/permissions";
 import {
 	formatDateInAppTimezone,
@@ -123,6 +123,8 @@ const DEFAULT_MAKEUP_FILTERS: MakeupFilters = {
 	restrictToSameType: true,
 };
 
+const MAKEUP_FILTERS_STORAGE_KEY = "my-shifts-makeup-options-filters";
+
 function MyShifts() {
 	const { period: selectedPeriodId } = usePeriod();
 	const [page, setPage] = React.useState(1);
@@ -141,27 +143,32 @@ function MyShifts() {
 		React.useState<number | null>(null);
 	const [dropNotes, setDropNotes] = React.useState("");
 	const [dropMakeupNotes, setDropMakeupNotes] = React.useState("");
-	const {
-		page: makeupPage,
-		setPage: setMakeupPage,
-		pageSize: makeupPageSize,
-		offset: makeupOffset,
-		filters: makeupFilters,
-		setFilters: setMakeupFilters,
-		resetToFirstPage: resetMakeupToFirstPage,
-	} = usePersistedTableState<MakeupFilters>({
-		pageKey: "my-shifts-makeup-options",
-		defaultFilters: DEFAULT_MAKEUP_FILTERS,
-		initialPageSize: 5,
-	});
+	const [makeupPage, setMakeupPage] = React.useState(1);
+	const [makeupFilters, setMakeupFilters] = React.useState<MakeupFilters>(
+		() => {
+			return (
+				loadFilters<MakeupFilters>(MAKEUP_FILTERS_STORAGE_KEY) ??
+				DEFAULT_MAKEUP_FILTERS
+			);
+		},
+	);
 
 	const limit = pageSize;
 	const offset = (page - 1) * limit;
-	const makeupLimit = makeupPageSize;
+	const makeupLimit = 5;
+	const makeupOffset = (makeupPage - 1) * makeupLimit;
 	const restrictToSameType = makeupFilters?.restrictToSameType ?? true;
 	const selectedMakeupShiftType = makeupFilters?.shiftType ?? null;
 	const makeupDateRange = makeupFilters?.dateRange ?? [undefined, undefined];
 	const makeupStartHour = makeupFilters?.startHour ?? null;
+
+	const resetMakeupToFirstPage = React.useCallback(() => {
+		setMakeupPage(1);
+	}, []);
+
+	React.useEffect(() => {
+		saveFilters(MAKEUP_FILTERS_STORAGE_KEY, makeupFilters);
+	}, [makeupFilters]);
 
 	const canDropPermission = true;
 	const canMakeupPermission = true;

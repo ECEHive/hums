@@ -40,6 +40,19 @@ export type TListMakeupStartHours = {
 	input: TListMakeupStartHoursSchema;
 };
 
+const COLLAPSE_SLOTS_BATCH_SIZE = 200;
+const COLLAPSE_SLOTS_MAX_SCANNED_OCCURRENCES = 2000;
+
+type MakeupOccurrenceWithRelations = Prisma.ShiftOccurrenceGetPayload<{
+	include: {
+		shiftSchedule: {
+			include: {
+				shiftType: true;
+			};
+		};
+	};
+}>;
+
 async function getAccessiblePeriod(
 	ctx: TProtectedProcedureContext,
 	periodId: number,
@@ -91,6 +104,135 @@ function getHourFromTimeString(time: string) {
 	const [hourValue] = time.split(":");
 	const parsedHour = Number.parseInt(hourValue ?? "", 10);
 	return Number.isNaN(parsedHour) ? null : parsedHour;
+}
+
+function getCollapsedOccurrenceKey(occurrence: MakeupOccurrenceWithRelations) {
+	return [
+		occurrence.shiftScheduleId,
+		occurrence.shiftSchedule.shiftType.id,
+		occurrence.timestamp.toISOString(),
+		occurrence.shiftSchedule.startTime,
+		occurrence.shiftSchedule.endTime,
+	].join(":");
+}
+
+function collapseOccurrencesBySlot(
+	occurrences: MakeupOccurrenceWithRelations[],
+) {
+	return Array.from(
+		occurrences
+			.reduce((map, occurrence) => {
+				const key = getCollapsedOccurrenceKey(occurrence);
+				const existing = map.get(key);
+
+				if (!existing || occurrence.slot < existing.slot) {
+					map.set(key, occurrence);
+				}
+
+				return map;
+			}, new Map<string, MakeupOccurrenceWithRelations>())
+			.values(),
+	);
+}
+
+async function listCollapsedMakeupOptions(params: {
+	where: Prisma.ShiftOccurrenceWhereInput;
+	limit: number;
+	offset: number;
+}) {
+	const { where, limit, offset } = params;
+	const targetCount = offset + limit;
+	const collected: MakeupOccurrenceWithRelations[] = [];
+	let scanOffset = 0;
+	let scannedCount = 0;
+	let hasMore = true;
+
+	while (
+		hasMore &&
+		collected.length < targetCount &&
+		scannedCount < COLLAPSE_SLOTS_MAX_SCANNED_OCCURRENCES
+	) {
+		const remainingBudget =
+			COLLAPSE_SLOTS_MAX_SCANNED_OCCURRENCES - scannedCount;
+		const take = Math.min(COLLAPSE_SLOTS_BATCH_SIZE, remainingBudget);
+
+		if (take <= 0) {
+			break;
+		}
+
+		const batch = await prisma.shiftOccurrence.findMany({
+			where,
+			orderBy: [{ timestamp: "asc" }, { slot: "asc" }],
+			skip: scanOffset,
+			take,
+			include: {
+				shiftSchedule: {
+					include: {
+						shiftType: true,
+					},
+				},
+			},
+		});
+
+		scannedCount += batch.length;
+		scanOffset += batch.length;
+		hasMore = batch.length === take;
+
+		if (batch.length === 0) {
+			break;
+		}
+
+		const collapsedBatch = collapseOccurrencesBySlot(batch);
+		for (const occurrence of collapsedBatch) {
+			if (collected.length >= targetCount) {
+				break;
+			}
+
+			collected.push(occurrence);
+		}
+	}
+
+	const total = await prisma.shiftOccurrence
+		.findMany({
+			where,
+			orderBy: [{ timestamp: "asc" }, { slot: "asc" }],
+			select: {
+				shiftScheduleId: true,
+				timestamp: true,
+				slot: true,
+				shiftSchedule: {
+					select: {
+						startTime: true,
+						endTime: true,
+						shiftType: {
+							select: {
+								id: true,
+							},
+						},
+					},
+				},
+			},
+		})
+		.then((occurrences) => {
+			const collapsedKeys = new Set(
+				occurrences.map((occurrence) =>
+					[
+						occurrence.shiftScheduleId,
+						occurrence.shiftSchedule.shiftType.id,
+						occurrence.timestamp.toISOString(),
+						occurrence.shiftSchedule.startTime,
+						occurrence.shiftSchedule.endTime,
+					].join(":"),
+				),
+			);
+
+			return collapsedKeys.size;
+		});
+
+	return {
+		occurrences: collected.slice(offset, offset + limit),
+		total,
+	};
 }
 
 export async function listMakeupStartHoursHandler(
@@ -196,48 +338,30 @@ export async function listMakeupOptionsHandler(options: TListMakeupOptions) {
 		};
 	}
 
-	const allOccurrences = await prisma.shiftOccurrence.findMany({
-		where,
-		orderBy: [{ timestamp: "asc" }, { slot: "asc" }],
-		include: {
-			shiftSchedule: {
-				include: {
-					shiftType: true,
-				},
-			},
-		},
-	});
+	const { occurrences, total } = collapseSlots
+		? await listCollapsedMakeupOptions({
+				where,
+				limit,
+				offset,
+			})
+		: await Promise.all([
+				prisma.shiftOccurrence.findMany({
+					where,
+					orderBy: [{ timestamp: "asc" }, { slot: "asc" }],
+					skip: offset,
+					take: limit,
+					include: {
+						shiftSchedule: {
+							include: {
+								shiftType: true,
+							},
+						},
+					},
+				}),
+				prisma.shiftOccurrence.count({ where }),
+			]).then(([occurrences, total]) => ({ occurrences, total }));
 
-	const normalizedOccurrences = collapseSlots
-		? Array.from(
-				allOccurrences
-					.reduce((map, occurrence) => {
-						const key = [
-							occurrence.shiftScheduleId,
-							occurrence.shiftSchedule.shiftType.id,
-							occurrence.timestamp.toISOString(),
-							occurrence.shiftSchedule.startTime,
-							occurrence.shiftSchedule.endTime,
-						].join(":");
-
-						const existing = map.get(key);
-						if (!existing || occurrence.slot < existing.slot) {
-							map.set(key, occurrence);
-						}
-
-						return map;
-					}, new Map<number | string, (typeof allOccurrences)[number]>())
-					.values(),
-			)
-		: allOccurrences;
-
-	const total = normalizedOccurrences.length;
-	const paginatedOccurrences = normalizedOccurrences.slice(
-		offset,
-		offset + limit,
-	);
-
-	const occurrencesForClient = paginatedOccurrences.map((occurrence) => ({
+	const occurrencesForClient = occurrences.map((occurrence) => ({
 		id: occurrence.id,
 		timestamp: occurrence.timestamp,
 		slot: occurrence.slot,
