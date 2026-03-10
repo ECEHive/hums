@@ -10,7 +10,9 @@ import { listHandler, ZListSchema } from "./list.route";
 import { listForUserHandler, ZListForUserSchema } from "./listForUser.route";
 import {
 	listMakeupOptionsHandler,
+	listMakeupStartHoursHandler,
 	ZListMakeupOptionsSchema,
+	ZListMakeupStartHoursSchema,
 } from "./listMakeupOptions.route";
 import { listMyHandler, ZListMySchema } from "./listMy.route";
 import { listMyPastHandler, ZListMyPastSchema } from "./listMyPast.route";
@@ -38,4 +40,7 @@ export const shiftOccurrencesRouter = router({
 	listMakeupOptions: protectedProcedure
 		.input(ZListMakeupOptionsSchema)
 		.query(listMakeupOptionsHandler),
+	listMakeupStartHours: protectedProcedure
+		.input(ZListMakeupStartHoursSchema)
+		.query(listMakeupStartHoursHandler),
 });

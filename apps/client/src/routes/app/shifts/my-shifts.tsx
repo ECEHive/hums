@@ -19,7 +19,12 @@ import {
 } from "@/components/my-shifts/columns";
 import { usePeriod } from "@/components/providers/period-provider";
 import { DataTable, TablePaginationFooter } from "@/components/shared";
+import DateRangeSelector from "@/components/shared/date-range-selector";
 import { TablePagination } from "@/components/shared/table-pagination";
+import {
+	type ShiftType,
+	ShiftTypeSelector,
+} from "@/components/shift-types/shift-type-selector";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,6 +37,13 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Sheet,
 	SheetContent,
@@ -51,8 +63,13 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarSyncButton } from "@/components/user/calendar-sync-button";
+import { loadFilters, saveFilters } from "@/lib/filter-storage";
 import type { RequiredPermissions } from "@/lib/permissions";
-import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
+import {
+	formatDateInAppTimezone,
+	formatTimeRange,
+	toUtcDateFromLocalInput,
+} from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/shifts/my-shifts")({
@@ -85,6 +102,29 @@ function getErrorMessage(error: unknown) {
 	return "Something went wrong";
 }
 
+function formatHourOption(hour: number) {
+	const normalizedHour = ((hour % 24) + 24) % 24;
+	const period = normalizedHour >= 12 ? "PM" : "AM";
+	const displayHour = normalizedHour % 12 || 12;
+	return `${displayHour}:00 ${period}`;
+}
+
+type MakeupFilters = {
+	shiftType: ShiftType | null;
+	dateRange: [Date | undefined, Date | undefined];
+	startHour: number | null;
+	restrictToSameType: boolean;
+};
+
+const DEFAULT_MAKEUP_FILTERS: MakeupFilters = {
+	shiftType: null,
+	dateRange: [undefined, undefined],
+	startHour: null,
+	restrictToSameType: true,
+};
+
+const MAKEUP_FILTERS_STORAGE_KEY = "my-shifts-makeup-options-filters";
+
 function MyShifts() {
 	const { period: selectedPeriodId } = usePeriod();
 	const [page, setPage] = React.useState(1);
@@ -103,13 +143,32 @@ function MyShifts() {
 		React.useState<number | null>(null);
 	const [dropNotes, setDropNotes] = React.useState("");
 	const [dropMakeupNotes, setDropMakeupNotes] = React.useState("");
-	const [restrictToSameType, setRestrictToSameType] = React.useState(true);
 	const [makeupPage, setMakeupPage] = React.useState(1);
+	const [makeupFilters, setMakeupFilters] = React.useState<MakeupFilters>(
+		() => {
+			return (
+				loadFilters<MakeupFilters>(MAKEUP_FILTERS_STORAGE_KEY) ??
+				DEFAULT_MAKEUP_FILTERS
+			);
+		},
+	);
 
 	const limit = pageSize;
 	const offset = (page - 1) * limit;
 	const makeupLimit = 5;
 	const makeupOffset = (makeupPage - 1) * makeupLimit;
+	const restrictToSameType = makeupFilters?.restrictToSameType ?? true;
+	const selectedMakeupShiftType = makeupFilters?.shiftType ?? null;
+	const makeupDateRange = makeupFilters?.dateRange ?? [undefined, undefined];
+	const makeupStartHour = makeupFilters?.startHour ?? null;
+
+	const resetMakeupToFirstPage = React.useCallback(() => {
+		setMakeupPage(1);
+	}, []);
+
+	React.useEffect(() => {
+		saveFilters(MAKEUP_FILTERS_STORAGE_KEY, makeupFilters);
+	}, [makeupFilters]);
 
 	const canDropPermission = true;
 	const canMakeupPermission = true;
@@ -130,11 +189,30 @@ function MyShifts() {
 			}
 			setDropMakeupNotes("");
 			setMakeupTarget(occurrence);
-			setRestrictToSameType(true);
+			setMakeupFilters((current) => {
+				const nextFilters = current ?? DEFAULT_MAKEUP_FILTERS;
+				const shouldResetShiftType =
+					nextFilters.restrictToSameType || nextFilters.shiftType === null;
+
+				return {
+					...nextFilters,
+					shiftType: shouldResetShiftType
+						? {
+								id: occurrence.shiftTypeId,
+								name: occurrence.shiftTypeName,
+								location: occurrence.shiftTypeLocation ?? "",
+							}
+						: nextFilters.shiftType,
+					restrictToSameType:
+						nextFilters.shiftType === null
+							? true
+							: nextFilters.restrictToSameType,
+				};
+			});
 			setSelectedMakeupOccurrenceId(null);
-			setMakeupPage(1);
+			resetMakeupToFirstPage();
 		},
-		[canMakeupPermission],
+		[canMakeupPermission, resetMakeupToFirstPage, setMakeupFilters],
 	);
 
 	const tableColumns = React.useMemo(
@@ -177,22 +255,38 @@ function MyShifts() {
 
 	const isMakeupSheetOpen = Boolean(makeupTarget);
 	const makeupQueryEnabled = Boolean(selectedPeriodId && makeupTarget);
+	const makeupDateFrom = React.useMemo(
+		() => toUtcDateFromLocalInput(makeupDateRange[0]),
+		[makeupDateRange],
+	);
+	const makeupDateTo = React.useMemo(() => {
+		const end = makeupDateRange[1];
+		if (!end) return null;
+		const inclusiveEnd = new Date(end);
+		inclusiveEnd.setHours(23, 59, 59, 999);
+		return toUtcDateFromLocalInput(inclusiveEnd);
+	}, [makeupDateRange]);
 	const { data: makeupOptionsData, isLoading: makeupOptionsLoading } = useQuery(
 		{
 			queryKey: [
 				"makeupOptions",
 				selectedPeriodId,
 				makeupTarget?.id,
-				restrictToSameType,
+				selectedMakeupShiftType?.id,
+				makeupDateFrom?.toISOString() ?? null,
+				makeupDateTo?.toISOString() ?? null,
+				makeupStartHour,
 				makeupPage,
 			],
 			queryFn: async () => {
 				if (!selectedPeriodId || !makeupTarget) return null;
 				return trpc.shiftOccurrences.listMakeupOptions.query({
 					periodId: selectedPeriodId,
-					shiftTypeId: restrictToSameType
-						? makeupTarget.shiftTypeId
-						: undefined,
+					shiftTypeId: selectedMakeupShiftType?.id,
+					dateFrom: makeupDateFrom ?? undefined,
+					dateTo: makeupDateTo ?? undefined,
+					startHourFrom: makeupStartHour ?? undefined,
+					collapseSlots: true,
 					limit: makeupLimit,
 					offset: makeupOffset,
 				});
@@ -200,10 +294,36 @@ function MyShifts() {
 			enabled: makeupQueryEnabled,
 		},
 	);
+	const { data: makeupStartHoursData } = useQuery({
+		queryKey: [
+			"makeupStartHours",
+			selectedPeriodId,
+			selectedMakeupShiftType?.id ?? null,
+		],
+		queryFn: async () => {
+			if (!selectedPeriodId) return null;
+			return trpc.shiftOccurrences.listMakeupStartHours.query({
+				periodId: selectedPeriodId,
+				shiftTypeId: selectedMakeupShiftType?.id,
+			});
+		},
+		enabled: Boolean(selectedPeriodId),
+	});
+	const makeupHourOptions = React.useMemo(
+		() =>
+			(makeupStartHoursData?.startHours ?? []).map((hour) => ({
+				value: hour,
+				label: formatHourOption(hour),
+			})),
+		[makeupStartHoursData],
+	);
 
 	const makeupOccurrences = makeupOptionsData?.occurrences ?? [];
 	const makeupTotal = makeupOptionsData?.total ?? 0;
 	const makeupTotalPages = Math.max(1, Math.ceil(makeupTotal / makeupLimit));
+	const hasSelectedHourOption =
+		makeupStartHour === null ||
+		makeupHourOptions.some((option) => option.value === makeupStartHour);
 	const modificationWindow = makeupOptionsData?.modificationWindow;
 	const dropDialogOpen = Boolean(dropTarget);
 	const dropSummary = dropTarget ? formatShiftSummary(dropTarget) : "";
@@ -218,6 +338,24 @@ function MyShifts() {
 			dropMakeupNotes.trim(),
 	);
 
+	React.useEffect(() => {
+		if (hasSelectedHourOption) {
+			return;
+		}
+
+		setMakeupFilters((current) => ({
+			...(current ?? DEFAULT_MAKEUP_FILTERS),
+			startHour: null,
+		}));
+		resetMakeupToFirstPage();
+		setSelectedMakeupOccurrenceId(null);
+	}, [
+		hasSelectedHourOption,
+		resetMakeupToFirstPage,
+		setMakeupFilters,
+		setSelectedMakeupOccurrenceId,
+	]);
+
 	const closeDropDialog = React.useCallback(() => {
 		setDropTarget(null);
 		setDropNotes("");
@@ -228,7 +366,7 @@ function MyShifts() {
 		setSelectedMakeupOccurrenceId(null);
 		setMakeupPage(1);
 		setDropMakeupNotes("");
-	}, []);
+	}, [setMakeupPage]);
 
 	const handleDropDialogOpenChange = React.useCallback(
 		(open: boolean) => {
@@ -294,11 +432,62 @@ function MyShifts() {
 	const handleRestrictToggle = React.useCallback(
 		(checked: boolean | "indeterminate") => {
 			const next = checked === true;
-			setRestrictToSameType(next);
-			setMakeupPage(1);
+			setMakeupFilters((current) => ({
+				...(current ?? DEFAULT_MAKEUP_FILTERS),
+				restrictToSameType: next,
+				shiftType:
+					next && makeupTarget
+						? {
+								id: makeupTarget.shiftTypeId,
+								name: makeupTarget.shiftTypeName,
+								location: makeupTarget.shiftTypeLocation ?? "",
+							}
+						: null,
+			}));
+			resetMakeupToFirstPage();
 			setSelectedMakeupOccurrenceId(null);
 		},
-		[],
+		[makeupTarget, resetMakeupToFirstPage, setMakeupFilters],
+	);
+
+	const handleMakeupShiftTypeChange = React.useCallback(
+		(shiftType: ShiftType | null) => {
+			setMakeupFilters((current) => ({
+				...(current ?? DEFAULT_MAKEUP_FILTERS),
+				shiftType,
+				restrictToSameType: Boolean(
+					makeupTarget && shiftType?.id === makeupTarget.shiftTypeId,
+				),
+			}));
+			resetMakeupToFirstPage();
+			setSelectedMakeupOccurrenceId(null);
+		},
+		[makeupTarget, resetMakeupToFirstPage, setMakeupFilters],
+	);
+
+	const handleMakeupDateRangeChange = React.useCallback(
+		(range: [Date | undefined, Date | undefined]) => {
+			setMakeupFilters((current) => ({
+				...(current ?? DEFAULT_MAKEUP_FILTERS),
+				dateRange: range,
+			}));
+			resetMakeupToFirstPage();
+			setSelectedMakeupOccurrenceId(null);
+		},
+		[resetMakeupToFirstPage, setMakeupFilters],
+	);
+
+	const handleMakeupStartHourChange = React.useCallback(
+		(value: string) => {
+			const parsed = value === "all" ? null : Number(value);
+			setMakeupFilters((current) => ({
+				...(current ?? DEFAULT_MAKEUP_FILTERS),
+				startHour: Number.isNaN(parsed) ? null : parsed,
+			}));
+			resetMakeupToFirstPage();
+			setSelectedMakeupOccurrenceId(null);
+		},
+		[resetMakeupToFirstPage, setMakeupFilters],
 	);
 
 	if (selectedPeriodId === null) {
@@ -444,6 +633,50 @@ function MyShifts() {
 										<Label htmlFor={restrictCheckboxId} className="text-sm">
 											Show only {makeupTarget.shiftTypeName} shifts
 										</Label>
+									</div>
+									<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+										<div className="space-y-2">
+											<Label className="text-sm">Shift type</Label>
+											<ShiftTypeSelector
+												value={selectedMakeupShiftType}
+												onChange={handleMakeupShiftTypeChange}
+												periodId={selectedPeriodId}
+												placeholder="All shift types"
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label className="text-sm">Date</Label>
+											<DateRangeSelector
+												value={makeupDateRange}
+												onChange={handleMakeupDateRangeChange}
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label className="text-sm">Starting hour</Label>
+											<Select
+												value={
+													makeupStartHour === null
+														? "all"
+														: String(makeupStartHour)
+												}
+												onValueChange={handleMakeupStartHourChange}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="All start hours" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="all">All start hours</SelectItem>
+													{makeupHourOptions.map((option) => (
+														<SelectItem
+															key={option.value}
+															value={String(option.value)}
+														>
+															{option.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</div>
 									</div>
 								</div>
 							) : null}
