@@ -44,7 +44,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 	useEffect(() => {
 		setRange(value ?? [undefined, undefined]);
 		// Extract time from dates if they exist
-		if (value?.[0]) {
+		if (typeof value?.[0] === "object" && value[0] instanceof Date) {
 			setStartTime(
 				`${value[0].getHours().toString().padStart(2, "0")}:${value[0]
 					.getMinutes()
@@ -52,7 +52,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 					.padStart(2, "0")}`,
 			);
 		}
-		if (value?.[1]) {
+		if (typeof value?.[1] === "object" && value[1] instanceof Date) {
 			setEndTime(
 				`${value[1].getHours().toString().padStart(2, "0")}:${value[1]
 					.getMinutes()
