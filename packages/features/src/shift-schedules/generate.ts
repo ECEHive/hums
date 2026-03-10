@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { regenerateScheduleOccurrenceAssignments } from "../assignments/generators";
 import type { Transaction } from "../types/transaction";
 import {
 	compareTimestamps,
@@ -195,5 +196,8 @@ export async function generateShiftScheduleShiftOccurrences(
 				message: `Failed to create all shift occurrences. Expected ${occurrencesToInsert.length}, created ${result.count}`,
 			});
 		}
+
+		// Ensure users registered on the schedule are assigned to the new occurrences
+		await regenerateScheduleOccurrenceAssignments(tx, shiftScheduleId);
 	}
 }
