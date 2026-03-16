@@ -10,7 +10,7 @@
     },
     "apps/client": {
       "name": "@ecehive/client",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -80,12 +80,12 @@
         "tw-animate-css": "^1.4.0",
         "typescript": "^5.9.3",
         "vite": "^7.2.7",
-        "vite-tsconfig-paths": "^5.1.4",
+        "vite-tsconfig-paths": "^6.1.1",
       },
     },
     "apps/control": {
       "name": "@ecehive/control",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -127,12 +127,12 @@
         "tw-animate-css": "^1.4.0",
         "typescript": "^5.9.3",
         "vite": "^7.2.7",
-        "vite-tsconfig-paths": "^5.1.4",
+        "vite-tsconfig-paths": "^6.1.1",
       },
     },
     "apps/inventory": {
       "name": "@ecehive/inventory",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -174,12 +174,12 @@
         "tw-animate-css": "^1.4.0",
         "typescript": "^5.9.3",
         "vite": "^7.2.7",
-        "vite-tsconfig-paths": "^5.1.4",
+        "vite-tsconfig-paths": "^6.1.1",
       },
     },
     "apps/kiosk": {
       "name": "@ecehive/kiosk",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -222,12 +222,12 @@
         "tw-animate-css": "^1.4.0",
         "typescript": "^5.9.3",
         "vite": "^7.2.7",
-        "vite-tsconfig-paths": "^5.1.4",
+        "vite-tsconfig-paths": "^6.1.1",
       },
     },
     "apps/overview": {
       "name": "@ecehive/overview",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-checkbox": "^1.3.3",
@@ -270,12 +270,12 @@
         "tw-animate-css": "^1.4.0",
         "typescript": "^5.9.3",
         "vite": "^7.2.7",
-        "vite-tsconfig-paths": "^5.1.4",
+        "vite-tsconfig-paths": "^6.1.1",
       },
     },
     "apps/server": {
       "name": "@ecehive/server",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
@@ -294,7 +294,7 @@
     },
     "packages/auth": {
       "name": "@ecehive/auth",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -308,7 +308,7 @@
     },
     "packages/card-scanner": {
       "name": "@ecehive/card-scanner",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "tslog": "^4.10.2",
       },
@@ -325,7 +325,7 @@
     },
     "packages/config": {
       "name": "@ecehive/config",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "devDependencies": {
         "@biomejs/biome": "2.4.4",
         "@types/node": "^25.3.0",
@@ -333,7 +333,7 @@
     },
     "packages/email": {
       "name": "@ecehive/email",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.1000.0",
         "@ecehive/env": "workspace:*",
@@ -354,7 +354,7 @@
     },
     "packages/env": {
       "name": "@ecehive/env",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@types/node": "^25.3.0",
         "zod": "^4.3.5",
@@ -366,7 +366,7 @@
     },
     "packages/features": {
       "name": "@ecehive/features",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
@@ -384,7 +384,7 @@
     },
     "packages/ldap": {
       "name": "@ecehive/ldap",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -397,7 +397,7 @@
     },
     "packages/logger": {
       "name": "@ecehive/logger",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "tslog": "^4.9.3",
       },
@@ -407,7 +407,7 @@
     },
     "packages/prisma": {
       "name": "@ecehive/prisma",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@prisma/adapter-pg": "^7.3.0",
@@ -425,7 +425,7 @@
     },
     "packages/rest": {
       "name": "@ecehive/rest",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/features": "workspace:*",
         "@ecehive/prisma": "workspace:*",
@@ -441,7 +441,7 @@
     },
     "packages/trpc": {
       "name": "@ecehive/trpc",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/auth": "workspace:*",
@@ -464,7 +464,7 @@
     },
     "packages/user-data": {
       "name": "@ecehive/user-data",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
@@ -478,7 +478,7 @@
     },
     "packages/workers": {
       "name": "@ecehive/workers",
-      "version": "3.4.2",
+      "version": "3.4.4",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/email": "workspace:*",
@@ -2030,7 +2030,7 @@
 
     "vite": ["vite@7.2.7", "", { "dependencies": { "esbuild": "^0.25.0", "fdir": "^6.5.0", "picomatch": "^4.0.3", "postcss": "^8.5.6", "rollup": "^4.43.0", "tinyglobby": "^0.2.15" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "jiti": ">=1.21.0", "less": "^4.0.0", "lightningcss": "^1.21.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "jiti", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-ITcnkFeR3+fI8P1wMgItjGrR10170d8auB4EpMLPqmx6uxElH3a/hHGQabSHKdqd4FXWO1nFIp9rRn7JQ34ACQ=="],
 
-    "vite-tsconfig-paths": ["vite-tsconfig-paths@5.1.4", "", { "dependencies": { "debug": "^4.1.1", "globrex": "^0.1.2", "tsconfck": "^3.0.3" }, "peerDependencies": { "vite": "*" }, "optionalPeers": ["vite"] }, "sha512-cYj0LRuLV2c2sMqhqhGpaO3LretdtMn/BVX4cPLanIZuwwrkVl+lK84E/miEXkCHWXuq65rhNN4rXsBcOB3S4w=="],
+    "vite-tsconfig-paths": ["vite-tsconfig-paths@6.1.1", "", { "dependencies": { "debug": "^4.1.1", "globrex": "^0.1.2", "tsconfck": "^3.0.3" }, "peerDependencies": { "vite": "*" } }, "sha512-2cihq7zliibCCZ8P9cKJrQBkfgdvcFkOOc3Y02o3GWUDLgqjWsZudaoiuOwO/gzTzy17cS5F7ZPo4bsnS4DGkg=="],
 
     "vitest": ["vitest@4.0.18", "", { "dependencies": { "@vitest/expect": "4.0.18", "@vitest/mocker": "4.0.18", "@vitest/pretty-format": "4.0.18", "@vitest/runner": "4.0.18", "@vitest/snapshot": "4.0.18", "@vitest/spy": "4.0.18", "@vitest/utils": "4.0.18", "es-module-lexer": "^1.7.0", "expect-type": "^1.2.2", "magic-string": "^0.30.21", "obug": "^2.1.1", "pathe": "^2.0.3", "picomatch": "^4.0.3", "std-env": "^3.10.0", "tinybench": "^2.9.0", "tinyexec": "^1.0.2", "tinyglobby": "^0.2.15", "tinyrainbow": "^3.0.3", "vite": "^6.0.0 || ^7.0.0", "why-is-node-running": "^2.3.0" }, "peerDependencies": { "@edge-runtime/vm": "*", "@opentelemetry/api": "^1.9.0", "@types/node": "^20.0.0 || ^22.0.0 || >=24.0.0", "@vitest/browser-playwright": "4.0.18", "@vitest/browser-preview": "4.0.18", "@vitest/browser-webdriverio": "4.0.18", "@vitest/ui": "4.0.18", "happy-dom": "*", "jsdom": "*" }, "optionalPeers": ["@edge-runtime/vm", "@opentelemetry/api", "@types/node", "@vitest/browser-playwright", "@vitest/browser-preview", "@vitest/browser-webdriverio", "@vitest/ui", "happy-dom", "jsdom"], "bin": { "vitest": "vitest.mjs" } }, "sha512-hOQuK7h0FGKgBAas7v0mSAsnvrIgAvWmRFjmzpJ7SwFHH3g1k2u37JtYwOwmEKhK6ZO3v9ggDBBm0La1LCK4uQ=="],
 
