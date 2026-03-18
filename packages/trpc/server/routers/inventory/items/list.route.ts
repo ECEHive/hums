@@ -1,4 +1,8 @@
-import { type Prisma, prisma } from "@ecehive/prisma";
+import {
+	type Prisma,
+	Prisma as PrismaNamespace,
+	prisma,
+} from "@ecehive/prisma";
 import z from "zod";
 import type { Context } from "../../../context";
 
@@ -8,6 +12,7 @@ export const ZListItemsSchema = z.object({
 	search: z.string().min(1).max(100).optional(),
 	isActive: z.boolean().optional(),
 	lowQuantity: z.boolean().optional(),
+	sortBy: z.enum(["name_asc", "name_desc"]).optional(),
 });
 
 export type TListItemsSchema = z.infer<typeof ZListItemsSchema>;
@@ -24,6 +29,7 @@ export async function listItemsHandler(options: TListItemsOptions) {
 		offset = 0,
 		isActive,
 		lowQuantity,
+		sortBy,
 	} = options.input;
 
 	// If lowQuantity filter is enabled, we need a different approach
@@ -34,6 +40,7 @@ export async function listItemsHandler(options: TListItemsOptions) {
 			limit,
 			offset,
 			isActive,
+			sortBy,
 		});
 	}
 
@@ -49,10 +56,17 @@ export async function listItemsHandler(options: TListItemsOptions) {
 		}),
 	};
 
+	// Determine the orderBy clause based on sortBy parameter
+	const orderBy: Prisma.ItemOrderByWithRelationInput = sortBy
+		? sortBy === "name_asc"
+			? { name: "asc" }
+			: { name: "desc" }
+		: { createdAt: "desc" };
+
 	const [items, count] = await Promise.all([
 		prisma.item.findMany({
 			where,
-			orderBy: { createdAt: "desc" },
+			orderBy,
 			skip: offset,
 			take: limit,
 			include: {
@@ -136,11 +150,22 @@ async function listLowQuantityItems(options: {
 	limit: number;
 	offset: number;
 	isActive?: boolean;
+	sortBy?: "name_asc" | "name_desc";
 }) {
-	const { search, limit, offset, isActive } = options;
+	const { search, limit, offset, isActive, sortBy } = options;
 
 	// Build parameterized search pattern for ILIKE
 	const searchPattern = search ? `%${search}%` : null;
+
+	// Determine the ORDER BY clause based on sortBy parameter
+	let orderByClause: string;
+	if (sortBy === "name_asc") {
+		orderByClause = "ORDER BY i.name ASC";
+	} else if (sortBy === "name_desc") {
+		orderByClause = "ORDER BY i.name DESC";
+	} else {
+		orderByClause = 'ORDER BY i."createdAt" DESC';
+	}
 
 	// Use parameterized queries to prevent SQL injection
 	// When search is provided, we filter; when isActive is defined, we filter by that too
@@ -171,7 +196,7 @@ async function listLowQuantityItems(options: {
 			 WHERE t."itemId" = i.id AND t."createdAt" > s."takenAt"),
 			0
 		)) < i."minQuantity"
-		ORDER BY i."createdAt" DESC
+		${PrismaNamespace.raw(orderByClause)}
 	`;
 
 	const totalCount = lowQuantityItemsRaw.length;
