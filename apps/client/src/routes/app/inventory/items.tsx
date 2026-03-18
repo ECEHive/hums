@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2Icon, RefreshCcwIcon } from "lucide-react";
+import { ArrowUpDownIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { generateColumns } from "@/components/inventory/columns";
 import { CreateDialog } from "@/components/inventory/create-dialog";
@@ -58,6 +58,9 @@ export function Items() {
 		"active" | "inactive" | "all"
 	>("active");
 	const [showLowQuantity, setShowLowQuantity] = React.useState(false);
+	const [sortOrder, setSortOrder] = React.useState<
+		"name_asc" | "name_desc" | "none"
+	>("none");
 
 	const queryParams = React.useMemo(() => {
 		return {
@@ -67,8 +70,16 @@ export function Items() {
 			limit: pageSize,
 			isActive: activeFilter === "all" ? undefined : activeFilter === "active",
 			lowQuantity: showLowQuantity || undefined,
+			sortBy: sortOrder === "none" ? undefined : sortOrder,
 		};
-	}, [debouncedSearch, offset, pageSize, activeFilter, showLowQuantity]);
+	}, [
+		debouncedSearch,
+		offset,
+		pageSize,
+		activeFilter,
+		showLowQuantity,
+		sortOrder,
+	]);
 
 	const {
 		data = { items: [], count: 0 },
@@ -143,6 +154,22 @@ export function Items() {
 							/>
 						</TableSearchInput>
 						<div className="flex items-center gap-4">
+							<Select
+								value={sortOrder}
+								onValueChange={(value: "name_asc" | "name_desc" | "none") => {
+									setSortOrder(value);
+									resetToFirstPage();
+								}}
+							>
+								<SelectTrigger className="w-10 h-10 p-0 flex justify-center items-center [&>svg:last-child]:hidden">
+									<ArrowUpDownIcon className="size-4" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">Newest</SelectItem>
+									<SelectItem value="name_asc">A to Z</SelectItem>
+									<SelectItem value="name_desc">Z to A</SelectItem>
+								</SelectContent>
+							</Select>
 							<div className="flex items-center gap-2">
 								<Label htmlFor="active-filter" className="text-sm font-medium">
 									Status:
