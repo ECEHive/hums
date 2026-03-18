@@ -1,7 +1,7 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2Icon, RefreshCcwIcon, ArrowUpDownIcon } from "lucide-react";
+import { ArrowUpDownIcon, Loader2Icon, RefreshCcwIcon } from "lucide-react";
 import React from "react";
 import { generateColumns } from "@/components/inventory/columns";
 import { CreateDialog } from "@/components/inventory/create-dialog";
@@ -72,7 +72,14 @@ export function Items() {
 			lowQuantity: showLowQuantity || undefined,
 			sortBy: sortOrder === "none" ? undefined : sortOrder,
 		};
-	}, [debouncedSearch, offset, pageSize, activeFilter, showLowQuantity, sortOrder]);
+	}, [
+		debouncedSearch,
+		offset,
+		pageSize,
+		activeFilter,
+		showLowQuantity,
+		sortOrder,
+	]);
 
 	const {
 		data = { items: [], count: 0 },

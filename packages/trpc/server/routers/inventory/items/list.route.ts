@@ -1,4 +1,8 @@
-import { type Prisma, prisma, Prisma as PrismaNamespace } from "@ecehive/prisma";
+import {
+	type Prisma,
+	Prisma as PrismaNamespace,
+	prisma,
+} from "@ecehive/prisma";
 import z from "zod";
 import type { Context } from "../../../context";
 
@@ -156,9 +160,9 @@ async function listLowQuantityItems(options: {
 	// Determine the ORDER BY clause based on sortBy parameter
 	let orderByClause: string;
 	if (sortBy === "name_asc") {
-		orderByClause = 'ORDER BY i.name ASC';
+		orderByClause = "ORDER BY i.name ASC";
 	} else if (sortBy === "name_desc") {
-		orderByClause = 'ORDER BY i.name DESC';
+		orderByClause = "ORDER BY i.name DESC";
 	} else {
 		orderByClause = 'ORDER BY i."createdAt" DESC';
 	}
