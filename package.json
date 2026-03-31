@@ -9,6 +9,7 @@
 	"scripts": {
 		"dev": "bun --filter './apps/*' dev",
 		"check": "biome check --write",
+		"test": "bun --filter './packages/*' --filter './apps/*' test",
 		"typecheck": "bun --filter './packages/*' --filter './apps/*' typecheck",
 		"set-version": "bun scripts/set-package-versions.ts",
 		"reinstall": "bun scripts/reinstall.ts"

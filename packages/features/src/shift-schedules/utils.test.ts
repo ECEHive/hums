@@ -315,12 +315,12 @@ describe("generateOccurrenceTimestamps", () => {
 describe("compareTimestamps", () => {
 	it("should identify timestamps to create when expected has more", () => {
 		const expected = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"),
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
-		const existing = [new Date("2024-01-01T09:00:00Z")];
+		const existing = [new Date("2025-01-01T09:00:00Z")];
 
 		const result = compareTimestamps(expected, existing);
 
@@ -328,20 +328,20 @@ describe("compareTimestamps", () => {
 		expect(result.timestampsToDelete).toHaveLength(0);
 
 		expect(result.timestampsToCreate[0].toISOString()).toBe(
-			"2024-01-08T09:00:00.000Z",
+			"2025-01-08T09:00:00.000Z",
 		);
 		expect(result.timestampsToCreate[1].toISOString()).toBe(
-			"2024-01-15T09:00:00.000Z",
+			"2025-01-15T09:00:00.000Z",
 		);
 	});
 
 	it("should identify timestamps to delete when existing has more", () => {
-		const expected = [new Date("2024-01-01T09:00:00Z")];
+		const expected = [new Date("2025-01-01T09:00:00Z")];
 
 		const existing = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"),
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
 		const result = compareTimestamps(expected, existing);
@@ -350,22 +350,22 @@ describe("compareTimestamps", () => {
 		expect(result.timestampsToDelete).toHaveLength(2);
 
 		expect(result.timestampsToDelete[0].toISOString()).toBe(
-			"2024-01-08T09:00:00.000Z",
+			"2025-01-08T09:00:00.000Z",
 		);
 		expect(result.timestampsToDelete[1].toISOString()).toBe(
-			"2024-01-15T09:00:00.000Z",
+			"2025-01-15T09:00:00.000Z",
 		);
 	});
 
 	it("should return empty arrays when timestamps match", () => {
 		const expected = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
 		];
 
 		const existing = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
 		];
 
 		const result = compareTimestamps(expected, existing);
@@ -376,13 +376,13 @@ describe("compareTimestamps", () => {
 
 	it("should handle completely different timestamp sets", () => {
 		const expected = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
 		];
 
 		const existing = [
-			new Date("2024-01-15T09:00:00Z"),
-			new Date("2024-01-22T09:00:00Z"),
+			new Date("2025-01-15T09:00:00Z"),
+			new Date("2025-01-22T09:00:00Z"),
 		];
 
 		const result = compareTimestamps(expected, existing);
@@ -392,18 +392,18 @@ describe("compareTimestamps", () => {
 
 		// Expected timestamps should be created
 		expect(result.timestampsToCreate.map((d) => d.toISOString())).toContain(
-			"2024-01-01T09:00:00.000Z",
+			"2025-01-01T09:00:00.000Z",
 		);
 		expect(result.timestampsToCreate.map((d) => d.toISOString())).toContain(
-			"2024-01-08T09:00:00.000Z",
+			"2025-01-08T09:00:00.000Z",
 		);
 
 		// Existing timestamps should be deleted
 		expect(result.timestampsToDelete.map((d) => d.toISOString())).toContain(
-			"2024-01-15T09:00:00.000Z",
+			"2025-01-15T09:00:00.000Z",
 		);
 		expect(result.timestampsToDelete.map((d) => d.toISOString())).toContain(
-			"2024-01-22T09:00:00.000Z",
+			"2025-01-22T09:00:00.000Z",
 		);
 	});
 
@@ -412,12 +412,12 @@ describe("compareTimestamps", () => {
 		expect(result1.timestampsToCreate).toHaveLength(0);
 		expect(result1.timestampsToDelete).toHaveLength(0);
 
-		const expected = [new Date("2024-01-01T09:00:00Z")];
+		const expected = [new Date("2025-01-01T09:00:00Z")];
 		const result2 = compareTimestamps(expected, []);
 		expect(result2.timestampsToCreate).toHaveLength(1);
 		expect(result2.timestampsToDelete).toHaveLength(0);
 
-		const existing = [new Date("2024-01-01T09:00:00Z")];
+		const existing = [new Date("2025-01-01T09:00:00Z")];
 		const result3 = compareTimestamps([], existing);
 		expect(result3.timestampsToCreate).toHaveLength(0);
 		expect(result3.timestampsToDelete).toHaveLength(1);
@@ -425,11 +425,11 @@ describe("compareTimestamps", () => {
 
 	it("should correctly compare timestamps with milliseconds", () => {
 		const expected = [
-			new Date("2024-01-01T09:00:00.000Z"),
-			new Date("2024-01-01T09:00:00.999Z"), // Different milliseconds
+			new Date("2025-01-01T09:00:00.000Z"),
+			new Date("2025-01-01T09:00:00.999Z"), // Different milliseconds
 		];
 
-		const existing = [new Date("2024-01-01T09:00:00.000Z")];
+		const existing = [new Date("2025-01-01T09:00:00.000Z")];
 
 		const result = compareTimestamps(expected, existing);
 
@@ -438,7 +438,7 @@ describe("compareTimestamps", () => {
 
 		// The timestamp with different milliseconds should be created
 		expect(result.timestampsToCreate[0].toISOString()).toBe(
-			"2024-01-01T09:00:00.999Z",
+			"2025-01-01T09:00:00.999Z",
 		);
 	});
 });
@@ -446,9 +446,9 @@ describe("compareTimestamps", () => {
 describe("filterExceptionPeriods", () => {
 	it("should return all timestamps when there are no exceptions", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"),
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
 		const result = filterExceptionPeriods(timestamps, []);
@@ -459,15 +459,15 @@ describe("filterExceptionPeriods", () => {
 
 	it("should filter out timestamps that fall within a single exception period", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"), // Within exception
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"), // Within exception
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
 		const exceptions = [
 			{
-				start: new Date("2024-01-07T00:00:00Z"),
-				end: new Date("2024-01-10T23:59:59Z"),
+				start: new Date("2025-01-07T00:00:00Z"),
+				end: new Date("2025-01-10T23:59:59Z"),
 			},
 		];
 
@@ -475,28 +475,28 @@ describe("filterExceptionPeriods", () => {
 
 		expect(result).toHaveLength(2);
 		expect(result.map((d) => d.toISOString())).toEqual([
-			"2024-01-01T09:00:00.000Z",
-			"2024-01-15T09:00:00.000Z",
+			"2025-01-01T09:00:00.000Z",
+			"2025-01-15T09:00:00.000Z",
 		]);
 	});
 
 	it("should filter out timestamps within multiple exception periods", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"), // Within first exception
-			new Date("2024-01-15T09:00:00Z"),
-			new Date("2024-01-22T09:00:00Z"), // Within second exception
-			new Date("2024-01-29T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"), // Within first exception
+			new Date("2025-01-15T09:00:00Z"),
+			new Date("2025-01-22T09:00:00Z"), // Within second exception
+			new Date("2025-01-29T09:00:00Z"),
 		];
 
 		const exceptions = [
 			{
-				start: new Date("2024-01-07T00:00:00Z"),
-				end: new Date("2024-01-09T23:59:59Z"),
+				start: new Date("2025-01-07T00:00:00Z"),
+				end: new Date("2025-01-09T23:59:59Z"),
 			},
 			{
-				start: new Date("2024-01-21T00:00:00Z"),
-				end: new Date("2024-01-23T23:59:59Z"),
+				start: new Date("2025-01-21T00:00:00Z"),
+				end: new Date("2025-01-23T23:59:59Z"),
 			},
 		];
 
@@ -504,23 +504,23 @@ describe("filterExceptionPeriods", () => {
 
 		expect(result).toHaveLength(3);
 		expect(result.map((d) => d.toISOString())).toEqual([
-			"2024-01-01T09:00:00.000Z",
-			"2024-01-15T09:00:00.000Z",
-			"2024-01-29T09:00:00.000Z",
+			"2025-01-01T09:00:00.000Z",
+			"2025-01-15T09:00:00.000Z",
+			"2025-01-29T09:00:00.000Z",
 		]);
 	});
 
 	it("should filter timestamps at the exact start of exception period", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T00:00:00Z"), // Exact start of exception
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T00:00:00Z"), // Exact start of exception
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
 		const exceptions = [
 			{
-				start: new Date("2024-01-08T00:00:00Z"),
-				end: new Date("2024-01-10T23:59:59Z"),
+				start: new Date("2025-01-08T00:00:00Z"),
+				end: new Date("2025-01-10T23:59:59Z"),
 			},
 		];
 
@@ -528,41 +528,41 @@ describe("filterExceptionPeriods", () => {
 
 		expect(result).toHaveLength(2);
 		expect(result.map((d) => d.toISOString())).not.toContain(
-			"2024-01-08T00:00:00.000Z",
+			"2025-01-08T00:00:00.000Z",
 		);
 	});
 
 	it("should filter timestamps at the exact end of exception period", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"),
-			new Date("2024-01-10T23:59:59Z"), // Exact end of exception
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
+			new Date("2025-01-10T23:59:59Z"), // Exact end of exception
 		];
 
 		const exceptions = [
 			{
-				start: new Date("2024-01-08T00:00:00Z"),
-				end: new Date("2024-01-10T23:59:59Z"),
+				start: new Date("2025-01-08T00:00:00Z"),
+				end: new Date("2025-01-10T23:59:59Z"),
 			},
 		];
 
 		const result = filterExceptionPeriods(timestamps, exceptions);
 
 		expect(result).toHaveLength(1);
-		expect(result[0].toISOString()).toBe("2024-01-01T09:00:00.000Z");
+		expect(result[0].toISOString()).toBe("2025-01-01T09:00:00.000Z");
 	});
 
 	it("should not filter timestamps just before exception period", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-07T23:59:59Z"), // Just before exception
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-07T23:59:59Z"), // Just before exception
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
 		const exceptions = [
 			{
-				start: new Date("2024-01-08T00:00:00Z"),
-				end: new Date("2024-01-10T23:59:59Z"),
+				start: new Date("2025-01-08T00:00:00Z"),
+				end: new Date("2025-01-10T23:59:59Z"),
 			},
 		];
 
@@ -574,15 +574,15 @@ describe("filterExceptionPeriods", () => {
 
 	it("should not filter timestamps just after exception period", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-11T00:00:00Z"), // Just after exception
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-11T00:00:00Z"), // Just after exception
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
 		const exceptions = [
 			{
-				start: new Date("2024-01-08T00:00:00Z"),
-				end: new Date("2024-01-10T23:59:59Z"),
+				start: new Date("2025-01-08T00:00:00Z"),
+				end: new Date("2025-01-10T23:59:59Z"),
 			},
 		];
 
@@ -594,20 +594,20 @@ describe("filterExceptionPeriods", () => {
 
 	it("should handle overlapping exception periods", () => {
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"),
-			new Date("2024-01-08T09:00:00Z"), // Within both exceptions
-			new Date("2024-01-09T09:00:00Z"), // Within both exceptions
-			new Date("2024-01-15T09:00:00Z"),
+			new Date("2025-01-01T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"), // Within both exceptions
+			new Date("2025-01-09T09:00:00Z"), // Within both exceptions
+			new Date("2025-01-15T09:00:00Z"),
 		];
 
 		const exceptions = [
 			{
-				start: new Date("2024-01-07T00:00:00Z"),
-				end: new Date("2024-01-10T23:59:59Z"),
+				start: new Date("2025-01-07T00:00:00Z"),
+				end: new Date("2025-01-10T23:59:59Z"),
 			},
 			{
-				start: new Date("2024-01-08T00:00:00Z"),
-				end: new Date("2024-01-12T23:59:59Z"),
+				start: new Date("2025-01-08T00:00:00Z"),
+				end: new Date("2025-01-12T23:59:59Z"),
 			},
 		];
 
@@ -615,8 +615,8 @@ describe("filterExceptionPeriods", () => {
 
 		expect(result).toHaveLength(2);
 		expect(result.map((d) => d.toISOString())).toEqual([
-			"2024-01-01T09:00:00.000Z",
-			"2024-01-15T09:00:00.000Z",
+			"2025-01-01T09:00:00.000Z",
+			"2025-01-15T09:00:00.000Z",
 		]);
 	});
 
@@ -624,8 +624,8 @@ describe("filterExceptionPeriods", () => {
 		const timestamps: Date[] = [];
 		const exceptions = [
 			{
-				start: new Date("2024-01-07T00:00:00Z"),
-				end: new Date("2024-01-10T23:59:59Z"),
+				start: new Date("2025-01-07T00:00:00Z"),
+				end: new Date("2025-01-10T23:59:59Z"),
 			},
 		];
 
@@ -638,30 +638,30 @@ describe("filterExceptionPeriods", () => {
 
 describe("filterPastTimestamps", () => {
 	it("should filter out past timestamps", () => {
-		const now = new Date("2024-01-15T12:00:00Z");
+		const now = new Date("2025-01-15T12:00:00Z");
 		const timestamps = [
-			new Date("2024-01-01T09:00:00Z"), // Past
-			new Date("2024-01-08T09:00:00Z"), // Past
-			new Date("2024-01-15T09:00:00Z"), // Past (same day, before reference)
-			new Date("2024-01-22T09:00:00Z"), // Future
-			new Date("2024-01-29T09:00:00Z"), // Future
+			new Date("2025-01-01T09:00:00Z"), // Past
+			new Date("2025-01-08T09:00:00Z"), // Past
+			new Date("2025-01-15T09:00:00Z"), // Past (same day, before reference)
+			new Date("2025-01-22T09:00:00Z"), // Future
+			new Date("2025-01-29T09:00:00Z"), // Future
 		];
 
 		const result = filterPastTimestamps(timestamps, now);
 
 		expect(result).toHaveLength(2);
 		expect(result.map((d) => d.toISOString())).toEqual([
-			"2024-01-22T09:00:00.000Z",
-			"2024-01-29T09:00:00.000Z",
+			"2025-01-22T09:00:00.000Z",
+			"2025-01-29T09:00:00.000Z",
 		]);
 	});
 
 	it("should return all timestamps when all are in the future", () => {
-		const now = new Date("2024-01-01T00:00:00Z");
+		const now = new Date("2025-01-01T00:00:00Z");
 		const timestamps = [
-			new Date("2024-01-08T09:00:00Z"),
-			new Date("2024-01-15T09:00:00Z"),
-			new Date("2024-01-22T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
+			new Date("2025-01-15T09:00:00Z"),
+			new Date("2025-01-22T09:00:00Z"),
 		];
 
 		const result = filterPastTimestamps(timestamps, now);
@@ -670,11 +670,11 @@ describe("filterPastTimestamps", () => {
 	});
 
 	it("should return empty array when all timestamps are in the past", () => {
-		const now = new Date("2024-12-31T23:59:59Z");
+		const now = new Date("2025-12-31T23:59:59Z");
 		const timestamps = [
-			new Date("2024-01-08T09:00:00Z"),
-			new Date("2024-01-15T09:00:00Z"),
-			new Date("2024-01-22T09:00:00Z"),
+			new Date("2025-01-08T09:00:00Z"),
+			new Date("2025-01-15T09:00:00Z"),
+			new Date("2025-01-22T09:00:00Z"),
 		];
 
 		const result = filterPastTimestamps(timestamps, now);
@@ -683,7 +683,7 @@ describe("filterPastTimestamps", () => {
 	});
 
 	it("should handle empty timestamp array", () => {
-		const now = new Date("2024-01-15T12:00:00Z");
+		const now = new Date("2025-01-15T12:00:00Z");
 		const timestamps: Date[] = [];
 
 		const result = filterPastTimestamps(timestamps, now);
