@@ -1,4 +1,8 @@
-import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
+import type { Prisma } from "@ecehive/prisma";
+import {
+	isProtectedAttendanceStatus,
+	PROTECTED_ATTENDANCE_STATUSES,
+} from "../attendance";
 import {
 	computeOccurrenceEnd,
 	computeOccurrenceStart,
@@ -6,31 +10,26 @@ import {
 	isDepartureEarly,
 } from "../time-utils";
 
-const PROTECTED_ATTENDANCE_STATUSES: ShiftAttendanceStatus[] = [
-	"dropped",
-	"dropped_makeup",
-];
-
-function isProtectedAttendanceStatus(
-	status?: ShiftAttendanceStatus | null,
-): boolean {
-	return status ? PROTECTED_ATTENDANCE_STATUSES.includes(status) : false;
-}
-
 /**
- * Find active shift occurrences for a user at the current time
+ * Find active shift occurrences for a user at the current time.
+ * Limits the query to occurrences from the last 24 hours to avoid
+ * scanning the entire history of shift occurrences.
  */
 async function findActiveShiftOccurrences(
 	tx: Prisma.TransactionClient,
 	userId: number,
 	now: Date,
 ) {
+	const lookbackMs = 24 * 60 * 60 * 1000;
+	const lookbackTime = new Date(now.getTime() - lookbackMs);
+
 	const occurrences = await tx.shiftOccurrence.findMany({
 		where: {
 			users: {
 				some: { id: userId },
 			},
 			timestamp: {
+				gte: lookbackTime,
 				lte: now,
 			},
 		},
@@ -130,23 +129,29 @@ export async function handleTapInAttendance(
 }
 
 /**
- * Update attendance records when user taps out
- * Only updates attendances that don't already have a timeOut (first tap-out only)
+ * Update attendance records when user taps out.
+ * Only updates attendances that have a timeIn but no timeOut (first tap-out only).
+ * Records without a timeIn are skipped since the user never actually tapped in.
  */
 export async function handleTapOutAttendance(
 	tx: Prisma.TransactionClient,
 	userId: number,
 	tapOutTime: Date,
 ) {
-	// Find all attendances without timeOut for this user
-	// This ensures we only record the first tap-out
+	const lookbackMs = 24 * 60 * 60 * 1000;
+	const lookbackTime = new Date(tapOutTime.getTime() - lookbackMs);
+
+	// Find all attendances with a timeIn but no timeOut for this user
+	// This ensures we only record the first tap-out, and only for records
+	// where the user actually tapped in
 	const openAttendances = await tx.shiftAttendance.findMany({
 		where: {
 			userId,
+			timeIn: { not: null },
 			timeOut: null,
 			status: { notIn: PROTECTED_ATTENDANCE_STATUSES },
 			shiftOccurrence: {
-				timestamp: { lte: tapOutTime },
+				timestamp: { gte: lookbackTime, lte: tapOutTime },
 			},
 		},
 		include: {
@@ -364,6 +369,9 @@ export async function hasActiveAttendance(
 	userId: number,
 	now: Date = new Date(),
 ): Promise<boolean> {
+	const lookbackMs = 24 * 60 * 60 * 1000;
+	const lookbackTime = new Date(now.getTime() - lookbackMs);
+
 	const activeAttendance = await tx.shiftAttendance.findFirst({
 		where: {
 			userId,
@@ -371,7 +379,7 @@ export async function hasActiveAttendance(
 			timeOut: null,
 			status: { notIn: PROTECTED_ATTENDANCE_STATUSES },
 			shiftOccurrence: {
-				timestamp: { lte: now },
+				timestamp: { gte: lookbackTime, lte: now },
 			},
 		},
 		include: {

@@ -22,7 +22,7 @@ function csvEscape(value: unknown): string {
 
 	// Check if it's an ISO date string and pass through as-is
 	if (typeof value === "string") {
-		// ISO 8601 date pattern (e.g., 2024-01-15T10:30:00.000Z)
+		// ISO 8601 date pattern (e.g., 2025-01-15T10:30:00.000Z)
 		const isoDatePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
 		if (isoDatePattern.test(value)) {
 			return value;

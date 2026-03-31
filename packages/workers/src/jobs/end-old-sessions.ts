@@ -1,40 +1,93 @@
 import { queueEmail } from "@ecehive/email";
-import { ConfigService } from "@ecehive/features";
+import { ConfigService, endSession } from "@ecehive/features";
 import { getLogger } from "@ecehive/logger";
 import { prisma } from "@ecehive/prisma";
 import { CronJob } from "cron";
 
 const logger = getLogger("workers:end-sessions");
 
+interface SessionToEnd {
+	id: number;
+	userId: number;
+	startedAt: Date;
+	sessionType: "regular" | "staffing";
+	user: {
+		name: string;
+		email: string;
+	};
+}
+
+/**
+ * End a single session using the shared endSession() utility
+ * so that attendance records are properly closed for staffing sessions.
+ * Falls back to a direct update if the shared utility fails, to ensure
+ * the session is always ended.
+ */
+async function endSessionSafely(
+	session: SessionToEnd,
+	endTime: Date,
+): Promise<boolean> {
+	try {
+		await prisma.$transaction(
+			async (tx) => {
+				await endSession(tx, session.id, endTime);
+			},
+			{ maxWait: 5000, timeout: 10000 },
+		);
+		return true;
+	} catch (error) {
+		// If endSession fails (e.g., session already ended by a concurrent tap-out),
+		// ensure the session is at least marked as ended
+		logger.warn("endSession utility failed, falling back to direct update", {
+			sessionId: session.id,
+			error: error instanceof Error ? error.message : String(error),
+		});
+		try {
+			await prisma.session.updateMany({
+				where: { id: session.id, endedAt: null },
+				data: { endedAt: endTime },
+			});
+		} catch (fallbackError) {
+			logger.error("Failed to end session even with fallback", {
+				sessionId: session.id,
+				error:
+					fallbackError instanceof Error
+						? fallbackError.message
+						: String(fallbackError),
+			});
+			return false;
+		}
+		return true;
+	}
+}
+
 /**
  * Ends all active sessions (endedAt == null) that started more than the configured timeout ago.
  * Separate timeouts for regular and staffing sessions.
+ * Uses endSession() to properly handle attendance record closure for staffing sessions.
  * Sends email notifications if configured.
- * Runs every 5 minutes.
+ * Runs every minute.
  */
 export async function endOldSessions(): Promise<void> {
 	try {
 		const now = new Date();
 
 		// Get configuration values
-		const regularEnabled = await ConfigService.get(
-			"session.timeout.regular.enabled",
-		);
-		const regularHours = await ConfigService.get(
-			"session.timeout.regular.hours",
-		);
-		const staffingEnabled = await ConfigService.get(
-			"session.timeout.staffing.enabled",
-		);
-		const staffingHours = await ConfigService.get(
-			"session.timeout.staffing.hours",
-		);
-		const regularEmailEnabled = await ConfigService.get(
-			"email.sessions.autologout.regular.enabled",
-		);
-		const staffingEmailEnabled = await ConfigService.get(
-			"email.sessions.autologout.staffing.enabled",
-		);
+		const [
+			regularEnabled,
+			regularHours,
+			staffingEnabled,
+			staffingHours,
+			regularEmailEnabled,
+			staffingEmailEnabled,
+		] = await Promise.all([
+			ConfigService.get("session.timeout.regular.enabled"),
+			ConfigService.get("session.timeout.regular.hours"),
+			ConfigService.get("session.timeout.staffing.enabled"),
+			ConfigService.get("session.timeout.staffing.hours"),
+			ConfigService.get("email.sessions.autologout.regular.enabled"),
+			ConfigService.get("email.sessions.autologout.staffing.enabled"),
+		]);
 
 		let totalEnded = 0;
 
@@ -60,15 +113,14 @@ export async function endOldSessions(): Promise<void> {
 				},
 			});
 
+			for (const session of regularSessions) {
+				const ended = await endSessionSafely(session, now);
+				if (ended) totalEnded++;
+			}
+
 			if (regularSessions.length > 0) {
-				const ids = regularSessions.map((s) => s.id);
-				await prisma.session.updateMany({
-					where: { id: { in: ids }, endedAt: null },
-					data: { endedAt: now },
-				});
-				totalEnded += ids.length;
 				logger.info("Ended regular sessions due to timeout", {
-					count: ids.length,
+					count: regularSessions.length,
 					timeoutHours: regularHours as number,
 				});
 
@@ -121,15 +173,14 @@ export async function endOldSessions(): Promise<void> {
 				},
 			});
 
+			for (const session of staffingSessions) {
+				const ended = await endSessionSafely(session, now);
+				if (ended) totalEnded++;
+			}
+
 			if (staffingSessions.length > 0) {
-				const ids = staffingSessions.map((s) => s.id);
-				await prisma.session.updateMany({
-					where: { id: { in: ids }, endedAt: null },
-					data: { endedAt: now },
-				});
-				totalEnded += ids.length;
 				logger.info("Ended staffing sessions due to timeout", {
-					count: ids.length,
+					count: staffingSessions.length,
 					timeoutHours: staffingHours as number,
 				});
 
