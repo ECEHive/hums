@@ -298,7 +298,7 @@ export async function endSession(
 	endTime: Date = new Date(),
 ) {
 	const session = await tx.session.update({
-		where: { id: sessionId },
+		where: { id: sessionId, endedAt: null },
 		data: { endedAt: endTime },
 	});
 

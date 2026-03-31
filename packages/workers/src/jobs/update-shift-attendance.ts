@@ -245,6 +245,8 @@ async function createAttendancesForOccurrenceStarts(
 		await prisma.shiftAttendance.updateMany({
 			where: {
 				id: { in: attendanceIdsToMarkAbsent },
+				status: "upcoming",
+				timeIn: null,
 			},
 			data: {
 				status: "absent",
@@ -253,8 +255,12 @@ async function createAttendancesForOccurrenceStarts(
 	}
 
 	for (const update of attendancesToMarkPresent) {
-		await prisma.shiftAttendance.update({
-			where: { id: update.id },
+		await prisma.shiftAttendance.updateMany({
+			where: {
+				id: update.id,
+				status: "upcoming",
+				timeIn: null,
+			},
 			data: {
 				status: "present",
 				timeIn: update.timeIn,
@@ -598,7 +604,10 @@ async function ensureOngoingOccurrenceAttendances(
  * Only processes "present" records that have a timeIn (user actually attended).
  */
 async function closeOrphanedAttendances(now: Date): Promise<void> {
-	const LOOKBACK_MS = 24 * 60 * 60 * 1000;
+	// Use a 7-day lookback to cover realistic outage durations.
+	// This is intentionally wider than the 24h lookback used elsewhere,
+	// since orphaned records indicate something already went wrong.
+	const LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 	const lookbackTime = new Date(now.getTime() - LOOKBACK_MS);
 
 	const orphanedAttendances = await prisma.shiftAttendance.findMany({

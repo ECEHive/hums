@@ -116,13 +116,13 @@ describe("calculateAttendanceStats", () => {
 		const attendances = [
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2025-01-01T10:00:00"),
-				timeOut: new Date("2025-01-01T11:00:00"),
+				timeIn: new Date("2025-01-01T10:00:00Z"),
+				timeOut: new Date("2025-01-01T11:00:00Z"),
 			}),
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2025-01-02T10:00:00"),
-				timeOut: new Date("2025-01-02T11:00:00"),
+				timeIn: new Date("2025-01-02T10:00:00Z"),
+				timeOut: new Date("2025-01-02T11:00:00Z"),
 			}),
 		];
 
@@ -285,13 +285,13 @@ describe("calculateAttendanceStats", () => {
 		const attendances = [
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2025-01-01T10:00:00"),
-				timeOut: new Date("2025-01-01T11:00:00"), // 1 hour
+				timeIn: new Date("2025-01-01T10:00:00Z"),
+				timeOut: new Date("2025-01-01T11:00:00Z"), // 1 hour
 			}),
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2025-01-02T10:00:00"),
-				timeOut: new Date("2025-01-02T12:30:00"), // 2.5 hours
+				timeIn: new Date("2025-01-02T10:00:00Z"),
+				timeOut: new Date("2025-01-02T12:30:00Z"), // 2.5 hours
 			}),
 		];
 
@@ -307,7 +307,7 @@ describe("calculateAttendanceStats", () => {
 				status: "absent",
 				isExcused: true,
 				shiftOccurrence: {
-					timestamp: new Date("2025-01-01T09:00:00"),
+					timestamp: new Date("2025-01-01T09:00:00Z"),
 					shiftSchedule: {
 						startTime: "10:00:00",
 						endTime: "12:00:00", // 2 hour shift
@@ -328,10 +328,10 @@ describe("calculateAttendanceStats", () => {
 		const attendances = [
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2025-01-01T10:15:00"), // 15 min late
-				timeOut: new Date("2025-01-01T10:45:00"), // 15 min early
+				timeIn: new Date("2025-01-01T10:15:00Z"), // 15 min late
+				timeOut: new Date("2025-01-01T10:45:00Z"), // 15 min early
 				shiftOccurrence: {
-					timestamp: new Date("2025-01-01T09:00:00"),
+					timestamp: new Date("2025-01-01T09:00:00Z"),
 					shiftSchedule: {
 						startTime: "10:00:00",
 						endTime: "11:00:00", // 1 hour shift

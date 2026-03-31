@@ -435,6 +435,10 @@ describe("endSession", () => {
 		await endSession(tx, 1, now);
 
 		expect(tx.session.update).toHaveBeenCalledOnce();
+		expect(tx.session.update.mock.calls[0][0].where).toEqual({
+			id: 1,
+			endedAt: null,
+		});
 		expect(tx.session.update.mock.calls[0][0].data).toEqual({ endedAt: now });
 		// Regular => no tap-out
 		expect(tx.shiftAttendance.findMany).not.toHaveBeenCalled();
