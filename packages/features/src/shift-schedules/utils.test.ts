@@ -269,10 +269,10 @@ describe("generateOccurrenceTimestamps", () => {
 		);
 
 		const beforeDst = occurrences.find((date) =>
-			date.toISOString().startsWith("2025-03-03"),
+			date.toISOString().startsWith("2024-03-03"),
 		);
 		const afterDst = occurrences.find((date) =>
-			date.toISOString().startsWith("2025-03-10"),
+			date.toISOString().startsWith("2024-03-10"),
 		);
 
 		expect(beforeDst?.toISOString()).toBe(
@@ -297,10 +297,10 @@ describe("generateOccurrenceTimestamps", () => {
 		);
 
 		const beforeDst = occurrences.find((date) =>
-			date.toISOString().startsWith("2025-10-27"),
+			date.toISOString().startsWith("2024-10-27"),
 		);
 		const afterDst = occurrences.find((date) =>
-			date.toISOString().startsWith("2025-11-03"),
+			date.toISOString().startsWith("2024-11-03"),
 		);
 
 		expect(beforeDst?.toISOString()).toBe(
