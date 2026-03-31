@@ -5,7 +5,6 @@ import {
 	CalendarCheckIcon,
 	CalendarClockIcon,
 	CalendarXIcon,
-	ClockIcon,
 } from "lucide-react";
 import { columns } from "@/components/attendance/columns";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
@@ -94,7 +93,7 @@ function AttendancePage() {
 
 			<PageContent>
 				{/* Stats Cards */}
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+				<div className="grid gap-4 md:grid-cols-3">
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-sm font-medium">
@@ -107,7 +106,7 @@ function AttendancePage() {
 								{statsData?.totalShifts ?? 0}
 							</div>
 							<p className="text-xs text-muted-foreground">
-								{statsData?.upcomingShiftsCount ?? 0} upcoming
+								{statsData?.upcomingShiftsCount ?? 0} upcoming shifts
 							</p>
 						</CardContent>
 					</Card>
@@ -116,23 +115,6 @@ function AttendancePage() {
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-sm font-medium">
 								Attendance Rate
-							</CardTitle>
-							<ClockIcon className="h-4 w-4 text-muted-foreground" />
-						</CardHeader>
-						<CardContent>
-							<div className="text-2xl font-bold">
-								{statsData?.attendanceRate ?? 0}%
-							</div>
-							<p className="text-xs text-muted-foreground">
-								of eligible shifts attended
-							</p>
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">
-								Time on Shift
 							</CardTitle>
 							<CalendarClockIcon className="h-4 w-4 text-muted-foreground" />
 						</CardHeader>
