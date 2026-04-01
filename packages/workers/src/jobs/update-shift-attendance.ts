@@ -50,23 +50,34 @@ async function updateShiftAttendance(): Promise<void> {
 
 		const userIds = Array.from(new Set(activeSessions.map((s) => s.userId)));
 
-		// Create attendance records for all assigned users when shifts start
-		// This runs regardless of whether there are active sessions
-		await createAttendancesForOccurrenceStarts(now);
+		// Create attendance records for all assigned users when shifts start.
+		// Pass active sessions so users with active staffing sessions get "present"
+		// records directly, avoiding the race condition where they'd briefly be "absent".
+		await createAttendancesForOccurrenceStarts(now, activeSessions);
 
-		// Process user-specific attendance updates only if there are active sessions
+		// Process user-specific attendance updates only if there are active sessions.
+		// These run sequentially after createAttendancesForOccurrenceStarts to avoid
+		// race conditions: "absent" records must exist before they can be updated to "present".
+		// closeAttendancesForRecentEnds can run in parallel with the "present" updates
+		// since they operate on different attendance records (ones with timeIn vs without).
 		if (activeSessions.length > 0) {
+			await createAttendancesForRecentStarts(
+				activeSessions,
+				userIds,
+				startWindow,
+				now,
+			);
 			await Promise.all([
-				createAttendancesForRecentStarts(
-					activeSessions,
-					userIds,
-					startWindow,
-					now,
-				),
 				closeAttendancesForRecentEnds(activeSessions, userIds, endWindow, now),
 				ensureOngoingOccurrenceAttendances(activeSessions, userIds, now),
 			]);
 		}
+
+		// Close any orphaned attendance records (present with timeIn but no timeOut)
+		// for shifts that have already ended. This is a safety net for records missed
+		// by the narrow real-time window or by sessions that were ended without
+		// proper attendance handling.
+		await closeOrphanedAttendances(now);
 	} catch (err) {
 		logger.error("Failed to update shift attendance", {
 			error: err instanceof Error ? err.message : String(err),
@@ -76,12 +87,19 @@ async function updateShiftAttendance(): Promise<void> {
 }
 
 /**
- * Create attendance records for all assigned users when occurrences start
- * Creates "absent" status by default for all assigned users
- * This ensures every shift has attendance records, which can be updated to "present" when users tap in
- * Also handles past occurrences that may have been missed (e.g., if the worker didn't run)
+ * Create attendance records for all assigned users when occurrences start.
+ * Users with active staffing sessions get "present" status with timeIn directly.
+ * Users without an active session get "absent" status.
+ * Also handles past occurrences that may have been missed (e.g., if the worker didn't run).
  */
-async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
+async function createAttendancesForOccurrenceStarts(
+	now: Date,
+	activeSessions: ActiveSession[],
+): Promise<void> {
+	// Build a map of userId -> session for quick lookup
+	const activeSessionsByUserId = new Map(
+		activeSessions.map((s) => [s.userId, s]),
+	);
 	// Find all occurrences that started within the window OR are currently ongoing
 	// This ensures we catch any missed occurrences from previous runs
 	const LOOKBACK_DAYS = 1; // Look back 1 day to catch any missed occurrences
@@ -136,15 +154,32 @@ async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
 				continue;
 			}
 
-			// Create attendance with "absent" status by default
-			// This will be updated to "present" if the user has an active session
-			attendancesToCreate.push({
-				shiftOccurrenceId: occurrence.id,
-				userId: user.id,
-				status: "absent",
-				timeIn: null,
-				timeOut: null,
-			});
+			// Check if user has an active staffing session - if so, mark as "present"
+			// directly to avoid a race where the record is briefly "absent"
+			const activeSession = activeSessionsByUserId.get(user.id);
+			if (activeSession) {
+				const timeIn =
+					activeSession.startedAt > occStart
+						? activeSession.startedAt
+						: occStart;
+				const didArriveLate = isArrivalLate(occStart, timeIn);
+				attendancesToCreate.push({
+					shiftOccurrenceId: occurrence.id,
+					userId: user.id,
+					status: "present",
+					timeIn,
+					didArriveLate,
+				});
+			} else {
+				// No active session - create with "absent" status
+				attendancesToCreate.push({
+					shiftOccurrenceId: occurrence.id,
+					userId: user.id,
+					status: "absent",
+					timeIn: null,
+					timeOut: null,
+				});
+			}
 		}
 	}
 
@@ -156,9 +191,9 @@ async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
 		});
 	}
 
-	// Update any "upcoming" attendances to "absent" for shifts that have started
-	// This handles makeup shifts that were scheduled in the future but have now started
-	// We need to check the computed start time, not just the timestamp
+	// Update any "upcoming" attendances for shifts that have started.
+	// Users with active staffing sessions go to "present" with timeIn.
+	// Users without an active session go to "absent".
 	const upcomingAttendances = await prisma.shiftAttendance.findMany({
 		where: {
 			status: "upcoming",
@@ -178,12 +213,30 @@ async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
 	});
 
 	const attendanceIdsToMarkAbsent: number[] = [];
+	const attendancesToMarkPresent: Array<{
+		id: number;
+		timeIn: Date;
+		didArriveLate: boolean;
+	}> = [];
+
 	for (const attendance of upcomingAttendances) {
 		const occStart = computeOccurrenceStart(
 			new Date(attendance.shiftOccurrence.timestamp),
 			attendance.shiftOccurrence.shiftSchedule.startTime,
 		);
-		if (occStart <= now) {
+		if (occStart > now) continue;
+
+		const activeSession = activeSessionsByUserId.get(attendance.userId);
+		if (activeSession) {
+			const timeIn =
+				activeSession.startedAt > occStart ? activeSession.startedAt : occStart;
+			const didArriveLate = isArrivalLate(occStart, timeIn);
+			attendancesToMarkPresent.push({
+				id: attendance.id,
+				timeIn,
+				didArriveLate,
+			});
+		} else {
 			attendanceIdsToMarkAbsent.push(attendance.id);
 		}
 	}
@@ -192,9 +245,26 @@ async function createAttendancesForOccurrenceStarts(now: Date): Promise<void> {
 		await prisma.shiftAttendance.updateMany({
 			where: {
 				id: { in: attendanceIdsToMarkAbsent },
+				status: "upcoming",
+				timeIn: null,
 			},
 			data: {
 				status: "absent",
+			},
+		});
+	}
+
+	for (const update of attendancesToMarkPresent) {
+		await prisma.shiftAttendance.updateMany({
+			where: {
+				id: update.id,
+				status: "upcoming",
+				timeIn: null,
+			},
+			data: {
+				status: "present",
+				timeIn: update.timeIn,
+				didArriveLate: update.didArriveLate,
 			},
 		});
 	}
@@ -412,9 +482,12 @@ async function ensureOngoingOccurrenceAttendances(
 	userIds: number[],
 	now: Date,
 ): Promise<void> {
+	const lookbackMs = 24 * 60 * 60 * 1000;
+	const lookbackTime = new Date(now.getTime() - lookbackMs);
+
 	const ongoingOccurrences = await prisma.shiftOccurrence.findMany({
 		where: {
-			timestamp: { lte: now },
+			timestamp: { gte: lookbackTime, lte: now },
 			users: { some: { id: { in: userIds } } },
 		},
 		include: {
@@ -519,6 +592,75 @@ async function ensureOngoingOccurrenceAttendances(
 				status: "present",
 				timeIn: update.timeIn,
 				didArriveLate: update.didArriveLate,
+			},
+		});
+	}
+}
+
+/**
+ * Close orphaned attendance records where the shift has ended but timeOut was never set.
+ * This catches records missed by the narrow real-time window in closeAttendancesForRecentEnds,
+ * or records left open due to the endOldSessions worker previously bypassing attendance handling.
+ * Only processes "present" records that have a timeIn (user actually attended).
+ */
+async function closeOrphanedAttendances(now: Date): Promise<void> {
+	// Use a 7-day lookback to cover realistic outage durations.
+	// This is intentionally wider than the 24h lookback used elsewhere,
+	// since orphaned records indicate something already went wrong.
+	const LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
+	const lookbackTime = new Date(now.getTime() - LOOKBACK_MS);
+
+	const orphanedAttendances = await prisma.shiftAttendance.findMany({
+		where: {
+			status: "present",
+			timeIn: { not: null },
+			timeOut: null,
+			shiftOccurrence: {
+				timestamp: {
+					gte: lookbackTime,
+					lte: now,
+				},
+			},
+		},
+		include: {
+			shiftOccurrence: {
+				include: {
+					shiftSchedule: {
+						select: {
+							startTime: true,
+							endTime: true,
+						},
+					},
+				},
+			},
+		},
+	});
+
+	for (const attendance of orphanedAttendances) {
+		if (isProtectedAttendanceStatus(attendance.status)) continue;
+
+		const scheduledStart = computeOccurrenceStart(
+			new Date(attendance.shiftOccurrence.timestamp),
+			attendance.shiftOccurrence.shiftSchedule.startTime,
+		);
+		const occEnd = computeOccurrenceEnd(
+			scheduledStart,
+			attendance.shiftOccurrence.shiftSchedule.startTime,
+			attendance.shiftOccurrence.shiftSchedule.endTime,
+		);
+
+		// Only close if the shift has already ended
+		if (occEnd >= now) continue;
+
+		await prisma.shiftAttendance.updateMany({
+			where: {
+				id: attendance.id,
+				timeOut: null,
+				status: { notIn: PROTECTED_ATTENDANCE_STATUSES },
+			},
+			data: {
+				timeOut: occEnd,
+				didLeaveEarly: false,
 			},
 		});
 	}

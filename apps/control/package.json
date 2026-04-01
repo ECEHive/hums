@@ -34,7 +34,7 @@
 		"rehype-sanitize": "^6.0.0",
 		"tailwind-merge": "^3.5.0",
 		"tslog": "^4.10.2",
-		"zod": "^4.3.5"
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
