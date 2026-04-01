@@ -60,7 +60,7 @@
 		"rehype-sanitize": "^6.0.0",
 		"sonner": "^2.0.7",
 		"tailwind-merge": "^3.5.0",
-		"zod": "^4.3.5"
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
