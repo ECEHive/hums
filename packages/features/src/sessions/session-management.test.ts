@@ -549,7 +549,9 @@ describe("hasActiveAttendance", () => {
 	});
 
 	it("should return true when an active attendance exists for an ongoing shift", async () => {
-		const now = new Date();
+		// Use a fixed noon-CDT reference time so that "01:00-23:00" always brackets it,
+		// matching the same pattern used by createActiveOccurrence above.
+		const now = new Date("2025-06-10T17:00:00Z"); // noon America/Chicago (CDT = UTC-5)
 		const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 		const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
 
@@ -562,8 +564,8 @@ describe("hasActiveAttendance", () => {
 			shiftOccurrence: {
 				timestamp: twoHoursAgo,
 				shiftSchedule: {
-					startTime: "10:00:00",
-					endTime: "14:00:00", // 4 hours - shift still ongoing
+					startTime: "01:00:00",
+					endTime: "23:00:00", // 22 hours - shift always ongoing at noon
 				},
 			},
 		});
