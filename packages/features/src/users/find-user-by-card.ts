@@ -132,8 +132,19 @@ export async function findUserByCard(cardNumber: string) {
 			}
 		}
 
-		// Persist credential for the resolved user
-		await ensureCredential(tx, user.id, hash, credentialPreview(normalized));
+		// Persist credentials for all cards belonging to this user
+		const allCards = profile.cardNumbers ?? [normalized];
+		for (const card of allCards) {
+			const cardNormalized = normalizeCardNumber(card);
+			if (!cardNormalized) continue;
+			const cardHash = hashCredential(cardNormalized);
+			await ensureCredential(
+				tx,
+				user.id,
+				cardHash,
+				credentialPreview(cardNormalized),
+			);
+		}
 
 		return user;
 	});
