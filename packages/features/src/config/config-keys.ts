@@ -8,6 +8,7 @@
 
 import type { BrandingConfigType } from "./definitions/branding";
 import type { EmailConfigType } from "./definitions/email";
+import type { ReservationConfigType } from "./definitions/reservations";
 import type { SessionConfigType } from "./definitions/sessions";
 import type { SlackConfigType } from "./definitions/slack";
 
@@ -18,7 +19,8 @@ import type { SlackConfigType } from "./definitions/slack";
 export type ConfigKeyMap = SessionConfigType &
 	EmailConfigType &
 	SlackConfigType &
-	BrandingConfigType;
+	BrandingConfigType &
+	ReservationConfigType;
 
 /**
  * Union type of all valid configuration keys

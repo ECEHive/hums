@@ -77,6 +77,9 @@ export async function listControlPoints(
 				authorizedUsers: {
 					select: { id: true, name: true, username: true },
 				},
+				reservationRoles: {
+					select: { id: true, name: true },
+				},
 			},
 			orderBy: { [sortBy]: sortOrder },
 			take: limit,

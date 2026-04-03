@@ -17,6 +17,13 @@ export type ControlPointInfo = {
 	isActive: boolean;
 };
 
+export type ControlPointReservation = {
+	userName: string;
+	startTime: Date;
+	endTime: Date;
+	status: string;
+};
+
 export type UserInfo = {
 	id: number;
 	name: string;
@@ -138,6 +145,7 @@ export type ControlPointWithStatus = {
 	authorizedRoles: { id: number; name: string }[];
 	authorizedUsers: { id: number; name: string }[];
 	currentUserName: string | null;
+	nextReservation: ControlPointReservation | null;
 };
 
 export type AuthenticatedUser = {
@@ -145,6 +153,13 @@ export type AuthenticatedUser = {
 	name: string;
 	cardNumber: string;
 	authorizedControlPointIds: string[];
+	reservations: {
+		id: string;
+		controlPointId: string;
+		startTime: Date;
+		endTime: Date;
+		status: string;
+	}[];
 };
 
 export type ControlKioskState = {

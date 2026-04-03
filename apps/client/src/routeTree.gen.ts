@@ -41,6 +41,7 @@ import { Route as AppShiftsAttendanceRouteImport } from './routes/app/shifts/att
 import { Route as AppInventoryTransactionsRouteImport } from './routes/app/inventory/transactions'
 import { Route as AppInventoryMyTransactionsRouteImport } from './routes/app/inventory/my-transactions'
 import { Route as AppInventoryItemsRouteImport } from './routes/app/inventory/items'
+import { Route as AppControlReservationsRouteImport } from './routes/app/control/reservations'
 import { Route as AppControlProvidersRouteImport } from './routes/app/control/providers'
 import { Route as AppControlPointsRouteImport } from './routes/app/control/points'
 import { Route as AppControlLogsRouteImport } from './routes/app/control/logs'
@@ -231,6 +232,11 @@ const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
   path: '/items',
   getParentRoute: () => AppInventoryRoute,
 } as any)
+const AppControlReservationsRoute = AppControlReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => AppControlRoute,
+} as any)
 const AppControlProvidersRoute = AppControlProvidersRouteImport.update({
   id: '/providers',
   path: '/providers',
@@ -373,7 +379,7 @@ export interface FileRoutesByFullPath {
   '/app/tickets': typeof AppTicketsRouteWithChildren
   '/control/$pointId': typeof ControlPointIdRoute
   '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
-  '/submit': typeof SubmitIndexRoute
+  '/submit/': typeof SubmitIndexRoute
   '/app/agreements': typeof AppAppAgreementsRoute
   '/app/api-tokens': typeof AppAppApiTokensRoute
   '/app/audit-logs': typeof AppAppAuditLogsRoute
@@ -389,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
   '/app/control/providers': typeof AppControlProvidersRoute
+  '/app/control/reservations': typeof AppControlReservationsRoute
   '/app/inventory/items': typeof AppInventoryItemsRoute
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
@@ -415,9 +422,9 @@ export interface FileRoutesByFullPath {
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
   '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
-  '/app/me': typeof AppAppMeIndexRoute
+  '/app/me/': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
-  '/app/tickets/admin': typeof AppTicketsAdminIndexRoute
+  '/app/tickets/admin/': typeof AppTicketsAdminIndexRoute
   '/app/tickets/my-tickets/': typeof AppTicketsMyTicketsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -443,6 +450,7 @@ export interface FileRoutesByTo {
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
   '/app/control/providers': typeof AppControlProvidersRoute
+  '/app/control/reservations': typeof AppControlReservationsRoute
   '/app/inventory/items': typeof AppInventoryItemsRoute
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
@@ -500,6 +508,7 @@ export interface FileRoutesById {
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
   '/app/control/providers': typeof AppControlProvidersRoute
+  '/app/control/reservations': typeof AppControlReservationsRoute
   '/app/inventory/items': typeof AppInventoryItemsRoute
   '/app/inventory/my-transactions': typeof AppInventoryMyTransactionsRoute
   '/app/inventory/transactions': typeof AppInventoryTransactionsRoute
@@ -544,7 +553,7 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/control/$pointId'
     | '/submit/$ticketTypeId'
-    | '/submit'
+    | '/submit/'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
@@ -560,6 +569,7 @@ export interface FileRouteTypes {
     | '/app/control/logs'
     | '/app/control/points'
     | '/app/control/providers'
+    | '/app/control/reservations'
     | '/app/inventory/items'
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
@@ -586,9 +596,9 @@ export interface FileRouteTypes {
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
     | '/app/tickets/submit/$ticketTypeId'
-    | '/app/me'
+    | '/app/me/'
     | '/app/shifts/manage-users/'
-    | '/app/tickets/admin'
+    | '/app/tickets/admin/'
     | '/app/tickets/my-tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -614,6 +624,7 @@ export interface FileRouteTypes {
     | '/app/control/logs'
     | '/app/control/points'
     | '/app/control/providers'
+    | '/app/control/reservations'
     | '/app/inventory/items'
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
@@ -670,6 +681,7 @@ export interface FileRouteTypes {
     | '/app/control/logs'
     | '/app/control/points'
     | '/app/control/providers'
+    | '/app/control/reservations'
     | '/app/inventory/items'
     | '/app/inventory/my-transactions'
     | '/app/inventory/transactions'
@@ -745,7 +757,7 @@ declare module '@tanstack/react-router' {
     '/submit/': {
       id: '/submit/'
       path: '/submit'
-      fullPath: '/submit'
+      fullPath: '/submit/'
       preLoaderRoute: typeof SubmitIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -938,6 +950,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInventoryItemsRouteImport
       parentRoute: typeof AppInventoryRoute
     }
+    '/app/control/reservations': {
+      id: '/app/control/reservations'
+      path: '/reservations'
+      fullPath: '/app/control/reservations'
+      preLoaderRoute: typeof AppControlReservationsRouteImport
+      parentRoute: typeof AppControlRoute
+    }
     '/app/control/providers': {
       id: '/app/control/providers'
       path: '/providers'
@@ -1053,7 +1072,7 @@ declare module '@tanstack/react-router' {
     '/app/tickets/admin/': {
       id: '/app/tickets/admin/'
       path: '/admin'
-      fullPath: '/app/tickets/admin'
+      fullPath: '/app/tickets/admin/'
       preLoaderRoute: typeof AppTicketsAdminIndexRouteImport
       parentRoute: typeof AppTicketsRoute
     }
@@ -1067,7 +1086,7 @@ declare module '@tanstack/react-router' {
     '/app/_app/me/': {
       id: '/app/_app/me/'
       path: '/me'
-      fullPath: '/app/me'
+      fullPath: '/app/me/'
       preLoaderRoute: typeof AppAppMeIndexRouteImport
       parentRoute: typeof AppAppRoute
     }
@@ -1158,6 +1177,7 @@ interface AppControlRouteChildren {
   AppControlLogsRoute: typeof AppControlLogsRoute
   AppControlPointsRoute: typeof AppControlPointsRoute
   AppControlProvidersRoute: typeof AppControlProvidersRoute
+  AppControlReservationsRoute: typeof AppControlReservationsRoute
   AppControlIndexRoute: typeof AppControlIndexRoute
 }
 
@@ -1166,6 +1186,7 @@ const AppControlRouteChildren: AppControlRouteChildren = {
   AppControlLogsRoute: AppControlLogsRoute,
   AppControlPointsRoute: AppControlPointsRoute,
   AppControlProvidersRoute: AppControlProvidersRoute,
+  AppControlReservationsRoute: AppControlReservationsRoute,
   AppControlIndexRoute: AppControlIndexRoute,
 }
 

@@ -36,6 +36,7 @@ model User {
   authorizedControlPoints ControlPoint[]         @relation("ControlPointUsers")
   controlLogs             ControlLog[]
   credentials             Credential[]
+  reservations            Reservation[]
 }
 
 model Role {
@@ -49,6 +50,7 @@ model Role {
   shiftTypes              ShiftType[]    @relation("RoleToShiftType")
   users                   User[]         @relation("RoleToUser")
   authorizedControlPoints ControlPoint[] @relation("ControlPointRoles")
+  reservationRoles        ControlPoint[] @relation("ControlPointReservationRoles")
 }
 
 model Permission {
@@ -450,27 +452,31 @@ model ControlProvider {
 }
 
 model ControlPoint {
-  id                 String                 @id @default(uuid())
-  name               String
-  description        String?
-  location           String?
-  controlClass       ControlClass
-  canControlOnline   Boolean                @default(true)
-  canControlWithCode Boolean                @default(false)
-  providerConfig     Json                   @default("{}")
-  currentState       Boolean                @default(false)
-  autoTurnOffEnabled Boolean                @default(false)
-  autoTurnOffMinutes Int?
-  isActive           Boolean                @default(true)
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @default(now()) @updatedAt
-  providerId         Int
-  provider           ControlProvider        @relation(fields: [providerId], references: [id], onDelete: Restrict)
-  authorizedRoles    Role[]                 @relation("ControlPointRoles")
-  authorizedUsers    User[]                 @relation("ControlPointUsers")
-  controlLogs        ControlLog[]
-  devices            Device[]               @relation("DeviceControlPoints")
-  gatewayActions     ControlGatewayAction[]
+  id                      String                 @id @default(uuid())
+  name                    String
+  description             String?
+  location                String?
+  controlClass            ControlClass
+  canControlOnline        Boolean                @default(true)
+  canControlWithCode      Boolean                @default(false)
+  providerConfig          Json                   @default("{}")
+  currentState            Boolean                @default(false)
+  autoTurnOffEnabled      Boolean                @default(false)
+  autoTurnOffMinutes      Int?
+  isActive                Boolean                @default(true)
+  canBeReserved           Boolean                @default(false)
+  maxReservationMinutes   Int?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @default(now()) @updatedAt
+  providerId              Int
+  provider                ControlProvider        @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  authorizedRoles         Role[]                 @relation("ControlPointRoles")
+  authorizedUsers         User[]                 @relation("ControlPointUsers")
+  reservationRoles        Role[]                 @relation("ControlPointReservationRoles")
+  controlLogs             ControlLog[]
+  devices                 Device[]               @relation("DeviceControlPoints")
+  gatewayActions          ControlGatewayAction[]
+  reservations            Reservation[]
 
   @@index([providerId])
 }
@@ -550,4 +556,35 @@ model Credential {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ===== Control Point Reservations =====
+
+model Reservation {
+  id             String            @id @default(uuid())
+  controlPointId String
+  userId         Int
+  startTime      DateTime
+  endTime        DateTime
+  status         ReservationStatus @default(PENDING)
+  checkedInAt    DateTime?
+  cancelledAt    DateTime?
+  cancelledById  Int?
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @default(now()) @updatedAt
+  controlPoint   ControlPoint      @relation(fields: [controlPointId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([controlPointId, startTime, endTime])
+  @@index([userId, status])
+  @@index([status, startTime])
+}
+
+enum ReservationStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  NO_SHOW
 }

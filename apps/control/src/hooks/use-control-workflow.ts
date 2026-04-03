@@ -15,6 +15,13 @@ interface AuthenticatedUser {
 		id: number;
 		sessionType: "regular" | "staffing";
 	} | null;
+	reservations: {
+		id: string;
+		controlPointId: string;
+		startTime: Date;
+		endTime: Date;
+		status: string;
+	}[];
 }
 
 export type SessionAction =
@@ -101,6 +108,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 										| "staffing",
 								}
 							: null,
+						reservations: data.reservations ?? [],
 					},
 					error: null,
 				}));

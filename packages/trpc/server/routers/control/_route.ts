@@ -2,10 +2,14 @@
  * Control Router
  *
  * This router provides all endpoints for the equipment control system,
- * including providers, control points, and logs.
+ * including providers, control points, logs, and reservations.
  */
 
-import { permissionProtectedProcedure, router } from "../../trpc";
+import {
+	permissionProtectedProcedure,
+	protectedProcedure,
+	router,
+} from "../../trpc";
 // Gateway routes
 import {
 	createGatewayHandler,
@@ -55,6 +59,28 @@ import {
 	updateProviderHandler,
 	ZUpdateProviderSchema,
 } from "./providers/update.route";
+// Reservation routes
+import {
+	cancelReservationHandler,
+	ZCancelReservationSchema,
+} from "./reservations/cancel.route";
+import {
+	createReservationHandler,
+	ZCreateReservationSchema,
+} from "./reservations/create.route";
+import {
+	getReservationHandler,
+	ZGetReservationSchema,
+} from "./reservations/get.route";
+import {
+	listReservationsHandler,
+	ZListReservationsSchema,
+} from "./reservations/list.route";
+import { listReservablePointsHandler } from "./reservations/listReservable.route";
+import {
+	myReservationsHandler,
+	ZMyReservationsSchema,
+} from "./reservations/my.route";
 
 export const controlRouter = router({
 	// Control Provider Management
@@ -127,5 +153,25 @@ export const controlRouter = router({
 		delete: permissionProtectedProcedure("control.gateways.delete")
 			.input(ZDeleteGatewaySchema)
 			.mutation(deleteGatewayHandler),
+	}),
+
+	// Control Point Reservations
+	reservations: router({
+		list: permissionProtectedProcedure("control.reservations.list")
+			.input(ZListReservationsSchema)
+			.query(listReservationsHandler),
+		get: permissionProtectedProcedure("control.reservations.list")
+			.input(ZGetReservationSchema)
+			.query(getReservationHandler),
+		create: protectedProcedure
+			.input(ZCreateReservationSchema)
+			.mutation(createReservationHandler),
+		cancel: permissionProtectedProcedure("control.reservations.cancel")
+			.input(ZCancelReservationSchema)
+			.mutation(cancelReservationHandler),
+		my: protectedProcedure
+			.input(ZMyReservationsSchema)
+			.query(myReservationsHandler),
+		reservablePoints: protectedProcedure.query(listReservablePointsHandler),
 	}),
 });

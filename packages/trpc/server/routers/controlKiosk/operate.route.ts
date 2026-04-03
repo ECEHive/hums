@@ -6,7 +6,12 @@
  * the specific control point that is assigned to the device.
  */
 
-import { findUserByCard, requireActiveSession } from "@ecehive/features";
+import {
+	checkInReservation,
+	findUserByCard,
+	getActiveReservationForControlPoint,
+	requireActiveSession,
+} from "@ecehive/features";
 import type { ControlAction, ControlProviderType } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
@@ -109,6 +114,24 @@ export async function kioskOperateHandler({ ctx, input }: KioskOperateOptions) {
 				code: "FORBIDDEN",
 				message: "You are not authorized to control this equipment",
 			});
+		}
+
+		// Enforce reservation exclusivity
+		const activeReservation =
+			await getActiveReservationForControlPoint(controlPointId);
+		if (activeReservation && activeReservation.userId !== user.id) {
+			throw new TRPCError({
+				code: "FORBIDDEN",
+				message: `This control point is currently reserved by ${activeReservation.user.name}`,
+			});
+		}
+		// Check-in if user is the reservation holder and turning on
+		if (
+			activeReservation &&
+			activeReservation.userId === user.id &&
+			(action === "TURN_ON" || action === "UNLOCK")
+		) {
+			await checkInReservation(activeReservation.id);
 		}
 	}
 

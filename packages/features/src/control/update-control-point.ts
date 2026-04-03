@@ -22,6 +22,9 @@ export interface UpdateControlPointInput {
 	autoTurnOffEnabled?: boolean;
 	autoTurnOffMinutes?: number | null;
 	isActive?: boolean;
+	canBeReserved?: boolean;
+	maxReservationMinutes?: number | null;
+	reservationRoleIds?: number[];
 }
 
 /**
@@ -84,6 +87,8 @@ export async function updateControlPoint(input: UpdateControlPointInput) {
 		autoTurnOffEnabled: input.autoTurnOffEnabled,
 		autoTurnOffMinutes: input.autoTurnOffMinutes,
 		isActive: input.isActive,
+		canBeReserved: input.canBeReserved,
+		maxReservationMinutes: input.maxReservationMinutes,
 	};
 
 	// Handle role connections
@@ -97,6 +102,13 @@ export async function updateControlPoint(input: UpdateControlPointInput) {
 	if (input.authorizedUserIds !== undefined) {
 		updateData.authorizedUsers = {
 			set: input.authorizedUserIds.map((id) => ({ id })),
+		};
+	}
+
+	// Handle reservation role connections
+	if (input.reservationRoleIds !== undefined) {
+		updateData.reservationRoles = {
+			set: input.reservationRoleIds.map((id) => ({ id })),
 		};
 	}
 

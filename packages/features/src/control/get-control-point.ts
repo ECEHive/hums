@@ -21,6 +21,9 @@ export async function getControlPoint(id: string) {
 			authorizedUsers: {
 				select: { id: true, name: true, username: true, email: true },
 			},
+			reservationRoles: {
+				select: { id: true, name: true },
+			},
 		},
 	});
 

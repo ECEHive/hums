@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	AlertCircle,
+	CalendarClock,
 	CheckCircle2,
 	Clock,
 	DoorOpen,
@@ -35,6 +36,17 @@ const queryClient = new QueryClient({
 
 // Auto-logout timeout in milliseconds (30 seconds)
 const AUTO_LOGOUT_MS = 30000;
+
+function getTimeUntil(date: Date): string {
+	const now = new Date();
+	const diff = date.getTime() - now.getTime();
+	if (diff <= 0) return "now";
+	const minutes = Math.floor(diff / 60000);
+	if (minutes < 60) return `${minutes}m`;
+	const hours = Math.floor(minutes / 60);
+	const remainingMinutes = minutes % 60;
+	return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+}
 
 // Control point status card for the idle screen
 function ControlPointStatusCard({
@@ -105,6 +117,16 @@ function ControlPointStatusCard({
 						<p className="text-xs text-muted-foreground truncate">
 							{controlPoint.currentUserName}
 						</p>
+					)}
+					{controlPoint.nextReservation && (
+						<div className="flex items-center gap-1 text-xs text-muted-foreground">
+							<CalendarClock className="w-3 h-3 shrink-0" />
+							<span className="truncate">
+								{controlPoint.nextReservation.status === "ACTIVE"
+									? `Reserved by ${controlPoint.nextReservation.userName}`
+									: `Reserved in ${getTimeUntil(new Date(controlPoint.nextReservation.startTime))}`}
+							</span>
+						</div>
 					)}
 				</div>
 			</Card>
@@ -495,6 +517,50 @@ function ControlKioskApp() {
 							</div>
 						)}
 					</section>
+
+					{/* Reservation Info */}
+					{state.authenticatedUser.reservations.length > 0 && (
+						<section className="mb-6">
+							<h2 className="text-lg font-bold mb-3">Your Reservations</h2>
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								{state.authenticatedUser.reservations.map((res) => {
+									const point = controlPoints.find(
+										(p) => p.id === res.controlPointId,
+									);
+									return (
+										<Card
+											key={res.id}
+											className="p-4 border-primary/30 bg-primary/5"
+										>
+											<div className="flex items-center gap-3">
+												<CalendarClock className="w-6 h-6 text-primary shrink-0" />
+												<div className="min-w-0">
+													<p className="font-semibold truncate">
+														{point?.name ?? "Control Point"}
+													</p>
+													<p className="text-sm text-muted-foreground">
+														{res.status === "ACTIVE"
+															? "Active now"
+															: `Starts ${getTimeUntil(new Date(res.startTime))}`}
+														{" · "}
+														{new Date(res.startTime).toLocaleTimeString([], {
+															hour: "2-digit",
+															minute: "2-digit",
+														})}
+														{" - "}
+														{new Date(res.endTime).toLocaleTimeString([], {
+															hour: "2-digit",
+															minute: "2-digit",
+														})}
+													</p>
+												</div>
+											</div>
+										</Card>
+									);
+								})}
+							</div>
+						</section>
+					)}
 
 					{/* Control Points */}
 					<section>

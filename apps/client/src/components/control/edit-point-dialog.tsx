@@ -46,6 +46,8 @@ const formSchema = z.object({
 	autoTurnOffEnabled: z.boolean(),
 	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),
 	isActive: z.boolean(),
+	canBeReserved: z.boolean(),
+	maxReservationMinutes: z.number().int().min(1).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,6 +64,8 @@ type ControlPoint = {
 	isActive: boolean;
 	autoTurnOffEnabled: boolean;
 	autoTurnOffMinutes: number | null;
+	canBeReserved: boolean;
+	maxReservationMinutes: number | null;
 	provider: {
 		id: number;
 		name: string;
@@ -69,6 +73,7 @@ type ControlPoint = {
 	};
 	authorizedRoles: { id: number; name: string }[];
 	authorizedUsers: { id: number; name: string; username: string }[];
+	reservationRoles: { id: number; name: string }[];
 	providerConfig?: {
 		tagName?: string;
 		ipAddress?: string;
@@ -88,6 +93,9 @@ export function EditControlPointDialog({
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [authorizedRoles, setAuthorizedRoles] = useState<Role[]>(
 		point.authorizedRoles ?? [],
+	);
+	const [reservationRoles, setReservationRoles] = useState<Role[]>(
+		point.reservationRoles ?? [],
 	);
 	const queryClient = useQueryClient();
 	const formId = useId();
@@ -123,6 +131,9 @@ export function EditControlPointDialog({
 			autoTurnOffEnabled?: boolean;
 			autoTurnOffMinutes?: number | null;
 			isActive?: boolean;
+			canBeReserved?: boolean;
+			maxReservationMinutes?: number | null;
+			reservationRoleIds?: number[];
 		}) => trpc.control.points.update.mutate(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["control", "points"] });
@@ -151,6 +162,8 @@ export function EditControlPointDialog({
 			autoTurnOffEnabled: point.autoTurnOffEnabled ?? false,
 			autoTurnOffMinutes: point.autoTurnOffMinutes ?? null,
 			isActive: point.isActive,
+			canBeReserved: point.canBeReserved ?? false,
+			maxReservationMinutes: point.maxReservationMinutes ?? null,
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -176,6 +189,13 @@ export function EditControlPointDialog({
 						? value.autoTurnOffMinutes
 						: null,
 					isActive: value.isActive,
+					canBeReserved: value.canBeReserved,
+					maxReservationMinutes: value.canBeReserved
+						? value.maxReservationMinutes
+						: null,
+					reservationRoleIds: value.canBeReserved
+						? reservationRoles.map((r) => r.id)
+						: [],
 				});
 				setOpen(false);
 				onUpdate?.();
@@ -220,9 +240,18 @@ export function EditControlPointDialog({
 						point.autoTurnOffMinutes ??
 						null,
 					isActive: pointDetails?.isActive ?? point.isActive,
+					canBeReserved:
+						pointDetails?.canBeReserved ?? point.canBeReserved ?? false,
+					maxReservationMinutes:
+						pointDetails?.maxReservationMinutes ??
+						point.maxReservationMinutes ??
+						null,
 				});
 				setAuthorizedRoles(
 					pointDetails?.authorizedRoles ?? point.authorizedRoles ?? [],
+				);
+				setReservationRoles(
+					pointDetails?.reservationRoles ?? point.reservationRoles ?? [],
 				);
 				setServerError(null);
 			}
@@ -497,6 +526,87 @@ export function EditControlPointDialog({
 								</form.Subscribe>
 							)}
 						</form.Field>
+					</div>
+
+					<div className="border rounded-lg p-4 space-y-4">
+						<h4 className="font-medium text-sm">Reservation Settings</h4>
+						<p className="text-xs text-muted-foreground">
+							Allow users to reserve this control point in advance.
+						</p>
+
+						<form.Field name="canBeReserved">
+							{(field) => (
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(checked) =>
+											field.handleChange(checked === true)
+										}
+									/>
+									<label
+										htmlFor={field.name}
+										className="text-sm font-medium leading-none"
+									>
+										Enable reservations
+									</label>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="maxReservationMinutes">
+							{(field) => (
+								<form.Subscribe
+									selector={(state) => state.values.canBeReserved}
+								>
+									{(canBeReserved) => (
+										<Field>
+											<FieldLabel htmlFor={field.name}>
+												Max reservation duration (minutes)
+											</FieldLabel>
+											<Input
+												id={field.name}
+												type="number"
+												min={1}
+												value={field.state.value ?? ""}
+												onChange={(e) =>
+													field.handleChange(
+														e.target.value ? Number(e.target.value) : null,
+													)
+												}
+												onBlur={field.handleBlur}
+												disabled={!canBeReserved}
+												placeholder="No limit"
+											/>
+											<FieldError>
+												{field.state.meta.errors.join(", ")}
+											</FieldError>
+										</Field>
+									)}
+								</form.Subscribe>
+							)}
+						</form.Field>
+
+						<form.Subscribe selector={(state) => state.values.canBeReserved}>
+							{(canBeReserved) => (
+								<Field>
+									<FieldLabel>Reservation Roles</FieldLabel>
+									<div
+										className={
+											canBeReserved ? "" : "opacity-50 pointer-events-none"
+										}
+									>
+										<RoleMultiSelect
+											value={reservationRoles}
+											onChange={setReservationRoles}
+										/>
+									</div>
+									<p className="text-xs text-muted-foreground mt-1">
+										Leave empty to allow anyone to reserve
+									</p>
+								</Field>
+							)}
+						</form.Subscribe>
 					</div>
 
 					<form.Field name="isActive">

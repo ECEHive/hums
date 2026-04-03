@@ -88,6 +88,24 @@ export async function checkUserPermissionsHandler({
 		return false;
 	});
 
+	// Get upcoming reservations for the user on this device's control points
+	const userReservations = await prisma.reservation.findMany({
+		where: {
+			userId: user.id,
+			controlPointId: { in: deviceControlPointIds },
+			status: { in: ["PENDING", "ACTIVE"] },
+			endTime: { gte: new Date() },
+		},
+		select: {
+			id: true,
+			controlPointId: true,
+			startTime: true,
+			endTime: true,
+			status: true,
+		},
+		orderBy: { startTime: "asc" },
+	});
+
 	return {
 		user: {
 			id: user.id,
@@ -109,5 +127,6 @@ export async function checkUserPermissionsHandler({
 			user.isSystemUser,
 		),
 		currentSession: await getCurrentSession(prisma, user.id),
+		reservations: userReservations,
 	};
 }

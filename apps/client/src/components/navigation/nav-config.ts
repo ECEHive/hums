@@ -9,6 +9,7 @@ import {
 	AlertCircleIcon,
 	BanIcon,
 	CalendarCheckIcon,
+	CalendarClockIcon,
 	CalendarIcon,
 	CalendarXIcon,
 	ClipboardListIcon,
@@ -353,6 +354,15 @@ export const appModules: AppModule[] = [
 						icon: PowerIcon,
 						permissions: { any: ["control.points.list"] },
 						description: "View and control equipment",
+					},
+					{
+						title: "Reservations",
+						url: "/app/control/reservations",
+						icon: CalendarClockIcon,
+						permissions: {
+							any: ["control.reservations.list", "control.reservations.create"],
+						},
+						description: "Reserve control points",
 					},
 				],
 			},

@@ -7,6 +7,7 @@
 
 import { brandingConfig } from "./definitions/branding";
 import { emailConfig } from "./definitions/email";
+import { reservationConfig } from "./definitions/reservations";
 import { sessionConfig } from "./definitions/sessions";
 import { slackConfig } from "./definitions/slack";
 import { ConfigRegistry } from "./registry";
@@ -16,3 +17,4 @@ ConfigRegistry.register("sessions", sessionConfig);
 ConfigRegistry.register("emails", emailConfig);
 ConfigRegistry.register("slack", slackConfig);
 ConfigRegistry.register("branding", brandingConfig);
+ConfigRegistry.register("reservations", reservationConfig);

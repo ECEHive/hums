@@ -22,6 +22,8 @@ export * from "./list-control-providers";
 export * from "./operate-control-points";
 // Provider Utilities
 export * from "./providers";
+// Reservations
+export * from "./reservations";
 // Session-Control Point Validation
 export * from "./session-control-validation";
 export * from "./update-control-gateway";

@@ -20,6 +20,9 @@ export const ZUpdatePointSchema = z.object({
 	autoTurnOffEnabled: z.boolean().optional(),
 	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),
 	isActive: z.boolean().optional(),
+	canBeReserved: z.boolean().optional(),
+	maxReservationMinutes: z.number().int().min(1).optional().nullable(),
+	reservationRoleIds: z.array(z.number().int()).optional(),
 });
 
 export async function updatePointHandler({

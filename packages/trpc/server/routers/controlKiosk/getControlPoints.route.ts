@@ -68,9 +68,45 @@ export async function getControlPointsHandler({
 		lastTurnOnLogs.map((log) => [log.controlPointId, log.user.name]),
 	);
 
+	// Get upcoming reservations for each control point
+	const now = new Date();
+	const upcomingReservations = await prisma.reservation.findMany({
+		where: {
+			controlPointId: { in: controlPointIds },
+			status: { in: ["PENDING", "ACTIVE"] },
+			endTime: { gte: now },
+		},
+		select: {
+			id: true,
+			controlPointId: true,
+			startTime: true,
+			endTime: true,
+			status: true,
+			user: { select: { name: true } },
+		},
+		orderBy: { startTime: "asc" },
+	});
+
+	// Group reservations by control point, keeping only the nearest one
+	const nextReservationByPointId = new Map<
+		string,
+		{ userName: string; startTime: Date; endTime: Date; status: string }
+	>();
+	for (const res of upcomingReservations) {
+		if (!nextReservationByPointId.has(res.controlPointId)) {
+			nextReservationByPointId.set(res.controlPointId, {
+				userName: res.user.name,
+				startTime: res.startTime,
+				endTime: res.endTime,
+				status: res.status,
+			});
+		}
+	}
+
 	const controlPointsWithUser = controlPoints.map((cp) => ({
 		...cp,
 		currentUserName: lastUserByPointId.get(cp.id) ?? null,
+		nextReservation: nextReservationByPointId.get(cp.id) ?? null,
 	}));
 
 	return {

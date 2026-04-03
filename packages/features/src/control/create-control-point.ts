@@ -21,6 +21,9 @@ export interface CreateControlPointInput {
 	autoTurnOffEnabled?: boolean;
 	autoTurnOffMinutes?: number | null;
 	isActive?: boolean;
+	canBeReserved?: boolean;
+	maxReservationMinutes?: number | null;
+	reservationRoleIds?: number[];
 }
 
 /**
@@ -64,11 +67,16 @@ export async function createControlPoint(input: CreateControlPointInput) {
 			autoTurnOffEnabled: input.autoTurnOffEnabled ?? false,
 			autoTurnOffMinutes: input.autoTurnOffMinutes ?? null,
 			isActive: input.isActive ?? true,
+			canBeReserved: input.canBeReserved ?? false,
+			maxReservationMinutes: input.maxReservationMinutes ?? null,
 			authorizedRoles: input.authorizedRoleIds?.length
 				? { connect: input.authorizedRoleIds.map((id) => ({ id })) }
 				: undefined,
 			authorizedUsers: input.authorizedUserIds?.length
 				? { connect: input.authorizedUserIds.map((id) => ({ id })) }
+				: undefined,
+			reservationRoles: input.reservationRoleIds?.length
+				? { connect: input.reservationRoleIds.map((id) => ({ id })) }
 				: undefined,
 		},
 		include: {
