@@ -20,6 +20,7 @@ type BuzzApiPerson = {
 	givenName?: string;
 	sn?: string;
 	gtAccessCardNumber?: string;
+	gtBuzzcardNumber?: string | string[];
 	gtPersonDirectoryId?: string;
 	gtPrimaryEmailAddress?: string;
 	gtPrimaryGTAccountUsername?: string;
@@ -32,6 +33,7 @@ const REQUESTED_ATTRIBUTES = [
 	"givenName",
 	"sn",
 	"gtAccessCardNumber",
+	"gtBuzzcardNumber",
 ].join(",");
 
 export class BuzzApiUserDataProvider implements UserDataProvider {
@@ -47,7 +49,7 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 	async fetchByCardNumber(cardNumber: string): Promise<UserProfile | null> {
 		const normalized = normalizeCardNumber(cardNumber);
 		if (!normalized) return null;
-		return this.request(`gtAccessCardNumber=${normalized}`);
+		return this.request(`gtBuzzcardNumber=${normalized}`);
 	}
 
 	private async request(filter: string): Promise<UserProfile | null> {
@@ -104,13 +106,23 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 			result.gtPrimaryEmailAddress?.trim() ||
 			`${username}@${this.config.fallbackEmailDomain}`;
 
-		const cardNumber = normalizeCardNumber(result.gtAccessCardNumber);
+		const rawCards = result.gtBuzzcardNumber
+			? Array.isArray(result.gtBuzzcardNumber)
+				? result.gtBuzzcardNumber
+				: [result.gtBuzzcardNumber]
+			: result.gtAccessCardNumber
+				? [result.gtAccessCardNumber]
+				: [];
+
+		const cardNumbers = rawCards
+			.map((c) => normalizeCardNumber(c))
+			.filter((c): c is string => c !== undefined);
 
 		return {
 			username,
 			name,
 			email,
-			cardNumber,
+			...(cardNumbers.length > 0 ? { cardNumbers } : {}),
 		};
 	}
 

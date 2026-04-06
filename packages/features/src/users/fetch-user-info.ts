@@ -9,6 +9,6 @@ export async function fetchUserInfo(username: string) {
 		name: profile?.name ?? username,
 		username: profile?.username ?? username,
 		email: profile?.email || fallbackEmail,
-		cardNumber: profile?.cardNumber,
+		cardNumbers: profile?.cardNumbers,
 	};
 }

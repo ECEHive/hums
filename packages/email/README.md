@@ -67,8 +67,8 @@ await queueEmail({
   data: {
     userName: 'John Doe',
     sessionType: 'regular', // or 'staffing'
-    startedAt: new Date('2024-01-01T10:00:00Z'),
-    endedAt: new Date('2024-01-01T22:00:00Z'),
+    startedAt: new Date('2025-01-01T10:00:00Z'),
+    endedAt: new Date('2025-01-01T22:00:00Z'),
     timeoutHours: 12,
   },
 });

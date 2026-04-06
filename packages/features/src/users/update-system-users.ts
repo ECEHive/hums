@@ -38,9 +38,9 @@ export async function updateSystemUsers() {
 				},
 			});
 
-			// Persist card number as a credential if available
-			if (userInfo.cardNumber) {
-				const normalized = normalizeCardNumber(userInfo.cardNumber);
+			// Persist card numbers as credentials if available
+			for (const card of userInfo.cardNumbers ?? []) {
+				const normalized = normalizeCardNumber(card);
 				if (normalized) {
 					const hash = hashCredential(normalized);
 					const preview = credentialPreview(normalized);
@@ -60,9 +60,9 @@ export async function updateSystemUsers() {
 				isSystemUser: true,
 			});
 
-			// Persist card number as a credential if available
-			if (userInfo.cardNumber) {
-				const normalized = normalizeCardNumber(userInfo.cardNumber);
+			// Persist card numbers as credentials if available
+			for (const card of userInfo.cardNumbers ?? []) {
+				const normalized = normalizeCardNumber(card);
 				if (normalized) {
 					const hash = hashCredential(normalized);
 					const preview = credentialPreview(normalized);

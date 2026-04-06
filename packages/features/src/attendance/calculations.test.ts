@@ -10,14 +10,16 @@ import {
 } from "./calculations";
 
 // Helper to create attendance records for testing
+// Uses a fixed past date to avoid timezone-dependent test failures.
+// The shift is 08:00-09:00 CDT on 2025-01-15, and the default reference
+// time for calculateAttendanceStats is new Date() which is always after this.
+const FIXED_PAST_TIMESTAMP = new Date("2025-01-15T18:00:00Z"); // Noon CDT
+
 function createAttendance(
 	overrides: Partial<AttendanceForCalculation> & {
 		status: ShiftAttendanceStatus;
 	},
 ): AttendanceForCalculation {
-	const now = new Date();
-	const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-
 	const defaults: AttendanceForCalculation = {
 		status: "upcoming",
 		isExcused: false,
@@ -27,10 +29,10 @@ function createAttendance(
 		timeIn: null,
 		timeOut: null,
 		shiftOccurrence: {
-			timestamp: twoHoursAgo,
+			timestamp: FIXED_PAST_TIMESTAMP,
 			shiftSchedule: {
-				startTime: "10:00:00",
-				endTime: "11:00:00",
+				startTime: "08:00:00",
+				endTime: "09:00:00",
 			},
 		},
 	};
@@ -114,13 +116,13 @@ describe("calculateAttendanceStats", () => {
 		const attendances = [
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2024-01-01T10:00:00"),
-				timeOut: new Date("2024-01-01T11:00:00"),
+				timeIn: new Date("2025-01-01T10:00:00Z"),
+				timeOut: new Date("2025-01-01T11:00:00Z"),
 			}),
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2024-01-02T10:00:00"),
-				timeOut: new Date("2024-01-02T11:00:00"),
+				timeIn: new Date("2025-01-02T10:00:00Z"),
+				timeOut: new Date("2025-01-02T11:00:00Z"),
 			}),
 		];
 
@@ -283,13 +285,13 @@ describe("calculateAttendanceStats", () => {
 		const attendances = [
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2024-01-01T10:00:00"),
-				timeOut: new Date("2024-01-01T11:00:00"), // 1 hour
+				timeIn: new Date("2025-01-01T10:00:00Z"),
+				timeOut: new Date("2025-01-01T11:00:00Z"), // 1 hour
 			}),
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2024-01-02T10:00:00"),
-				timeOut: new Date("2024-01-02T12:30:00"), // 2.5 hours
+				timeIn: new Date("2025-01-02T10:00:00Z"),
+				timeOut: new Date("2025-01-02T12:30:00Z"), // 2.5 hours
 			}),
 		];
 
@@ -305,7 +307,7 @@ describe("calculateAttendanceStats", () => {
 				status: "absent",
 				isExcused: true,
 				shiftOccurrence: {
-					timestamp: new Date("2024-01-01T09:00:00"),
+					timestamp: new Date("2025-01-01T09:00:00Z"),
 					shiftSchedule: {
 						startTime: "10:00:00",
 						endTime: "12:00:00", // 2 hour shift
@@ -326,10 +328,10 @@ describe("calculateAttendanceStats", () => {
 		const attendances = [
 			createAttendance({
 				status: "present",
-				timeIn: new Date("2024-01-01T10:15:00"), // 15 min late
-				timeOut: new Date("2024-01-01T10:45:00"), // 15 min early
+				timeIn: new Date("2025-01-01T10:15:00Z"), // 15 min late
+				timeOut: new Date("2025-01-01T10:45:00Z"), // 15 min early
 				shiftOccurrence: {
-					timestamp: new Date("2024-01-01T09:00:00"),
+					timestamp: new Date("2025-01-01T09:00:00Z"),
 					shiftSchedule: {
 						startTime: "10:00:00",
 						endTime: "11:00:00", // 1 hour shift

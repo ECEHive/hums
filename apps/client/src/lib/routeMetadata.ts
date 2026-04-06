@@ -86,6 +86,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Configuration",
 		breadcrumb: "Configuration",
 	},
+	"/app/reports": {
+		title: "Reports",
+		breadcrumb: "Reports",
+	},
 
 	// Inventory Routes
 	"/app/inventory": {
@@ -114,6 +118,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "Shift Schedules",
 		breadcrumb: "Shift Schedules",
 	},
+	"/app/shifts/schedule-overview": {
+		title: "Schedule Overview",
+		breadcrumb: "Schedule Overview",
+	},
 	"/app/shifts/scheduling": {
 		title: "Scheduling",
 		breadcrumb: "Scheduling",
@@ -133,6 +141,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 	"/app/shifts/manage-users": {
 		title: "Manage Users",
 		breadcrumb: "Manage Users",
+	},
+	"/app/shifts/attendance-issues": {
+		title: "Attendance Issues",
+		breadcrumb: "Attendance Issues",
 	},
 	"/app/shifts/my-shifts": {
 		title: "My Shifts",
@@ -171,6 +183,28 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 	"/app/tickets/admin/types": {
 		title: "Ticket Types",
 		breadcrumb: "Types",
+	},
+
+	// Control Routes
+	"/app/control": {
+		title: "Control",
+		breadcrumb: "Control",
+	},
+	"/app/control/points": {
+		title: "Control Points",
+		breadcrumb: "Control Points",
+	},
+	"/app/control/providers": {
+		title: "Control Providers",
+		breadcrumb: "Providers",
+	},
+	"/app/control/gateways": {
+		title: "Control Gateways",
+		breadcrumb: "Gateways",
+	},
+	"/app/control/logs": {
+		title: "Control Logs",
+		breadcrumb: "Logs",
 	},
 };
 

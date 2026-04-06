@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/rest",
-	"version": "3.4.4",
+	"version": "3.5.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -11,7 +11,7 @@
 		"@ecehive/prisma": "workspace:*",
 		"@ecehive/user-data": "workspace:*",
 		"fastify": "^5.8.2",
-		"zod": "^4.3.5"
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
