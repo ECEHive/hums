@@ -106,7 +106,7 @@ export class LegacyUserDataProvider implements UserDataProvider {
 
 		return {
 			...profile,
-			cardNumber: normalized,
+			cardNumbers: [normalized],
 		};
 	}
 }

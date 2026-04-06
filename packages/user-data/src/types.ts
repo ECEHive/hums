@@ -4,7 +4,7 @@ export interface UserProfile {
 	username: string;
 	name: string;
 	email: string;
-	cardNumber?: string;
+	cardNumbers?: string[];
 }
 
 export interface UserDataProvider {
