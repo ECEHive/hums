@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDistanceToNow } from "date-fns";
 import {
+	ClockIcon,
 	CookieIcon,
 	EllipsisIcon,
 	LinkIcon,
@@ -72,6 +73,25 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 								<TooltipContent>Individual item</TooltipContent>
 							</Tooltip>
 						) : null}
+						{row.transactionRateLimit !== undefined &&
+						row.transactionRateLimit !== null ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button variant="ghost" size="icon" className="h-6 w-6">
+										<ClockIcon className="h-4 w-4 text-amber-500" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<div className="text-sm">
+										<div className="font-semibold mb-1">Transaction Limit</div>
+										<div>
+											{row.transactionRateLimit}{" per "}
+											{row.transactionRateLimitPeriod}
+										</div>
+									</div>
+								</TooltipContent>
+							</Tooltip>
+						) : null}
 						{row.approvalRoles && row.approvalRoles.length > 0 ? (
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -80,7 +100,7 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 								<TooltipContent>
 									<div className="text-sm">
 										<div className="font-semibold mb-1">Restricted Item</div>
-										<div className="text-muted-foreground">
+										<div>
 											Requires approval from:
 										</div>
 										<ul className="mt-1 list-disc list-inside">

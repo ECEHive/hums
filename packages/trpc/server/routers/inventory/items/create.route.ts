@@ -11,6 +11,8 @@ export const ZCreateItemSchema = z.object({
 	link: z.string().url().optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
 	itemType: z.enum(["multiple", "single", "consumable"]).optional(),
+	transactionRateLimit: z.number().optional(),
+	transactionRateLimitPeriod: z.enum(["day", "week", "month", "semester"]).optional(),
 	initialQuantity: z.number().int().min(0).optional(),
 	approvalRoleIds: z.array(z.number().int()).optional(),
 });
