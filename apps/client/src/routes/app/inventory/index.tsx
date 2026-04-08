@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { HistoryIcon, LaptopMinimalCheckIcon } from "lucide-react";
+import { HistoryIcon, PackageSearchIcon } from "lucide-react";
 import { useCurrentUser } from "@/auth/AuthProvider";
 import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ function InventoryIndex() {
 					<CardContent className="flex flex-col gap-2">
 						<Link to="/app/inventory/items">
 							<Button variant="outline" className="w-full justify-start">
-								<LaptopMinimalCheckIcon className="mr-2 h-4 w-4" />
+								<PackageSearchIcon className="mr-2 h-4 w-4" />
 								View Items
 							</Button>
 						</Link>

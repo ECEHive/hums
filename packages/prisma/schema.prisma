@@ -297,21 +297,30 @@ enum ItemType {
   consumable
 }
 
+enum TransactionRateLimitPeriod {
+  day
+  week
+  month
+  semester
+}
+
 model Item {
-  id            String                 @id @default(uuid())
-  name          String
-  description   String?
-  sku           String?                @unique
-  location      String?
-  minQuantity   Int?
-  isActive      Boolean                @default(true)
-  itemType      ItemType               @default(multiple)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @default(now()) @updatedAt
-  link          String?
-  snapshot      InventorySnapshot?
-  transactions  InventoryTransaction[]
-  approvalRoles Role[]                 @relation("ItemApprovalRoles")
+  id                          String                      @id @default(uuid())
+  name                        String
+  description                 String?
+  sku                         String?                     @unique
+  location                    String?
+  minQuantity                 Int?
+  isActive                    Boolean                     @default(true)
+  itemType                    ItemType                    @default(multiple)
+  transactionRateLimit        Float?                      // Max transactions per period, null for no limit
+  transactionRateLimitPeriod  TransactionRateLimitPeriod? // day, week, month, semester
+  createdAt                   DateTime                    @default(now())
+  updatedAt                   DateTime                    @default(now()) @updatedAt
+  link                        String?
+  snapshot                    InventorySnapshot?
+  transactions                InventoryTransaction[]
+  approvalRoles               Role[]                      @relation("ItemApprovalRoles")
 }
 
 model InventoryTransaction {

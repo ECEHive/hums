@@ -56,6 +56,8 @@ type EditDialogProps = {
 		link?: string | null;
 		isActive: boolean;
 		itemType: "multiple" | "single" | "consumable";
+		transactionRateLimit?: number | null;
+		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester" | null;
 		approvalRoles?: { id: number; name: string }[];
 	};
 	onUpdate?: () => void;
@@ -80,6 +82,8 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		link?: string;
 		isActive?: boolean;
 		itemType?: "multiple" | "single" | "consumable";
+		transactionRateLimit?: number;
+		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester";
 		approvalRoleIds?: number[];
 	};
 
@@ -113,6 +117,8 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 			quantity: undefined,
 			isActive: item.isActive,
 			itemType: item.itemType,
+			transactionRateLimit: item.transactionRateLimit ?? undefined,
+			transactionRateLimitPeriod: item.transactionRateLimitPeriod ?? undefined,
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -402,6 +408,59 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 							</Field>
 						)}
 					</form.Field>
+
+					<div className="gap-4 display: flex">
+						<form.Field name="transactionRateLimit">
+							{(field) => (
+								<Field>
+									<FieldLabel htmlFor={field.name}>
+										Transaction Rate Limit{" "}
+										<span className="text-muted-foreground">(optional)</span>
+									</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value ?? ""}
+										onChange={(e) => field.handleChange(Number(e.target.value))}
+										onBlur={field.handleBlur}
+										placeholder="Enter transaction rate limit"
+									/>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+						<form.Field name="transactionRateLimitPeriod">
+							{(field) => (
+								<Field>
+								<FieldLabel htmlFor={field.name}>
+									Per Period{" "}
+									<span className="text-muted-foreground">(optional)</span>
+								</FieldLabel>
+								<Select
+									value={field.state.value}
+									onValueChange={(value) =>
+										field.handleChange(
+											value as "day" | "week" | "month" | "semester"
+										)
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select period" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="day">Per day</SelectItem>
+										<SelectItem value="week">Per week</SelectItem>
+										<SelectItem value="month">Per month</SelectItem>
+										<SelectItem value="semester">
+											Per semester (90 days)
+										</SelectItem>
+									</SelectContent>
+								</Select>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								</Field>
+							)}
+						</form.Field>
+					</div>
 
 					<Field>
 						<FieldLabel>
