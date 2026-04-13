@@ -37,7 +37,7 @@
         "@radix-ui/react-toggle": "^1.1.10",
         "@radix-ui/react-toggle-group": "^1.1.11",
         "@radix-ui/react-tooltip": "^1.2.8",
-        "@sentry/react": "^10.42.0",
+        "@sentry/react": "^10.48.0",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
         "@tanstack/react-form": "^1.28.0",
@@ -92,7 +92,7 @@
         "@radix-ui/react-scroll-area": "^1.2.9",
         "@radix-ui/react-separator": "^1.1.8",
         "@radix-ui/react-slot": "^1.2.4",
-        "@sentry/react": "^10.42.0",
+        "@sentry/react": "^10.48.0",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
         "@tanstack/react-query": "^5.96.2",
@@ -139,7 +139,7 @@
         "@radix-ui/react-label": "^2.1.8",
         "@radix-ui/react-separator": "^1.1.8",
         "@radix-ui/react-slot": "^1.2.4",
-        "@sentry/react": "^10.42.0",
+        "@sentry/react": "^10.48.0",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
         "@tanstack/react-query": "^5.96.2",
@@ -185,7 +185,7 @@
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-separator": "^1.1.8",
         "@radix-ui/react-slot": "^1.2.4",
-        "@sentry/react": "^10.42.0",
+        "@sentry/react": "^10.48.0",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
         "@tanstack/react-query": "^5.96.2",
@@ -239,7 +239,7 @@
         "@radix-ui/react-slot": "^1.2.4",
         "@radix-ui/react-tabs": "^1.1.13",
         "@radix-ui/react-tooltip": "^1.2.8",
-        "@sentry/react": "^10.42.0",
+        "@sentry/react": "^10.48.0",
         "@tanstack/devtools-vite": "^0.3.11",
         "@tanstack/react-devtools": "^0.9.6",
         "@tanstack/react-query": "^5.96.2",
@@ -990,19 +990,19 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.53.3", "", { "os": "win32", "cpu": "x64" }, "sha512-UhTd8u31dXadv0MopwGgNOBpUVROFKWVQgAg5N1ESyCz8AuBcMqm4AuTjrwgQKGDfoFuz02EuMRHQIw/frmYKQ=="],
 
-    "@sentry-internal/browser-utils": ["@sentry-internal/browser-utils@10.42.0", "", { "dependencies": { "@sentry/core": "10.42.0" } }, "sha512-HCEICKvepxN4/6NYfnMMMlppcSwIEwtS66X6d1/mwaHdi2ivw0uGl52p7Nfhda/lIJArbrkWprxl0WcjZajhQA=="],
+    "@sentry-internal/browser-utils": ["@sentry-internal/browser-utils@10.48.0", "", { "dependencies": { "@sentry/core": "10.48.0" } }, "sha512-SCiTLBXzugFKxev6NoKYBIhQoDk0gUh0AVVVepCBqfCJiWBG01Zvv0R5tCVohr4cWRllkQ8mlBdNQd/I7s9tdA=="],
 
-    "@sentry-internal/feedback": ["@sentry-internal/feedback@10.42.0", "", { "dependencies": { "@sentry/core": "10.42.0" } }, "sha512-lpPcHsog10MVYFTWE0Pf8vQRqQWwZHJpkVl2FEb9/HDdHFyTBUhCVoWo1KyKaG7GJl9AVKMAg7bp9SSNArhFNQ=="],
+    "@sentry-internal/feedback": ["@sentry-internal/feedback@10.48.0", "", { "dependencies": { "@sentry/core": "10.48.0" } }, "sha512-tGkEyOM1HDS9qebDphUMEnyk3qq/50AnuTBiFmMJyjNzowylVGmRRk0sr3xkmbVHCDXQCiYnDmSVlJ2x4SDMrQ=="],
 
-    "@sentry-internal/replay": ["@sentry-internal/replay@10.42.0", "", { "dependencies": { "@sentry-internal/browser-utils": "10.42.0", "@sentry/core": "10.42.0" } }, "sha512-Zh3EoaH39x2lqVY1YyVB2vJEyCIrT+YLUQxYl1yvP0MJgLxaR6akVjkgxbSUJahan4cX5DxpZiEHfzdlWnYPyQ=="],
+    "@sentry-internal/replay": ["@sentry-internal/replay@10.48.0", "", { "dependencies": { "@sentry-internal/browser-utils": "10.48.0", "@sentry/core": "10.48.0" } }, "sha512-sevRTePfuk4PNuz9KAKpmTZEomAU0aLXyIhOwA0OnUDdxPhkY8kq5lwDbuxTHv6DQUjUX3YgFbY45VH1JEqHKA=="],
 
-    "@sentry-internal/replay-canvas": ["@sentry-internal/replay-canvas@10.42.0", "", { "dependencies": { "@sentry-internal/replay": "10.42.0", "@sentry/core": "10.42.0" } }, "sha512-am3m1Fj8ihoPfoYo41Qq4KeCAAICn4bySso8Oepu9dMNe9Lcnsf+reMRS2qxTPg3pZDc4JEMOcLyNCcgnAfrHw=="],
+    "@sentry-internal/replay-canvas": ["@sentry-internal/replay-canvas@10.48.0", "", { "dependencies": { "@sentry-internal/replay": "10.48.0", "@sentry/core": "10.48.0" } }, "sha512-9nWuN2z4O+iwbTfuYV5ZmngBgJU/ZxfOo47A5RJP3Nu/kl59aJ1lUhILYOKyeNOIC/JyeERmpIcTxnlPXQzZ3Q=="],
 
-    "@sentry/browser": ["@sentry/browser@10.42.0", "", { "dependencies": { "@sentry-internal/browser-utils": "10.42.0", "@sentry-internal/feedback": "10.42.0", "@sentry-internal/replay": "10.42.0", "@sentry-internal/replay-canvas": "10.42.0", "@sentry/core": "10.42.0" } }, "sha512-iXxYjXNEBwY1MH4lDSDZZUNjzPJDK7/YLwVIJq/3iBYpIQVIhaJsoJnf3clx9+NfJ8QFKyKfcvgae61zm+hgTA=="],
+    "@sentry/browser": ["@sentry/browser@10.48.0", "", { "dependencies": { "@sentry-internal/browser-utils": "10.48.0", "@sentry-internal/feedback": "10.48.0", "@sentry-internal/replay": "10.48.0", "@sentry-internal/replay-canvas": "10.48.0", "@sentry/core": "10.48.0" } }, "sha512-4jt2zX2ExgFcNe2x+W+/k81fmDUsOrquGtt028CiGuDuma6kEsWBI4JbooT1jhj2T+eeUxe3YGbM23Zhh7Ghhw=="],
 
-    "@sentry/core": ["@sentry/core@10.42.0", "", {}, "sha512-L4rMrXMqUKBanpjpMT+TuAVk6xAijz6AWM6RiEYpohAr7SGcCEc1/T0+Ep1eLV8+pwWacfU27OvELIyNeOnGzA=="],
+    "@sentry/core": ["@sentry/core@10.48.0", "", {}, "sha512-h8F+fXVwYC9ro5ZaO8V+v3vqc0awlXHGblEAuVxSGgh4IV/oFX+QVzXeDTTrFOFS6v/Vn5vAyu240eJrJAS6/g=="],
 
-    "@sentry/react": ["@sentry/react@10.42.0", "", { "dependencies": { "@sentry/browser": "10.42.0", "@sentry/core": "10.42.0" }, "peerDependencies": { "react": "^16.14.0 || 17.x || 18.x || 19.x" } }, "sha512-uigyz6E3yPjjqIZpkGzRChww6gzMmqdCpK30M5aBYoaen29DDmSECHYA16sfgXeSwzQhnXyX7GxgOB+eKIr9dw=="],
+    "@sentry/react": ["@sentry/react@10.48.0", "", { "dependencies": { "@sentry/browser": "10.48.0", "@sentry/core": "10.48.0" }, "peerDependencies": { "react": "^16.14.0 || 17.x || 18.x || 19.x" } }, "sha512-uc93vKjmu6gNns+JAX4qquuxWpAMit0uGPA1TYlMjct9NG1uX3TkDPJAr9Pgd1lOXx8mKqCmj5fK33QeExMpPw=="],
 
     "@smithy/abort-controller": ["@smithy/abort-controller@4.2.8", "", { "dependencies": { "@smithy/types": "^4.12.0", "tslib": "^2.6.2" } }, "sha512-peuVfkYHAmS5ybKxWcfraK7WBBP0J+rkfUcbHJJKQ4ir3UAUNQI+Y4Vt/PqSzGqgloJ5O1dk7+WzNL8wcCSXbw=="],
 
