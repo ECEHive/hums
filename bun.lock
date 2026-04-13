@@ -46,7 +46,7 @@
         "@tanstack/react-router": "^1.140.0",
         "@tanstack/react-table": "^8.21.3",
         "@trpc/client": "11.15.0",
-        "@trpc/tanstack-react-query": "11.13.4",
+        "@trpc/tanstack-react-query": "11.16.0",
         "@vitejs/plugin-basic-ssl": "^2.1.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -98,7 +98,7 @@
         "@tanstack/react-query": "^5.96.2",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@trpc/client": "11.15.0",
-        "@trpc/tanstack-react-query": "11.13.4",
+        "@trpc/tanstack-react-query": "11.16.0",
         "@vitejs/plugin-basic-ssl": "^2.1.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -145,7 +145,7 @@
         "@tanstack/react-query": "^5.96.2",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@trpc/client": "11.15.0",
-        "@trpc/tanstack-react-query": "11.13.4",
+        "@trpc/tanstack-react-query": "11.16.0",
         "@vitejs/plugin-basic-ssl": "^2.1.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -191,7 +191,7 @@
         "@tanstack/react-query": "^5.96.2",
         "@tanstack/react-query-devtools": "^5.91.2",
         "@trpc/client": "11.15.0",
-        "@trpc/tanstack-react-query": "11.13.4",
+        "@trpc/tanstack-react-query": "11.16.0",
         "@vitejs/plugin-basic-ssl": "^2.1.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -246,7 +246,7 @@
         "@tanstack/react-query-devtools": "^5.91.2",
         "@tanstack/react-router": "^1.140.0",
         "@trpc/client": "11.15.0",
-        "@trpc/tanstack-react-query": "11.13.4",
+        "@trpc/tanstack-react-query": "11.16.0",
         "@vitejs/plugin-basic-ssl": "^2.1.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -1152,7 +1152,7 @@
 
     "@trpc/server": ["@trpc/server@11.7.2", "", { "peerDependencies": { "typescript": ">=5.7.2" } }, "sha512-AgB26PXY69sckherIhCacKLY49rxE2XP5h38vr/KMZTbLCL1p8IuIoKPjALTcugC2kbyQ7Lbqo2JDVfRSmPmfQ=="],
 
-    "@trpc/tanstack-react-query": ["@trpc/tanstack-react-query@11.13.4", "", { "peerDependencies": { "@tanstack/react-query": "^5.80.3", "@trpc/client": "11.13.4", "@trpc/server": "11.13.4", "react": ">=18.2.0", "typescript": ">=5.7.2" } }, "sha512-/R6iKghuRWjiviY3lv8e/OVfe8CucqPh6IOKipbQHXIWv/BYzJbaOhS/gZXRYk4aSa+lUzxhob/NheXOmpZsMg=="],
+    "@trpc/tanstack-react-query": ["@trpc/tanstack-react-query@11.16.0", "", { "peerDependencies": { "@tanstack/react-query": "^5.80.3", "@trpc/client": "11.16.0", "@trpc/server": "11.16.0", "react": ">=18.2.0", "typescript": ">=5.7.2" }, "bin": { "intent": "bin/intent.js" } }, "sha512-kfNYJ5NCk67tmRCO/QWCycJmRamuEKmZf1HRG8yCBl8aTJdTwVq7l6AffFIMab3Q+NmQzwP8XXkAEK/EelKYOA=="],
 
     "@tsconfig/node10": ["@tsconfig/node10@1.0.12", "", {}, "sha512-UCYBaeFvM11aU2y3YPZ//O5Rhj+xKyzy7mvcIoAjASbigy8mHMryP5cK7dgjlz2hWxh1g5pLw084E0a/wlUSFQ=="],
 
