@@ -373,7 +373,7 @@ export interface FileRoutesByFullPath {
   '/app/tickets': typeof AppTicketsRouteWithChildren
   '/control/$pointId': typeof ControlPointIdRoute
   '/submit/$ticketTypeId': typeof SubmitTicketTypeIdRoute
-  '/submit': typeof SubmitIndexRoute
+  '/submit/': typeof SubmitIndexRoute
   '/app/agreements': typeof AppAppAgreementsRoute
   '/app/api-tokens': typeof AppAppApiTokensRoute
   '/app/audit-logs': typeof AppAppAuditLogsRoute
@@ -415,9 +415,9 @@ export interface FileRoutesByFullPath {
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
   '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
-  '/app/me': typeof AppAppMeIndexRoute
+  '/app/me/': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
-  '/app/tickets/admin': typeof AppTicketsAdminIndexRoute
+  '/app/tickets/admin/': typeof AppTicketsAdminIndexRoute
   '/app/tickets/my-tickets/': typeof AppTicketsMyTicketsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -544,7 +544,7 @@ export interface FileRouteTypes {
     | '/app/tickets'
     | '/control/$pointId'
     | '/submit/$ticketTypeId'
-    | '/submit'
+    | '/submit/'
     | '/app/agreements'
     | '/app/api-tokens'
     | '/app/audit-logs'
@@ -586,9 +586,9 @@ export interface FileRouteTypes {
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
     | '/app/tickets/submit/$ticketTypeId'
-    | '/app/me'
+    | '/app/me/'
     | '/app/shifts/manage-users/'
-    | '/app/tickets/admin'
+    | '/app/tickets/admin/'
     | '/app/tickets/my-tickets/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -745,7 +745,7 @@ declare module '@tanstack/react-router' {
     '/submit/': {
       id: '/submit/'
       path: '/submit'
-      fullPath: '/submit'
+      fullPath: '/submit/'
       preLoaderRoute: typeof SubmitIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -1053,7 +1053,7 @@ declare module '@tanstack/react-router' {
     '/app/tickets/admin/': {
       id: '/app/tickets/admin/'
       path: '/admin'
-      fullPath: '/app/tickets/admin'
+      fullPath: '/app/tickets/admin/'
       preLoaderRoute: typeof AppTicketsAdminIndexRouteImport
       parentRoute: typeof AppTicketsRoute
     }
@@ -1067,7 +1067,7 @@ declare module '@tanstack/react-router' {
     '/app/_app/me/': {
       id: '/app/_app/me/'
       path: '/me'
-      fullPath: '/app/me'
+      fullPath: '/app/me/'
       preLoaderRoute: typeof AppAppMeIndexRouteImport
       parentRoute: typeof AppAppRoute
     }

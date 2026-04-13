@@ -2,12 +2,13 @@ import {
 	CatIcon,
 	Flower2Icon,
 	HatGlassesIcon,
-	SproutIcon,
-	SunMoonIcon,
 	LogIn,
 	LogOut,
 	type LucideIcon,
 	RefreshCw,
+	RocketIcon,
+	SproutIcon,
+	SunMoonIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo } from "react";
@@ -34,7 +35,7 @@ const pingLoopTransition = {
 
 const welcomeOverrides: Record<
 	string,
-	{ text: string; icon: LucideIcon | null; color: string | null}
+	{ text: string; icon: LucideIcon | null; color: string | null }
 > = {
 	alemons8: {
 		text: "Meow",
@@ -42,14 +43,17 @@ const welcomeOverrides: Record<
 		color: null,
 	},
 	banderson336: {
-		text: Math.ceil((new Date(Date.UTC(2069, 8, 6)).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)).toString() + " Days left",
+		text: `${Math.ceil(
+			(new Date(Date.UTC(2069, 8, 6)).getTime() - Date.now()) /
+				(1000 * 60 * 60 * 24),
+		).toString()} Days left`,
 		icon: Flower2Icon,
 		color: "text-yellow-500",
 	},
 	wcastro8: {
-		text: "Goodbye",
-		icon: null,
-		color: null,
+		text: "buh :o",
+		icon: RocketIcon,
+		color: "text-yellow-500",
 	},
 	chartigan6: {
 		text: "buh card found thx",
@@ -110,9 +114,9 @@ const goodbyeOverrides: Record<
 		color: "text-orange-500",
 	},
 	wcastro8: {
-		text: "Welcome",
-		icon: null,
-		color: null,
+		text: "buh :(",
+		icon: RocketIcon,
+		color: "text-yellow-500",
 	},
 	chartigan6: {
 		text: "buh bye",
@@ -185,8 +189,12 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 		if (isSwitchToStaffing) {
 			return {
 				icon: switchToStaffOverrides[event.user.username]?.icon || RefreshCw,
-				title: switchToStaffOverrides[event.user.username]?.text || "Switched to Staffing",
-				color: switchToStaffOverrides[event.user.username]?.color || "text-purple-500",
+				title:
+					switchToStaffOverrides[event.user.username]?.text ||
+					"Switched to Staffing",
+				color:
+					switchToStaffOverrides[event.user.username]?.color ||
+					"text-purple-500",
 				subtitle: event.user.name,
 			};
 		}
@@ -194,8 +202,12 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 		if (isSwitchToRegular) {
 			return {
 				icon: switchToRegularOverrides[event.user.username]?.icon || RefreshCw,
-				title: switchToRegularOverrides[event.user.username]?.text || "Switched to Regular",
-				color: switchToRegularOverrides[event.user.username]?.color || "text-orange-500",
+				title:
+					switchToRegularOverrides[event.user.username]?.text ||
+					"Switched to Regular",
+				color:
+					switchToRegularOverrides[event.user.username]?.color ||
+					"text-orange-500",
 				subtitle: event.user.name,
 			};
 		}
@@ -209,44 +221,44 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 	}, [event.user.name, isTapIn, isSwitchToRegular, isSwitchToStaffing]);
 
 	return (
+		<motion.div
+			className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
+			initial={{ opacity: 0 }}
+			animate={{ opacity: isExiting ? 0 : 1 }}
+			transition={{ duration: 0.3 }}
+		>
 			<motion.div
-				className="absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
-				initial={{ opacity: 0 }}
-				animate={{ opacity: isExiting ? 0 : 1 }}
-				transition={{ duration: 0.3 }}
+				key={event.id}
+				className="max-w-2xl mx-auto"
+				initial={{ opacity: 0, scale: 0.95, y: 16 }}
+				animate={{
+					opacity: isExiting ? 0 : 1,
+					scale: isExiting ? 0.95 : 1,
+					y: isExiting ? 16 : 0,
+				}}
+				transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
 			>
-				<motion.div
-					key={event.id}
-					className="max-w-2xl mx-auto"
-					initial={{ opacity: 0, scale: 0.95, y: 16 }}
-					animate={{
-						opacity: isExiting ? 0 : 1,
-						scale: isExiting ? 0.95 : 1,
-						y: isExiting ? 16 : 0,
-					}}
-					transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-				>
-					<div className="flex flex-col items-center gap-8">
-						<AnimatedIcon
-							icon={notificationContent.icon}
-							colorClass={notificationContent.color}
-							isExiting={isExiting}
-						/>
-						<motion.div
-							className="text-center gap-3 flex flex-col"
-							initial={{ opacity: 0, y: 12 }}
-							animate={{ opacity: isExiting ? 0 : 1, y: isExiting ? 12 : 0 }}
-							transition={{ duration: 0.5, delay: 0.2 }}
-						>
-							<h2 className={`text-6xl font-bold ${notificationContent.color}`}>
-								{notificationContent.title}
-							</h2>
-							<p className={`text-4xl font-semibold`}>
-								{notificationContent.subtitle}
-							</p>
-						</motion.div>
-					</div>
-				</motion.div>
+				<div className="flex flex-col items-center gap-8">
+					<AnimatedIcon
+						icon={notificationContent.icon}
+						colorClass={notificationContent.color}
+						isExiting={isExiting}
+					/>
+					<motion.div
+						className="text-center gap-3 flex flex-col"
+						initial={{ opacity: 0, y: 12 }}
+						animate={{ opacity: isExiting ? 0 : 1, y: isExiting ? 12 : 0 }}
+						transition={{ duration: 0.5, delay: 0.2 }}
+					>
+						<h2 className={`text-6xl font-bold ${notificationContent.color}`}>
+							{notificationContent.title}
+						</h2>
+						<p className={`text-4xl font-semibold`}>
+							{notificationContent.subtitle}
+						</p>
+					</motion.div>
+				</div>
 			</motion.div>
-		);
-	}
+		</motion.div>
+	);
+}
