@@ -9,7 +9,7 @@
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
 		"@types/node": "^25.3.0",
-		"typescript": "^5.9.2"
+		"typescript": "^6.0.2"
 	},
 	"dependencies": {
 		"@ecehive/env": "workspace:*",

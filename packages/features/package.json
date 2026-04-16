@@ -18,7 +18,7 @@
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"typescript": "^5.9.3",
+		"typescript": "^6.0.2",
 		"vitest": "^4.1.2"
 	}
 }
