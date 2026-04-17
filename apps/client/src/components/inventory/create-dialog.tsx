@@ -157,7 +157,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 					isActive: true,
 					initialQuantity: undefined,
 					itemType: "multiple",
-							transactionRateLimitPeriod: undefined,
+					transactionRateLimitPeriod: undefined,
 				});
 				setApprovalRoles([]);
 				return;
@@ -427,7 +427,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 											field.handleChange(
 												value === "none"
 													? undefined
-													: (value as "day" | "week" | "month" | "semester")
+													: (value as "day" | "week" | "month" | "semester"),
 											)
 										}
 									>

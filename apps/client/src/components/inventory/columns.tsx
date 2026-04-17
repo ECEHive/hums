@@ -85,7 +85,8 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 									<div className="text-sm">
 										<div className="font-semibold mb-1">Transaction Limit</div>
 										<div>
-											{row.transactionRateLimit}{" per "}
+											{row.transactionRateLimit}
+											{" per "}
 											{row.transactionRateLimitPeriod}
 										</div>
 									</div>
@@ -100,9 +101,7 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 								<TooltipContent>
 									<div className="text-sm">
 										<div className="font-semibold mb-1">Restricted Item</div>
-										<div>
-											Requires approval from:
-										</div>
+										<div>Requires approval from:</div>
 										<ul className="mt-1 list-disc list-inside">
 											{row.approvalRoles.map((role) => (
 												<li key={role.id}>{role.name}</li>

@@ -83,12 +83,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		isActive?: boolean;
 		itemType?: "multiple" | "single" | "consumable";
 		transactionRateLimit?: number;
-			transactionRateLimitPeriod?:
-				| "day"
-				| "week"
-				| "month"
-				| "semester"
-				| null;
+		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester" | null;
 		approvalRoleIds?: number[];
 	};
 
@@ -447,7 +442,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 											field.handleChange(
 												value === "none"
 													? null
-													: (value as "day" | "week" | "month" | "semester")
+													: (value as "day" | "week" | "month" | "semester"),
 											)
 										}
 									>
