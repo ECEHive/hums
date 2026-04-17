@@ -252,6 +252,20 @@ export function SuspensionCreateDialog({
 															mode="single"
 															selected={selectedDate}
 															captionLayout="dropdown"
+															startMonth={
+																new Date(
+																	new Date().setFullYear(
+																		new Date().getFullYear() - 1,
+																	),
+																)
+															}
+															endMonth={
+																new Date(
+																	new Date().setFullYear(
+																		new Date().getFullYear() + 10,
+																	),
+																)
+															}
 															onSelect={(date) => {
 																if (date) {
 																	const year = date.getFullYear();

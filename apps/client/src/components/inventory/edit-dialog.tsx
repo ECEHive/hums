@@ -83,7 +83,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		isActive?: boolean;
 		itemType?: "multiple" | "single" | "consumable";
 		transactionRateLimit?: number;
-		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester";
+		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester" | null;
 		approvalRoleIds?: number[];
 	};
 
@@ -432,31 +432,34 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 						<form.Field name="transactionRateLimitPeriod">
 							{(field) => (
 								<Field>
-								<FieldLabel htmlFor={field.name}>
-									Per Period{" "}
-									<span className="text-muted-foreground">(optional)</span>
-								</FieldLabel>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) =>
-										field.handleChange(
-											value as "day" | "week" | "month" | "semester"
-										)
-									}
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Select period" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="day">Per day</SelectItem>
-										<SelectItem value="week">Per week</SelectItem>
-										<SelectItem value="month">Per month</SelectItem>
-										<SelectItem value="semester">
-											Per semester (90 days)
-										</SelectItem>
-									</SelectContent>
-								</Select>
-								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+									<FieldLabel htmlFor={field.name}>
+										Per Period{" "}
+										<span className="text-muted-foreground">(optional)</span>
+									</FieldLabel>
+									<Select
+										value={field.state.value}
+										onValueChange={(value) =>
+											field.handleChange(
+												value === "none"
+													? null
+													: (value as "day" | "week" | "month" | "semester"),
+											)
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select period" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="none">None</SelectItem>
+											<SelectItem value="day">Per day</SelectItem>
+											<SelectItem value="week">Per week</SelectItem>
+											<SelectItem value="month">Per month</SelectItem>
+											<SelectItem value="semester">
+												Per semester (90 days)
+											</SelectItem>
+										</SelectContent>
+									</Select>
+									<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 								</Field>
 							)}
 						</form.Field>

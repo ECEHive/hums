@@ -107,7 +107,7 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 
 			const totalCheckedOut = existingTransactions.reduce(
 				(sum, tx) => sum + Math.abs(tx.quantity),
-				0
+				0,
 			);
 
 			const quantity = items.find((i) => i.itemId === item.id)?.quantity;
