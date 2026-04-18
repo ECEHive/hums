@@ -465,36 +465,35 @@ jobs:
         env:
           TAG: ${{ needs.create-release.outputs.tag }}
           VERSION: ${{ needs.create-release.outputs.version }}
-          REPO_OWNER: ${{ github.repository_owner }}
         run: |
           # Create multi-arch manifest for server
           docker buildx imagetools create \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG} \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:v${VERSION} \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:latest \
-            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG}-amd64 \
-            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG}-arm64
+            -t ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}:${TAG} \
+            -t ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}:v${VERSION} \
+            -t ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}:${TAG}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}:${TAG}-arm64
 
           # Create multi-arch manifest for migrate
           docker buildx imagetools create \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG} \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:v${VERSION} \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:latest \
-            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG}-amd64 \
-            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG}-arm64
+            -t ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}:${TAG} \
+            -t ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}:v${VERSION} \
+            -t ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}:${TAG}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}:${TAG}-arm64
 
           # Create multi-arch manifest for web
           docker buildx imagetools create \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG} \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:v${VERSION} \
-            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:latest \
-            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG}-amd64 \
-            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG}-arm64
+            -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${TAG} \
+            -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:v${VERSION} \
+            -t ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${TAG}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${TAG}-arm64
 
           # Capture manifest digests
-          SERVER_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG} --format '{{.Manifest.Digest}}')
-          MIGRATE_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG} --format '{{.Manifest.Digest}}')
-          WEB_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG} --format '{{.Manifest.Digest}}')
+          SERVER_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}:${TAG} --format '{{.Manifest.Digest}}')
+          MIGRATE_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}:${TAG} --format '{{.Manifest.Digest}}')
+          WEB_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${TAG} --format '{{.Manifest.Digest}}')
 
           # Validate digests are non-empty
           for img in SERVER MIGRATE WEB; do
