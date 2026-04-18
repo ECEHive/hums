@@ -419,7 +419,7 @@ jobs:
           platforms: ${{ matrix.platform }}
 
   # Finalize after all builds complete
-  finalize-docker:
+  finalize-docker:v
     needs: [create-release, build-server, build-migrate, build-web]
     if: needs.create-release.outputs.release_created == 'true'
     runs-on: ubuntu-latest
@@ -497,8 +497,8 @@ jobs:
 
           # Validate digests are non-empty
           for img in SERVER MIGRATE WEB; do
-            eval "val=\${${img}_DIGEST}"
-            if [ -z "$val" ]; then
+            var="${img}_DIGEST"
+            if [ -z "${!var}" ]; then
               echo "❌ Failed to capture digest for ${img,,} manifest"
               exit 1
             fi
