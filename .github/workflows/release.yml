@@ -419,7 +419,7 @@ jobs:
           platforms: ${{ matrix.platform }}
 
   # Finalize after all builds complete
-  finalize-docker:v
+  finalize-docker:
     needs: [create-release, build-server, build-migrate, build-web]
     if: needs.create-release.outputs.release_created == 'true'
     runs-on: ubuntu-latest
