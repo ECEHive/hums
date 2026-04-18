@@ -253,13 +253,20 @@ jobs:
   build-server:
     needs: create-release
     if: needs.create-release.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
     permissions:
       contents: read
       packages: write
-    outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-      digest: ${{ steps.build.outputs.digest }}
     
     steps:
       - name: Checkout repository
@@ -283,9 +290,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.SERVER_IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ needs.create-release.outputs.tag }},priority=900
-            type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
-            type=raw,value=latest,priority=600
+            type=raw,value=${{ needs.create-release.outputs.tag }}-${{ matrix.arch }},priority=900
+            type=raw,value=v${{ needs.create-release.outputs.version }}-${{ matrix.arch }},priority=850
+            type=raw,value=latest-${{ matrix.arch }},priority=600
 
       - name: Build and push server image
         id: build
@@ -297,18 +304,25 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
 
   build-migrate:
     needs: create-release
     if: needs.create-release.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
     permissions:
       contents: read
       packages: write
-    outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-      digest: ${{ steps.build.outputs.digest }}
     
     steps:
       - name: Checkout repository
@@ -332,9 +346,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.MIGRATE_IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ needs.create-release.outputs.tag }},priority=900
-            type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
-            type=raw,value=latest,priority=600
+            type=raw,value=${{ needs.create-release.outputs.tag }}-${{ matrix.arch }},priority=900
+            type=raw,value=v${{ needs.create-release.outputs.version }}-${{ matrix.arch }},priority=850
+            type=raw,value=latest-${{ matrix.arch }},priority=600
 
       - name: Build and push prisma-migrate image
         id: build
@@ -346,18 +360,25 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
 
   build-web:
     needs: create-release
     if: needs.create-release.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
     permissions:
       contents: read
       packages: write
-    outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-      digest: ${{ steps.build.outputs.digest }}
     
     steps:
       - name: Checkout repository
@@ -381,9 +402,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ needs.create-release.outputs.tag }},priority=900
-            type=raw,value=v${{ needs.create-release.outputs.version }},priority=850
-            type=raw,value=latest,priority=600
+            type=raw,value=${{ needs.create-release.outputs.tag }}-${{ matrix.arch }},priority=900
+            type=raw,value=v${{ needs.create-release.outputs.version }}-${{ matrix.arch }},priority=850
+            type=raw,value=latest-${{ matrix.arch }},priority=600
 
       - name: Build and push web image
         id: build
@@ -395,7 +416,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
 
   # Finalize after all builds complete
   finalize-docker:
@@ -409,6 +430,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Make images public
         run: |
@@ -429,15 +460,66 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Create multi-arch manifests
+        id: manifests
+        env:
+          TAG: ${{ needs.create-release.outputs.tag }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          # Create multi-arch manifest for server
+          docker buildx imagetools create \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG} \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:v${VERSION} \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:latest \
+            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG}-amd64 \
+            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG}-arm64
+
+          # Create multi-arch manifest for migrate
+          docker buildx imagetools create \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG} \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:v${VERSION} \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:latest \
+            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG}-amd64 \
+            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG}-arm64
+
+          # Create multi-arch manifest for web
+          docker buildx imagetools create \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG} \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:v${VERSION} \
+            -t ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:latest \
+            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG}-amd64 \
+            ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG}-arm64
+
+          # Capture manifest digests
+          SERVER_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${REPO_OWNER}/hums-server:${TAG} --format '{{.Manifest.Digest}}')
+          MIGRATE_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${REPO_OWNER}/hums-migrate:${TAG} --format '{{.Manifest.Digest}}')
+          WEB_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${REPO_OWNER}/hums-web:${TAG} --format '{{.Manifest.Digest}}')
+
+          # Validate digests are non-empty
+          for img in SERVER MIGRATE WEB; do
+            eval "val=\${${img}_DIGEST}"
+            if [ -z "$val" ]; then
+              echo "❌ Failed to capture digest for ${img,,} manifest"
+              exit 1
+            fi
+          done
+
+          echo "server_digest=${SERVER_DIGEST}" >> $GITHUB_OUTPUT
+          echo "migrate_digest=${MIGRATE_DIGEST}" >> $GITHUB_OUTPUT
+          echo "web_digest=${WEB_DIGEST}" >> $GITHUB_OUTPUT
+
+          echo "✅ Multi-arch manifests created for all images"
+
       - name: Update release with Docker image information
         uses: actions/github-script@v7
         env:
           RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
           TAG: ${{ needs.create-release.outputs.tag }}
           VERSION: ${{ needs.create-release.outputs.version }}
-          SERVER_DIGEST: ${{ needs.build-server.outputs.digest }}
-          MIGRATE_DIGEST: ${{ needs.build-migrate.outputs.digest }}
-          WEB_DIGEST: ${{ needs.build-web.outputs.digest }}
+          SERVER_DIGEST: ${{ steps.manifests.outputs.server_digest }}
+          MIGRATE_DIGEST: ${{ steps.manifests.outputs.migrate_digest }}
+          WEB_DIGEST: ${{ steps.manifests.outputs.web_digest }}
           REPO_OWNER: ${{ github.repository_owner }}
         with:
           script: |
@@ -460,6 +542,7 @@ jobs:
               '## Docker Images',
               '',
               'All images are published to GitHub Container Registry.',
+              'Each image supports **linux/amd64** and **linux/arm64** architectures.',
               '',
               '### Pull Commands',
               '',
@@ -485,7 +568,12 @@ jobs:
               '### Available Tags',
               '',
               `- \`${tag}\` - This release`,
-              '- `latest` - Latest stable release'
+              '- `latest` - Latest stable release',
+              '',
+              '### Supported Architectures',
+              '',
+              '- `linux/amd64`',
+              '- `linux/arm64`'
             ].join('\n');
 
             const updatedBody = release.body + dockerSection;
@@ -500,24 +588,32 @@ jobs:
             console.log('✅ Release updated with Docker image information');
 
       - name: Generate image summary
+        env:
+          TAG: ${{ needs.create-release.outputs.tag }}
+          SERVER_DIGEST: ${{ steps.manifests.outputs.server_digest }}
+          MIGRATE_DIGEST: ${{ steps.manifests.outputs.migrate_digest }}
+          WEB_DIGEST: ${{ steps.manifests.outputs.web_digest }}
+          REPO_OWNER: ${{ github.repository_owner }}
         run: |
-          TAG="${{ needs.create-release.outputs.tag }}"
           echo "## Docker Images Published 🐳" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All images support **linux/amd64** and **linux/arm64**." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Server Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ needs.build-server.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${REPO_OWNER}/hums-server:${TAG}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "Digest: \`${{ needs.build-server.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${SERVER_DIGEST}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Migrate Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ needs.build-migrate.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${REPO_OWNER}/hums-migrate:${TAG}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "Digest: \`${{ needs.build-migrate.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${MIGRATE_DIGEST}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Web Image" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ needs.build-web.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "ghcr.io/${REPO_OWNER}/hums-web:${TAG}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "Digest: \`${{ needs.build-web.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Digest: \`${WEB_DIGEST}\`" >> $GITHUB_STEP_SUMMARY
+
