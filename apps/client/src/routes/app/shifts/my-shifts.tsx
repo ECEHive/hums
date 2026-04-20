@@ -579,7 +579,10 @@ function MyShifts() {
 						<Alert variant="destructive" className="mb-4">
 							<AlertDescription>
 								<strong>Warning:</strong> If not excused by staff, this drop
-								will count against your attendance record.
+								will count against your attendance record. You are given a few
+								unexcused drops per semester so long as your overall attendance
+								percentage is acceptable. Time conflicts such as job interviews
+								are not valid excuses.
 							</AlertDescription>
 						</Alert>
 						<DialogFooter className="flex justify-end gap-2">
