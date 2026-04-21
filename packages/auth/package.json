@@ -10,7 +10,7 @@
 		"@ecehive/env": "workspace:*",
 		"@ecehive/logger": "workspace:*",
 		"fast-xml-parser": "^5.3.5",
-		"jose": "^6.1.0"
+		"jose": "^6.2.2"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
