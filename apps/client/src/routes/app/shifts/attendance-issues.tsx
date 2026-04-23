@@ -13,7 +13,7 @@ import {
 	ShieldCheck,
 	XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { type MouseEvent, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
@@ -338,6 +338,30 @@ function AttendanceIssuesPage() {
 		setExcuseDialogOpen(true);
 	};
 
+	const handleGrantExcuseClick = (
+		issue: Issue,
+		event: MouseEvent<HTMLButtonElement>,
+	) => {
+		if (event.shiftKey) {
+			grantExcuseMutation.mutate({ attendanceId: issue.id });
+			return;
+		}
+
+		openExcuseDialog(issue);
+	};
+
+	const handleMarkUnexcusedClick = (
+		issue: Issue,
+		event: MouseEvent<HTMLButtonElement>,
+	) => {
+		if (event.shiftKey) {
+			markReviewedMutation.mutate(issue.id);
+			return;
+		}
+
+		markReviewedMutation.mutate(issue.id);
+	};
+
 	const openDetailsDialog = (issue: Issue) => {
 		setSelectedIssue(issue);
 		setDetailsDialogOpen(true);
@@ -489,19 +513,23 @@ function AttendanceIssuesPage() {
 										<Button
 											variant="ghost"
 											size="sm"
-											onClick={() => openExcuseDialog(issue)}
+											onClick={(event) => handleGrantExcuseClick(issue, event)}
 										>
 											<ShieldCheck className="h-4 w-4" />
 										</Button>
 									</TooltipTrigger>
-									<TooltipContent>Grant excuse</TooltipContent>
+									<TooltipContent>
+										Grant excuse (Shift-click to bypass confirmation)
+									</TooltipContent>
 								</Tooltip>
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
 											variant="ghost"
 											size="sm"
-											onClick={() => markReviewedMutation.mutate(issue.id)}
+											onClick={(event) =>
+												handleMarkUnexcusedClick(issue, event)
+											}
 											disabled={markReviewedMutation.isPending}
 										>
 											<ShieldAlert className="h-4 w-4" />
@@ -517,12 +545,14 @@ function AttendanceIssuesPage() {
 									<Button
 										variant="ghost"
 										size="sm"
-										onClick={() => openExcuseDialog(issue)}
+										onClick={(event) => handleGrantExcuseClick(issue, event)}
 									>
 										<ShieldCheck className="h-4 w-4" />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>Grant excuse</TooltipContent>
+								<TooltipContent>
+									Grant excuse (Shift-click to bypass confirmation)
+								</TooltipContent>
 							</Tooltip>
 						)}
 					</div>
@@ -941,8 +971,8 @@ function AttendanceIssuesPage() {
 									<>
 										<Button
 											variant="outline"
-											onClick={() => {
-												markReviewedMutation.mutate(selectedIssue.id);
+											onClick={(event) => {
+												handleMarkUnexcusedClick(selectedIssue, event);
 												setDetailsDialogOpen(false);
 											}}
 											disabled={markReviewedMutation.isPending}
@@ -951,9 +981,9 @@ function AttendanceIssuesPage() {
 											Mark Unexcused
 										</Button>
 										<Button
-											onClick={() => {
+											onClick={(event) => {
 												setDetailsDialogOpen(false);
-												openExcuseDialog(selectedIssue);
+												handleGrantExcuseClick(selectedIssue, event);
 											}}
 										>
 											<ShieldCheck className="h-4 w-4 mr-2" />
@@ -964,9 +994,9 @@ function AttendanceIssuesPage() {
 							{selectedIssue &&
 								getExcuseStatus(selectedIssue) === "unexcused" && (
 									<Button
-										onClick={() => {
+										onClick={(event) => {
 											setDetailsDialogOpen(false);
-											openExcuseDialog(selectedIssue);
+											handleGrantExcuseClick(selectedIssue, event);
 										}}
 									>
 										<ShieldCheck className="h-4 w-4 mr-2" />
