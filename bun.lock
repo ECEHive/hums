@@ -452,7 +452,7 @@
         "@trpc/client": "11.15.0",
         "@trpc/server": "11.8.0",
         "fastify": "^5.8.2",
-        "nanoid": "^5.1.6",
+        "nanoid": "^5.1.9",
         "superjson": "^2.2.6",
         "zod": "^4.3.6",
       },
@@ -1742,7 +1742,7 @@
 
     "named-placeholders": ["named-placeholders@1.1.4", "", { "dependencies": { "lru.min": "^1.1.0" } }, "sha512-/qfG0Kk/bLJIvej4FcPQ2KYUJP8iQdU1CTxysNb/U2wUNb+/4K485yeio8iNoiwfqJnsTInXoRPTza0dZWHVJQ=="],
 
-    "nanoid": ["nanoid@5.1.6", "", { "bin": { "nanoid": "bin/nanoid.js" } }, "sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg=="],
+    "nanoid": ["nanoid@5.1.9", "", { "bin": { "nanoid": "bin/nanoid.js" } }, "sha512-ZUvP7KeBLe3OZ1ypw6dI/TzYJuvHP77IM4Ry73waSQTLn8/g8rpdjfyVAh7t1/+FjBtG4lCP42MEbDxOsRpBMw=="],
 
     "next-themes": ["next-themes@0.4.6", "", { "peerDependencies": { "react": "^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc", "react-dom": "^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc" } }, "sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA=="],
 
