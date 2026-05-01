@@ -459,7 +459,12 @@ jobs:
       - name: Normalize image owner
         id: owner
         run: |
-          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+          OWNER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
+          echo "REPO_OWNER=$OWNER" >> "$GITHUB_ENV"
+          echo "SERVER_IMAGE_NAME=${{ env.REGISTRY }}/$OWNER/hums-server" >> "$GITHUB_ENV"
+          echo "MIGRATE_IMAGE_NAME=${{ env.REGISTRY }}/$OWNER/hums-migrate" >> "$GITHUB_ENV"
+          echo "WEB_IMAGE_NAME=${{ env.REGISTRY }}/$OWNER/hums-web" >> "$GITHUB_ENV"
 
       - name: Make images public
         run: |
