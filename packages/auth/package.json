@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/auth",
-	"version": "3.5.0",
+	"version": "3.6.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -10,10 +10,10 @@
 		"@ecehive/env": "workspace:*",
 		"@ecehive/logger": "workspace:*",
 		"fast-xml-parser": "^5.3.5",
-		"jose": "^6.1.0"
+		"jose": "^6.2.2"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"typescript": "^5.9.2"
+		"typescript": "^6.0.3"
 	}
 }

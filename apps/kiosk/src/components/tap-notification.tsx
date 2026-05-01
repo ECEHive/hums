@@ -1,9 +1,14 @@
 import {
 	CatIcon,
+	Flower2Icon,
+	HatGlassesIcon,
 	LogIn,
 	LogOut,
 	type LucideIcon,
 	RefreshCw,
+	RocketIcon,
+	SproutIcon,
+	SunMoonIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo } from "react";
@@ -30,61 +35,108 @@ const pingLoopTransition = {
 
 const welcomeOverrides: Record<
 	string,
-	{ text: string; icon: LucideIcon | null }
+	{ text: string; icon: LucideIcon | null; color: string | null }
 > = {
 	alemons8: {
 		text: "Meow",
 		icon: CatIcon,
+		color: null,
+	},
+	banderson336: {
+		text: `${Math.ceil(
+			(new Date(Date.UTC(2069, 8, 6)).getTime() - Date.now()) /
+				(1000 * 60 * 60 * 24),
+		).toString()} Days left`,
+		icon: Flower2Icon,
+		color: "text-yellow-500",
 	},
 	wcastro8: {
-		text: "Goodbye",
-		icon: null,
+		text: "buh :o",
+		icon: RocketIcon,
+		color: "text-yellow-500",
 	},
 	chartigan6: {
 		text: "buh card found thx",
 		icon: null,
+		color: null,
 	},
 	jdudik6: {
 		text: `${Math.floor(Math.random() * 100)} attendance issues`,
 		icon: null,
+		color: null,
 	},
 	awang409: {
 		text: "You came back?!",
 		icon: null,
+		color: null,
 	},
 	etracy8: {
 		text: "Photo Taken",
 		icon: null,
+		color: null,
+	},
+};
+
+const switchToStaffOverrides: Record<
+	string,
+	{ text: string; icon: LucideIcon | null; color: string | null }
+> = {
+	banderson336: {
+		text: "Welcome to the Bright-side",
+		icon: SunMoonIcon,
+		color: "text-yellow-500",
+	},
+};
+
+const switchToRegularOverrides: Record<
+	string,
+	{ text: string; icon: LucideIcon | null; color: string | null }
+> = {
+	banderson336: {
+		text: "Onto greener pastures",
+		icon: SproutIcon,
+		color: "text-green-500",
 	},
 };
 
 const goodbyeOverrides: Record<
 	string,
-	{ text: string; icon: LucideIcon | null }
+	{ text: string; icon: LucideIcon | null; color: string | null }
 > = {
 	alemons8: {
 		text: "Good Boy",
 		icon: null,
+		color: null,
+	},
+	banderson336: {
+		text: "Cya, Slime",
+		icon: HatGlassesIcon,
+		color: "text-orange-500",
 	},
 	wcastro8: {
-		text: "Welcome",
-		icon: null,
+		text: "buh :(",
+		icon: RocketIcon,
+		color: "text-yellow-500",
 	},
 	chartigan6: {
 		text: "buh bye",
 		icon: null,
+		color: null,
 	},
 	jdudik6: {
 		text: "SLACKER ALERT",
 		icon: null,
+		color: null,
 	},
 	awang409: {
 		text: "Graduating?",
 		icon: null,
+		color: null,
 	},
 	etracy8: {
 		text: "Photo Taken",
 		icon: null,
+		color: null,
 	},
 };
 
@@ -129,25 +181,33 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 			return {
 				icon: welcomeOverrides[event.user.username]?.icon || LogIn,
 				title: welcomeOverrides[event.user.username]?.text || "Welcome",
-				color: "text-green-500",
+				color: welcomeOverrides[event.user.username]?.color || "text-green-500",
 				subtitle: event.user.name,
 			};
 		}
 
 		if (isSwitchToStaffing) {
 			return {
-				icon: RefreshCw,
-				title: "Switched to Staffing",
-				color: "text-purple-500",
+				icon: switchToStaffOverrides[event.user.username]?.icon || RefreshCw,
+				title:
+					switchToStaffOverrides[event.user.username]?.text ||
+					"Switched to Staffing",
+				color:
+					switchToStaffOverrides[event.user.username]?.color ||
+					"text-purple-500",
 				subtitle: event.user.name,
 			};
 		}
 
 		if (isSwitchToRegular) {
 			return {
-				icon: RefreshCw,
-				title: "Switched to Regular",
-				color: "text-orange-500",
+				icon: switchToRegularOverrides[event.user.username]?.icon || RefreshCw,
+				title:
+					switchToRegularOverrides[event.user.username]?.text ||
+					"Switched to Regular",
+				color:
+					switchToRegularOverrides[event.user.username]?.color ||
+					"text-orange-500",
 				subtitle: event.user.name,
 			};
 		}
@@ -155,7 +215,7 @@ export function TapNotification({ event, isExiting }: TapNotificationProps) {
 		return {
 			icon: goodbyeOverrides[event.user.username]?.icon || LogOut,
 			title: goodbyeOverrides[event.user.username]?.text || "Goodbye",
-			color: "text-blue-500",
+			color: goodbyeOverrides[event.user.username]?.color || "text-blue-500",
 			subtitle: event.user.name,
 		};
 	}, [event.user.name, isTapIn, isSwitchToRegular, isSwitchToStaffing]);

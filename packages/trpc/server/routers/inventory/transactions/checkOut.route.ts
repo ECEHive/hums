@@ -72,6 +72,62 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 		});
 	}
 
+	// Check transaction rate limit for each item
+	// Fetch existing transactions for the user within the rate limit period
+	for (const item of foundItems) {
+		if (item.transactionRateLimit) {
+			const rateLimitPeriod = item.transactionRateLimitPeriod || "day";
+			const now = new Date();
+			const startDate = new Date(now);
+			switch (rateLimitPeriod) {
+				case "day":
+					startDate.setDate(now.getDate() - 1);
+					break;
+				case "week":
+					startDate.setDate(now.getDate() - 7);
+					break;
+				case "month":
+					startDate.setMonth(now.getDate() - 30);
+					break;
+				case "semester":
+					startDate.setMonth(now.getDate() - 90);
+					break;
+			}
+
+			const existingTransactions = await prisma.inventoryTransaction.findMany({
+				where: {
+					userId,
+					itemId: item.id,
+					createdAt: {
+						gte: startDate,
+						lte: now,
+					},
+				},
+			});
+
+			const totalCheckedOut = existingTransactions.reduce(
+				(sum, tx) => sum + Math.abs(tx.quantity),
+				0,
+			);
+
+			const quantity = items.find((i) => i.itemId === item.id)?.quantity;
+
+			if (!quantity) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `Quantity not provided for item: ${item.name}`,
+				});
+			}
+
+			if (totalCheckedOut + quantity > item.transactionRateLimit) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: `Transaction rate limit exceeded for ${item.name}. Limit: ${item.transactionRateLimit} per ${item.transactionRateLimitPeriod}.`,
+				});
+			}
+		}
+	}
+
 	// Validate single items: quantity must be 1 and the item must not already be checked out
 	const singleItems = foundItems.filter((i) => i.itemType === "single");
 	if (singleItems.length > 0) {

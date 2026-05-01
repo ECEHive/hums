@@ -8,6 +8,8 @@ export type ItemRow = {
 	link?: string | null;
 	isActive: boolean;
 	itemType: "multiple" | "single" | "consumable";
+	transactionRateLimit?: number | null;
+	transactionRateLimitPeriod?: "day" | "week" | "month" | "semester" | null;
 	snapshot?: { quantity: number } | null;
 	currentQuantity?: number | null;
 	createdAt?: string | null;

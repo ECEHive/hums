@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/logger",
-	"version": "3.5.0",
+	"version": "3.6.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"exports": {
@@ -13,6 +13,6 @@
 		"tslog": "^4.9.3"
 	},
 	"devDependencies": {
-		"typescript": "^5.6.3"
+		"typescript": "^6.0.3"
 	}
 }

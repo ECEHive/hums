@@ -1,4 +1,4 @@
 {
-	"extends": "@ecehive/config/tsconfig/base.json",
+	"extends": "@ecehive/config/tsconfig/node.json",
 	"include": ["src"]
 }
