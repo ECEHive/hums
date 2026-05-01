@@ -284,6 +284,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image names
+        run: |
+          echo "SERVER_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-server" >> "$GITHUB_ENV"
+          echo "MIGRATE_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-migrate" >> "$GITHUB_ENV"
+          echo "WEB_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-web" >> "$GITHUB_ENV"
+
+      - name: Normalize image names
+        run: |
+          echo "SERVER_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-server" >> "$GITHUB_ENV"
+          echo "MIGRATE_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-migrate" >> "$GITHUB_ENV"
+          echo "WEB_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-web" >> "$GITHUB_ENV"
+
       - name: Extract metadata for server image
         id: meta
         uses: docker/metadata-action@v5
@@ -339,6 +351,18 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize image names
+        run: |
+          echo "SERVER_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-server" >> "$GITHUB_ENV"
+          echo "MIGRATE_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-migrate" >> "$GITHUB_ENV"
+          echo "WEB_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-web" >> "$GITHUB_ENV"
+
+      - name: Normalize image names
+        run: |
+          echo "SERVER_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-server" >> "$GITHUB_ENV"
+          echo "MIGRATE_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-migrate" >> "$GITHUB_ENV"
+          echo "WEB_IMAGE_NAME=${GITHUB_REPOSITORY_OWNER,,}/hums-web" >> "$GITHUB_ENV"
 
       - name: Extract metadata for migrate image
         id: meta
