@@ -49,7 +49,7 @@ function ControlPointStatusCard({
 	const isOn = controlPoint.currentState;
 
 	const getStatusText = () => {
-		if (!isActive) return "Offline";
+		if (!isActive) return "Disabled";
 		if (controlPoint.controlClass === "DOOR") {
 			return isOn ? "Unlocked" : "Locked";
 		}

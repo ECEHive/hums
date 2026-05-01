@@ -25,7 +25,6 @@ export async function getControlPointsHandler({
 	const controlPoints = await prisma.controlPoint.findMany({
 		where: {
 			id: { in: controlPointIds },
-			isActive: true,
 		},
 		select: {
 			id: true,

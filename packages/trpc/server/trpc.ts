@@ -223,7 +223,6 @@ export type TKioskProtectedProcedureContext =
  */
 const deviceWithControlPointsInclude = {
 	controlPoints: {
-		where: { isActive: true },
 		select: {
 			id: true,
 			name: true,
