@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/workers",
-	"version": "3.5.0",
+	"version": "3.6.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -18,6 +18,6 @@
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
 		"@types/node": "^25.3.0",
-		"typescript": "^5.9.2"
+		"typescript": "^6.0.3"
 	}
 }

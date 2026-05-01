@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/prisma",
-	"version": "3.5.0",
+	"version": "3.6.0",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
@@ -23,6 +23,6 @@
 		"@types/node": "^25.3.0",
 		"@types/pg": "^8.16.0",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.9.3"
+		"typescript": "^6.0.3"
 	}
 }
