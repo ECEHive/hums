@@ -438,6 +438,24 @@ export function EditControlPointDialog({
 						</p>
 					</Field>
 
+					<Field>
+						<FieldLabel>Trained Role</FieldLabel>
+						<RoleMultiSelect
+							value={trainedRole}
+							onChange={setTrainedRole}
+							selectionMode="single"
+						/>
+					</Field>
+
+					<Field>
+						<FieldLabel>Trainer Role</FieldLabel>
+						<RoleMultiSelect
+							value={trainerRole}
+							onChange={setTrainerRole}
+							selectionMode="single"
+						/>
+					</Field>
+
 					<form.Field name="canControlOnline">
 						{(field) => (
 							<div className="flex items-center space-x-2">
