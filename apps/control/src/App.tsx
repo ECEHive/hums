@@ -258,7 +258,7 @@ function ControlPointButton({
 						</p>
 					)}
 				</div>
-				<Badge variant={isOn ? "success" : "secondary"} className="text-xs">
+				<Badge variant={point.isActive ? (isOn ? "success" : "secondary") : "destructive"} className="text-xs">
 					{actionText}
 				</Badge>
 				{isOn && point.currentUserName && (

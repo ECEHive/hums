@@ -419,6 +419,10 @@ export function EditControlPointDialog({
 							onChange={setTrainedRole}
 							selectionMode="single"
 						/>
+						<p className="text-xs text-muted-foreground mt-1">
+							This role is granted when a user is trained through the control
+							kiosk, and should be included in the authorized roles above
+						</p>
 					</Field>
 
 					<Field>
@@ -428,6 +432,10 @@ export function EditControlPointDialog({
 							onChange={setTrainerRole}
 							selectionMode="single"
 						/>
+						<p className="text-xs text-muted-foreground mt-1">
+							Users with this role can train other users (assigning the role
+							above) and mark the control point as active/inactive
+						</p>
 					</Field>
 
 					<form.Field name="canControlOnline">
