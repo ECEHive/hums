@@ -35,6 +35,8 @@ export async function checkStatusHandler(options: TCheckStatusOptions) {
 					isActive: true,
 					canControlOnline: true,
 					authorizedRoles: { select: { id: true } },
+					trainedRole: { select: { id: true, name: true } },
+					trainerRole: { select: { id: true, name: true } },
 					authorizedUsers: { select: { id: true } },
 				},
 			},

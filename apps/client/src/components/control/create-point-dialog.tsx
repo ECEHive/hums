@@ -62,6 +62,8 @@ export function CreateControlPointDialog({
 	const [open, setOpen] = useState(false);
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [authorizedRoles, setAuthorizedRoles] = useState<Role[]>([]);
+	const [trainedRole, setTrainedRole] = useState<Role | null>(null);
+	const [trainerRole, setTrainerRole] = useState<Role | null>(null);
 	const queryClient = useQueryClient();
 	const formId = useId();
 
@@ -85,6 +87,8 @@ export function CreateControlPointDialog({
 			providerId: number;
 			providerConfig: Record<string, unknown>;
 			authorizedRoleIds?: number[];
+			trainedRoleId?: number | null;
+			trainerRoleId?: number | null;
 			autoTurnOffEnabled?: boolean;
 			autoTurnOffMinutes?: number | null;
 			isActive: boolean;
@@ -127,6 +131,8 @@ export function CreateControlPointDialog({
 						ipAddress: value.ipAddress,
 					},
 					authorizedRoleIds: authorizedRoles.map((r) => r.id),
+					trainedRoleId: trainedRole?.id,
+					trainerRoleId: trainerRole?.id,
 					autoTurnOffEnabled: value.autoTurnOffEnabled,
 					autoTurnOffMinutes: value.autoTurnOffEnabled
 						? value.autoTurnOffMinutes
@@ -151,6 +157,8 @@ export function CreateControlPointDialog({
 			if (nextOpen) {
 				form.reset();
 				setAuthorizedRoles([]);
+				setTrainedRole(null);
+				setTrainerRole(null);
 				setServerError(null);
 			}
 		},
@@ -332,7 +340,33 @@ export function CreateControlPointDialog({
 							onChange={setAuthorizedRoles}
 						/>
 						<p className="text-xs text-muted-foreground mt-1">
-							Leave empty to allow anyone with operate permission
+							Leave empty to allow anyone to operate
+						</p>
+					</Field>
+
+					<Field>
+						<FieldLabel>Trained Role</FieldLabel>
+						<RoleMultiSelect
+							value={trainedRole}
+							onChange={setTrainedRole}
+							selectionMode="single"
+						/>
+						<p className="text-xs text-muted-foreground mt-1">
+							This role is granted when a user is trained through the control
+							kiosk, and should be included in the authorized roles above
+						</p>
+					</Field>
+
+					<Field>
+						<FieldLabel>Trainer Role</FieldLabel>
+						<RoleMultiSelect
+							value={trainerRole}
+							onChange={setTrainerRole}
+							selectionMode="single"
+						/>
+						<p className="text-xs text-muted-foreground mt-1">
+							Users with this role can train other users (assigning the role
+							above) and mark the control point as active/inactive
 						</p>
 					</Field>
 

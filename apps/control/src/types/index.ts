@@ -136,6 +136,8 @@ export type ControlPointWithStatus = {
 	isActive: boolean;
 	canControlOnline: boolean;
 	authorizedRoles: { id: number; name: string }[];
+	trainedRole: { id: number; name: string } | null;
+	trainerRole: { id: number; name: string } | null;
 	authorizedUsers: { id: number; name: string }[];
 	currentUserName: string | null;
 };

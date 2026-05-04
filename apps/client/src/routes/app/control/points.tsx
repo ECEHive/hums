@@ -74,6 +74,8 @@ type ControlPoint = {
 		providerType: string;
 	};
 	authorizedRoles: { id: number; name: string }[];
+	trainedRole: { id: number; name: string } | null;
+	trainerRole: { id: number; name: string } | null;
 	authorizedUsers: { id: number; name: string; username: string }[];
 };
 
@@ -94,7 +96,7 @@ function ControlPointsPage() {
 
 	const [activeFilter, setActiveFilter] = React.useState<
 		"active" | "inactive" | "all"
-	>("active");
+	>("all");
 	const [classFilter, setClassFilter] = React.useState<
 		"SWITCH" | "DOOR" | "all"
 	>("all");
@@ -161,7 +163,7 @@ function ControlPointsPage() {
 			// System users can operate everything
 			if (user?.isSystemUser) return true;
 
-			// If no restrictions, anyone with operate permission can use it
+			// If no restrictions, anyone can operate
 			if (
 				point.authorizedRoles.length === 0 &&
 				point.authorizedUsers.length === 0

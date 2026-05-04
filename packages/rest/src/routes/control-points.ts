@@ -65,6 +65,8 @@ function serializeControlPoint(point: {
 		isActive?: boolean;
 	};
 	authorizedRoles: Array<{ id: number; name: string }>;
+	trainedRole: { id: number; name: string } | null;
+	trainerRole: { id: number; name: string } | null;
 	authorizedUsers: Array<{
 		id: number;
 		name: string;
@@ -93,6 +95,18 @@ function serializeControlPoint(point: {
 			id: r.id,
 			name: r.name,
 		})),
+		trainedRole: point.trainedRole
+			? {
+					id: point.trainedRole.id,
+					name: point.trainedRole.name,
+				}
+			: null,
+		trainerRole: point.trainerRole
+			? {
+					id: point.trainerRole.id,
+					name: point.trainerRole.name,
+				}
+			: null,
 		authorizedUsers: point.authorizedUsers.map((u) => ({
 			id: u.id,
 			name: u.name,
