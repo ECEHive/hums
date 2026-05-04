@@ -61,6 +61,8 @@ export type SearchableMultiSelectProps<T = string | number> = {
 	showClearAll?: boolean;
 	/** Disable the component */
 	disabled?: boolean;
+	/** Selection mode for the component */
+	selectionMode?: "multiple" | "single";
 };
 
 export function SearchableMultiSelect<T = string | number>({
@@ -80,6 +82,7 @@ export function SearchableMultiSelect<T = string | number>({
 	className,
 	showClearAll = true,
 	disabled = false,
+	selectionMode = "multiple",
 }: SearchableMultiSelectProps<T>) {
 	const [open, setOpen] = React.useState(false);
 	const [internalSearch, setInternalSearch] = React.useState("");
@@ -96,15 +99,22 @@ export function SearchableMultiSelect<T = string | number>({
 	async function addOption(option: MultiSelectOption<T>) {
 		if (selectedIds.has(option.id)) return;
 		const previous = value;
-		onChange([...value, option]);
-		if (onAdd) {
-			try {
+		const nextValue = selectionMode === "single" ? [option] : [...value, option];
+		onChange(nextValue);
+		try {
+			if (onAdd) {
 				await onAdd(option);
-			} catch (err) {
-				// Revert optimistic update on error
-				onChange(previous);
-				throw err;
 			}
+			if (selectionMode === "single" && onRemove) {
+				const removed = previous.filter((item) => item.id !== option.id);
+				for (const removedOption of removed) {
+					await onRemove(removedOption);
+				}
+			}
+		} catch (err) {
+			// Revert optimistic update on error
+			onChange(previous);
+			throw err;
 		}
 	}
 
@@ -215,7 +225,9 @@ export function SearchableMultiSelect<T = string | number>({
 													} else {
 														addOption(option);
 													}
-													// Keep popover open for multi-selection
+													if (selectionMode === "single") {
+														setOpen(false);
+													}
 												}}
 											>
 												<div

@@ -223,7 +223,6 @@ export type TKioskProtectedProcedureContext =
  */
 const deviceWithControlPointsInclude = {
 	controlPoints: {
-		where: { isActive: true },
 		select: {
 			id: true,
 			name: true,
@@ -246,6 +245,8 @@ const deviceWithControlPointsInclude = {
 				},
 			},
 			authorizedRoles: { select: { id: true } },
+			trainedRole: { select: { id: true, name: true } },
+			trainerRole: { select: { id: true, name: true } },
 			authorizedUsers: { select: { id: true } },
 		},
 	},

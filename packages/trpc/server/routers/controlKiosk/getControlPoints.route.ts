@@ -25,7 +25,6 @@ export async function getControlPointsHandler({
 	const controlPoints = await prisma.controlPoint.findMany({
 		where: {
 			id: { in: controlPointIds },
-			isActive: true,
 		},
 		select: {
 			id: true,
@@ -37,6 +36,8 @@ export async function getControlPointsHandler({
 			isActive: true,
 			canControlOnline: true,
 			authorizedRoles: { select: { id: true, name: true } },
+			trainedRole: { select: { id: true, name: true } },
+			trainerRole: { select: { id: true, name: true } },
 			authorizedUsers: { select: { id: true, name: true } },
 		},
 		orderBy: { name: "asc" },

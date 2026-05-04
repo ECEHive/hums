@@ -17,6 +17,8 @@ export interface CreateControlPointInput {
 	providerId: number;
 	providerConfig: Record<string, unknown>;
 	authorizedRoleIds?: number[];
+	trainedRoleId?: number;
+	trainerRoleId?: number;
 	authorizedUserIds?: number[];
 	autoTurnOffEnabled?: boolean;
 	autoTurnOffMinutes?: number | null;
@@ -67,6 +69,8 @@ export async function createControlPoint(input: CreateControlPointInput) {
 			authorizedRoles: input.authorizedRoleIds?.length
 				? { connect: input.authorizedRoleIds.map((id) => ({ id })) }
 				: undefined,
+			trainedRoleId: input.trainedRoleId ?? undefined,
+			trainerRoleId: input.trainerRoleId ?? undefined,
 			authorizedUsers: input.authorizedUserIds?.length
 				? { connect: input.authorizedUserIds.map((id) => ({ id })) }
 				: undefined,
@@ -80,6 +84,12 @@ export async function createControlPoint(input: CreateControlPointInput) {
 				},
 			},
 			authorizedRoles: {
+				select: { id: true, name: true },
+			},
+			trainedRole: {
+				select: { id: true, name: true },
+			},
+			trainerRole: {
 				select: { id: true, name: true },
 			},
 			authorizedUsers: {

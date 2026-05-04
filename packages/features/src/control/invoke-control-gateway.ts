@@ -54,6 +54,8 @@ export async function invokeControlGateway(
 						include: {
 							provider: true,
 							authorizedRoles: { select: { id: true } },
+							trainedRole: { select: { id: true, name: true } },
+							trainerRole: { select: { id: true, name: true } },
 							authorizedUsers: { select: { id: true } },
 						},
 					},

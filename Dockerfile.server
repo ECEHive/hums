@@ -77,17 +77,14 @@ FROM base AS prisma-migrate
 RUN apk add --no-cache openssl
 
 # Copy dependencies
-COPY --from=prod-deps /app/node_modules /app/node_modules
-COPY --from=prod-deps /app/package.json /app/package.json
-COPY --from=prod-deps /app/bun.lock /app/bun.lock
+COPY --chown=bun:bun --from=prod-deps /app/node_modules /app/node_modules
+COPY --chown=bun:bun --from=prod-deps /app/package.json /app/package.json
+COPY --chown=bun:bun --from=prod-deps /app/bun.lock /app/bun.lock
 
 # Copy Prisma files with generated client
-COPY --from=prisma-generate /app/packages/prisma /app/packages/prisma
+COPY --chown=bun:bun --from=prisma-generate /app/packages/prisma /app/packages/prisma
 
 WORKDIR /app/packages/prisma
-
-# Set ownership for bun user (already exists in base image)
-RUN chown -R bun:bun /app
 
 USER bun
 
@@ -102,24 +99,21 @@ FROM base AS server
 RUN apk add --no-cache openssl libldap
 
 # Copy production dependencies
-COPY --from=prod-deps /app/node_modules /app/node_modules
-COPY --from=prod-deps /app/package.json /app/package.json
-COPY --from=prod-deps /app/bun.lock /app/bun.lock
-COPY --from=prod-deps /app/apps/server/package.json /app/apps/server/package.json
+COPY --chown=bun:bun --from=prod-deps /app/node_modules /app/node_modules
+COPY --chown=bun:bun --from=prod-deps /app/package.json /app/package.json
+COPY --chown=bun:bun --from=prod-deps /app/bun.lock /app/bun.lock
+COPY --chown=bun:bun --from=prod-deps /app/apps/server/package.json /app/apps/server/package.json
 
 # Copy built server
-COPY --from=build /app/apps/server/dist /app/apps/server/dist
+COPY --chown=bun:bun --from=build /app/apps/server/dist /app/apps/server/dist
 
 # Copy Prisma files with generated client
-COPY --from=prisma-generate /app/packages/prisma /app/packages/prisma
+COPY --chown=bun:bun --from=prisma-generate /app/packages/prisma /app/packages/prisma
 
 WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV=production
-
-# Set ownership for bun user (already exists in base image)
-RUN chown -R bun:bun /app
 
 USER bun
 
