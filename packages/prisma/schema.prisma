@@ -49,6 +49,8 @@ model Role {
   shiftTypes              ShiftType[]    @relation("RoleToShiftType")
   users                   User[]         @relation("RoleToUser")
   authorizedControlPoints ControlPoint[] @relation("ControlPointRoles")
+  trainedControlPoints    ControlPoint[] @relation("ControlPointTrainedRole")
+  trainerControlPoints    ControlPoint[] @relation("ControlPointTrainerRole")
 }
 
 model Permission {
@@ -476,6 +478,10 @@ model ControlPoint {
   providerId         Int
   provider           ControlProvider        @relation(fields: [providerId], references: [id], onDelete: Restrict)
   authorizedRoles    Role[]                 @relation("ControlPointRoles")
+  trainedRoleId      Int?
+  trainedRole        Role?                  @relation("ControlPointTrainedRole", fields: [trainedRoleId], references: [id])
+  trainerRoleId      Int?
+  trainerRole        Role?                  @relation("ControlPointTrainerRole", fields: [trainerRoleId], references: [id])
   authorizedUsers    User[]                 @relation("ControlPointUsers")
   controlLogs        ControlLog[]
   devices            Device[]               @relation("DeviceControlPoints")

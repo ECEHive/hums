@@ -9,21 +9,37 @@ import { useDebounce } from "@/lib/debounce";
 
 export type Role = { id: number; name: string };
 
-type RoleMultiSelectProps = {
+type RoleMultiSelectSingleProps = {
+	value: Role | null;
+	onChange: (role: Role | null) => void;
+	placeholder?: string;
+	onAdd?: (role: Role) => Promise<void> | void;
+	onRemove?: (role: Role) => Promise<void> | void;
+	selectionMode: "single";
+};
+
+type RoleMultiSelectMultipleProps = {
 	value: Role[];
 	onChange: (roles: Role[]) => void;
 	placeholder?: string;
 	onAdd?: (role: Role) => Promise<void> | void;
 	onRemove?: (role: Role) => Promise<void> | void;
+	selectionMode?: "multiple";
 };
 
-export function RoleMultiSelect({
-	value,
-	onChange,
-	placeholder = "Select roles...",
-	onAdd,
-	onRemove,
-}: RoleMultiSelectProps) {
+type RoleMultiSelectProps =
+	| RoleMultiSelectSingleProps
+	| RoleMultiSelectMultipleProps;
+
+export function RoleMultiSelect(props: RoleMultiSelectProps) {
+	const selectionMode = props.selectionMode ?? "multiple";
+	const {
+		placeholder = `Select role${selectionMode === "single" ? "" : "s"}...`,
+		onAdd,
+		onRemove,
+	} = props;
+	const value = props.value;
+	const onChange = props.onChange;
 	const [query, setQuery] = React.useState("");
 	const debounced = useDebounce(query, 250);
 
@@ -49,26 +65,36 @@ export function RoleMultiSelect({
 	);
 
 	// Convert value to MultiSelectOption format
-	const selectedOptions: MultiSelectOption<number>[] = React.useMemo(
-		() =>
-			value.map((r) => ({
-				id: r.id,
-				label: r.name,
-			})),
-		[value],
-	);
+	const selectedOptions: MultiSelectOption<number>[] = React.useMemo(() => {
+		var selectedRoles: Role[];
+		var val: Role[] | Role | null = value ?? [];
+		if (typeof val === "object" && "id" in val) {
+			// Single mode
+			selectedRoles = val ? [val] : [];
+		} else {
+			// Multiple mode
+			selectedRoles = (value as Role[]) || [];
+		}
+		return selectedRoles.map((r) => ({
+			id: r.id,
+			label: r.name,
+		}));
+	}, [value, selectionMode]);
 
 	// Handle selection changes
 	const handleChange = React.useCallback(
 		(newOptions: MultiSelectOption<number>[]) => {
-			onChange(
-				newOptions.map((opt) => ({
-					id: opt.id,
-					name: opt.label,
-				})),
-			);
+			const nextRoles = newOptions.map((opt) => ({
+				id: opt.id,
+				name: opt.label,
+			}));
+			if (selectionMode === "single") {
+				(onChange as (role: Role | null) => void)(nextRoles[0] ?? null);
+				return;
+			}
+			(onChange as (roles: Role[]) => void)(nextRoles);
 		},
-		[onChange],
+		[onChange, selectionMode],
 	);
 
 	// Handle add with optimistic update
@@ -105,6 +131,7 @@ export function RoleMultiSelect({
 			onAdd={onAdd ? handleAdd : undefined}
 			onRemove={onRemove ? handleRemove : undefined}
 			popoverWidth="w-[300px]"
+			selectionMode={selectionMode}
 		/>
 	);
 }

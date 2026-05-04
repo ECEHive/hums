@@ -1,12 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	AlertCircle,
+	ArrowLeft,
 	CheckCircle2,
 	Clock,
 	DoorOpen,
 	Loader2,
 	LogOut,
 	RefreshCw,
+	Settings,
 	Usb,
 	Users,
 	Zap,
@@ -49,7 +51,7 @@ function ControlPointStatusCard({
 	const isOn = controlPoint.currentState;
 
 	const getStatusText = () => {
-		if (!isActive) return "Offline";
+		if (!isActive) return "Disabled";
 		if (controlPoint.controlClass === "DOOR") {
 			return isOn ? "Unlocked" : "Locked";
 		}
@@ -157,28 +159,55 @@ function SessionActionCard({
 // Control point button for the authenticated view
 function ControlPointButton({
 	point,
+	onManage,
 	onOperate,
 	isOperating,
+	canManage,
 	disabled,
 	index,
 }: {
 	point: ControlPointWithStatus;
+	onManage: (point: ControlPointWithStatus) => void;
 	onOperate: (point: ControlPointWithStatus) => void;
 	isOperating: boolean;
+	canManage: boolean;
 	disabled: boolean;
 	index: number;
 }) {
 	const Icon = point.controlClass === "DOOR" ? DoorOpen : Zap;
 	const isOn = point.currentState;
-	const actionText =
-		point.controlClass === "DOOR" ? "Unlock" : isOn ? "Turn Off" : "Turn On";
+	const actionText = point.isActive
+		? point.controlClass === "DOOR"
+			? "Unlock"
+			: isOn
+				? "Turn Off"
+				: "Turn On"
+		: "Disabled";
+
+	const handleOperate = () => {
+		if (disabled || !point.isActive) return;
+		onOperate(point);
+	};
+
+	const handleManage = (event: React.MouseEvent<HTMLButtonElement>) => {
+		event.stopPropagation();
+		onManage(point);
+	};
 
 	return (
-		<motion.button
+		<motion.div
 			key={point.id}
-			type="button"
-			disabled={disabled}
-			onClick={() => onOperate(point)}
+			role="button"
+			tabIndex={disabled ? -1 : 0}
+			aria-disabled={disabled || !point.isActive}
+			onClick={handleOperate}
+			onKeyDown={(event) => {
+				if (disabled || !point.isActive) return;
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					handleOperate();
+				}
+			}}
 			className={`relative bg-card text-card-foreground rounded-xl shadow-sm cursor-pointer transition-all p-4 md:p-6 border ${
 				isOn ? "border-green-500/50" : "border-border hover:border-primary/50"
 			} ${disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02]"} ${isOperating ? "!opacity-100" : ""}`}
@@ -197,6 +226,19 @@ function ControlPointButton({
 						transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
 					/>
 				</div>
+			)}
+			{canManage && (
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					disabled={disabled}
+					aria-label={`Manage ${point.name}`}
+					onClick={handleManage}
+					className="absolute right-2 top-2 h-12 w-12"
+				>
+					<Settings className="size-10" />
+				</Button>
 			)}
 			<div className="flex flex-col items-center gap-2">
 				<div
@@ -225,7 +267,7 @@ function ControlPointButton({
 					</p>
 				)}
 			</div>
-		</motion.button>
+		</motion.div>
 	);
 }
 
@@ -237,12 +279,30 @@ function ControlKioskApp() {
 		state,
 		controlPoints,
 		isLoading: controlPointsLoading,
+		controlLogs,
+		isControlLogsLoading,
 		handleCardScan,
+		handleTrainingCardScan,
 		operateControlPoint,
 		logout,
 		handleSessionAction,
 		cancelConfirmation,
 		confirmAction,
+		selectedControlPoint,
+		startManagingControlPoint,
+		stopManagingControlPoint,
+		toggleControlPointActive,
+		isUpdatingControlPoint,
+		trainingControlPoint,
+		trainingStatusMessage,
+		trainingStatusType,
+		lastTrainedUserName,
+		openTrainingDialog,
+		closeTrainingDialog,
+		isTrainingUser,
+		controlLogsPoint,
+		openControlLogsDialog,
+		closeControlLogsDialog,
 	} = useControlWorkflow({
 		onSuccess: (message) => {
 			logger.info("Control operation success:", message);
@@ -254,7 +314,13 @@ function ControlKioskApp() {
 
 	// Set up card reader
 	const { connectionStatus, connect } = useCardReader({
-		onScan: handleCardScan,
+		onScan: (cardNumber) => {
+			if (trainingControlPoint) {
+				handleTrainingCardScan(cardNumber);
+				return;
+			}
+			handleCardScan(cardNumber);
+		},
 		onFatalError: (message) => {
 			logger.error("Card reader fatal error:", message);
 		},
@@ -401,10 +467,391 @@ function ControlKioskApp() {
 		);
 	}
 
+	if (isAuthenticated && state.authenticatedUser && selectedControlPoint) {
+		const point = selectedControlPoint;
+		const Icon = point.controlClass === "DOOR" ? DoorOpen : Zap;
+		const statusText = !point.isActive
+			? "Disabled"
+			: point.controlClass === "DOOR"
+				? point.currentState
+					? "Unlocked"
+					: "Locked"
+				: point.currentState
+					? "In Use"
+					: "Available";
+		const statusVariant = !point.isActive
+			? "secondary"
+			: point.currentState
+				? "warning"
+				: "success";
+		const trainingStatusText = trainingStatusMessage
+			? trainingStatusMessage
+			: lastTrainedUserName
+				? `Last trained: ${lastTrainedUserName}`
+				: "Waiting for card scan...";
+		const trainingStatusClass =
+			trainingStatusType === "error"
+				? "text-destructive"
+				: "text-muted-foreground";
+		const hasControlLogs = controlLogs.length > 0;
+
+		return (
+			<>
+				<div className="h-svh bg-background flex flex-col overflow-hidden">
+					<AuthenticatedHeader
+						logo={logo}
+						getLogoDataUrl={getLogoDataUrl}
+						userName={state.authenticatedUser.name}
+						onCancel={logout}
+					/>
+
+					<main className="flex-1 overflow-auto p-4 px-8">
+						<div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+							<div>
+								<p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
+									Manage Control Point
+								</p>
+								<h1 className="text-3xl font-bold">{point.name}</h1>
+								{point.location && (
+									<p className="text-sm text-muted-foreground mt-2">
+										{point.location}
+									</p>
+								)}
+							</div>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={stopManagingControlPoint}
+								className="gap-2"
+							>
+								<ArrowLeft className="w-4 h-4" />
+								Back
+							</Button>
+						</div>
+
+						<div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
+							<Card className="p-6 space-y-6">
+								<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+									<div className="flex items-center gap-4">
+										<div
+											className={`p-4 rounded-full ${point.currentState ? "bg-green-500/10" : "bg-muted"}`}
+										>
+											<Icon
+												className={`w-6 h-6 ${point.currentState ? "text-green-500" : "text-muted-foreground"}`}
+											/>
+										</div>
+										<div>
+											<p className="text-sm text-muted-foreground">
+												Control type
+											</p>
+											<h2 className="text-xl font-semibold">
+												{point.controlClass === "DOOR" ? "Door" : "Switch"}
+											</h2>
+										</div>
+									</div>
+									<Badge
+										variant={statusVariant}
+										className="uppercase text-lg font-semibold py-2 px-3"
+									>
+										{statusText}
+									</Badge>
+								</div>
+								<div className="grid gap-4 sm:grid-cols-2">
+									<div className="rounded-xl border border-border p-4 bg-background">
+										<p className="text-sm text-muted-foreground">Active</p>
+										<p className="mt-2 font-semibold">
+											{point.isActive ? "Yes" : "No"}
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={() => openControlLogsDialog(point)}
+										className="rounded-xl border border-border p-4 bg-background text-left transition hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+									>
+										<p className="text-sm text-muted-foreground">Control Logs</p>
+										<p className="mt-2 font-semibold">Tap to view logs</p>
+									</button>
+								</div>
+								<div className="rounded-xl border border-border p-4 bg-background space-y-2">
+									<p className="text-sm text-muted-foreground">Current state</p>
+									<p className="font-semibold">
+										{statusText}
+										{point.isActive &&
+											point.currentUserName &&
+											` by ${point.currentUserName}`}
+									</p>
+								</div>
+								<div className="flex flex-col gap-3 sm:flex-row">
+									<Button
+										onClick={() => toggleControlPointActive(point)}
+										disabled={isUpdatingControlPoint}
+										className="flex-1 text-lg font-semibold"
+										variant={point.isActive ? "destructive" : "success"}
+									>
+										{point.isActive ? "Deactivate" : "Activate"}
+									</Button>
+									<Button
+										variant="outline"
+										onClick={stopManagingControlPoint}
+										className="flex-1 text-lg font-semibold"
+									>
+										Close
+									</Button>
+								</div>
+							</Card>
+							<div className="space-y-4">
+								<Card className="p-6 space-y-4">
+									<h3 className="text-lg font-semibold">Training</h3>
+									{point.trainedRole ? (
+										<div className="space-y-4">
+											<div>
+												<p className="text-sm text-muted-foreground">
+													Trained role
+												</p>
+												<Badge variant="outline" className="text-xs">
+													{point.trainedRole.name}
+												</Badge>
+											</div>
+											<Button
+												className="w-full text-lg font-semibold"
+												onClick={() => openTrainingDialog(point)}
+											>
+												Train Users
+											</Button>
+										</div>
+									) : (
+										<p className="text-sm text-muted-foreground">
+											No trained role is configured for this point.
+										</p>
+									)}
+								</Card>
+								<Card className="p-6 space-y-4">
+									<h3 className="text-lg font-semibold">Authorized access</h3>
+									<div className="space-y-4">
+										<div>
+											<p className="text-sm text-muted-foreground">
+												Authorized roles
+											</p>
+											{point.authorizedRoles.length > 0 ? (
+												<div className="mt-2 flex flex-wrap gap-2">
+													{point.authorizedRoles.map((role) => (
+														<Badge
+															key={role.id}
+															variant="outline"
+															className="text-xs"
+														>
+															{role.name}
+														</Badge>
+													))}
+												</div>
+											) : (
+												<p className="mt-2 text-sm text-muted-foreground">
+													No role restrictions.
+												</p>
+											)}
+										</div>
+										<div>
+											<p className="text-sm text-muted-foreground">
+												Authorized users
+											</p>
+											{point.authorizedUsers.length > 0 ? (
+												<div className="mt-2 space-y-2">
+													{point.authorizedUsers.map((user) => (
+														<p key={user.id} className="text-sm">
+															{user.name}
+														</p>
+													))}
+												</div>
+											) : (
+												<p className="mt-2 text-sm text-muted-foreground">
+													No users are explicitly authorized.
+												</p>
+											)}
+										</div>
+									</div>
+								</Card>
+							</div>
+						</div>
+					</main>
+				</div>
+
+				<AnimatePresence>
+					{trainingControlPoint && (
+						<motion.div
+							className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							onClick={closeTrainingDialog}
+						>
+							<motion.div
+								className="w-full max-w-2xl rounded-3xl bg-card p-8 shadow-xl border border-border"
+								initial={{ opacity: 0, scale: 0.95, y: 16 }}
+								animate={{ opacity: 1, scale: 1, y: 0 }}
+								exit={{ opacity: 0, scale: 0.95, y: 16 }}
+								transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+								onClick={(event) => event.stopPropagation()}
+							>
+								<div className="flex flex-col gap-6">
+									<div className="flex items-center justify-between">
+										<div>
+											<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+												Training Mode
+											</p>
+											<h2 className="text-3xl font-bold">
+												Train Users for {trainingControlPoint.name}
+											</h2>
+											{trainingControlPoint.trainedRole && (
+												<div>
+													<p className="text-sm text-muted-foreground mt-2">
+														Granting Role
+													</p>
+													<Badge variant="outline" className="text-xs">
+														{trainingControlPoint.trainedRole.name}
+													</Badge>
+												</div>
+											)}
+										</div>
+										<Button variant="outline" onClick={closeTrainingDialog}>
+											Done
+										</Button>
+									</div>
+
+									<div className="flex items-center gap-4 rounded-2xl border border-border bg-background p-6">
+										<div className="relative flex items-center justify-center">
+											<motion.div
+												className="absolute h-4 w-4 rounded-full bg-primary/20"
+												animate={{ scale: [1, 3], opacity: [0.6, 0.2] }}
+												transition={{
+													duration: 1.6,
+													repeat: Infinity,
+													ease: "easeOut",
+												}}
+											/>
+											<motion.div
+												className="h-4 w-4 rounded-full bg-primary"
+												animate={{ opacity: [0.3, 1, 0.3] }}
+												transition={{ duration: 1.6, repeat: Infinity }}
+											/>
+										</div>
+										<div>
+											<p className="text-lg font-semibold">
+												Scan card to train user
+											</p>
+											<p className="text-sm text-muted-foreground">
+												You can scan multiple cards quickly without closing this
+												dialog.
+											</p>
+										</div>
+									</div>
+
+									<div className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3">
+										<div
+											className={`text-sm font-medium ${trainingStatusClass}`}
+										>
+											{trainingStatusText}
+										</div>
+										{isTrainingUser && (
+											<div className="flex items-center gap-2 text-xs text-muted-foreground">
+												<Loader2 className="h-4 w-4 animate-spin" />
+												Saving
+											</div>
+										)}
+									</div>
+								</div>
+							</motion.div>
+						</motion.div>
+					)}
+				</AnimatePresence>
+
+				<AnimatePresence>
+					{controlLogsPoint && (
+						<motion.div
+							className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							onClick={closeControlLogsDialog}
+						>
+							<motion.div
+								className="w-full max-w-3xl rounded-3xl bg-card p-8 shadow-xl border border-border"
+								initial={{ opacity: 0, scale: 0.95, y: 16 }}
+								animate={{ opacity: 1, scale: 1, y: 0 }}
+								exit={{ opacity: 0, scale: 0.95, y: 16 }}
+								transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+								onClick={(event) => event.stopPropagation()}
+							>
+								<div className="flex flex-col gap-6">
+									<div className="flex items-center justify-between">
+										<div>
+											<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+												Control Logs
+											</p>
+											<h2 className="text-3xl font-bold">
+												{controlLogsPoint.name}
+											</h2>
+										</div>
+										<Button variant="outline" onClick={closeControlLogsDialog}>
+											Done
+										</Button>
+									</div>
+
+									<div className="rounded-2xl border border-border bg-background p-4">
+										<div className="mb-3 flex items-center justify-between">
+											<p className="text-sm font-semibold">Recent activity</p>
+											{isControlLogsLoading && (
+												<div className="flex items-center gap-2 text-xs text-muted-foreground">
+													<Loader2 className="h-4 w-4 animate-spin" />
+													Loading
+												</div>
+											)}
+										</div>
+										<div className="max-h-[320px] space-y-3 overflow-y-auto pr-2">
+											{hasControlLogs ? (
+												controlLogs.map((log) => (
+													<div
+														key={log.id}
+														className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3"
+													>
+														<div>
+															<p className="text-sm font-semibold capitalize">
+																{log.action}
+															</p>
+															<p className="text-xs text-muted-foreground">
+																{log.userName}
+															</p>
+														</div>
+														<p className="text-xs text-muted-foreground">
+															{new Date(log.createdAt).toLocaleString()}
+														</p>
+													</div>
+												))
+											) : (
+												<p className="text-sm text-muted-foreground">
+													No log entries yet.
+												</p>
+											)}
+										</div>
+									</div>
+								</div>
+							</motion.div>
+						</motion.div>
+					)}
+				</AnimatePresence>
+			</>
+		);
+	}
+
 	// Authenticated view - new design with session controls and control points
 	if (isAuthenticated && state.authenticatedUser) {
-		const authorizedPoints = controlPoints.filter((p) =>
-			state.authenticatedUser?.authorizedControlPointIds.includes(p.id),
+		const authorizedPoints = controlPoints.filter(
+			(p) =>
+				(state.authenticatedUser?.authorizedControlPointIds.includes(p.id) &&
+					p.isActive) ||
+				state.authenticatedUser?.managedControlPointIds.includes(p.id),
+		);
+		const managedPoints = controlPoints.filter((p) =>
+			state.authenticatedUser?.managedControlPointIds.includes(p.id),
 		);
 		const isInSession = !!state.authenticatedUser.currentSession;
 		const isStaffing =
@@ -512,7 +959,9 @@ function ControlKioskApp() {
 									<ControlPointButton
 										key={point.id}
 										point={point}
+										onManage={startManagingControlPoint}
 										onOperate={operateControlPoint}
+										canManage={managedPoints.some((p) => p.id === point.id)}
 										isOperating={state.operatingPointId === point.id}
 										disabled={!!state.operatingPointId}
 										index={index}

@@ -18,6 +18,8 @@ export interface UpdateControlPointInput {
 	providerId?: number;
 	providerConfig?: Record<string, unknown>;
 	authorizedRoleIds?: number[];
+	trainedRoleId?: number | null;
+	trainerRoleId?: number | null;
 	authorizedUserIds?: number[];
 	autoTurnOffEnabled?: boolean;
 	autoTurnOffMinutes?: number | null;
@@ -93,6 +95,14 @@ export async function updateControlPoint(input: UpdateControlPointInput) {
 		};
 	}
 
+	// Handle trained/trainer role updates
+	if (input.trainedRoleId !== undefined) {
+		updateData.trainedRoleId = input.trainedRoleId;
+	}
+	if (input.trainerRoleId !== undefined) {
+		updateData.trainerRoleId = input.trainerRoleId;
+	}
+
 	// Handle user connections
 	if (input.authorizedUserIds !== undefined) {
 		updateData.authorizedUsers = {
@@ -112,6 +122,12 @@ export async function updateControlPoint(input: UpdateControlPointInput) {
 				},
 			},
 			authorizedRoles: {
+				select: { id: true, name: true },
+			},
+			trainedRole: {
+				select: { id: true, name: true },
+			},
+			trainerRole: {
 				select: { id: true, name: true },
 			},
 			authorizedUsers: {

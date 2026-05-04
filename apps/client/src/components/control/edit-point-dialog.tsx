@@ -68,6 +68,8 @@ type ControlPoint = {
 		providerType: string;
 	};
 	authorizedRoles: { id: number; name: string }[];
+	trainedRole: { id: number; name: string } | null;
+	trainerRole: { id: number; name: string } | null;
 	authorizedUsers: { id: number; name: string; username: string }[];
 	providerConfig?: {
 		tagName?: string;
@@ -88,6 +90,12 @@ export function EditControlPointDialog({
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [authorizedRoles, setAuthorizedRoles] = useState<Role[]>(
 		point.authorizedRoles ?? [],
+	);
+	const [trainedRole, setTrainedRole] = useState<Role | null>(
+		point.trainedRole ?? null,
+	);
+	const [trainerRole, setTrainerRole] = useState<Role | null>(
+		point.trainerRole ?? null,
 	);
 	const queryClient = useQueryClient();
 	const formId = useId();
@@ -120,6 +128,8 @@ export function EditControlPointDialog({
 			providerId?: number;
 			providerConfig?: Record<string, unknown>;
 			authorizedRoleIds?: number[];
+			trainedRoleId?: number | null;
+			trainerRoleId?: number | null;
 			autoTurnOffEnabled?: boolean;
 			autoTurnOffMinutes?: number | null;
 			isActive?: boolean;
@@ -171,6 +181,8 @@ export function EditControlPointDialog({
 						ipAddress: value.ipAddress,
 					},
 					authorizedRoleIds: authorizedRoles.map((r) => r.id),
+					trainedRoleId: trainedRole?.id ?? null,
+					trainerRoleId: trainerRole?.id ?? null,
 					autoTurnOffEnabled: value.autoTurnOffEnabled,
 					autoTurnOffMinutes: value.autoTurnOffEnabled
 						? value.autoTurnOffMinutes
@@ -224,6 +236,8 @@ export function EditControlPointDialog({
 				setAuthorizedRoles(
 					pointDetails?.authorizedRoles ?? point.authorizedRoles ?? [],
 				);
+				setTrainedRole(pointDetails?.trainedRole ?? point.trainedRole ?? null);
+				setTrainerRole(pointDetails?.trainerRole ?? point.trainerRole ?? null);
 				setServerError(null);
 			}
 		},
@@ -394,8 +408,26 @@ export function EditControlPointDialog({
 							onChange={setAuthorizedRoles}
 						/>
 						<p className="text-xs text-muted-foreground mt-1">
-							Leave empty to allow anyone with operate permission
+							Leave empty to allow anyone to operate
 						</p>
+					</Field>
+
+					<Field>
+						<FieldLabel>Trained Role</FieldLabel>
+						<RoleMultiSelect
+							value={trainedRole}
+							onChange={setTrainedRole}
+							selectionMode="single"
+						/>
+					</Field>
+
+					<Field>
+						<FieldLabel>Trainer Role</FieldLabel>
+						<RoleMultiSelect
+							value={trainerRole}
+							onChange={setTrainerRole}
+							selectionMode="single"
+						/>
 					</Field>
 
 					<form.Field name="canControlOnline">

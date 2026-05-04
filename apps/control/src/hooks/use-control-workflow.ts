@@ -10,6 +10,7 @@ interface AuthenticatedUser {
 	name: string;
 	cardNumber: string;
 	authorizedControlPointIds: string[];
+	managedControlPointIds: string[];
 	hasStaffingPermission: boolean;
 	currentSession: {
 		id: number;
@@ -39,7 +40,20 @@ interface ControlKioskState {
 	showSessionSelection: boolean;
 	operatingPointId: string | null; // Track which control point is being operated
 	pendingConfirmation: ConfirmationState | null; // Track pending confirmation dialog
+	selectedControlPoint: ControlPointWithStatus | null;
+	trainingControlPoint: ControlPointWithStatus | null;
+	trainingStatusMessage: string | null;
+	trainingStatusType: "success" | "error" | null;
+	lastTrainedUserName: string | null;
+	controlLogsPoint: ControlPointWithStatus | null;
 }
+
+type ControlLogEntry = {
+	id: string;
+	action: "login" | "logout";
+	createdAt: Date;
+	userName: string;
+};
 
 interface UseControlWorkflowOptions {
 	onSuccess?: (message: string) => void;
@@ -57,6 +71,12 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		showSessionSelection: false,
 		operatingPointId: null,
 		pendingConfirmation: null,
+		selectedControlPoint: null,
+		trainingControlPoint: null,
+		trainingStatusMessage: null,
+		trainingStatusType: null,
+		lastTrainedUserName: null,
+		controlLogsPoint: null,
 	});
 
 	// Get control points available on this device
@@ -66,12 +86,30 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		refetchInterval: 5000, // Refetch every 5 seconds for status updates
 	});
 
+	const controlLogsQuery = useQuery({
+		queryKey: ["controlKiosk", "controlLogs", state.controlLogsPoint?.id],
+		queryFn: async () => {
+			if (!state.controlLogsPoint) {
+				return { logs: [] };
+			}
+
+			return trpc.controlKiosk.getControlLogs.query({
+				controlPointId: state.controlLogsPoint.id,
+				limit: 50,
+			});
+		},
+		enabled: !!state.controlLogsPoint,
+	});
+
 	// Check user permissions mutation
 	const checkPermissionsMutation = useMutation({
 		mutationFn: (input: { cardNumber: string }) =>
 			trpc.controlKiosk.checkUserPermissions.query(input),
 		onSuccess: (data, variables) => {
-			if (data.authorizedControlPoints.length === 0) {
+			if (
+				data.authorizedControlPoints.length === 0 &&
+				data.managedControlPoints.length === 0
+			) {
 				const errorMsg =
 					"You don't have permission to control any points on this device";
 				setState((prev) => ({
@@ -92,6 +130,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 						authorizedControlPointIds: data.authorizedControlPoints.map(
 							(p) => p.id,
 						),
+						managedControlPointIds: data.managedControlPoints.map((p) => p.id),
 						hasStaffingPermission: data.hasStaffingPermission,
 						currentSession: data.currentSession
 							? {
@@ -157,6 +196,70 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 					})),
 				calculateReadingDuration(errorMsg),
 			);
+		},
+	});
+
+	const updatePointMutation = useMutation({
+		mutationFn: (input: {
+			id: string;
+			isActive: boolean;
+			cardNumber: string;
+		}) =>
+			trpc.controlKiosk.updatePoint.mutate({
+				cardNumber: input.cardNumber,
+				controlPointId: input.id,
+				isActive: input.isActive,
+			}),
+		onSuccess: (_data, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: ["controlKiosk", "controlPoints"],
+			});
+			setState((prev) => ({
+				...prev,
+				selectedControlPoint:
+					prev.selectedControlPoint &&
+					prev.selectedControlPoint.id === variables.id
+						? {
+								...prev.selectedControlPoint,
+								isActive: variables.isActive,
+							}
+						: prev.selectedControlPoint,
+			}));
+			onSuccess?.("Control point updated successfully");
+		},
+		onError: (error: Error) => {
+			logger.error("Failed to update control point:", error);
+			const errorMsg = error.message || "Failed to update control point";
+			setState((prev) => ({ ...prev, error: errorMsg }));
+			onError?.(errorMsg);
+			setTimeout(
+				() => setState((prev) => ({ ...prev, error: null })),
+				calculateReadingDuration(errorMsg),
+			);
+		},
+	});
+
+	const trainUserMutation = useMutation({
+		mutationFn: (input: {
+			controlPointId: string;
+			trainerCardNumber: string;
+			traineeCardNumber: string;
+		}) => trpc.controlKiosk.trainUser.mutate(input),
+		onSuccess: (data) => {
+			setState((prev) => ({
+				...prev,
+				lastTrainedUserName: data.userName,
+				trainingStatusMessage: null,
+				trainingStatusType: "success",
+			}));
+		},
+		onError: (error: Error) => {
+			const errorMsg = error.message || "Failed to train user";
+			setState((prev) => ({
+				...prev,
+				trainingStatusMessage: errorMsg,
+				trainingStatusType: "error",
+			}));
 		},
 	});
 
@@ -253,14 +356,21 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 			logger.info("Card scanned for control access");
 
 			// Authenticate the user
-			setState({
+			setState((prev) => ({
+				...prev,
 				mode: "processing",
 				authenticatedUser: null,
 				error: null,
 				showSessionSelection: false,
 				operatingPointId: null,
 				pendingConfirmation: null,
-			});
+				selectedControlPoint: null,
+				trainingControlPoint: null,
+				trainingStatusMessage: null,
+				trainingStatusType: null,
+				lastTrainedUserName: null,
+				controlLogsPoint: null,
+			}));
 
 			checkPermissionsMutation.mutate({ cardNumber });
 		},
@@ -304,20 +414,122 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 	);
 
 	const resetToIdle = useCallback(() => {
-		setState({
+		setState((prev) => ({
+			...prev,
 			mode: "idle",
 			authenticatedUser: null,
 			error: null,
 			showSessionSelection: false,
 			operatingPointId: null,
 			pendingConfirmation: null,
-		});
+			selectedControlPoint: null,
+			trainingControlPoint: null,
+			trainingStatusMessage: null,
+			trainingStatusType: null,
+			lastTrainedUserName: null,
+			controlLogsPoint: null,
+		}));
 	}, []);
 
 	const logout = useCallback(() => {
 		logger.info("User logged out from control kiosk");
 		resetToIdle();
 	}, [resetToIdle]);
+
+	const startManagingControlPoint = useCallback(
+		(controlPoint: ControlPointWithStatus) => {
+			setState((prev) => ({ ...prev, selectedControlPoint: controlPoint }));
+		},
+		[],
+	);
+
+	const stopManagingControlPoint = useCallback(() => {
+		setState((prev) => ({
+			...prev,
+			selectedControlPoint: null,
+			trainingControlPoint: null,
+			trainingStatusMessage: null,
+			trainingStatusType: null,
+			lastTrainedUserName: null,
+			controlLogsPoint: null,
+		}));
+	}, []);
+
+	const openControlLogsDialog = useCallback(
+		(controlPoint: ControlPointWithStatus) => {
+			setState((prev) => ({
+				...prev,
+				controlLogsPoint: controlPoint,
+			}));
+		},
+		[],
+	);
+
+	const closeControlLogsDialog = useCallback(() => {
+		setState((prev) => ({
+			...prev,
+			controlLogsPoint: null,
+		}));
+	}, []);
+
+	const openTrainingDialog = useCallback(
+		(controlPoint: ControlPointWithStatus) => {
+			setState((prev) => ({
+				...prev,
+				trainingControlPoint: controlPoint,
+				trainingStatusMessage: null,
+				trainingStatusType: null,
+				lastTrainedUserName: null,
+			}));
+		},
+		[],
+	);
+
+	const closeTrainingDialog = useCallback(() => {
+		setState((prev) => ({
+			...prev,
+			trainingControlPoint: null,
+			trainingStatusMessage: null,
+			trainingStatusType: null,
+			lastTrainedUserName: null,
+		}));
+	}, []);
+
+	const handleTrainingCardScan = useCallback(
+		(cardNumber: string) => {
+			if (!state.authenticatedUser || !state.trainingControlPoint) {
+				return;
+			}
+
+			setState((prev) => ({
+				...prev,
+				trainingStatusMessage: null,
+				trainingStatusType: null,
+			}));
+
+			trainUserMutation.mutate({
+				controlPointId: state.trainingControlPoint.id,
+				trainerCardNumber: state.authenticatedUser.cardNumber,
+				traineeCardNumber: cardNumber,
+			});
+		},
+		[state.authenticatedUser, state.trainingControlPoint, trainUserMutation],
+	);
+
+	const toggleControlPointActive = useCallback(
+		(controlPoint: ControlPointWithStatus) => {
+			if (state.mode !== "authenticated" || !state.authenticatedUser) {
+				return;
+			}
+
+			updatePointMutation.mutate({
+				id: controlPoint.id,
+				isActive: !controlPoint.isActive,
+				cardNumber: state.authenticatedUser.cardNumber,
+			});
+		},
+		[state.mode, state.authenticatedUser, updatePointMutation],
+	);
 
 	const showSessionSelection = useCallback(() => {
 		setState((prev) => ({ ...prev, showSessionSelection: true }));
@@ -471,12 +683,15 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		state,
 		controlPoints: (controlPointsQuery.data?.controlPoints ??
 			[]) as ControlPointWithStatus[],
+		controlLogs: (controlLogsQuery.data?.logs ?? []) as ControlLogEntry[],
 		isLoading: controlPointsQuery.isLoading,
+		isControlLogsLoading: controlLogsQuery.isLoading,
 		isProcessing:
 			checkPermissionsMutation.isPending ||
 			operateMutation.isPending ||
 			tapInOutMutation.isPending,
 		handleCardScan,
+		handleTrainingCardScan,
 		operateControlPoint,
 		logout,
 		resetToIdle,
@@ -490,5 +705,20 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 			queryClient.invalidateQueries({
 				queryKey: ["controlKiosk", "controlPoints"],
 			}),
+		selectedControlPoint: state.selectedControlPoint,
+		startManagingControlPoint,
+		stopManagingControlPoint,
+		toggleControlPointActive,
+		isUpdatingControlPoint: updatePointMutation.isPending,
+		trainingControlPoint: state.trainingControlPoint,
+		trainingStatusMessage: state.trainingStatusMessage,
+		trainingStatusType: state.trainingStatusType,
+		lastTrainedUserName: state.lastTrainedUserName,
+		openTrainingDialog,
+		closeTrainingDialog,
+		isTrainingUser: trainUserMutation.isPending,
+		controlLogsPoint: state.controlLogsPoint,
+		openControlLogsDialog,
+		closeControlLogsDialog,
 	};
 }

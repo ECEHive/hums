@@ -45,7 +45,6 @@ export async function checkUserPermissionsHandler({
 	const deviceControlPoints = await prisma.controlPoint.findMany({
 		where: {
 			id: { in: deviceControlPointIds },
-			isActive: true,
 		},
 		select: {
 			id: true,
@@ -55,7 +54,10 @@ export async function checkUserPermissionsHandler({
 			controlClass: true,
 			currentState: true,
 			authorizedRoles: { select: { id: true } },
+			trainedRole: { select: { id: true, name: true } },
+			trainerRole: { select: { id: true, name: true } },
 			authorizedUsers: { select: { id: true } },
+			isActive: true,
 		},
 	});
 
@@ -88,6 +90,33 @@ export async function checkUserPermissionsHandler({
 		return false;
 	});
 
+	// Check if the user has universalTrainer permission on any assigned role
+	const hasUniversalTrainerPermission =
+		(await prisma.role.count({
+			where: {
+				id: { in: userRoleIds },
+				permissions: { some: { name: "control.points.universalTrainer" } },
+			},
+		})) > 0;
+
+	// Check which control points the user can manage (activate/deactivate and train other users)
+	const managedControlPoints = deviceControlPoints.filter((point) => {
+		// System users can manage everything
+		if (isSystemUser) return true;
+
+		// Check if user has trainer role for this control point
+		if (point.trainerRole && userRoleIds.includes(point.trainerRole.id)) {
+			return true;
+		}
+
+		// Check if user has universalTrainer permission
+		if (hasUniversalTrainerPermission) {
+			return true;
+		}
+
+		return false;
+	});
+
 	return {
 		user: {
 			id: user.id,
@@ -95,6 +124,14 @@ export async function checkUserPermissionsHandler({
 			username: user.username,
 		},
 		authorizedControlPoints: authorizedControlPoints.map((cp) => ({
+			id: cp.id,
+			name: cp.name,
+			description: cp.description,
+			location: cp.location,
+			controlClass: cp.controlClass,
+			currentState: cp.currentState,
+		})),
+		managedControlPoints: managedControlPoints.map((cp) => ({
 			id: cp.id,
 			name: cp.name,
 			description: cp.description,

@@ -18,6 +18,12 @@ export async function getControlPoint(id: string) {
 			authorizedRoles: {
 				select: { id: true, name: true },
 			},
+			trainedRole: {
+				select: { id: true, name: true },
+			},
+			trainerRole: {
+				select: { id: true, name: true },
+			},
 			authorizedUsers: {
 				select: { id: true, name: true, username: true, email: true },
 			},
@@ -47,6 +53,12 @@ export async function findControlPoint(id: string) {
 				},
 			},
 			authorizedRoles: {
+				select: { id: true, name: true },
+			},
+			trainedRole: {
+				select: { id: true, name: true },
+			},
+			trainerRole: {
 				select: { id: true, name: true },
 			},
 			authorizedUsers: {

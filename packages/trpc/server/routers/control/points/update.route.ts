@@ -16,6 +16,8 @@ export const ZUpdatePointSchema = z.object({
 	providerId: z.number().int().optional(),
 	providerConfig: z.record(z.string(), z.unknown()).optional(),
 	authorizedRoleIds: z.array(z.number().int()).optional(),
+	trainedRoleId: z.number().int().optional().nullable(),
+	trainerRoleId: z.number().int().optional().nullable(),
 	authorizedUserIds: z.array(z.number().int()).optional(),
 	autoTurnOffEnabled: z.boolean().optional(),
 	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),

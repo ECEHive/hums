@@ -86,6 +86,8 @@ export async function operateControlPoint(
 		include: {
 			provider: true,
 			authorizedRoles: { select: { id: true } },
+			trainedRole: { select: { id: true, name: true } },
+			trainerRole: { select: { id: true, name: true } },
 			authorizedUsers: { select: { id: true } },
 		},
 	});
@@ -217,6 +219,8 @@ export async function operateControlPointByUserId(
 		include: {
 			provider: true,
 			authorizedRoles: { select: { id: true } },
+			trainedRole: { select: { id: true, name: true } },
+			trainerRole: { select: { id: true, name: true } },
 			authorizedUsers: { select: { id: true } },
 		},
 	});
