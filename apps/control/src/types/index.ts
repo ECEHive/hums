@@ -147,6 +147,7 @@ export type AuthenticatedUser = {
 	name: string;
 	cardNumber: string;
 	authorizedControlPointIds: string[];
+	managedControlPointIds: string[];
 };
 
 export type ControlKioskState = {
