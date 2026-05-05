@@ -10,7 +10,7 @@
     },
     "apps/client": {
       "name": "@ecehive/client",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -59,7 +59,7 @@
         "react-day-picker": "^9.14.0",
         "react-dom": "^19.2.4",
         "react-markdown": "^10.1.0",
-        "react-resizable-panels": "^4.5.2",
+        "react-resizable-panels": "^4.11.0",
         "rehype-sanitize": "^6.0.0",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.5.0",
@@ -85,7 +85,7 @@
     },
     "apps/control": {
       "name": "@ecehive/control",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -132,7 +132,7 @@
     },
     "apps/inventory": {
       "name": "@ecehive/inventory",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -179,7 +179,7 @@
     },
     "apps/kiosk": {
       "name": "@ecehive/kiosk",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/card-scanner": "workspace:*",
         "@ecehive/trpc": "workspace:*",
@@ -227,7 +227,7 @@
     },
     "apps/overview": {
       "name": "@ecehive/overview",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/trpc": "workspace:*",
         "@radix-ui/react-checkbox": "^1.3.3",
@@ -275,7 +275,7 @@
     },
     "apps/server": {
       "name": "@ecehive/server",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
@@ -294,7 +294,7 @@
     },
     "packages/auth": {
       "name": "@ecehive/auth",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -308,7 +308,7 @@
     },
     "packages/card-scanner": {
       "name": "@ecehive/card-scanner",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "tslog": "^4.10.2",
       },
@@ -325,7 +325,7 @@
     },
     "packages/config": {
       "name": "@ecehive/config",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "devDependencies": {
         "@biomejs/biome": "2.4.4",
         "@types/node": "^25.3.0",
@@ -333,7 +333,7 @@
     },
     "packages/email": {
       "name": "@ecehive/email",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.1025.0",
         "@ecehive/env": "workspace:*",
@@ -354,7 +354,7 @@
     },
     "packages/env": {
       "name": "@ecehive/env",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@types/node": "^25.3.0",
         "zod": "^4.3.6",
@@ -366,7 +366,7 @@
     },
     "packages/features": {
       "name": "@ecehive/features",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/email": "workspace:*",
         "@ecehive/env": "workspace:*",
@@ -384,7 +384,7 @@
     },
     "packages/ldap": {
       "name": "@ecehive/ldap",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -397,7 +397,7 @@
     },
     "packages/logger": {
       "name": "@ecehive/logger",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "tslog": "^4.9.3",
       },
@@ -407,7 +407,7 @@
     },
     "packages/prisma": {
       "name": "@ecehive/prisma",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@prisma/adapter-pg": "^7.5.0",
@@ -425,7 +425,7 @@
     },
     "packages/rest": {
       "name": "@ecehive/rest",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/features": "workspace:*",
         "@ecehive/prisma": "workspace:*",
@@ -441,7 +441,7 @@
     },
     "packages/trpc": {
       "name": "@ecehive/trpc",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/auth": "workspace:*",
@@ -464,7 +464,7 @@
     },
     "packages/user-data": {
       "name": "@ecehive/user-data",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@ecehive/env": "workspace:*",
         "@ecehive/ldap": "workspace:*",
@@ -478,7 +478,7 @@
     },
     "packages/workers": {
       "name": "@ecehive/workers",
-      "version": "3.5.0",
+      "version": "3.7.0",
       "dependencies": {
         "@date-fns/tz": "^1.4.1",
         "@ecehive/email": "workspace:*",
@@ -1810,7 +1810,7 @@
 
     "react-remove-scroll-bar": ["react-remove-scroll-bar@2.3.8", "", { "dependencies": { "react-style-singleton": "^2.2.2", "tslib": "^2.0.0" }, "peerDependencies": { "@types/react": "*", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react"] }, "sha512-9r+yi9+mgU33AKcj6IbT9oRCO78WriSj6t/cF8DWBZJ9aOGPOTEDvdUDz1FwKim7QXWwmHqtdHnRJfhAxEG46Q=="],
 
-    "react-resizable-panels": ["react-resizable-panels@4.5.2", "", { "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-PJyyR41poi1O1MvvQzDVtEBRq1x7B/9jB6yoFbm67pm8AvPUUwhljFtxfhaYy8klsmkQ6AvxZgDxXTkDl4vy4Q=="],
+    "react-resizable-panels": ["react-resizable-panels@4.11.0", "", { "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-LPk/AkFDGkg7SsbOyL93ojrE6E7lhrxxDwnYNjfmnSeI6BE7Sje6dB24PXgZk8DeugdeXNk1LO+ohRqIjhxiLw=="],
 
     "react-style-singleton": ["react-style-singleton@2.2.3", "", { "dependencies": { "get-nonce": "^1.0.0", "tslib": "^2.0.0" }, "peerDependencies": { "@types/react": "*", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-b6jSvxvVnyptAiLjbkWLE/lOnR4lfTtDAl+eUC7RZy+QQWc6wRzIV2CE6xBuMmDxc2qIihtDCZD5NPOFl7fRBQ=="],
 
