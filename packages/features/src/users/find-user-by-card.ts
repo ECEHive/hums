@@ -92,6 +92,7 @@ export async function findUserByCard(cardNumber: string) {
 						username: profile.username,
 						name: profile.name,
 						email: profile.email,
+						department: profile.department ?? null,
 					},
 					{ tx, skipProviderFetch: true },
 				);
@@ -122,6 +123,12 @@ export async function findUserByCard(cardNumber: string) {
 			}
 			if (profile.email && profile.email !== user.email) {
 				updateData.email = profile.email;
+			}
+			if (
+				profile.department !== undefined &&
+				profile.department !== user.department
+			) {
+				updateData.department = profile.department;
 			}
 
 			if (Object.keys(updateData).length > 0) {

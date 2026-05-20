@@ -24,6 +24,7 @@ type BuzzApiPerson = {
 	gtPersonDirectoryId?: string;
 	gtPrimaryEmailAddress?: string;
 	gtPrimaryGTAccountUsername?: string;
+	gtCurriculum?: string[];
 };
 
 const REQUESTED_ATTRIBUTES = [
@@ -34,7 +35,19 @@ const REQUESTED_ATTRIBUTES = [
 	"sn",
 	"gtAccessCardNumber",
 	"gtBuzzcardNumber",
+	"gtCurriculum",
 ].join(",");
+
+/**
+ * Extracts the department code from the gtCurriculum array.
+ * The department value is a short, uppercase-only path such as "E/ECE/CMPE".
+ * Longer student enrollment paths (e.g. "student/major/...") are ignored.
+ */
+function extractDepartment(gtCurriculum?: string[]): string | undefined {
+	if (!gtCurriculum || gtCurriculum.length === 0) return undefined;
+	const DEPT_PATTERN = /^[A-Z0-9]{1,10}(\/[A-Z0-9]{1,10}){1,4}$/;
+	return gtCurriculum.find((entry) => DEPT_PATTERN.test(entry.trim()));
+}
 
 export class BuzzApiUserDataProvider implements UserDataProvider {
 	constructor(private readonly config: BuzzApiProviderConfig) {}
@@ -118,11 +131,14 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 			.map((c) => normalizeCardNumber(c))
 			.filter((c): c is string => c !== undefined);
 
+		const department = extractDepartment(result.gtCurriculum);
+
 		return {
 			username,
 			name,
 			email,
 			...(cardNumbers.length > 0 ? { cardNumbers } : {}),
+			...(department !== undefined ? { department } : {}),
 		};
 	}
 
