@@ -17,6 +17,7 @@ model User {
   createdAt               DateTime               @default(now())
   updatedAt               DateTime               @default(now()) @updatedAt
   slackUsername           String?                @unique
+  department              String?
   apiTokens               ApiToken[]
   impersonatedAuditLogs   AuditLog[]             @relation("AuditLogImpersonators")
   auditLogs               AuditLog[]

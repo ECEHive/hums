@@ -41,6 +41,7 @@ export async function usersReportHandler(options: TUsersReportOptions) {
 			isSystemUser: true,
 			createdAt: true,
 			updatedAt: true,
+			department: true,
 			roles: {
 				select: {
 					id: true,
@@ -65,6 +66,7 @@ export async function usersReportHandler(options: TUsersReportOptions) {
 		slackUsername: user.slackUsername,
 		isSystemUser: user.isSystemUser,
 		createdAt: user.createdAt,
+		department: user.department,
 		roles: user.roles.map((r) => r.name).join(", "),
 		roleCount: user.roles.length,
 		totalSessions: user._count.sessions,

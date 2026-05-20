@@ -28,6 +28,7 @@ export interface GlobalUsersReport {
 	slackUsername: string | null;
 	isSystemUser: boolean;
 	createdAt: Date;
+	department: string | null;
 	roles: string;
 	roleCount: number;
 	totalSessions: number;
@@ -106,6 +107,11 @@ export const globalUsersReportConfig: ReportConfig<GlobalUsersReport> = {
 			accessorKey: "email",
 			header: "Email",
 			cell: ({ row }) => row.original.email,
+		},
+		{
+			accessorKey: "department",
+			header: "Department",
+			cell: ({ row }) => row.original.department || "—",
 		},
 		{
 			accessorKey: "roles",

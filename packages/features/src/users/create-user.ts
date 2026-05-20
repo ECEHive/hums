@@ -18,6 +18,7 @@ export type CreateUserData = {
 	slackUsername?: string | null;
 	isSystemUser?: boolean;
 	roleIds?: number[];
+	department?: string | null;
 };
 
 export type CreateUserOptions = {
@@ -65,11 +66,14 @@ export async function createUser(
 		// Attempt to fetch user information from the configured provider
 		// This enriches the user data with info from external systems (LDAP, BuzzAPI, etc.)
 		// Skipped when the caller already supplied provider data (e.g. findUserByCard)
+		let department: string | null = providedData.department ?? null;
+
 		if (!options?.skipProviderFetch) {
 			try {
 				const userInfo = await fetchUserInfo(username);
 				name = userInfo.name ?? name;
 				email = userInfo.email ?? email;
+				department = userInfo.department ?? department;
 			} catch (error) {
 				// If fetch fails, proceed with defaults
 				logger.warn("User data fetch failed, using defaults", {
@@ -86,6 +90,7 @@ export async function createUser(
 			email,
 			slackUsername,
 			isSystemUser,
+			...(department !== null ? { department } : {}),
 			...(roleIds && roleIds.length > 0
 				? {
 						roles: {
