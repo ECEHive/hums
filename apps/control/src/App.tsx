@@ -568,7 +568,9 @@ function ControlKioskApp() {
 										onClick={() => openControlLogsDialog(point)}
 										className="rounded-xl border border-border p-4 bg-background text-left transition hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
 									>
-										<p className="text-sm text-muted-foreground">Control Logs</p>
+										<p className="text-sm text-muted-foreground">
+											Control Logs
+										</p>
 										<p className="mt-2 font-semibold">Tap to view logs</p>
 									</button>
 								</div>
