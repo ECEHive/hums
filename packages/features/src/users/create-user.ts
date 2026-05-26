@@ -19,6 +19,8 @@ export type CreateUserData = {
 	isSystemUser?: boolean;
 	roleIds?: number[];
 	department?: string | null;
+	/** Institutional affiliation (e.g. "student", "faculty", "staff"). */
+	affiliation?: string | null;
 };
 
 export type CreateUserOptions = {
@@ -32,6 +34,12 @@ export type CreateUserOptions = {
 	 * could be exceeded by the network round-trip.
 	 */
 	skipProviderFetch?: boolean;
+	/**
+	 * When true, sets `profileSyncedAt` to the current time on the created user.
+	 * Use this when the caller has already fetched fresh provider data and is
+	 * passing it in via `skipProviderFetch: true`.
+	 */
+	markProfileSynced?: boolean;
 };
 
 /**
@@ -63,10 +71,12 @@ export async function createUser(
 			providedData.slackUsername || undefined;
 		const isSystemUser = providedData.isSystemUser ?? false;
 
-		// Attempt to fetch user information from the configured provider
-		// This enriches the user data with info from external systems (LDAP, BuzzAPI, etc.)
-		// Skipped when the caller already supplied provider data (e.g. findUserByCard)
+		// Attempt to fetch user information from the configured provider.
+		// This enriches the user data with info from external systems (LDAP, BuzzAPI, etc.).
+		// Skipped when the caller already supplied provider data (e.g. findUserByCard).
 		let department: string | null = providedData.department ?? null;
+		let affiliation: string | null = providedData.affiliation ?? null;
+		let profileSyncedAt: Date | null = null;
 
 		if (!options?.skipProviderFetch) {
 			try {
@@ -74,6 +84,8 @@ export async function createUser(
 				name = userInfo.name ?? name;
 				email = userInfo.email ?? email;
 				department = userInfo.department ?? department;
+				affiliation = userInfo.affiliation ?? affiliation;
+				profileSyncedAt = new Date();
 			} catch (error) {
 				// If fetch fails, proceed with defaults
 				logger.warn("User data fetch failed, using defaults", {
@@ -81,6 +93,9 @@ export async function createUser(
 					error: error instanceof Error ? error.message : String(error),
 				});
 			}
+		} else if (options?.markProfileSynced) {
+			// Caller provided fresh provider data; record the sync timestamp.
+			profileSyncedAt = new Date();
 		}
 
 		// Build the Prisma create data
@@ -91,6 +106,8 @@ export async function createUser(
 			slackUsername,
 			isSystemUser,
 			...(department !== null ? { department } : {}),
+			...(affiliation !== null ? { affiliation } : {}),
+			...(profileSyncedAt !== null ? { profileSyncedAt } : {}),
 			...(roleIds && roleIds.length > 0
 				? {
 						roles: {

@@ -125,6 +125,16 @@ export type TapResponse =
 				endDate: Date;
 				externalNotes: string | null;
 			};
+	  }
+	| {
+			status: "access_denied";
+			user: {
+				id: number;
+				name: string;
+				email: string;
+				username: string;
+			};
+			message: string;
 	  };
 
 export type TapEvent = Extract<

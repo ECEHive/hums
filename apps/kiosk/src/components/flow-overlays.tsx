@@ -1,5 +1,6 @@
 import { Clock, LogOut, RefreshCw, Users } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
+import { AccessDeniedDialog } from "@/components/access-denied-dialog";
 import { AgreementFlow } from "@/components/agreement-flow";
 import { EarlyLeaveConfirmation } from "@/components/early-leave-confirmation";
 import { ErrorDialog } from "@/components/error-dialog";
@@ -9,6 +10,7 @@ import { ShiftEarlyLeaveConfirmation } from "@/components/shift-early-leave-conf
 import { SuspensionDialog } from "@/components/suspension-dialog";
 import { TapNotification } from "@/components/tap-notification";
 import type {
+	AccessDeniedState,
 	EarlyLeaveConfirmationState,
 	ErrorDialogState,
 	PendingAgreementState,
@@ -29,6 +31,7 @@ interface FlowOverlaysProps {
 	pendingAgreement: PendingAgreementState | null;
 	tapNotification: TapNotificationState;
 	suspension: SuspensionState | null;
+	accessDenied: AccessDeniedState | null;
 	onSessionTypeSelect: (type: "regular" | "staffing") => void;
 	onSessionTypeCancel: () => void;
 	onTapOutActionSelect: (
@@ -54,6 +57,7 @@ export function FlowOverlays({
 	pendingAgreement,
 	tapNotification,
 	suspension,
+	accessDenied,
 	onSessionTypeSelect,
 	onSessionTypeCancel,
 	onTapOutActionSelect,
@@ -75,7 +79,8 @@ export function FlowOverlays({
 			!!tapOutActionSelection ||
 			!!earlyLeaveConfirmation ||
 			!!shiftEarlyLeaveConfirmation ||
-			!!suspension,
+			!!suspension ||
+			!!accessDenied,
 		[
 			errorDialog.message,
 			pendingAgreement,
@@ -215,6 +220,14 @@ export function FlowOverlays({
 					endDate={suspension.endDate}
 					externalNotes={suspension.externalNotes}
 					isExiting={suspension.isExiting}
+				/>
+			)}
+
+			{accessDenied && (
+				<AccessDeniedDialog
+					userName={accessDenied.userName}
+					message={accessDenied.message}
+					isExiting={accessDenied.isExiting}
 				/>
 			)}
 

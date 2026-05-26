@@ -25,6 +25,7 @@ type BuzzApiPerson = {
 	gtPrimaryEmailAddress?: string;
 	gtPrimaryGTAccountUsername?: string;
 	gtCurriculum?: string[];
+	eduPersonPrimaryAffiliation?: string;
 };
 
 const REQUESTED_ATTRIBUTES = [
@@ -36,6 +37,7 @@ const REQUESTED_ATTRIBUTES = [
 	"gtAccessCardNumber",
 	"gtBuzzcardNumber",
 	"gtCurriculum",
+	"eduPersonPrimaryAffiliation",
 ].join(",");
 
 /**
@@ -132,6 +134,7 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 			.filter((c): c is string => c !== undefined);
 
 		const department = extractDepartment(result.gtCurriculum);
+		const affiliation = result.eduPersonPrimaryAffiliation?.trim() || undefined;
 
 		return {
 			username,
@@ -139,6 +142,7 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 			email,
 			...(cardNumbers.length > 0 ? { cardNumbers } : {}),
 			...(department !== undefined ? { department } : {}),
+			...(affiliation !== undefined ? { affiliation } : {}),
 		};
 	}
 

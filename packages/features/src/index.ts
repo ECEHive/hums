@@ -1,4 +1,5 @@
 export { clearEmailLogoCache, getEmailLogosAsync } from "@ecehive/email";
+export * from "./affiliation";
 export * from "./api-tokens";
 export * from "./assignments/generators";
 export * from "./attendance";
