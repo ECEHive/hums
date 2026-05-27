@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated"
+  runtime  = "bun"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                      Int                    @id @default(autoincrement())
+  username                String                 @unique
+  name                    String
+  email                   String                 @unique
+  isSystemUser            Boolean                @default(false)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @default(now()) @updatedAt
+  slackUsername           String?                @unique
+  department              String?
+  /// Institutional affiliation sourced from the external identity provider
+  /// (e.g. "student", "faculty", "staff"). Null when not yet synced or unavailable.
+  affiliation             String?
+  /// Timestamp of the most recent successful profile sync from the external
+  /// identity provider. Used to enforce the profile cache TTL.
+  profileSyncedAt         DateTime?
+  /// Set to true when the external identity provider returns no record for this
+  /// user during a profile refresh. While true the user is denied access and
+  /// every subsequent login triggers a re-fetch so that a re-appearing account
+  /// is reinstated automatically. Reset to false when the provider returns data.
+  providerDeleted         Boolean                @default(false)
+  apiTokens               ApiToken[]
+  impersonatedAuditLogs   AuditLog[]             @relation("AuditLogImpersonators")
+  auditLogs               AuditLog[]
+  inventoryTransactions   InventoryTransaction[]
+  sessions                Session[]
+  reviewedAttendances     ShiftAttendance[]      @relation("ShiftAttendanceReviewedBy")
+  attendances             ShiftAttendance[]
+  createdSuspensions      Suspension[]           @relation("SuspensionCreatedBy")
+  suspensions             Suspension[]
+  handledTickets          Ticket[]               @relation("TicketHandler")
+  submittedTickets        Ticket[]               @relation("TicketSubmitter")
+  ticketStatusChanges     TicketStatusHistory[]  @relation("TicketStatusChangedBy")
+  userAgreements          UserAgreement[]
+  roles                   Role[]                 @relation("RoleToUser")
+  shiftOccurrences        ShiftOccurrence[]      @relation("ShiftOccurrenceToUser")
+  shiftSchedules          ShiftSchedule[]        @relation("ShiftScheduleToUser")
+  authorizedControlPoints ControlPoint[]         @relation("ControlPointUsers")
+  controlLogs             ControlLog[]
+  credentials             Credential[]
+}
+
+model Role {
+  id                      Int            @id @default(autoincrement())
+  name                    String         @unique
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @default(now()) @updatedAt
+  approvalItems           Item[]         @relation("ItemApprovalRoles")
+  periods                 Period[]       @relation("PeriodRoles")
+  permissions             Permission[]   @relation("PermissionToRole")
+  shiftTypes              ShiftType[]    @relation("RoleToShiftType")
+  users                   User[]         @relation("RoleToUser")
+  authorizedControlPoints ControlPoint[] @relation("ControlPointRoles")
+  trainedControlPoints    ControlPoint[] @relation("ControlPointTrainedRole")
+  trainerControlPoints    ControlPoint[] @relation("ControlPointTrainerRole")
+}
+
+model Permission {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  roles     Role[]     @relation("PermissionToRole")
+  apiTokens ApiToken[] @relation("ApiTokenToPermission")
+}
+
+enum KioskMode {
+  ATTENDANCE
+  CONTROL
+  INVENTORY
+}
+
+model Device {
+  id                 Int            @id @default(autoincrement())
+  name               String
+  ipAddress          String         @unique
+  isActive           Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @default(now()) @updatedAt
+  hasDashboardAccess Boolean        @default(false)
+  hasKioskAccess     Boolean        @default(true)
+  hasInventoryAccess Boolean        @default(false)
+  hasControlAccess   Boolean        @default(false)
+  kioskMode          KioskMode?
+  controlPoints      ControlPoint[] @relation("DeviceControlPoints")
+}
+
+model ApiToken {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  prefix      String       @unique
+  hashedKey   String       @unique
+  createdById Int?
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  permissions Permission[] @relation("ApiTokenToPermission")
+  auditLogs   AuditLog[]
+}
+
+model AuditLog {
+  id               Int            @id @default(autoincrement())
+  userId           Int
+  impersonatedById Int?
+  apiTokenId       Int?
+  action           String
+  metadata         Json           @default("{}")
+  source           AuditLogSource
+  createdAt        DateTime       @default(now())
+  apiToken         ApiToken?      @relation(fields: [apiTokenId], references: [id])
+  impersonatedBy   User?          @relation("AuditLogImpersonators", fields: [impersonatedById], references: [id])
+  user             User           @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([apiTokenId, createdAt])
+  @@index([action, createdAt])
+}
+
+enum AuditLogSource {
+  trpc
+  rest
+  slack
+}
+
+model OneTimeAccessCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  @@index([code, expiresAt])
+}
+
+model ConfigValue {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([key])
+}
+
+model Credential {
+  id        Int      @id @default(autoincrement())
+  hash      String   @unique
+  preview   String
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

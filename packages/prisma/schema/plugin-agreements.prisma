@@ -1,0 +1,23 @@
+model Agreement {
+  id               Int             @id @default(autoincrement())
+  title            String
+  content          String
+  confirmationText String
+  isEnabled        Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+  userAgreements   UserAgreement[]
+}
+
+model UserAgreement {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  agreementId Int
+  agreedAt    DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  agreement   Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agreementId])
+}

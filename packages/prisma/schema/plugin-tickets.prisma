@@ -1,0 +1,63 @@
+model TicketType {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  description  String?
+  icon         String?
+  color        String?
+  requiresAuth Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  fieldSchema  Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  tickets      Ticket[]
+}
+
+model Ticket {
+  id              String                @id @default(uuid())
+  ticketTypeId    Int
+  status          TicketStatus          @default(pending)
+  data            Json
+  submitterId     Int?
+  submitterEmail  String?
+  submitterName   String?
+  handlerId       Int?
+  internalNotes   String?
+  resolutionNotes String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @default(now()) @updatedAt
+  resolvedAt      DateTime?
+  handler         User?                 @relation("TicketHandler", fields: [handlerId], references: [id])
+  submitter       User?                 @relation("TicketSubmitter", fields: [submitterId], references: [id])
+  ticketType      TicketType            @relation(fields: [ticketTypeId], references: [id])
+  statusHistory   TicketStatusHistory[]
+
+  @@index([ticketTypeId])
+  @@index([submitterId])
+  @@index([handlerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TicketStatusHistory {
+  id             Int           @id @default(autoincrement())
+  ticketId       String
+  previousStatus TicketStatus?
+  newStatus      TicketStatus
+  notes          String?
+  changedById    Int?
+  createdAt      DateTime      @default(now())
+  changedBy      User?         @relation("TicketStatusChangedBy", fields: [changedById], references: [id])
+  ticket         Ticket        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+enum TicketStatus {
+  pending
+  in_progress
+  resolved
+  closed
+  cancelled
+}

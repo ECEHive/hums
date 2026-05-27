@@ -1,0 +1,18 @@
+model Suspension {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  startDate     DateTime
+  endDate       DateTime
+  internalNotes String?
+  externalNotes String?
+  createdById   Int?
+  emailSentAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  createdBy     User?     @relation("SuspensionCreatedBy", fields: [createdById], references: [id])
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([startDate, endDate])
+  @@index([emailSentAt, startDate])
+}

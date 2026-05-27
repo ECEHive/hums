@@ -1,0 +1,101 @@
+model ControlProvider {
+  id            Int                 @id @default(autoincrement())
+  name          String              @unique
+  providerType  ControlProviderType
+  config        Json                @default("{}")
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @default(now()) @updatedAt
+  controlPoints ControlPoint[]
+}
+
+model ControlPoint {
+  id                 String                 @id @default(uuid())
+  name               String
+  description        String?
+  location           String?
+  controlClass       ControlClass
+  canControlOnline   Boolean                @default(true)
+  canControlWithCode Boolean                @default(false)
+  providerConfig     Json                   @default("{}")
+  currentState       Boolean                @default(false)
+  autoTurnOffEnabled Boolean                @default(false)
+  autoTurnOffMinutes Int?
+  isActive           Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @default(now()) @updatedAt
+  providerId         Int
+  provider           ControlProvider        @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  authorizedRoles    Role[]                 @relation("ControlPointRoles")
+  trainedRoleId      Int?
+  trainedRole        Role?                  @relation("ControlPointTrainedRole", fields: [trainedRoleId], references: [id])
+  trainerRoleId      Int?
+  trainerRole        Role?                  @relation("ControlPointTrainerRole", fields: [trainerRoleId], references: [id])
+  authorizedUsers    User[]                 @relation("ControlPointUsers")
+  controlLogs        ControlLog[]
+  devices            Device[]               @relation("DeviceControlPoints")
+  gatewayActions     ControlGatewayAction[]
+
+  @@index([providerId])
+}
+
+model ControlLog {
+  id             String        @id @default(uuid())
+  controlPointId String
+  userId         Int
+  action         ControlAction
+  previousState  Boolean?
+  newState       Boolean?
+  success        Boolean       @default(true)
+  errorMessage   String?
+  createdAt      DateTime      @default(now())
+  controlPoint   ControlPoint  @relation(fields: [controlPointId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id])
+
+  @@index([controlPointId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ControlGateway {
+  id          Int                    @id @default(autoincrement())
+  name        String
+  description String?
+  accessToken String                 @unique
+  isActive    Boolean                @default(true)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @default(now()) @updatedAt
+  actions     ControlGatewayAction[]
+
+  @@index([accessToken])
+}
+
+model ControlGatewayAction {
+  id             Int            @id @default(autoincrement())
+  gatewayId      Int
+  controlPointId String
+  action         ControlAction
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
+  gateway        ControlGateway @relation(fields: [gatewayId], references: [id], onDelete: Cascade)
+  controlPoint   ControlPoint   @relation(fields: [controlPointId], references: [id], onDelete: Cascade)
+
+  @@unique([gatewayId, controlPointId, action])
+  @@index([gatewayId])
+  @@index([controlPointId])
+}
+
+enum ControlProviderType {
+  GEORGIA_TECH_PLC
+}
+
+enum ControlClass {
+  SWITCH // On/off toggle with persistent state
+  DOOR // Momentary unlock, no persistent state
+}
+
+enum ControlAction {
+  TURN_ON
+  TURN_OFF
+  UNLOCK
+  READ_STATE
+}

@@ -1,0 +1,57 @@
+enum ItemType {
+  multiple
+  single
+  consumable
+}
+
+enum TransactionRateLimitPeriod {
+  day
+  week
+  month
+  semester
+}
+
+model Item {
+  id                         String                      @id @default(uuid())
+  name                       String
+  description                String?
+  sku                        String?                     @unique
+  location                   String?
+  minQuantity                Int?
+  isActive                   Boolean                     @default(true)
+  itemType                   ItemType                    @default(multiple)
+  transactionRateLimit       Float? // Max transactions per period, null for no limit
+  transactionRateLimitPeriod TransactionRateLimitPeriod? // day, week, month, semester
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @default(now()) @updatedAt
+  link                       String?
+  snapshot                   InventorySnapshot?
+  transactions               InventoryTransaction[]
+  approvalRoles              Role[]                      @relation("ItemApprovalRoles")
+}
+
+model InventoryTransaction {
+  id        String          @id @default(uuid())
+  itemId    String
+  userId    Int
+  action    InventoryAction
+  quantity  Int
+  notes     String?
+  createdAt DateTime        @default(now())
+  item      Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id])
+
+  @@index([itemId, createdAt])
+}
+
+model InventorySnapshot {
+  itemId   String   @id
+  quantity Int
+  takenAt  DateTime @default(now())
+  item     Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+enum InventoryAction {
+  CHECK_IN
+  CHECK_OUT
+}

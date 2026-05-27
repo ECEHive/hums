@@ -1,0 +1,126 @@
+model Period {
+  id                  Int               @id @default(autoincrement())
+  name                String
+  start               DateTime
+  end                 DateTime
+  visibleStart        DateTime
+  visibleEnd          DateTime
+  scheduleSignupStart DateTime
+  scheduleSignupEnd   DateTime
+  scheduleModifyStart DateTime
+  scheduleModifyEnd   DateTime
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @default(now()) @updatedAt
+  max                 Int?
+  min                 Int?
+  minMaxUnit          MinMaxUnit?
+  periodExceptions    PeriodException[]
+  shiftTypes          ShiftType[]
+  roles               Role[]            @relation("PeriodRoles")
+}
+
+model PeriodException {
+  id        Int      @id @default(autoincrement())
+  periodId  Int
+  name      String
+  start     DateTime
+  end       DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  period    Period   @relation(fields: [periodId], references: [id], onDelete: Cascade)
+}
+
+model ShiftType {
+  id                      Int                      @id @default(autoincrement())
+  periodId                Int
+  name                    String
+  location                String
+  description             String?
+  color                   String?
+  icon                    String?
+  isBalancedAcrossOverlap Boolean                  @default(false)
+  isBalancedAcrossDay     Boolean                  @default(false)
+  isBalancedAcrossPeriod  Boolean                  @default(false)
+  canSelfAssign           Boolean                  @default(true)
+  doRequireRoles          ShiftTypeRoleRequirement @default(disabled)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @default(now()) @updatedAt
+  shiftSchedules          ShiftSchedule[]
+  period                  Period                   @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  roles                   Role[]                   @relation("RoleToShiftType")
+}
+
+model ShiftSchedule {
+  id               Int               @id @default(autoincrement())
+  shiftTypeId      Int
+  slots            Int               @default(1)
+  dayOfWeek        Int
+  startTime        String
+  endTime          String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  shiftOccurrences ShiftOccurrence[]
+  shiftType        ShiftType         @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
+  users            User[]            @relation("ShiftScheduleToUser")
+
+  @@unique([shiftTypeId, dayOfWeek, startTime])
+}
+
+model ShiftOccurrence {
+  id              Int               @id @default(autoincrement())
+  shiftScheduleId Int
+  timestamp       DateTime
+  slot            Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now()) @updatedAt
+  attendances     ShiftAttendance[]
+  shiftSchedule   ShiftSchedule     @relation(fields: [shiftScheduleId], references: [id], onDelete: Cascade)
+  users           User[]            @relation("ShiftOccurrenceToUser")
+
+  @@unique([shiftScheduleId, timestamp, slot])
+}
+
+model ShiftAttendance {
+  id                Int                   @id @default(autoincrement())
+  shiftOccurrenceId Int
+  userId            Int
+  status            ShiftAttendanceStatus @default(absent)
+  timeIn            DateTime?
+  timeOut           DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @default(now()) @updatedAt
+  didArriveLate     Boolean               @default(false)
+  didLeaveEarly     Boolean               @default(false)
+  droppedNotes      String?
+  isMakeup          Boolean               @default(false)
+  excuseNotes       String?
+  isExcused         Boolean               @default(false)
+  reviewedAt        DateTime?
+  reviewedById      Int?
+  reviewedBy        User?                 @relation("ShiftAttendanceReviewedBy", fields: [reviewedById], references: [id])
+  shiftOccurrence   ShiftOccurrence       @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftOccurrenceId, userId])
+}
+
+enum ShiftTypeRoleRequirement {
+  disabled
+  all
+  any
+}
+
+enum ShiftAttendanceStatus {
+  upcoming
+  present
+  absent
+  dropped
+  dropped_makeup
+  excused
+}
+
+enum MinMaxUnit {
+  count
+  minutes
+  hours
+}

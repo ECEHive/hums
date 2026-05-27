@@ -1,0 +1,16 @@
+model Session {
+  id                Int         @id @default(autoincrement())
+  userId            Int
+  startedAt         DateTime    @default(now())
+  endedAt           DateTime?
+  sessionType       SessionType @default(regular)
+  isManuallyCreated Boolean     @default(false)
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endedAt])
+}
+
+enum SessionType {
+  regular
+  staffing
+}
