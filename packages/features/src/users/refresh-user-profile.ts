@@ -48,10 +48,17 @@ export function isProfileStale(
  * The provider HTTP call is deliberately made **outside** any Prisma
  * transaction to avoid exceeding the transaction timeout.
  *
+ * @param cardNumber - Optional normalized card number. When provided (e.g. on
+ *   a card tap), the provider is queried by card number rather than by
+ *   username, so the single card-number lookup already in progress is reused
+ *   instead of issuing a separate username-based request.
  * @returns The updated user record, or the original record when no refresh
  *          was needed or the refresh failed.
  */
-export async function refreshUserProfileIfStale(user: User): Promise<User> {
+export async function refreshUserProfileIfStale(
+	user: User,
+	cardNumber?: string,
+): Promise<User> {
 	if (!isProfileStale(user)) {
 		return user;
 	}
@@ -64,9 +71,14 @@ export async function refreshUserProfileIfStale(user: User): Promise<User> {
 
 	const provider = getUserDataProvider();
 
+	const fetchProfile = () =>
+		cardNumber
+			? provider.fetchByCardNumber(cardNumber)
+			: provider.fetchByUsername(user.username);
+
 	let profile: Awaited<ReturnType<typeof provider.fetchByUsername>>;
 	try {
-		profile = await provider.fetchByUsername(user.username);
+		profile = await fetchProfile();
 	} catch (error) {
 		logger.warn(
 			"Profile refresh failed — keeping existing data to avoid lockout",
@@ -77,6 +89,37 @@ export async function refreshUserProfileIfStale(user: User): Promise<User> {
 			},
 		);
 		return user;
+	}
+
+	if (!profile) {
+		// The provider returned empty data. This can happen when the upstream
+		// directory (e.g. BuzzAPI) times out its own backend and returns a
+		// successful-status response with no records. Retry once before treating
+		// this as a genuine deletion, so a transient timeout does not lock out
+		// users who still exist.
+		logger.warn(
+			"External provider returned no data for user — retrying before marking as deleted",
+			{
+				userId: user.id,
+				username: user.username,
+			},
+		);
+		try {
+			profile = await fetchProfile();
+		} catch (retryError) {
+			logger.warn(
+				"Profile refresh retry also failed — keeping existing data to avoid lockout",
+				{
+					userId: user.id,
+					username: user.username,
+					error:
+						retryError instanceof Error
+							? retryError.message
+							: String(retryError),
+				},
+			);
+			return user;
+		}
 	}
 
 	if (!profile) {
