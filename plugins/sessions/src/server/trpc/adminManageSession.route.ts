@@ -219,6 +219,7 @@ export async function adminManageSessionHandler(
 			sessionId: result.session.id,
 			userId,
 			sessionType: result.session.sessionType,
+			startedAt: result.session.startedAt,
 		});
 	} else if (result.action === "ended_session") {
 		options.events?.emit("session:ended", {
@@ -245,6 +246,7 @@ export async function adminManageSessionHandler(
 			sessionId: result.newSession.id,
 			userId,
 			sessionType: newType,
+			startedAt: result.newSession.startedAt,
 		});
 		options.events?.emit("session:type-switched", {
 			previousSessionId: result.endedSession.id,

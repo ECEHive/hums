@@ -310,6 +310,7 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			sessionId: result.session.id,
 			userId: user.id,
 			sessionType: result.session.sessionType,
+			startedAt: result.session.startedAt,
 		});
 	} else if (result.status === "tapped_out") {
 		options.events?.emit("session:ended", {
@@ -336,6 +337,7 @@ export async function tapInOutHandler(options: TTapInOutOptions) {
 			sessionId: result.newSession.id,
 			userId: user.id,
 			sessionType: newType,
+			startedAt: result.newSession.startedAt,
 		});
 		options.events?.emit("session:type-switched", {
 			previousSessionId: result.endedSession.id,

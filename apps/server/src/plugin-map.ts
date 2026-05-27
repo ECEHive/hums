@@ -23,4 +23,5 @@ import type { HumsPlugin } from "@ecehive/core";
 export const pluginMap: Record<string, () => Promise<HumsPlugin>> = {
 	sessions: () => import("@ecehive/plugin-sessions").then((m) => m.default),
 	control: () => import("@ecehive/plugin-control").then((m) => m.default),
+	attendance: () => import("@ecehive/plugin-attendance").then((m) => m.default),
 };

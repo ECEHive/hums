@@ -1,11 +1,13 @@
 import type { Prisma, ShiftAttendanceStatus } from "@ecehive/prisma";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	checkStaffingPermission,
-	endSession,
 	handleTapInAttendance,
 	handleTapOutAttendance,
 	hasActiveAttendance,
+} from "../attendance/tap-handlers";
+import {
+	checkStaffingPermission,
+	endSession,
 	startSession,
 	switchSessionType,
 } from "./session-management";

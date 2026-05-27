@@ -7,6 +7,7 @@ export {
 	kioskProtectedProcedure,
 	permissionProtectedProcedure,
 	protectedProcedure,
+	publicProcedure,
 	router,
 	type TControlProtectedProcedureContext,
 	type TDashboardProtectedProcedureContext,

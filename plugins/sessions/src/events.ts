@@ -17,11 +17,15 @@ declare module "@ecehive/core" {
 		/**
 		 * Emitted after a new session has been persisted and the transaction
 		 * has committed successfully.
+		 *
+		 * `startedAt` is included so that listeners can record the precise
+		 * tap-in time without an extra DB lookup.
 		 */
 		"session:started": {
 			sessionId: number;
 			userId: number;
 			sessionType: "regular" | "staffing";
+			startedAt: Date;
 		};
 
 		/**

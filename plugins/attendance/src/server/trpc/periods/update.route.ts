@@ -1,0 +1,257 @@
+import { generatePeriodShiftOccurrences } from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
+import type { TPermissionProtectedProcedureContext } from "@ecehive/trpc/server";
+import { TRPCError } from "@trpc/server";
+import z from "zod";
+
+export const ZUpdateSchema = z
+	.object({
+		id: z.number().min(1),
+		name: z.string().min(1).max(100).optional(),
+		start: z.date().optional(),
+		end: z.date().optional(),
+		min: z.number().int().min(0).optional().nullable(),
+		max: z.number().int().min(0).optional().nullable(),
+		minMaxUnit: z.enum(["count", "minutes", "hours"]).optional().nullable(),
+		visibleStart: z.date().optional(),
+		visibleEnd: z.date().optional(),
+		scheduleSignupStart: z.date().optional(),
+		scheduleSignupEnd: z.date().optional(),
+		scheduleModifyStart: z.date().optional(),
+		scheduleModifyEnd: z.date().optional(),
+		periodRoleIds: z.array(z.number().int().min(1)).optional(),
+	})
+	.superRefine((data, ctx) => {
+		// Start must be before end
+		if (data.start && data.end && data.start >= data.end) {
+			ctx.addIssue({
+				code: "custom",
+				message: "start must be before end",
+				path: ["start"],
+			});
+		}
+
+		// Visible start must be before visible end
+		if (
+			data.visibleStart &&
+			data.visibleEnd &&
+			data.visibleStart >= data.visibleEnd
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message: "visibleStart must be before visibleEnd",
+				path: ["visibleStart"],
+			});
+		}
+
+		// Schedule signup start must be before signup end
+		if (
+			data.scheduleSignupStart &&
+			data.scheduleSignupEnd &&
+			data.scheduleSignupStart >= data.scheduleSignupEnd
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message: "scheduleSignupStart must be before scheduleSignupEnd",
+				path: ["scheduleSignupStart"],
+			});
+		}
+
+		// Schedule modify start must be before modify end
+		if (
+			data.scheduleModifyStart &&
+			data.scheduleModifyEnd &&
+			data.scheduleModifyStart >= data.scheduleModifyEnd
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message: "scheduleModifyStart must be before scheduleModifyEnd",
+				path: ["scheduleModifyStart"],
+			});
+		}
+	});
+
+export type TUpdateSchema = z.infer<typeof ZUpdateSchema>;
+
+export type TUpdateOptions = {
+	ctx?: TPermissionProtectedProcedureContext;
+	input: TUpdateSchema;
+};
+
+export async function updateHandler(options: TUpdateOptions) {
+	const {
+		id,
+		name,
+		start,
+		end,
+		min,
+		max,
+		minMaxUnit,
+		visibleStart,
+		visibleEnd,
+		scheduleSignupStart,
+		scheduleSignupEnd,
+		scheduleModifyStart,
+		scheduleModifyEnd,
+		periodRoleIds,
+	} = options.input;
+
+	const shouldUpdatePeriodRoles = periodRoleIds !== undefined;
+	const uniqueRoleIds = shouldUpdatePeriodRoles
+		? Array.from(new Set(periodRoleIds ?? []))
+		: [];
+
+	const existing = await prisma.period.findUnique({ where: { id } });
+
+	if (!existing) {
+		return { period: undefined };
+	}
+
+	const nextStart = start ?? existing.start;
+	const nextEnd = end ?? existing.end;
+	const nextVisibleStart =
+		visibleStart === undefined ? existing.visibleStart : visibleStart;
+	const nextVisibleEnd =
+		visibleEnd === undefined ? existing.visibleEnd : visibleEnd;
+	const nextScheduleSignupStart =
+		scheduleSignupStart === undefined
+			? existing.scheduleSignupStart
+			: scheduleSignupStart;
+	const nextScheduleSignupEnd =
+		scheduleSignupEnd === undefined
+			? existing.scheduleSignupEnd
+			: scheduleSignupEnd;
+	const nextScheduleModifyStart =
+		scheduleModifyStart === undefined
+			? existing.scheduleModifyStart
+			: scheduleModifyStart;
+	const nextScheduleModifyEnd =
+		scheduleModifyEnd === undefined
+			? existing.scheduleModifyEnd
+			: scheduleModifyEnd;
+	const nextMin = min === undefined ? existing.min : min;
+	const nextMax = max === undefined ? existing.max : max;
+	let nextMinMaxUnit =
+		minMaxUnit === undefined ? existing.minMaxUnit : minMaxUnit;
+	const minProvided = min !== undefined;
+	const maxProvided = max !== undefined;
+
+	const hasNextMin = nextMin !== null && nextMin !== undefined;
+	const hasNextMax = nextMax !== null && nextMax !== undefined;
+
+	if ((hasNextMin || hasNextMax) && !nextMinMaxUnit) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Select a unit when specifying min or max",
+		});
+	}
+
+	if (
+		typeof nextMin === "number" &&
+		typeof nextMax === "number" &&
+		nextMin > nextMax
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Minimum requirement cannot exceed maximum",
+		});
+	}
+
+	if (!hasNextMin && !hasNextMax && (minProvided || maxProvided)) {
+		nextMinMaxUnit = null;
+	}
+
+	if (nextStart >= nextEnd) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Start must be before end",
+		});
+	}
+
+	if (
+		nextVisibleStart &&
+		nextVisibleEnd &&
+		nextVisibleStart >= nextVisibleEnd
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Visible start must be before visible end",
+		});
+	}
+
+	if (
+		nextScheduleSignupStart &&
+		nextScheduleSignupEnd &&
+		nextScheduleSignupStart >= nextScheduleSignupEnd
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Schedule signup start must be before schedule signup end",
+		});
+	}
+
+	if (
+		nextScheduleModifyStart &&
+		nextScheduleModifyEnd &&
+		nextScheduleModifyStart >= nextScheduleModifyEnd
+	) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Schedule modify start must be before schedule modify end",
+		});
+	}
+
+	return await prisma.$transaction(async (tx) => {
+		const updated = await tx.period.update({
+			where: { id },
+			data: {
+				...(name !== undefined && { name }),
+				start: nextStart,
+				end: nextEnd,
+				min: nextMin ?? null,
+				max: nextMax ?? null,
+				minMaxUnit: nextMinMaxUnit ?? null,
+				visibleStart: nextVisibleStart,
+				visibleEnd: nextVisibleEnd,
+				scheduleSignupStart: nextScheduleSignupStart,
+				scheduleSignupEnd: nextScheduleSignupEnd,
+				scheduleModifyStart: nextScheduleModifyStart,
+				scheduleModifyEnd: nextScheduleModifyEnd,
+				...(shouldUpdatePeriodRoles && {
+					roles: {
+						set: uniqueRoleIds.map((roleId) => ({ id: roleId })),
+					},
+				}),
+			},
+			include: {
+				roles: true,
+			},
+		});
+
+		if (!updated) {
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Failed to update period",
+			});
+		}
+
+		const startChanged = updated.start.getTime() !== existing.start.getTime();
+		const endChanged = updated.end.getTime() !== existing.end.getTime();
+
+		if (startChanged || endChanged) {
+			// Determine if the period is expanding (which would add new occurrences)
+			// If the start moved earlier or end moved later, we're expanding
+			const isExpanding =
+				updated.start < existing.start || updated.end > existing.end;
+
+			// Re-generate occurrences for all schedules in this period
+			// Use skipPastOccurrences when expanding to avoid creating past occurrences
+			// that didn't exist before
+			await generatePeriodShiftOccurrences(tx, updated.id, {
+				skipPastOccurrences: isExpanding,
+			});
+		}
+
+		return { period: updated };
+	});
+}

@@ -7,19 +7,11 @@ import { controlRouter } from "./routers/control/_route";
 import { controlKioskRouter } from "./routers/controlKiosk/_route";
 import { credentialsRouter } from "./routers/credentials/_route";
 import { devicesRouter } from "./routers/devices/_route";
-import { globalReportsRouter } from "./routers/globalReports/_route";
 import { inventoryRouter } from "./routers/inventory/_route";
 import { oneTimeLoginCodesRouter } from "./routers/oneTimeLoginCodes/_route";
 import { overviewRouter } from "./routers/overview/_route";
-import { periodExceptionsRouter } from "./routers/periodExceptions/_route";
-import { periodsRouter } from "./routers/periods/_route";
 import { permissionsRouter } from "./routers/permissions/_route";
-import { reportsRouter } from "./routers/reports/_route";
 import { rolesRouter } from "./routers/roles/_route";
-import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
-import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
-import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
-import { shiftTypesRouter } from "./routers/shiftTypes/_route";
 import { suspensionsRouter } from "./routers/suspensions/_route";
 import { ticketsRouter } from "./routers/tickets/_route";
 import { usersRouter } from "./routers/users/_route";
@@ -33,23 +25,18 @@ export const appRouter = router({
 	control: controlRouter,
 	controlKiosk: controlKioskRouter,
 	credentials: credentialsRouter,
+	// overview is kept here for frontend type compatibility until Phase 11
+	// migrates the @ecehive/overview app to use the attendance plugin's types.
+	// At runtime, the attendance plugin overrides this with its own registration.
 	overview: overviewRouter,
 	users: usersRouter,
 	roles: rolesRouter,
 	permissions: permissionsRouter,
 	agreements: agreementsRouter,
-	periods: periodsRouter,
-	periodExceptions: periodExceptionsRouter,
-	shiftTypes: shiftTypesRouter,
-	shiftSchedules: shiftSchedulesRouter,
-	shiftOccurrences: shiftOccurrencesRouter,
-	shiftAttendances: shiftAttendancesRouter,
 	suspensions: suspensionsRouter,
 	devices: devicesRouter,
 	oneTimeLoginCodes: oneTimeLoginCodesRouter,
-	reports: reportsRouter,
 	inventory: inventoryRouter,
-	globalReports: globalReportsRouter,
 	tickets: ticketsRouter,
 });
 

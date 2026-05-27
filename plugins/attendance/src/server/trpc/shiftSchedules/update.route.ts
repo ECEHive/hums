@@ -1,0 +1,103 @@
+import {
+	generateShiftScheduleShiftOccurrences,
+	TIME_REGEX,
+	timeToSeconds,
+} from "@ecehive/features";
+import { prisma } from "@ecehive/prisma";
+import type { TPermissionProtectedProcedureContext } from "@ecehive/trpc/server";
+import { TRPCError } from "@trpc/server";
+import z from "zod";
+
+const timeStringSchema = z.string().regex(TIME_REGEX, "Invalid time format");
+
+export const ZUpdateSchema = z
+	.object({
+		id: z.number().min(1),
+		shiftTypeId: z.number().min(1).optional(),
+		slots: z.number().min(1).optional(),
+		dayOfWeek: z.number().min(0).max(6).optional(),
+		startTime: timeStringSchema.optional(),
+		endTime: timeStringSchema.optional(),
+	})
+	.superRefine((data, ctx) => {
+		if (data.startTime && data.endTime) {
+			const startSeconds = timeToSeconds(data.startTime);
+			const endSeconds = timeToSeconds(data.endTime);
+
+			if (startSeconds >= endSeconds) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "startTime must be before endTime",
+					path: ["startTime"],
+				});
+			}
+		}
+	});
+
+export type TUpdateSchema = z.infer<typeof ZUpdateSchema>;
+
+export type TUpdateOptions = {
+	ctx?: TPermissionProtectedProcedureContext;
+	input: TUpdateSchema;
+};
+
+export async function updateHandler(options: TUpdateOptions) {
+	const { id, shiftTypeId, slots, dayOfWeek, startTime, endTime } =
+		options.input;
+
+	const existing = await prisma.shiftSchedule.findUnique({
+		where: { id },
+	});
+
+	if (!existing) {
+		return { shiftSchedule: undefined };
+	}
+
+	// If changing shift type, verify the new shift type exists
+	if (shiftTypeId !== undefined && shiftTypeId !== existing.shiftTypeId) {
+		const shiftType = await prisma.shiftType.findUnique({
+			where: { id: shiftTypeId },
+		});
+
+		if (!shiftType) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: "Shift type not found",
+			});
+		}
+	}
+
+	const nextStartTime = startTime ?? existing.startTime;
+	const nextEndTime = endTime ?? existing.endTime;
+
+	if (timeToSeconds(nextStartTime) >= timeToSeconds(nextEndTime)) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "startTime must be before endTime",
+		});
+	}
+
+	return await prisma.$transaction(async (tx) => {
+		const updated = await tx.shiftSchedule.update({
+			where: { id },
+			data: {
+				...(shiftTypeId !== undefined && { shiftTypeId }),
+				...(slots !== undefined && { slots }),
+				...(dayOfWeek !== undefined && { dayOfWeek }),
+				...(startTime !== undefined && { startTime }),
+				...(endTime !== undefined && { endTime }),
+			},
+		});
+
+		if (!updated) {
+			return { shiftSchedule: undefined };
+		}
+
+		// Re-generate shift occurrences for this schedule
+		// This will create new occurrences with the updated slot count
+		// and remove obsolete occurrences
+		await generateShiftScheduleShiftOccurrences(tx, updated.id);
+
+		return { shiftSchedule: updated };
+	});
+}
