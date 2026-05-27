@@ -17,6 +17,18 @@ model User {
   createdAt               DateTime               @default(now())
   updatedAt               DateTime               @default(now()) @updatedAt
   slackUsername           String?                @unique
+  department              String?
+  /// Institutional affiliation sourced from the external identity provider
+  /// (e.g. "student", "faculty", "staff"). Null when not yet synced or unavailable.
+  affiliation             String?
+  /// Timestamp of the most recent successful profile sync from the external
+  /// identity provider. Used to enforce the profile cache TTL.
+  profileSyncedAt         DateTime?
+  /// Set to true when the external identity provider returns no record for this
+  /// user during a profile refresh. While true the user is denied access and
+  /// every subsequent login triggers a re-fetch so that a re-appearing account
+  /// is reinstated automatically. Reset to false when the provider returns data.
+  providerDeleted         Boolean                @default(false)
   apiTokens               ApiToken[]
   impersonatedAuditLogs   AuditLog[]             @relation("AuditLogImpersonators")
   auditLogs               AuditLog[]

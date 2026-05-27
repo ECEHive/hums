@@ -133,6 +133,7 @@ function AppContent() {
 							pendingAgreement={tapWorkflow.pendingAgreement}
 							tapNotification={tapWorkflow.tapNotification}
 							suspension={tapWorkflow.suspension}
+							accessDenied={tapWorkflow.accessDenied}
 							onSessionTypeSelect={tapWorkflow.handleSessionTypeSelect}
 							onSessionTypeCancel={tapWorkflow.handleSessionTypeCancel}
 							onTapOutActionSelect={tapWorkflow.handleTapOutActionSelect}

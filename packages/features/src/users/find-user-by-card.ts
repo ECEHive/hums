@@ -4,6 +4,7 @@ import { getUserDataProvider, normalizeCardNumber } from "@ecehive/user-data";
 import { TRPCError } from "@trpc/server";
 import { credentialPreview, hashCredential } from "../credentials/hash";
 import { createUser } from "./create-user";
+import { refreshUserProfileIfStale } from "./refresh-user-profile";
 
 const logger = getLogger("features:find-user-by-card");
 
@@ -15,6 +16,8 @@ const UNIQUE_CONSTRAINT_ERROR_CODE = "P2002";
  *
  * Lookup order:
  *  1. Credential table  – value already associated with a user.
+ *     If found, the profile is refreshed from the identity provider when
+ *     it is older than the cache TTL (7 days).
  *  2. External data provider – fetch by card number, create/update user,
  *     then persist a Credential row for future lookups.
  *
@@ -44,7 +47,9 @@ export async function findUserByCard(cardNumber: string) {
 			credentialId: credential.id,
 			userId: credential.user.id,
 		});
-		return credential.user;
+		// Refresh profile data from the identity provider when the cache is stale.
+		// This keeps affiliation, card numbers, and other attributes current.
+		return refreshUserProfileIfStale(credential.user);
 	}
 
 	// ── Step 2: External provider lookup (outside transaction) ───────────
@@ -92,8 +97,10 @@ export async function findUserByCard(cardNumber: string) {
 						username: profile.username,
 						name: profile.name,
 						email: profile.email,
+						department: profile.department ?? null,
+						affiliation: profile.affiliation ?? null,
 					},
-					{ tx, skipProviderFetch: true },
+					{ tx, skipProviderFetch: true, markProfileSynced: true },
 				);
 			} catch (error) {
 				if (
@@ -115,21 +122,29 @@ export async function findUserByCard(cardNumber: string) {
 				}
 			}
 		} else {
-			// Update existing user profile if needed
-			const updateData: Prisma.UserUpdateInput = {};
+			// Update existing user profile with fresh provider data.
+			const updateData: Prisma.UserUpdateInput = {
+				profileSyncedAt: new Date(),
+			};
 			if (profile.name && profile.name !== user.name) {
 				updateData.name = profile.name;
 			}
 			if (profile.email && profile.email !== user.email) {
 				updateData.email = profile.email;
 			}
-
-			if (Object.keys(updateData).length > 0) {
-				user = await tx.user.update({
-					where: { id: user.id },
-					data: updateData,
-				});
+			if (
+				profile.department !== undefined &&
+				profile.department !== user.department
+			) {
+				updateData.department = profile.department;
 			}
+			// Always write affiliation so revoked access is reflected promptly.
+			updateData.affiliation = profile.affiliation ?? null;
+
+			user = await tx.user.update({
+				where: { id: user.id },
+				data: updateData,
+			});
 		}
 
 		// Persist credentials for all cards belonging to this user

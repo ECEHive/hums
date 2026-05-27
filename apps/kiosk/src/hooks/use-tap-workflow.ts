@@ -69,6 +69,12 @@ export type SuspensionState = {
 	isExiting: boolean;
 };
 
+export type AccessDeniedState = {
+	userName: string;
+	message: string;
+	isExiting: boolean;
+};
+
 type TapWorkflowState = {
 	isProcessing: boolean;
 	pendingAgreement: PendingAgreementState | null;
@@ -80,6 +86,7 @@ type TapWorkflowState = {
 	errorDialog: ErrorDialogState;
 	oneTimeLogin: OneTimeLoginState | null;
 	suspension: SuspensionState | null;
+	accessDenied: AccessDeniedState | null;
 };
 
 type TapWorkflowAction =
@@ -111,7 +118,10 @@ type TapWorkflowAction =
 	| { type: "one_time_login_clear" }
 	| { type: "suspension_set"; payload: Omit<SuspensionState, "isExiting"> }
 	| { type: "suspension_clear" }
-	| { type: "suspension_exit_start" };
+	| { type: "suspension_exit_start" }
+	| { type: "access_denied_set"; payload: Omit<AccessDeniedState, "isExiting"> }
+	| { type: "access_denied_clear" }
+	| { type: "access_denied_exit_start" };
 
 const INITIAL_STATE: TapWorkflowState = {
 	isProcessing: false,
@@ -130,6 +140,7 @@ const INITIAL_STATE: TapWorkflowState = {
 	},
 	oneTimeLogin: null,
 	suspension: null,
+	accessDenied: null,
 };
 
 const tapWorkflowReducer = (
@@ -230,6 +241,23 @@ const tapWorkflowReducer = (
 			};
 		case "suspension_clear":
 			return { ...state, suspension: null };
+		case "access_denied_set":
+			return {
+				...state,
+				accessDenied: {
+					...action.payload,
+					isExiting: false,
+				},
+			};
+		case "access_denied_exit_start":
+			return {
+				...state,
+				accessDenied: state.accessDenied
+					? { ...state.accessDenied, isExiting: true }
+					: null,
+			};
+		case "access_denied_clear":
+			return { ...state, accessDenied: null };
 		default:
 			return state;
 	}
@@ -256,6 +284,7 @@ export function useTapWorkflow() {
 		errorDialog,
 		oneTimeLogin,
 		suspension,
+		accessDenied,
 	} = state;
 
 	const currentTapEventRef = useRef<TapEvent | null>(null);
@@ -283,6 +312,8 @@ export function useTapWorkflow() {
 	const agreementFlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const accessDeniedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const accessDeniedExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const dismissTapNotification = useCallback(() => {
 		clearTimer(tapEventTimeoutRef);
@@ -479,6 +510,27 @@ export function useTapWorkflow() {
 						dispatch({ type: "suspension_exit_start" });
 						suspensionExitTimeoutRef.current = setTimeout(() => {
 							dispatch({ type: "suspension_clear" });
+						}, FADE_OUT_DURATION_MS);
+					}, 5000);
+					return;
+				}
+
+				if (result.status === "access_denied") {
+					dispatch({ type: "processing_end" });
+					clearTimer(accessDeniedTimeoutRef);
+					clearTimer(accessDeniedExitTimeoutRef);
+					dispatch({
+						type: "access_denied_set",
+						payload: {
+							userName: result.user.name,
+							message: result.message,
+						},
+					});
+					// Show access denied dialog for 5 seconds then fade out
+					accessDeniedTimeoutRef.current = setTimeout(() => {
+						dispatch({ type: "access_denied_exit_start" });
+						accessDeniedExitTimeoutRef.current = setTimeout(() => {
+							dispatch({ type: "access_denied_clear" });
 						}, FADE_OUT_DURATION_MS);
 					}, 5000);
 					return;
@@ -702,6 +754,8 @@ export function useTapWorkflow() {
 			clearTimer(agreementFlowTimeoutRef);
 			clearTimer(suspensionTimeoutRef);
 			clearTimer(suspensionExitTimeoutRef);
+			clearTimer(accessDeniedTimeoutRef);
+			clearTimer(accessDeniedExitTimeoutRef);
 		};
 	}, []);
 
@@ -716,6 +770,7 @@ export function useTapWorkflow() {
 		errorDialog,
 		oneTimeLogin,
 		suspension,
+		accessDenied,
 		handleTap: handleTapInOut,
 		handleAgreementComplete,
 		handleAgreementCancel,

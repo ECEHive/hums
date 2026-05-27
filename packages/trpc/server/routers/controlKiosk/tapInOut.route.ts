@@ -11,6 +11,7 @@
  */
 
 import {
+	ALLOWED_AFFILIATIONS_LABEL,
 	ConfigService,
 	checkMissingAgreements,
 	checkStaffingPermission,
@@ -18,6 +19,7 @@ import {
 	findUserByCard,
 	getActiveSuspension,
 	getCurrentSession,
+	isAffiliationAllowed,
 	startSession,
 	switchSessionType,
 	validateCanEndSession,
@@ -45,6 +47,23 @@ export async function controlTapInOutHandler(options: TControlTapInOutOptions) {
 	const { cardNumber, sessionType, tapAction } = options.input;
 
 	const user = await findUserByCard(cardNumber);
+
+	// System users (administrators) bypass affiliation and provider-deletion restrictions.
+	if (
+		!user.isSystemUser &&
+		(user.providerDeleted || !isAffiliationAllowed(user.affiliation))
+	) {
+		return {
+			status: "access_denied" as const,
+			user: {
+				id: user.id,
+				name: user.name,
+				email: user.email,
+				username: user.username,
+			},
+			message: `Access Denied. HUMS is only available to ${ALLOWED_AFFILIATIONS_LABEL}.`,
+		};
+	}
 
 	// Get kiosk session type configuration
 	const [regularSessionsEnabled, staffingSessionsEnabled] = await Promise.all([

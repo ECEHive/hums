@@ -17,6 +17,8 @@ type User = {
 	isSystemUser: boolean;
 	createdAt: Date;
 	updatedAt: Date;
+	department: string | null;
+	affiliation: string | null;
 	roles: {
 		id: number;
 		name: string;
@@ -42,6 +44,22 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 		{
 			accessorKey: "email",
 			header: "Email",
+		},
+		{
+			accessorKey: "department",
+			header: "Department",
+			cell: ({ row }) =>
+				row.original.department ?? (
+					<span className="text-muted-foreground">—</span>
+				),
+		},
+		{
+			accessorKey: "affiliation",
+			header: "Affiliation",
+			cell: ({ row }) =>
+				row.original.affiliation ?? (
+					<span className="text-muted-foreground">—</span>
+				),
 		},
 		{
 			accessorKey: "slackUsername",
