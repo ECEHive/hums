@@ -47,7 +47,6 @@ export async function findUserByCard(cardNumber: string) {
 			credentialId: credential.id,
 			userId: credential.user.id,
 		});
-		// Refresh profile data from the identity provider when the cache is stale.
 		// Pass the card number so the refresh reuses a card-number-based lookup
 		// rather than issuing a separate username-based request.
 		return refreshUserProfileIfStale(credential.user, normalized);
