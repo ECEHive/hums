@@ -35,6 +35,15 @@ const BaseEnvSchema = z.object({
 	// Sentry DSNs for client applications (exposed via /api/config)
 	CLIENT_SENTRY_DSN: z.string().optional(),
 	KIOSK_SENTRY_DSN: z.string().optional(),
+	/**
+	 * Comma-separated list of plugin names to enable at startup.
+	 *
+	 * When set, only the named plugins are loaded. When absent, all plugins
+	 * present in the server plugin map are loaded (i.e. the default is "all").
+	 *
+	 * @example ENABLED_PLUGINS=sessions,control,attendance
+	 */
+	ENABLED_PLUGINS: z.string().optional(),
 });
 
 const LegacyProviderSchema = z

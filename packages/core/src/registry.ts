@@ -167,12 +167,14 @@ export class PluginRegistry {
 	 * 1. Call each lazy importer in `importMap` to obtain the plugin object.
 	 * 2. Register every plugin.
 	 * 3. Compute a topological sort of the plugin names.
-	 * 4. Call `plugin.server.register(ctx)` in sorted order.
+	 * 4. Call `plugin.server.register(ctx)` in sorted order, creating a
+	 *    per-plugin context via `ctxFactory`.
 	 * 5. (Workers are started separately by the server scheduler.)
 	 *
-	 * @param names     Ordered list of plugin names to load (respects `ENABLED_PLUGINS`).
-	 * @param importMap Record mapping plugin names to lazy `() => Promise<HumsPlugin>` importers.
-	 * @param ctx       The server context shared with all plugins.
+	 * @param names      Ordered list of plugin names to load (respects `ENABLED_PLUGINS`).
+	 * @param importMap  Record mapping plugin names to lazy `() => Promise<HumsPlugin>` importers.
+	 * @param ctxFactory Factory that returns a {@link PluginServerContext} scoped to each plugin.
+	 *                   Called once per plugin, receiving the plugin's name.
 	 *
 	 * @throws if any name in `names` lacks an entry in `importMap`.
 	 * @throws if any hard dependency is missing or a cycle is found.
@@ -180,7 +182,7 @@ export class PluginRegistry {
 	async loadAll(
 		names: string[],
 		importMap: Record<string, () => Promise<HumsPlugin>>,
-		ctx: PluginServerContext,
+		ctxFactory: (pluginName: string) => PluginServerContext,
 	): Promise<void> {
 		// Step 1 & 2 — import and register
 		for (const name of names) {
@@ -203,6 +205,7 @@ export class PluginRegistry {
 			// biome-ignore lint/style/noNonNullAssertion: guaranteed by topologicalSort
 			const plugin = this.plugins.get(name)!;
 			if (plugin.server) {
+				const ctx = ctxFactory(name);
 				await plugin.server.register(ctx);
 			}
 		}

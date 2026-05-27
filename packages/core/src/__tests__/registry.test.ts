@@ -20,6 +20,8 @@ function makePlugin(
  * without importing any heavyweight server packages.
  */
 const stubCtx = {} as unknown as PluginServerContext;
+/** Context factory for loadAll — returns the shared stub regardless of plugin name. */
+const ctxFactory = (_: string): PluginServerContext => stubCtx;
 
 // ---------------------------------------------------------------------------
 // register / getPlugin / has / getAll
@@ -99,7 +101,7 @@ describe("PluginRegistry — loadAll ordering", () => {
 			beta: async () => pluginB,
 		};
 
-		await registry.loadAll(["alpha", "beta"], importMap, stubCtx);
+		await registry.loadAll(["alpha", "beta"], importMap, ctxFactory);
 		expect(calls).toHaveLength(2);
 		expect(calls).toContain("alpha");
 		expect(calls).toContain("beta");
@@ -132,7 +134,7 @@ describe("PluginRegistry — loadAll ordering", () => {
 			attendance: async () => attendance,
 		};
 
-		await registry.loadAll(["attendance", "sessions"], importMap, stubCtx);
+		await registry.loadAll(["attendance", "sessions"], importMap, ctxFactory);
 
 		expect(order.indexOf("sessions")).toBeLessThan(order.indexOf("attendance"));
 	});
@@ -174,7 +176,7 @@ describe("PluginRegistry — loadAll ordering", () => {
 			c: async () => c,
 		};
 
-		await registry.loadAll(["c", "b", "a"], importMap, stubCtx);
+		await registry.loadAll(["c", "b", "a"], importMap, ctxFactory);
 
 		expect(order).toEqual(["a", "b", "c"]);
 	});
@@ -192,7 +194,7 @@ describe("PluginRegistry — loadAll ordering", () => {
 		await registry.loadAll(
 			["alpha", "beta"],
 			{ alpha: async () => pluginA, beta: async () => pluginB },
-			stubCtx,
+			ctxFactory,
 		);
 
 		expect(called).toHaveBeenCalledOnce();
@@ -231,7 +233,7 @@ describe("PluginRegistry — optional dependencies", () => {
 				control: async () => control,
 				sessions: async () => sessions,
 			},
-			stubCtx,
+			ctxFactory,
 		);
 
 		expect(order.indexOf("sessions")).toBeLessThan(order.indexOf("control"));
@@ -247,7 +249,11 @@ describe("PluginRegistry — optional dependencies", () => {
 		};
 
 		await expect(
-			registry.loadAll(["control"], { control: async () => control }, stubCtx),
+			registry.loadAll(
+				["control"],
+				{ control: async () => control },
+				ctxFactory,
+			),
 		).resolves.toBeUndefined();
 	});
 });
@@ -265,7 +271,11 @@ describe("PluginRegistry — error cases", () => {
 		};
 
 		await expect(
-			registry.loadAll(["control"], { control: async () => control }, stubCtx),
+			registry.loadAll(
+				["control"],
+				{ control: async () => control },
+				ctxFactory,
+			),
 		).rejects.toThrow(/sessions/);
 	});
 
@@ -280,7 +290,7 @@ describe("PluginRegistry — error cases", () => {
 			registry.loadAll(
 				["a", "b"],
 				{ a: async () => a, b: async () => b },
-				stubCtx,
+				ctxFactory,
 			),
 		).rejects.toThrow(/circular/i);
 	});
@@ -300,7 +310,7 @@ describe("PluginRegistry — error cases", () => {
 					b: async () => b,
 					c: async () => c,
 				},
-				stubCtx,
+				ctxFactory,
 			),
 		).rejects.toThrow(/circular/i);
 	});
@@ -308,7 +318,7 @@ describe("PluginRegistry — error cases", () => {
 	it("throws when importMap is missing an entry for a requested plugin", async () => {
 		const registry = new PluginRegistry();
 
-		await expect(registry.loadAll(["missing"], {}, stubCtx)).rejects.toThrow(
+		await expect(registry.loadAll(["missing"], {}, ctxFactory)).rejects.toThrow(
 			/missing/,
 		);
 	});

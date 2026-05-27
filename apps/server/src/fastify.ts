@@ -1,11 +1,23 @@
+import type { RestRegistrarImpl, TrpcRegistrarImpl } from "@ecehive/core";
 import cors from "@fastify/cors";
 import fastify from "fastify";
-import { apiRoute } from "./routes/api";
+import { createApiRoute } from "./routes/api";
+
+/**
+ * Dependencies supplied by the plugin system to the HTTP server layer.
+ *
+ * Passed to `createServer()` so that plugin-contributed tRPC sub-routers and
+ * Fastify REST handlers can be wired in before the server starts listening.
+ */
+export interface PluginBoot {
+	trpcRegistrar: TrpcRegistrarImpl;
+	restRegistrar: RestRegistrarImpl;
+}
 
 /**
  * Creates and configures the Fastify server instance
  */
-async function createServer() {
+async function createServer(boot: PluginBoot) {
 	const server = fastify({
 		routerOptions: {
 			maxParamLength: 5000,
@@ -40,7 +52,7 @@ async function createServer() {
 		};
 	});
 
-	await server.register(apiRoute, {
+	await server.register(createApiRoute(boot), {
 		prefix: "/api",
 	});
 

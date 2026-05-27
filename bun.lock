@@ -276,6 +276,7 @@
       "name": "@ecehive/server",
       "version": "3.8.0",
       "dependencies": {
+        "@ecehive/core": "workspace:*",
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
         "@ecehive/logger": "workspace:*",
@@ -334,7 +335,6 @@
       "name": "@ecehive/core",
       "version": "3.8.0",
       "dependencies": {
-        "@ecehive/card-scanner": "workspace:*",
         "@ecehive/features": "workspace:*",
         "@ecehive/logger": "workspace:*",
         "@ecehive/prisma": "workspace:*",
