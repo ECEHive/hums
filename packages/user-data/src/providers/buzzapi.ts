@@ -69,20 +69,35 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 
 	private async request(filter: string): Promise<UserProfile | null> {
 		const url = this.normalizeBaseUrl();
-		const response = await fetch(`${url}/central.iam.gted.people/read`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				api_app_id: this.config.username,
-				api_app_password: this.config.password,
-				api_request_mode: "sync",
-				api_receive_timeout: this.config.timeoutMs ?? 15000,
-				filter,
-				requested_attributes: REQUESTED_ATTRIBUTES,
-			}),
-		});
+		// Hard client-side cap: abort if BuzzAPI hasn't responded within the
+		// receive timeout plus a 5 s buffer (to allow BuzzAPI to send its
+		// timeout-response after api_receive_timeout fires on their end).
+		const receiveTimeout = this.config.timeoutMs ?? 10000;
+		const controller = new AbortController();
+		const abortTimer = setTimeout(
+			() => controller.abort(),
+			receiveTimeout + 5000,
+		);
+		let response: Response;
+		try {
+			response = await fetch(`${url}/central.iam.gted.people/read`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					api_app_id: this.config.username,
+					api_app_password: this.config.password,
+					api_request_mode: "sync",
+					api_receive_timeout: receiveTimeout,
+					filter,
+					requested_attributes: REQUESTED_ATTRIBUTES,
+				}),
+				signal: controller.signal,
+			});
+		} finally {
+			clearTimeout(abortTimer);
+		}
 
 		if (!response.ok) {
 			throw new Error(`BuzzAPI request failed with status ${response.status}`);
