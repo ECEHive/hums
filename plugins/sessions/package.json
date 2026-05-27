@@ -1,0 +1,25 @@
+{
+	"name": "@ecehive/plugin-sessions",
+	"version": "3.8.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@ecehive/core": "workspace:*",
+		"@ecehive/email": "workspace:*",
+		"@ecehive/features": "workspace:*",
+		"@ecehive/logger": "workspace:*",
+		"@ecehive/prisma": "workspace:*",
+		"@ecehive/trpc": "workspace:*",
+		"@trpc/server": "11.15.0",
+		"cron": "^4.4.0",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@ecehive/config": "workspace:*",
+		"@types/node": "^25.3.0",
+		"typescript": "^6.0.3"
+	}
+}

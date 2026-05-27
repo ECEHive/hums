@@ -280,6 +280,7 @@
         "@ecehive/env": "workspace:*",
         "@ecehive/features": "workspace:*",
         "@ecehive/logger": "workspace:*",
+        "@ecehive/plugin-sessions": "workspace:*",
         "@ecehive/rest": "workspace:*",
         "@ecehive/trpc": "workspace:*",
         "@ecehive/workers": "workspace:*",
@@ -518,6 +519,26 @@
         "typescript": "^6.0.3",
       },
     },
+    "plugins/sessions": {
+      "name": "@ecehive/plugin-sessions",
+      "version": "3.8.0",
+      "dependencies": {
+        "@ecehive/core": "workspace:*",
+        "@ecehive/email": "workspace:*",
+        "@ecehive/features": "workspace:*",
+        "@ecehive/logger": "workspace:*",
+        "@ecehive/prisma": "workspace:*",
+        "@ecehive/trpc": "workspace:*",
+        "@trpc/server": "11.15.0",
+        "cron": "^4.4.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@ecehive/config": "workspace:*",
+        "@types/node": "^25.3.0",
+        "typescript": "^6.0.3",
+      },
+    },
   },
   "packages": {
     "@aws-crypto/sha256-browser": ["@aws-crypto/sha256-browser@5.2.0", "", { "dependencies": { "@aws-crypto/sha256-js": "^5.2.0", "@aws-crypto/supports-web-crypto": "^5.2.0", "@aws-crypto/util": "^5.2.0", "@aws-sdk/types": "^3.222.0", "@aws-sdk/util-locate-window": "^3.0.0", "@smithy/util-utf8": "^2.0.0", "tslib": "^2.6.2" } }, "sha512-AXfN/lGotSQwu6HNcEsIASo7kWXZ5HYWvfOmSNKDsEqC4OashTp8alTmaz+F7TC2L083SFv5RdB+qU3Vs1kZqw=="],
@@ -683,6 +704,8 @@
     "@ecehive/logger": ["@ecehive/logger@workspace:packages/logger"],
 
     "@ecehive/overview": ["@ecehive/overview@workspace:apps/overview"],
+
+    "@ecehive/plugin-sessions": ["@ecehive/plugin-sessions@workspace:plugins/sessions"],
 
     "@ecehive/prisma": ["@ecehive/prisma@workspace:packages/prisma"],
 

@@ -4,13 +4,14 @@
 	"type": "module",
 	"workspaces": [
 		"apps/*",
-		"packages/*"
+		"packages/*",
+		"plugins/*"
 	],
 	"scripts": {
 		"dev": "bun --filter './apps/*' dev",
 		"check": "biome check --write",
 		"test": "bun --filter './packages/*' --filter './apps/*' test",
-		"typecheck": "bun --filter './packages/*' --filter './apps/*' typecheck",
+		"typecheck": "bun --filter './packages/*' --filter './apps/*' --filter './plugins/*' typecheck",
 		"set-version": "bun scripts/set-package-versions.ts",
 		"reinstall": "bun scripts/reinstall.ts"
 	},

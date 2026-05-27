@@ -21,5 +21,5 @@ import type { HumsPlugin } from "@ecehive/core";
  * ```
  */
 export const pluginMap: Record<string, () => Promise<HumsPlugin>> = {
-	// No plugins implemented yet — Phase 3+ adds entries here.
+	sessions: () => import("@ecehive/plugin-sessions").then((m) => m.default),
 };

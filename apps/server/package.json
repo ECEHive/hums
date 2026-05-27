@@ -14,6 +14,7 @@
 		"@ecehive/env": "workspace:*",
 		"@ecehive/features": "workspace:*",
 		"@ecehive/logger": "workspace:*",
+		"@ecehive/plugin-sessions": "workspace:*",
 		"@ecehive/rest": "workspace:*",
 		"@ecehive/trpc": "workspace:*",
 		"@ecehive/workers": "workspace:*",
