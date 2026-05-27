@@ -1,5 +1,9 @@
 import { generateToken, validateTicket } from "@ecehive/auth";
-import { findOrCreateUser } from "@ecehive/features";
+import {
+	ALLOWED_AFFILIATIONS_LABEL,
+	findOrCreateUser,
+	isAffiliationAllowed,
+} from "@ecehive/features";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 
@@ -45,6 +49,17 @@ export async function loginHandler(options: TLoginOptions) {
 		name: derivedName.length ? derivedName : undefined,
 		email: validationResult.attributes.email,
 	});
+
+	// System users (administrators) bypass affiliation and provider-deletion restrictions.
+	if (
+		!user.isSystemUser &&
+		(user.providerDeleted || !isAffiliationAllowed(user.affiliation))
+	) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: `HUMS is only available to ${ALLOWED_AFFILIATIONS_LABEL}. If you believe this is an error, please contact support.`,
+		});
+	}
 
 	const token = await generateToken(user.id);
 

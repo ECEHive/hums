@@ -11,5 +11,6 @@ export async function fetchUserInfo(username: string) {
 		email: profile?.email || fallbackEmail,
 		cardNumbers: profile?.cardNumbers,
 		department: profile?.department,
+		affiliation: profile?.affiliation,
 	};
 }
