@@ -1,7 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
 import { registerAuthGuard } from "./auth";
-import { controlGatewayRoutes } from "./routes/control-gateways";
-import { controlPointsRoutes } from "./routes/control-points";
 import { openHoursRoutes } from "./routes/open-hours";
 import { rolesRoutes } from "./routes/roles";
 import { slackRoutes } from "./routes/slack";
@@ -30,11 +28,6 @@ export const restApiRoute: FastifyPluginAsync = async (fastify) => {
 		prefix: "/open-hours",
 	});
 
-	// Control gateway invocation uses its own access token authentication
-	fastify.register(controlGatewayRoutes, {
-		prefix: "/control/gateways",
-	});
-
 	// ===== Protected Routes (authentication required) =====
 	// Create a sub-context with auth guard for protected routes
 	fastify.register(async (protectedRoutes) => {
@@ -52,9 +45,16 @@ export const restApiRoute: FastifyPluginAsync = async (fastify) => {
 		protectedRoutes.register(slackRoutes, {
 			prefix: "/slack",
 		});
-
-		protectedRoutes.register(controlPointsRoutes, {
-			prefix: "/control/points",
-		});
 	});
 };
+
+export { registerAuthGuard } from "./auth";
+export { logRestAction } from "./shared/audit";
+export { requirePermission } from "./shared/permissions";
+export { listResponse, successResponse } from "./shared/responses";
+export {
+	badRequestError,
+	internalError,
+	notFoundError,
+	validationError,
+} from "./shared/validation";

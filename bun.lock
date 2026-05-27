@@ -519,6 +519,28 @@
         "typescript": "^6.0.3",
       },
     },
+    "plugins/control": {
+      "name": "@ecehive/plugin-control",
+      "version": "3.8.0",
+      "dependencies": {
+        "@ecehive/core": "workspace:*",
+        "@ecehive/features": "workspace:*",
+        "@ecehive/logger": "workspace:*",
+        "@ecehive/prisma": "workspace:*",
+        "@ecehive/rest": "workspace:*",
+        "@ecehive/trpc": "workspace:*",
+        "cron": "^4.4.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@ecehive/config": "workspace:*",
+        "@types/node": "^25.3.0",
+        "typescript": "^6.0.3",
+      },
+      "optionalDependencies": {
+        "@ecehive/plugin-sessions": "workspace:*",
+      },
+    },
     "plugins/sessions": {
       "name": "@ecehive/plugin-sessions",
       "version": "3.8.0",
@@ -704,6 +726,8 @@
     "@ecehive/logger": ["@ecehive/logger@workspace:packages/logger"],
 
     "@ecehive/overview": ["@ecehive/overview@workspace:apps/overview"],
+
+    "@ecehive/plugin-control": ["@ecehive/plugin-control@workspace:plugins/control"],
 
     "@ecehive/plugin-sessions": ["@ecehive/plugin-sessions@workspace:plugins/sessions"],
 

@@ -1,0 +1,256 @@
+import {
+	findControlPoint,
+	listControlPoints,
+	operateControlPoint,
+} from "@ecehive/features";
+import {
+	badRequestError,
+	listResponse,
+	logRestAction,
+	notFoundError,
+	requirePermission,
+	successResponse,
+	validationError,
+} from "@ecehive/rest";
+import type { FastifyPluginAsync } from "fastify";
+import { z } from "zod";
+
+const UsernameValidationSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(100)
+	.regex(
+		/^[a-zA-Z0-9_-]+$/,
+		"Username must contain only letters, numbers, hyphens, and underscores",
+	);
+
+const ControlPointIdParamsSchema = z.object({
+	id: z.string().trim().min(1),
+});
+
+const OperateControlPointSchema = z.object({
+	username: UsernameValidationSchema,
+	state: z.boolean(),
+});
+
+const ListControlPointsQuerySchema = z.object({
+	skip: z.coerce.number().int().min(0).default(0),
+	take: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+function serializeControlPoint(point: {
+	id: string;
+	name: string;
+	description: string | null;
+	location: string | null;
+	controlClass: string;
+	canControlOnline: boolean;
+	canControlWithCode: boolean;
+	currentState: boolean;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+	provider: {
+		id: number;
+		name: string;
+		providerType: string;
+		isActive?: boolean;
+	};
+	authorizedRoles: Array<{ id: number; name: string }>;
+	trainedRole: { id: number; name: string } | null;
+	trainerRole: { id: number; name: string } | null;
+	authorizedUsers: Array<{
+		id: number;
+		name: string;
+		username: string;
+		email?: string;
+	}>;
+}) {
+	return {
+		id: point.id,
+		name: point.name,
+		description: point.description,
+		location: point.location,
+		controlClass: point.controlClass,
+		canControlOnline: point.canControlOnline,
+		canControlWithCode: point.canControlWithCode,
+		currentState: point.currentState,
+		isActive: point.isActive,
+		createdAt: point.createdAt,
+		updatedAt: point.updatedAt,
+		provider: {
+			id: point.provider.id,
+			name: point.provider.name,
+			providerType: point.provider.providerType,
+		},
+		authorizedRoles: point.authorizedRoles.map((r) => ({
+			id: r.id,
+			name: r.name,
+		})),
+		trainedRole: point.trainedRole
+			? {
+					id: point.trainedRole.id,
+					name: point.trainedRole.name,
+				}
+			: null,
+		trainerRole: point.trainerRole
+			? {
+					id: point.trainerRole.id,
+					name: point.trainerRole.name,
+				}
+			: null,
+		authorizedUsers: point.authorizedUsers.map((u) => ({
+			id: u.id,
+			name: u.name,
+			username: u.username,
+		})),
+	};
+}
+
+export const controlPointsRoutes: FastifyPluginAsync = async (fastify) => {
+	fastify.get("/", async (request, reply) => {
+		if (await requirePermission(request, reply, "control.points.list")) return;
+
+		const parsedQuery = ListControlPointsQuerySchema.safeParse(request.query);
+		if (!parsedQuery.success) {
+			return validationError(reply, parsedQuery.error);
+		}
+
+		const { skip, take } = parsedQuery.data;
+
+		try {
+			const result = await listControlPoints({
+				offset: skip,
+				limit: take,
+				sortBy: "name",
+				sortOrder: "asc",
+			});
+
+			return listResponse(result.points.map(serializeControlPoint), {
+				total: result.total,
+				skip,
+				take,
+				hasMore: result.hasMore,
+			});
+		} catch (error) {
+			request.log.error({ err: error }, "Failed to list control points");
+			return badRequestError(reply, "Failed to retrieve control points", error);
+		}
+	});
+
+	fastify.get("/:id", async (request, reply) => {
+		if (await requirePermission(request, reply, "control.points.get")) return;
+
+		const parsedParams = ControlPointIdParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
+			return validationError(reply, parsedParams.error);
+		}
+
+		const { id } = parsedParams.data;
+
+		try {
+			const controlPoint = await findControlPoint(id);
+
+			if (!controlPoint) {
+				return notFoundError(reply, "Control point", id);
+			}
+
+			return successResponse(serializeControlPoint(controlPoint));
+		} catch (error) {
+			request.log.error(
+				{ err: error, controlPointId: id },
+				"Failed to retrieve control point",
+			);
+			return badRequestError(reply, "Failed to retrieve control point", error);
+		}
+	});
+
+	fastify.put("/:id/operate", async (request, reply) => {
+		if (await requirePermission(request, reply, "control.points.update"))
+			return;
+
+		const parsedParams = ControlPointIdParamsSchema.safeParse(request.params);
+		if (!parsedParams.success) {
+			return validationError(reply, parsedParams.error);
+		}
+
+		const parsedBody = OperateControlPointSchema.safeParse(request.body);
+		if (!parsedBody.success) {
+			return validationError(reply, parsedBody.error);
+		}
+
+		const { id } = parsedParams.data;
+		const { username, state } = parsedBody.data;
+
+		try {
+			const result = await operateControlPoint({
+				controlPointId: id,
+				username,
+				state,
+			});
+
+			await logRestAction(request, "rest.control.points.operate", {
+				controlPointId: id,
+				username,
+				state,
+				action: result.action,
+				success: result.success,
+				logId: result.logId,
+			});
+
+			return successResponse({
+				id: result.controlPointId,
+				username: result.username,
+				action: result.action,
+				previousState: result.previousState,
+				newState: result.newState,
+				success: result.success,
+				logId: result.logId,
+				timestamp: new Date(),
+			});
+		} catch (error) {
+			if (error && typeof error === "object" && "code" in error) {
+				const trpcError = error as { code: string; message: string };
+
+				switch (trpcError.code) {
+					case "NOT_FOUND":
+						if (trpcError.message.includes("User")) {
+							return notFoundError(reply, "User", username);
+						}
+						if (trpcError.message.includes("Control point")) {
+							return notFoundError(reply, "Control point", id);
+						}
+						return notFoundError(reply, "Resource");
+
+					case "FORBIDDEN":
+						return reply.code(403).send({
+							success: false,
+							error: {
+								code: "FORBIDDEN",
+								message: trpcError.message,
+							},
+						});
+
+					case "PRECONDITION_FAILED":
+						return reply.code(412).send({
+							success: false,
+							error: {
+								code: "PRECONDITION_FAILED",
+								message: trpcError.message,
+							},
+						});
+
+					case "BAD_REQUEST":
+						return badRequestError(reply, trpcError.message);
+				}
+			}
+
+			request.log.error(
+				{ err: error, controlPointId: id, username, state },
+				"Failed to operate control point",
+			);
+			return badRequestError(reply, "Failed to operate control point", error);
+		}
+	});
+};

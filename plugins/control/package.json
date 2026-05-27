@@ -1,0 +1,20 @@
+{
+	"name": "@ecehive/plugin-control",
+	"version": "3.8.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"private": true,
+	"dependencies": {
+		"@ecehive/core": "workspace:*",
+		"@ecehive/features": "workspace:*",
+		"@ecehive/logger": "workspace:*",
+		"@ecehive/prisma": "workspace:*",
+		"@ecehive/rest": "workspace:*",
+		"@ecehive/trpc": "workspace:*",
+		"cron": "^4.4.0",
+		"zod": "^4.3.6"
+	},
+	"optionalDependencies": {
+		"@ecehive/plugin-sessions": "workspace:*"
+	}
+}
