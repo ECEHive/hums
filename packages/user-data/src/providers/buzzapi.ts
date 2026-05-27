@@ -78,7 +78,7 @@ export class BuzzApiUserDataProvider implements UserDataProvider {
 				api_app_id: this.config.username,
 				api_app_password: this.config.password,
 				api_request_mode: "sync",
-				api_receive_timeout: this.config.timeoutMs ?? 5000,
+				api_receive_timeout: this.config.timeoutMs ?? 15000,
 				filter,
 				requested_attributes: REQUESTED_ATTRIBUTES,
 			}),

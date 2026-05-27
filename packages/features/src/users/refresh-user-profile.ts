@@ -80,6 +80,37 @@ export async function refreshUserProfileIfStale(user: User): Promise<User> {
 	}
 
 	if (!profile) {
+		// The provider returned empty data. This can happen when the upstream
+		// directory (e.g. BuzzAPI) times out its own backend and returns a
+		// successful-status response with no records. Retry once before treating
+		// this as a genuine deletion, so a transient timeout does not lock out
+		// users who still exist.
+		logger.warn(
+			"External provider returned no data for user — retrying before marking as deleted",
+			{
+				userId: user.id,
+				username: user.username,
+			},
+		);
+		try {
+			profile = await provider.fetchByUsername(user.username);
+		} catch (retryError) {
+			logger.warn(
+				"Profile refresh retry also failed — keeping existing data to avoid lockout",
+				{
+					userId: user.id,
+					username: user.username,
+					error:
+						retryError instanceof Error
+							? retryError.message
+							: String(retryError),
+				},
+			);
+			return user;
+		}
+	}
+
+	if (!profile) {
 		logger.warn(
 			"External provider returned no data for user during refresh — marking as provider-deleted",
 			{
