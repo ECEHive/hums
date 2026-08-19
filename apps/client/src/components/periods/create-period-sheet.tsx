@@ -286,9 +286,11 @@ export function CreatePeriodSheet({
 						variant="outline"
 						type="single"
 						value={creationType}
-						onValueChange={(value) =>
-							setCreationType(value === "new" ? "new" : "clone")
-						}
+						onValueChange={(value) => {
+							if (value === "new" || value === "clone") {
+								setCreationType(value);
+							}
+						}}
 					>
 						<ToggleGroupItem value="new" aria-label="From scratch">
 							From scratch
@@ -356,6 +358,9 @@ export function CreatePeriodSheet({
 								{isCloning ? <Spinner /> : "Clone Period"}
 							</Button>
 						</div>
+						{serverError && (
+							<p className="text-sm text-destructive">{serverError}</p>
+						)}
 					</div>
 				)}
 				{creationType === "new" && (
