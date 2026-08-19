@@ -311,8 +311,9 @@ export function CreatePeriodSheet({
 							showCreate={false}
 						/>
 						<p className="text-xs text-muted-foreground mt-1">
-							Period details, exceptions, shift types, and schedules will be copied.
-							Shift registrations and attendance records will not be copied.
+							Period details, exceptions, shift types, and schedules will be
+							copied. Shift registrations and attendance records will not be
+							copied.
 						</p>
 						<FieldLabel>
 							Name <span className="text-destructive">*</span>
