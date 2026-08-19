@@ -3,6 +3,7 @@ import {
 	protectedProcedure,
 	router,
 } from "../../trpc";
+import { cloneHandler, ZCloneSchema } from "./clone.route";
 import { createHandler, ZCreateSchema } from "./create.route";
 import { deleteHandler, ZDeleteSchema } from "./delete.route";
 import { getHandler, ZGetSchema } from "./get.route";
@@ -27,6 +28,9 @@ export const periodsRouter = router({
 	create: permissionProtectedProcedure("periods.create")
 		.input(ZCreateSchema)
 		.mutation(createHandler),
+	clone: permissionProtectedProcedure("periods.create")
+		.input(ZCloneSchema)
+		.mutation(cloneHandler),
 	update: permissionProtectedProcedure("periods.update")
 		.input(ZUpdateSchema)
 		.mutation(updateHandler),
