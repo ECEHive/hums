@@ -18,11 +18,13 @@ import { checkPermissions } from "@/lib/permissions";
 interface PeriodSelectorProps {
 	selectedPeriodId: number | null;
 	onPeriodChange: (periodId: number) => void;
+	showCreate?: boolean;
 }
 
 export function PeriodSelector({
 	selectedPeriodId,
 	onPeriodChange,
+	showCreate = true,
 }: PeriodSelectorProps) {
 	const user = useCurrentUser();
 	// If user has the 'periods.list' permission they can list all periods.
@@ -124,7 +126,7 @@ export function PeriodSelector({
 					)}
 				</SelectContent>
 			</Select>
-			{canCreate && (
+			{showCreate && canCreate && (
 				<>
 					<Button
 						variant="outline"
