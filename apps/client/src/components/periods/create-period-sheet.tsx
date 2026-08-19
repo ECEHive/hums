@@ -36,7 +36,9 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toUtcDateFromLocalInput } from "@/lib/timezone";
+import { PeriodSelector } from "./period-selector";
 
 const unitSchema = z.enum(["count", "minutes", "hours"]);
 
@@ -102,6 +104,10 @@ export function CreatePeriodSheet({
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
+	const [creationType, setCreationType] = useState<"new" | "clone">("new");
+	const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null);
+	const [clonedPeriodName, setClonedPeriodName] = useState<string | null>(null);
+	const [isCloning, setIsCloning] = useState(false);
 	const formId = useId();
 
 	// access period context so we can set the newly created period
@@ -136,6 +142,35 @@ export function CreatePeriodSheet({
 					// ignore if context not available
 				}
 				// navigate to the period details page
+				navigate({
+					to: "/app/shifts/period-details",
+				});
+			}
+		},
+	});
+
+	const clonePeriodMutation = useMutation({
+		mutationFn: async (input: {
+			clonePeriodId: number | null;
+			name: string;
+		}) => {
+			if (input.clonePeriodId === null) {
+				throw new Error("Please select a period to clone");
+			}
+
+			return trpc.periods.clone.mutate({
+				clonePeriodId: input.clonePeriodId,
+				name: input.name,
+			});
+		},
+		onSuccess: (data) => {
+			if (data.period) {
+				queryClient.invalidateQueries({ queryKey: ["periods"] });
+				try {
+					setPeriod(data.period.id);
+				} catch (_) {
+					// ignore if context not available
+				}
 				navigate({
 					to: "/app/shifts/period-details",
 				});
@@ -228,6 +263,9 @@ export function CreatePeriodSheet({
 				form.reset();
 				setServerError(null);
 				setSelectedRoles([]);
+				setSelectedPeriodId(null);
+				setClonedPeriodName(null);
+				setIsCloning(false);
 			}
 		},
 		[form, onOpenChange],
@@ -243,427 +281,502 @@ export function CreatePeriodSheet({
 						Create a new period to organize shift schedules.
 					</SheetDescription>
 				</SheetHeader>
-				<form
-					id={formId}
-					onSubmit={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						form.handleSubmit();
-					}}
-					noValidate
-				>
+				<div className="space-y-6 px-4">
+					<ToggleGroup
+						variant="outline"
+						type="single"
+						value={creationType}
+						onValueChange={(value) =>
+							setCreationType(value === "new" ? "new" : "clone")
+						}
+					>
+						<ToggleGroupItem value="new" aria-label="From scratch">
+							From scratch
+						</ToggleGroupItem>
+						<ToggleGroupItem value="clone" aria-label="Clone existing period">
+							Clone existing period
+						</ToggleGroupItem>
+					</ToggleGroup>
+				</div>
+				{creationType === "clone" && (
 					<div className="space-y-6 px-4">
-						<form.Field
-							name="name"
-							children={(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-								return (
-									<div className="space-y-2">
-										<FieldLabel htmlFor={field.name}>
-											Name <span className="text-destructive">*</span>
-										</FieldLabel>
-										<Input
-											id={field.name}
-											name={field.name}
-											value={field.state.value}
-											onBlur={field.handleBlur}
-											onChange={(e) => field.handleChange(e.target.value)}
-											placeholder="e.g., Fall 2024"
-											autoComplete="off"
-											aria-invalid={isInvalid}
-										/>
-										{isInvalid && (
-											<FieldError errors={field.state.meta.errors} />
-										)}
-									</div>
-								);
-							}}
+						<FieldLabel>
+							Select Period to Clone{" "}
+							<span className="text-destructive">*</span>
+						</FieldLabel>
+						<PeriodSelector
+							selectedPeriodId={selectedPeriodId}
+							onPeriodChange={(periodId) => setSelectedPeriodId(periodId)}
+							showCreate={false}
 						/>
-
-						<div className="space-y-2">
-							<FieldLabel>
-								Period Dates <span className="text-destructive">*</span>
-							</FieldLabel>
-							<form.Field
-								name="start"
-								children={(startField) => {
-									const start = form.getFieldValue("start");
-									const end = form.getFieldValue("end");
-									return (
-										<form.Field
-											name="end"
-											children={(endField) => (
-												<DateRangeSelector
-													value={[start ?? undefined, end ?? undefined]}
-													onChange={([s, e]) => {
-														const [normalizedStart, normalizedEnd] =
-															normalizeRangeToDayBounds(s, e);
-														startField.handleChange(normalizedStart);
-														endField.handleChange(normalizedEnd);
-													}}
-												/>
-											)}
-										/>
-									);
+						<FieldLabel>
+							Name <span className="text-destructive">*</span>
+						</FieldLabel>
+						<Input
+							value={clonedPeriodName || ""}
+							onChange={(e) => setClonedPeriodName(e.target.value)}
+							placeholder="e.g., Fall 2024"
+							autoComplete="off"
+						/>
+						<div className="flex flex-row items-center justify-end gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => handleSheetChange(false)}
+							>
+								Cancel
+							</Button>
+							<Button 
+								type="button"
+								disabled={isCloning || selectedPeriodId === null || clonedPeriodName === null || clonedPeriodName === ""}
+								onClick={async () => {
+									if (selectedPeriodId === null) return;
+									const cloneName = clonedPeriodName;
+									if (!cloneName) return;
+									setIsCloning(true);
+									try {
+										await clonePeriodMutation.mutateAsync({
+											clonePeriodId: selectedPeriodId,
+											name: cloneName,
+										});
+										handleSheetChange(false);
+									} catch (err) {
+										const message = err instanceof Error ? err.message : String(err);
+										setServerError(message);
+									} finally {
+										setIsCloning(false);
+									}
 								}}
-							/>
+							>
+								{isCloning ? <Spinner /> : "Clone Period"}
+							</Button>
+						</div>
+					</div>
+				)}
+				{creationType === "new" && (
+					<form
+						id={formId}
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							form.handleSubmit();
+						}}
+						noValidate
+					>
+						<div className="space-y-6 px-4">
 							<form.Field
-								name="start"
+								name="name"
 								children={(field) => {
 									const isInvalid =
 										field.state.meta.isTouched && !field.state.meta.isValid;
-									return isInvalid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null;
-								}}
-							/>
-							<form.Field
-								name="end"
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									const startDate = form.getFieldValue("start");
 									return (
-										<>
+										<div className="space-y-2">
+											<FieldLabel htmlFor={field.name}>
+												Name <span className="text-destructive">*</span>
+											</FieldLabel>
+											<Input
+												id={field.name}
+												name={field.name}
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												placeholder="e.g., Fall 2024"
+												autoComplete="off"
+												aria-invalid={isInvalid}
+											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
 											)}
-											{field.state.value &&
-												startDate &&
-												field.state.value <= startDate && (
-													<FieldError
-														errors={[
-															{
-																message: "End date must be after start date",
-															},
-														]}
+										</div>
+									);
+								}}
+							/>
+
+							<div className="space-y-2">
+								<FieldLabel>
+									Period Dates <span className="text-destructive">*</span>
+								</FieldLabel>
+								<form.Field
+									name="start"
+									children={(startField) => {
+										const start = form.getFieldValue("start");
+										const end = form.getFieldValue("end");
+										return (
+											<form.Field
+												name="end"
+												children={(endField) => (
+													<DateRangeSelector
+														value={[start ?? undefined, end ?? undefined]}
+														onChange={([s, e]) => {
+															const [normalizedStart, normalizedEnd] =
+																normalizeRangeToDayBounds(s, e);
+															startField.handleChange(normalizedStart);
+															endField.handleChange(normalizedEnd);
+														}}
 													/>
 												)}
-										</>
-									);
-								}}
-							/>
-						</div>
-
-						<div className="space-y-2">
-							<div className="space-y-1">
-								<h3 className="text-sm font-medium">
-									Shift Requirements
-									<span className="text-muted-foreground text-xs font-normal ml-1">
-										(optional)
-									</span>
-								</h3>
-								<FieldDescription>
-									Specify a recommended minimum or enforced maximum number of
-									shifts for this period.
-								</FieldDescription>
-							</div>
-							<div className="grid gap-4 sm:grid-cols-3">
-								<form.Field
-									name="min"
-									children={(field) => {
-										const isInvalid =
-											field.state.meta.isTouched && !field.state.meta.isValid;
-										return (
-											<div className="space-y-1">
-												<FieldLabel htmlFor={field.name}>Minimum</FieldLabel>
-												<Input
-													id={field.name}
-													type="number"
-													min={0}
-													step={1}
-													value={field.state.value ?? ""}
-													onBlur={field.handleBlur}
-													onChange={(e) => {
-														const numericValue =
-															e.target.value === ""
-																? null
-																: Number(e.target.value);
-														field.handleChange(numericValue);
-													}}
-													placeholder="e.g. 4"
-												/>
-												{isInvalid && (
-													<FieldError errors={field.state.meta.errors} />
-												)}
-											</div>
+											/>
 										);
 									}}
 								/>
 								<form.Field
-									name="max"
+									name="start"
 									children={(field) => {
 										const isInvalid =
 											field.state.meta.isTouched && !field.state.meta.isValid;
-										return (
-											<div className="space-y-1">
-												<FieldLabel htmlFor={field.name}>Maximum</FieldLabel>
-												<Input
-													id={field.name}
-													type="number"
-													min={0}
-													step={1}
-													value={field.state.value ?? ""}
-													onBlur={field.handleBlur}
-													onChange={(e) => {
-														const numericValue =
-															e.target.value === ""
-																? null
-																: Number(e.target.value);
-														field.handleChange(numericValue);
-													}}
-													placeholder="e.g. 10"
-												/>
-												{isInvalid && (
-													<FieldError errors={field.state.meta.errors} />
-												)}
-											</div>
-										);
+										return isInvalid ? (
+											<FieldError errors={field.state.meta.errors} />
+										) : null;
 									}}
 								/>
 								<form.Field
-									name="minMaxUnit"
+									name="end"
 									children={(field) => {
 										const isInvalid =
 											field.state.meta.isTouched && !field.state.meta.isValid;
+										const startDate = form.getFieldValue("start");
 										return (
-											<div className="space-y-1">
-												<FieldLabel>Unit</FieldLabel>
-												<Select
-													value={field.state.value ?? ""}
-													onValueChange={(value) =>
-														field.handleChange(
-															value as z.infer<typeof unitSchema>,
-														)
-													}
-												>
-													<SelectTrigger>
-														<SelectValue placeholder="Unit" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="count">Shift count</SelectItem>
-														<SelectItem value="hours">Hours</SelectItem>
-														<SelectItem value="minutes">Minutes</SelectItem>
-													</SelectContent>
-												</Select>
+											<>
 												{isInvalid && (
 													<FieldError errors={field.state.meta.errors} />
 												)}
-											</div>
+												{field.state.value &&
+													startDate &&
+													field.state.value <= startDate && (
+														<FieldError
+															errors={[
+																{
+																	message: "End date must be after start date",
+																},
+															]}
+														/>
+													)}
+											</>
 										);
 									}}
 								/>
 							</div>
-						</div>
 
-						<form.Field
-							name="periodRoleIds"
-							children={(field) => (
-								<div className="space-y-2">
-									<div className="flex items-center justify-between">
-										<FieldLabel>Allowed Roles</FieldLabel>
-										<span className="text-xs text-muted-foreground">
-											Optional
+							<div className="space-y-2">
+								<div className="space-y-1">
+									<h3 className="text-sm font-medium">
+										Shift Requirements
+										<span className="text-muted-foreground text-xs font-normal ml-1">
+											(optional)
 										</span>
-									</div>
+									</h3>
 									<FieldDescription>
-										Users must have at least one selected role to view or
-										interact with this period. Leave empty to allow all users.
+										Specify a recommended minimum or enforced maximum number of
+										shifts for this period.
 									</FieldDescription>
-									<RoleMultiSelect
-										value={selectedRoles}
-										onChange={(roles) => {
-											setSelectedRoles(roles);
-											field.handleChange(roles.map((role) => role.id));
+								</div>
+								<div className="grid gap-4 sm:grid-cols-3">
+									<form.Field
+										name="min"
+										children={(field) => {
+											const isInvalid =
+												field.state.meta.isTouched && !field.state.meta.isValid;
+											return (
+												<div className="space-y-1">
+													<FieldLabel htmlFor={field.name}>Minimum</FieldLabel>
+													<Input
+														id={field.name}
+														type="number"
+														min={0}
+														step={1}
+														value={field.state.value ?? ""}
+														onBlur={field.handleBlur}
+														onChange={(e) => {
+															const numericValue =
+																e.target.value === ""
+																	? null
+																	: Number(e.target.value);
+															field.handleChange(numericValue);
+														}}
+														placeholder="e.g. 4"
+													/>
+													{isInvalid && (
+														<FieldError errors={field.state.meta.errors} />
+													)}
+												</div>
+											);
 										}}
-										placeholder="Search roles..."
+									/>
+									<form.Field
+										name="max"
+										children={(field) => {
+											const isInvalid =
+												field.state.meta.isTouched && !field.state.meta.isValid;
+											return (
+												<div className="space-y-1">
+													<FieldLabel htmlFor={field.name}>Maximum</FieldLabel>
+													<Input
+														id={field.name}
+														type="number"
+														min={0}
+														step={1}
+														value={field.state.value ?? ""}
+														onBlur={field.handleBlur}
+														onChange={(e) => {
+															const numericValue =
+																e.target.value === ""
+																	? null
+																	: Number(e.target.value);
+															field.handleChange(numericValue);
+														}}
+														placeholder="e.g. 10"
+													/>
+													{isInvalid && (
+														<FieldError errors={field.state.meta.errors} />
+													)}
+												</div>
+											);
+										}}
+									/>
+									<form.Field
+										name="minMaxUnit"
+										children={(field) => {
+											const isInvalid =
+												field.state.meta.isTouched && !field.state.meta.isValid;
+											return (
+												<div className="space-y-1">
+													<FieldLabel>Unit</FieldLabel>
+													<Select
+														value={field.state.value ?? ""}
+														onValueChange={(value) =>
+															field.handleChange(
+																value as z.infer<typeof unitSchema>,
+															)
+														}
+													>
+														<SelectTrigger>
+															<SelectValue placeholder="Unit" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="count">Shift count</SelectItem>
+															<SelectItem value="hours">Hours</SelectItem>
+															<SelectItem value="minutes">Minutes</SelectItem>
+														</SelectContent>
+													</Select>
+													{isInvalid && (
+														<FieldError errors={field.state.meta.errors} />
+													)}
+												</div>
+											);
+										}}
 									/>
 								</div>
+							</div>
+
+							<form.Field
+								name="periodRoleIds"
+								children={(field) => (
+									<div className="space-y-2">
+										<div className="flex items-center justify-between">
+											<FieldLabel>Allowed Roles</FieldLabel>
+											<span className="text-xs text-muted-foreground">
+												Optional
+											</span>
+										</div>
+										<FieldDescription>
+											Users must have at least one selected role to view or
+											interact with this period. Leave empty to allow all users.
+										</FieldDescription>
+										<RoleMultiSelect
+											value={selectedRoles}
+											onChange={(roles) => {
+												setSelectedRoles(roles);
+												field.handleChange(roles.map((role) => role.id));
+											}}
+											placeholder="Search roles..."
+										/>
+									</div>
+								)}
+							/>
+
+							<div className="space-y-2">
+								<div className="space-y-1">
+									<FieldLabel>
+										Visibility Window{" "}
+										<span className="text-destructive">*</span>
+									</FieldLabel>
+									<FieldDescription>
+										Control when this period is visible to users. Includes
+										specific start and end times.
+									</FieldDescription>
+								</div>
+								<form.Field
+									name="visibleStart"
+									children={(startField) => {
+										const start = form.getFieldValue("visibleStart");
+										const end = form.getFieldValue("visibleEnd");
+										return (
+											<form.Field
+												name="visibleEnd"
+												children={(endField) => (
+													<DateRangeSelector
+														value={[start ?? undefined, end ?? undefined]}
+														onChange={([s, e]) => {
+															startField.handleChange(s ?? null);
+															endField.handleChange(e ?? null);
+														}}
+														withTime
+													/>
+												)}
+											/>
+										);
+									}}
+								/>
+								<form.Field
+									name="visibleStart"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return isInvalid ? (
+											<FieldError errors={field.state.meta.errors} />
+										) : null;
+									}}
+								/>
+								<form.Field
+									name="visibleEnd"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return isInvalid ? (
+											<FieldError errors={field.state.meta.errors} />
+										) : null;
+									}}
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<div className="space-y-1">
+									<FieldLabel>
+										Signup Window <span className="text-destructive">*</span>
+									</FieldLabel>
+									<FieldDescription>
+										Control when users can sign up for shifts. Includes specific
+										start and end times.
+									</FieldDescription>
+								</div>
+								<form.Field
+									name="scheduleSignupStart"
+									children={(startField) => {
+										const start = form.getFieldValue("scheduleSignupStart");
+										const end = form.getFieldValue("scheduleSignupEnd");
+										return (
+											<form.Field
+												name="scheduleSignupEnd"
+												children={(endField) => (
+													<DateRangeSelector
+														value={[start ?? undefined, end ?? undefined]}
+														onChange={([s, e]) => {
+															startField.handleChange(s ?? null);
+															endField.handleChange(e ?? null);
+														}}
+														withTime
+													/>
+												)}
+											/>
+										);
+									}}
+								/>
+								<form.Field
+									name="scheduleSignupStart"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return isInvalid ? (
+											<FieldError errors={field.state.meta.errors} />
+										) : null;
+									}}
+								/>
+								<form.Field
+									name="scheduleSignupEnd"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return isInvalid ? (
+											<FieldError errors={field.state.meta.errors} />
+										) : null;
+									}}
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<div className="space-y-1">
+									<FieldLabel>
+										Modification Window{" "}
+										<span className="text-destructive">*</span>
+									</FieldLabel>
+									<FieldDescription>
+										Control when users can modify their shift assignments.
+										Includes specific start and end times.
+									</FieldDescription>
+								</div>
+								<form.Field
+									name="scheduleModifyStart"
+									children={(startField) => {
+										const start = form.getFieldValue("scheduleModifyStart");
+										const end = form.getFieldValue("scheduleModifyEnd");
+										return (
+											<form.Field
+												name="scheduleModifyEnd"
+												children={(endField) => (
+													<DateRangeSelector
+														value={[start ?? undefined, end ?? undefined]}
+														onChange={([s, e]) => {
+															startField.handleChange(s ?? null);
+															endField.handleChange(e ?? null);
+														}}
+														withTime
+													/>
+												)}
+											/>
+										);
+									}}
+								/>
+								<form.Field
+									name="scheduleModifyStart"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return isInvalid ? (
+											<FieldError errors={field.state.meta.errors} />
+										) : null;
+									}}
+								/>
+								<form.Field
+									name="scheduleModifyEnd"
+									children={(field) => {
+										const isInvalid =
+											field.state.meta.isTouched && !field.state.meta.isValid;
+										return isInvalid ? (
+											<FieldError errors={field.state.meta.errors} />
+										) : null;
+									}}
+								/>
+							</div>
+
+							{serverError && (
+								<p className="text-sm text-destructive">{serverError}</p>
 							)}
-						/>
-
-						<div className="space-y-2">
-							<div className="space-y-1">
-								<FieldLabel>
-									Visibility Window <span className="text-destructive">*</span>
-								</FieldLabel>
-								<FieldDescription>
-									Control when this period is visible to users. Includes
-									specific start and end times.
-								</FieldDescription>
-							</div>
-							<form.Field
-								name="visibleStart"
-								children={(startField) => {
-									const start = form.getFieldValue("visibleStart");
-									const end = form.getFieldValue("visibleEnd");
-									return (
-										<form.Field
-											name="visibleEnd"
-											children={(endField) => (
-												<DateRangeSelector
-													value={[start ?? undefined, end ?? undefined]}
-													onChange={([s, e]) => {
-														startField.handleChange(s ?? null);
-														endField.handleChange(e ?? null);
-													}}
-													withTime
-												/>
-											)}
-										/>
-									);
-								}}
-							/>
-							<form.Field
-								name="visibleStart"
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return isInvalid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null;
-								}}
-							/>
-							<form.Field
-								name="visibleEnd"
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return isInvalid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null;
-								}}
-							/>
 						</div>
 
-						<div className="space-y-2">
-							<div className="space-y-1">
-								<FieldLabel>
-									Signup Window <span className="text-destructive">*</span>
-								</FieldLabel>
-								<FieldDescription>
-									Control when users can sign up for shifts. Includes specific
-									start and end times.
-								</FieldDescription>
-							</div>
-							<form.Field
-								name="scheduleSignupStart"
-								children={(startField) => {
-									const start = form.getFieldValue("scheduleSignupStart");
-									const end = form.getFieldValue("scheduleSignupEnd");
-									return (
-										<form.Field
-											name="scheduleSignupEnd"
-											children={(endField) => (
-												<DateRangeSelector
-													value={[start ?? undefined, end ?? undefined]}
-													onChange={([s, e]) => {
-														startField.handleChange(s ?? null);
-														endField.handleChange(e ?? null);
-													}}
-													withTime
-												/>
-											)}
-										/>
-									);
-								}}
-							/>
-							<form.Field
-								name="scheduleSignupStart"
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return isInvalid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null;
-								}}
-							/>
-							<form.Field
-								name="scheduleSignupEnd"
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return isInvalid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null;
-								}}
-							/>
-						</div>
-
-						<div className="space-y-2">
-							<div className="space-y-1">
-								<FieldLabel>
-									Modification Window{" "}
-									<span className="text-destructive">*</span>
-								</FieldLabel>
-								<FieldDescription>
-									Control when users can modify their shift assignments.
-									Includes specific start and end times.
-								</FieldDescription>
-							</div>
-							<form.Field
-								name="scheduleModifyStart"
-								children={(startField) => {
-									const start = form.getFieldValue("scheduleModifyStart");
-									const end = form.getFieldValue("scheduleModifyEnd");
-									return (
-										<form.Field
-											name="scheduleModifyEnd"
-											children={(endField) => (
-												<DateRangeSelector
-													value={[start ?? undefined, end ?? undefined]}
-													onChange={([s, e]) => {
-														startField.handleChange(s ?? null);
-														endField.handleChange(e ?? null);
-													}}
-													withTime
-												/>
-											)}
-										/>
-									);
-								}}
-							/>
-							<form.Field
-								name="scheduleModifyStart"
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return isInvalid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null;
-								}}
-							/>
-							<form.Field
-								name="scheduleModifyEnd"
-								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-									return isInvalid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null;
-								}}
-							/>
-						</div>
-
-						{serverError && (
-							<p className="text-sm text-destructive">{serverError}</p>
-						)}
-					</div>
-
-					<SheetFooter className="flex flex-row items-center justify-end gap-2">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => handleSheetChange(false)}
-						>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={isSubmitting || !canSubmit}>
-							{isSubmitting ? <Spinner /> : "Create Period"}
-						</Button>
-					</SheetFooter>
-				</form>
+						<SheetFooter className="flex flex-row items-center justify-end gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => handleSheetChange(false)}
+							>
+								Cancel
+							</Button>
+							<Button type="submit" disabled={isSubmitting || !canSubmit}>
+								{isSubmitting ? <Spinner /> : "Create Period"}
+							</Button>
+						</SheetFooter>
+					</form>
+				)}
 			</SheetContent>
 		</Sheet>
 	);
