@@ -9,72 +9,67 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OtaSessionLoginRouteImport } from './routes/ota-session-login'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as OtaSessionLoginRouteImport } from './routes/ota-session-login'
+import { Route as AppAppRouteImport } from './routes/app/_app'
+import { Route as AppControlRouteImport } from './routes/app/control'
+import { Route as AppInventoryRouteImport } from './routes/app/inventory'
+import { Route as AppShiftsRouteImport } from './routes/app/shifts'
+import { Route as AppTicketsRouteImport } from './routes/app/tickets'
+import { Route as ControlPointIdRouteImport } from './routes/control.$pointId'
 import { Route as SubmitIndexRouteImport } from './routes/submit/index'
 import { Route as SubmitTicketTypeIdRouteImport } from './routes/submit/$ticketTypeId'
-import { Route as ControlPointIdRouteImport } from './routes/control.$pointId'
-import { Route as AppTicketsRouteImport } from './routes/app/tickets'
-import { Route as AppShiftsRouteImport } from './routes/app/shifts'
-import { Route as AppInventoryRouteImport } from './routes/app/inventory'
-import { Route as AppControlRouteImport } from './routes/app/control'
-import { Route as AppAppRouteImport } from './routes/app/_app'
-import { Route as AppTicketsIndexRouteImport } from './routes/app/tickets/index'
-import { Route as AppShiftsIndexRouteImport } from './routes/app/shifts/index'
-import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
-import { Route as AppControlIndexRouteImport } from './routes/app/control/index'
 import { Route as AppAppIndexRouteImport } from './routes/app/_app/index'
-import { Route as AppTicketsMyTicketsRouteImport } from './routes/app/tickets/my-tickets'
-import { Route as AppShiftsShiftTypesRouteImport } from './routes/app/shifts/shift-types'
-import { Route as AppShiftsShiftSchedulesRouteImport } from './routes/app/shifts/shift-schedules'
-import { Route as AppShiftsSchedulingRouteImport } from './routes/app/shifts/scheduling'
-import { Route as AppShiftsScheduleOverviewRouteImport } from './routes/app/shifts/schedule-overview'
-import { Route as AppShiftsReportsRouteImport } from './routes/app/shifts/reports'
-import { Route as AppShiftsPeriodExceptionsRouteImport } from './routes/app/shifts/period-exceptions'
-import { Route as AppShiftsPeriodDetailsRouteImport } from './routes/app/shifts/period-details'
-import { Route as AppShiftsMyShiftsRouteImport } from './routes/app/shifts/my-shifts'
-import { Route as AppShiftsManageUsersRouteImport } from './routes/app/shifts/manage-users'
-import { Route as AppShiftsAttendanceIssuesRouteImport } from './routes/app/shifts/attendance-issues'
-import { Route as AppShiftsAttendanceRouteImport } from './routes/app/shifts/attendance'
-import { Route as AppInventoryTransactionsRouteImport } from './routes/app/inventory/transactions'
-import { Route as AppInventoryMyTransactionsRouteImport } from './routes/app/inventory/my-transactions'
-import { Route as AppInventoryItemsRouteImport } from './routes/app/inventory/items'
-import { Route as AppControlProvidersRouteImport } from './routes/app/control/providers'
-import { Route as AppControlPointsRouteImport } from './routes/app/control/points'
-import { Route as AppControlLogsRouteImport } from './routes/app/control/logs'
-import { Route as AppControlGatewaysRouteImport } from './routes/app/control/gateways'
-import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
-import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
-import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
-import { Route as AppAppRolesRouteImport } from './routes/app/_app/roles'
-import { Route as AppAppReportsRouteImport } from './routes/app/_app/reports'
-import { Route as AppAppMyAgreementsRouteImport } from './routes/app/_app/my-agreements'
-import { Route as AppAppDevicesRouteImport } from './routes/app/_app/devices'
-import { Route as AppAppConfigurationRouteImport } from './routes/app/_app/configuration'
-import { Route as AppAppAuditLogsRouteImport } from './routes/app/_app/audit-logs'
-import { Route as AppAppApiTokensRouteImport } from './routes/app/_app/api-tokens'
 import { Route as AppAppAgreementsRouteImport } from './routes/app/_app/agreements'
-import { Route as AppTicketsMyTicketsIndexRouteImport } from './routes/app/tickets/my-tickets/index'
-import { Route as AppTicketsAdminIndexRouteImport } from './routes/app/tickets/admin/index'
-import { Route as AppShiftsManageUsersIndexRouteImport } from './routes/app/shifts/manage-users.index'
+import { Route as AppAppApiTokensRouteImport } from './routes/app/_app/api-tokens'
+import { Route as AppAppAuditLogsRouteImport } from './routes/app/_app/audit-logs'
+import { Route as AppAppConfigurationRouteImport } from './routes/app/_app/configuration'
+import { Route as AppAppDevicesRouteImport } from './routes/app/_app/devices'
+import { Route as AppAppMyAgreementsRouteImport } from './routes/app/_app/my-agreements'
+import { Route as AppAppReportsRouteImport } from './routes/app/_app/reports'
+import { Route as AppAppRolesRouteImport } from './routes/app/_app/roles'
+import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
+import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
+import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
+import { Route as AppControlIndexRouteImport } from './routes/app/control/index'
+import { Route as AppControlGatewaysRouteImport } from './routes/app/control/gateways'
+import { Route as AppControlLogsRouteImport } from './routes/app/control/logs'
+import { Route as AppControlPointsRouteImport } from './routes/app/control/points'
+import { Route as AppControlProvidersRouteImport } from './routes/app/control/providers'
+import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
+import { Route as AppInventoryItemsRouteImport } from './routes/app/inventory/items'
+import { Route as AppInventoryMyTransactionsRouteImport } from './routes/app/inventory/my-transactions'
+import { Route as AppInventoryTransactionsRouteImport } from './routes/app/inventory/transactions'
+import { Route as AppShiftsIndexRouteImport } from './routes/app/shifts/index'
+import { Route as AppShiftsAttendanceRouteImport } from './routes/app/shifts/attendance'
+import { Route as AppShiftsAttendanceIssuesRouteImport } from './routes/app/shifts/attendance-issues'
+import { Route as AppShiftsManageUsersRouteImport } from './routes/app/shifts/manage-users'
+import { Route as AppShiftsMyShiftsRouteImport } from './routes/app/shifts/my-shifts'
+import { Route as AppShiftsPeriodDetailsRouteImport } from './routes/app/shifts/period-details'
+import { Route as AppShiftsPeriodExceptionsRouteImport } from './routes/app/shifts/period-exceptions'
+import { Route as AppShiftsReportsRouteImport } from './routes/app/shifts/reports'
+import { Route as AppShiftsScheduleOverviewRouteImport } from './routes/app/shifts/schedule-overview'
+import { Route as AppShiftsSchedulingRouteImport } from './routes/app/shifts/scheduling'
+import { Route as AppShiftsShiftSchedulesRouteImport } from './routes/app/shifts/shift-schedules'
+import { Route as AppShiftsShiftTypesRouteImport } from './routes/app/shifts/shift-types'
+import { Route as AppTicketsIndexRouteImport } from './routes/app/tickets/index'
+import { Route as AppTicketsMyTicketsRouteImport } from './routes/app/tickets/my-tickets'
 import { Route as AppAppMeIndexRouteImport } from './routes/app/_app/me/index'
-import { Route as AppTicketsSubmitTicketTypeIdRouteImport } from './routes/app/tickets/submit.$ticketTypeId'
-import { Route as AppTicketsMyTicketsTicketIdRouteImport } from './routes/app/tickets/my-tickets/$ticketId'
-import { Route as AppTicketsAdminTypesRouteImport } from './routes/app/tickets/admin/types'
-import { Route as AppTicketsAdminTicketIdRouteImport } from './routes/app/tickets/admin/$ticketId'
-import { Route as AppShiftsManageUsersUserIdRouteImport } from './routes/app/shifts/manage-users.$userId'
 import { Route as AppAppMeSessionsRouteImport } from './routes/app/_app/me/sessions'
+import { Route as AppShiftsManageUsersIndexRouteImport } from './routes/app/shifts/manage-users.index'
+import { Route as AppShiftsManageUsersUserIdRouteImport } from './routes/app/shifts/manage-users.$userId'
+import { Route as AppTicketsAdminIndexRouteImport } from './routes/app/tickets/admin/index'
+import { Route as AppTicketsAdminTicketIdRouteImport } from './routes/app/tickets/admin/$ticketId'
+import { Route as AppTicketsAdminTypesRouteImport } from './routes/app/tickets/admin/types'
+import { Route as AppTicketsMyTicketsIndexRouteImport } from './routes/app/tickets/my-tickets/index'
+import { Route as AppTicketsMyTicketsTicketIdRouteImport } from './routes/app/tickets/my-tickets/$ticketId'
+import { Route as AppTicketsSubmitTicketTypeIdRouteImport } from './routes/app/tickets/submit.$ticketTypeId'
 
-const OtaSessionLoginRoute = OtaSessionLoginRouteImport.update({
-  id: '/ota-session-login',
-  path: '/ota-session-login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -82,9 +77,43 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OtaSessionLoginRoute = OtaSessionLoginRouteImport.update({
+  id: '/ota-session-login',
+  path: '/ota-session-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAppRoute = AppAppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppControlRoute = AppControlRouteImport.update({
+  id: '/control',
+  path: '/control',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInventoryRoute = AppInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShiftsRoute = AppShiftsRouteImport.update({
+  id: '/shifts',
+  path: '/shifts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTicketsRoute = AppTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AppRoute,
+} as any)
+const ControlPointIdRoute = ControlPointIdRouteImport.update({
+  id: '/control/$pointId',
+  path: '/control/$pointId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubmitIndexRoute = SubmitIndexRouteImport.update({
@@ -97,110 +126,121 @@ const SubmitTicketTypeIdRoute = SubmitTicketTypeIdRouteImport.update({
   path: '/submit/$ticketTypeId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ControlPointIdRoute = ControlPointIdRouteImport.update({
-  id: '/control/$pointId',
-  path: '/control/$pointId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppTicketsRoute = AppTicketsRouteImport.update({
-  id: '/tickets',
-  path: '/tickets',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppShiftsRoute = AppShiftsRouteImport.update({
-  id: '/shifts',
-  path: '/shifts',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInventoryRoute = AppInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppControlRoute = AppControlRouteImport.update({
-  id: '/control',
-  path: '/control',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAppRoute = AppAppRouteImport.update({
-  id: '/_app',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTicketsIndexRoute = AppTicketsIndexRouteImport.update({
+const AppAppIndexRoute = AppAppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppTicketsRoute,
+  getParentRoute: () => AppAppRoute,
 } as any)
-const AppShiftsIndexRoute = AppShiftsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppShiftsRoute,
+const AppAppAgreementsRoute = AppAppAgreementsRouteImport.update({
+  id: '/agreements',
+  path: '/agreements',
+  getParentRoute: () => AppAppRoute,
 } as any)
-const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppInventoryRoute,
+const AppAppApiTokensRoute = AppAppApiTokensRouteImport.update({
+  id: '/api-tokens',
+  path: '/api-tokens',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppAuditLogsRoute = AppAppAuditLogsRouteImport.update({
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppConfigurationRoute = AppAppConfigurationRouteImport.update({
+  id: '/configuration',
+  path: '/configuration',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppDevicesRoute = AppAppDevicesRouteImport.update({
+  id: '/devices',
+  path: '/devices',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppMyAgreementsRoute = AppAppMyAgreementsRouteImport.update({
+  id: '/my-agreements',
+  path: '/my-agreements',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppReportsRoute = AppAppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppRolesRoute = AppAppRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppSessionsRoute = AppAppSessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppSuspensionsRoute = AppAppSuspensionsRouteImport.update({
+  id: '/suspensions',
+  path: '/suspensions',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppUsersRoute = AppAppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppAppRoute,
 } as any)
 const AppControlIndexRoute = AppControlIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppControlRoute,
 } as any)
-const AppAppIndexRoute = AppAppIndexRouteImport.update({
+const AppControlGatewaysRoute = AppControlGatewaysRouteImport.update({
+  id: '/gateways',
+  path: '/gateways',
+  getParentRoute: () => AppControlRoute,
+} as any)
+const AppControlLogsRoute = AppControlLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AppControlRoute,
+} as any)
+const AppControlPointsRoute = AppControlPointsRouteImport.update({
+  id: '/points',
+  path: '/points',
+  getParentRoute: () => AppControlRoute,
+} as any)
+const AppControlProvidersRoute = AppControlProvidersRouteImport.update({
+  id: '/providers',
+  path: '/providers',
+  getParentRoute: () => AppControlRoute,
+} as any)
+const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppAppRoute,
+  getParentRoute: () => AppInventoryRoute,
 } as any)
-const AppTicketsMyTicketsRoute = AppTicketsMyTicketsRouteImport.update({
-  id: '/my-tickets',
-  path: '/my-tickets',
-  getParentRoute: () => AppTicketsRoute,
+const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => AppInventoryRoute,
 } as any)
-const AppShiftsShiftTypesRoute = AppShiftsShiftTypesRouteImport.update({
-  id: '/shift-types',
-  path: '/shift-types',
-  getParentRoute: () => AppShiftsRoute,
-} as any)
-const AppShiftsShiftSchedulesRoute = AppShiftsShiftSchedulesRouteImport.update({
-  id: '/shift-schedules',
-  path: '/shift-schedules',
-  getParentRoute: () => AppShiftsRoute,
-} as any)
-const AppShiftsSchedulingRoute = AppShiftsSchedulingRouteImport.update({
-  id: '/scheduling',
-  path: '/scheduling',
-  getParentRoute: () => AppShiftsRoute,
-} as any)
-const AppShiftsScheduleOverviewRoute =
-  AppShiftsScheduleOverviewRouteImport.update({
-    id: '/schedule-overview',
-    path: '/schedule-overview',
-    getParentRoute: () => AppShiftsRoute,
+const AppInventoryMyTransactionsRoute =
+  AppInventoryMyTransactionsRouteImport.update({
+    id: '/my-transactions',
+    path: '/my-transactions',
+    getParentRoute: () => AppInventoryRoute,
   } as any)
-const AppShiftsReportsRoute = AppShiftsReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AppShiftsRoute,
-} as any)
-const AppShiftsPeriodExceptionsRoute =
-  AppShiftsPeriodExceptionsRouteImport.update({
-    id: '/period-exceptions',
-    path: '/period-exceptions',
-    getParentRoute: () => AppShiftsRoute,
+const AppInventoryTransactionsRoute =
+  AppInventoryTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => AppInventoryRoute,
   } as any)
-const AppShiftsPeriodDetailsRoute = AppShiftsPeriodDetailsRouteImport.update({
-  id: '/period-details',
-  path: '/period-details',
+const AppShiftsIndexRoute = AppShiftsIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => AppShiftsRoute,
 } as any)
-const AppShiftsMyShiftsRoute = AppShiftsMyShiftsRouteImport.update({
-  id: '/my-shifts',
-  path: '/my-shifts',
-  getParentRoute: () => AppShiftsRoute,
-} as any)
-const AppShiftsManageUsersRoute = AppShiftsManageUsersRouteImport.update({
-  id: '/manage-users',
-  path: '/manage-users',
+const AppShiftsAttendanceRoute = AppShiftsAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => AppShiftsRoute,
 } as any)
 const AppShiftsAttendanceIssuesRoute =
@@ -209,113 +249,72 @@ const AppShiftsAttendanceIssuesRoute =
     path: '/attendance-issues',
     getParentRoute: () => AppShiftsRoute,
   } as any)
-const AppShiftsAttendanceRoute = AppShiftsAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
+const AppShiftsManageUsersRoute = AppShiftsManageUsersRouteImport.update({
+  id: '/manage-users',
+  path: '/manage-users',
   getParentRoute: () => AppShiftsRoute,
 } as any)
-const AppInventoryTransactionsRoute =
-  AppInventoryTransactionsRouteImport.update({
-    id: '/transactions',
-    path: '/transactions',
-    getParentRoute: () => AppInventoryRoute,
+const AppShiftsMyShiftsRoute = AppShiftsMyShiftsRouteImport.update({
+  id: '/my-shifts',
+  path: '/my-shifts',
+  getParentRoute: () => AppShiftsRoute,
+} as any)
+const AppShiftsPeriodDetailsRoute = AppShiftsPeriodDetailsRouteImport.update({
+  id: '/period-details',
+  path: '/period-details',
+  getParentRoute: () => AppShiftsRoute,
+} as any)
+const AppShiftsPeriodExceptionsRoute =
+  AppShiftsPeriodExceptionsRouteImport.update({
+    id: '/period-exceptions',
+    path: '/period-exceptions',
+    getParentRoute: () => AppShiftsRoute,
   } as any)
-const AppInventoryMyTransactionsRoute =
-  AppInventoryMyTransactionsRouteImport.update({
-    id: '/my-transactions',
-    path: '/my-transactions',
-    getParentRoute: () => AppInventoryRoute,
-  } as any)
-const AppInventoryItemsRoute = AppInventoryItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
-  getParentRoute: () => AppInventoryRoute,
-} as any)
-const AppControlProvidersRoute = AppControlProvidersRouteImport.update({
-  id: '/providers',
-  path: '/providers',
-  getParentRoute: () => AppControlRoute,
-} as any)
-const AppControlPointsRoute = AppControlPointsRouteImport.update({
-  id: '/points',
-  path: '/points',
-  getParentRoute: () => AppControlRoute,
-} as any)
-const AppControlLogsRoute = AppControlLogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
-  getParentRoute: () => AppControlRoute,
-} as any)
-const AppControlGatewaysRoute = AppControlGatewaysRouteImport.update({
-  id: '/gateways',
-  path: '/gateways',
-  getParentRoute: () => AppControlRoute,
-} as any)
-const AppAppUsersRoute = AppAppUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppSuspensionsRoute = AppAppSuspensionsRouteImport.update({
-  id: '/suspensions',
-  path: '/suspensions',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppSessionsRoute = AppAppSessionsRouteImport.update({
-  id: '/sessions',
-  path: '/sessions',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppRolesRoute = AppAppRolesRouteImport.update({
-  id: '/roles',
-  path: '/roles',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppReportsRoute = AppAppReportsRouteImport.update({
+const AppShiftsReportsRoute = AppShiftsReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => AppAppRoute,
+  getParentRoute: () => AppShiftsRoute,
 } as any)
-const AppAppMyAgreementsRoute = AppAppMyAgreementsRouteImport.update({
-  id: '/my-agreements',
-  path: '/my-agreements',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppDevicesRoute = AppAppDevicesRouteImport.update({
-  id: '/devices',
-  path: '/devices',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppConfigurationRoute = AppAppConfigurationRouteImport.update({
-  id: '/configuration',
-  path: '/configuration',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppAuditLogsRoute = AppAppAuditLogsRouteImport.update({
-  id: '/audit-logs',
-  path: '/audit-logs',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppApiTokensRoute = AppAppApiTokensRouteImport.update({
-  id: '/api-tokens',
-  path: '/api-tokens',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppAppAgreementsRoute = AppAppAgreementsRouteImport.update({
-  id: '/agreements',
-  path: '/agreements',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppTicketsMyTicketsIndexRoute =
-  AppTicketsMyTicketsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AppTicketsMyTicketsRoute,
+const AppShiftsScheduleOverviewRoute =
+  AppShiftsScheduleOverviewRouteImport.update({
+    id: '/schedule-overview',
+    path: '/schedule-overview',
+    getParentRoute: () => AppShiftsRoute,
   } as any)
-const AppTicketsAdminIndexRoute = AppTicketsAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
+const AppShiftsSchedulingRoute = AppShiftsSchedulingRouteImport.update({
+  id: '/scheduling',
+  path: '/scheduling',
+  getParentRoute: () => AppShiftsRoute,
+} as any)
+const AppShiftsShiftSchedulesRoute = AppShiftsShiftSchedulesRouteImport.update({
+  id: '/shift-schedules',
+  path: '/shift-schedules',
+  getParentRoute: () => AppShiftsRoute,
+} as any)
+const AppShiftsShiftTypesRoute = AppShiftsShiftTypesRouteImport.update({
+  id: '/shift-types',
+  path: '/shift-types',
+  getParentRoute: () => AppShiftsRoute,
+} as any)
+const AppTicketsIndexRoute = AppTicketsIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppTicketsMyTicketsRoute = AppTicketsMyTicketsRouteImport.update({
+  id: '/my-tickets',
+  path: '/my-tickets',
+  getParentRoute: () => AppTicketsRoute,
+} as any)
+const AppAppMeIndexRoute = AppAppMeIndexRouteImport.update({
+  id: '/me/',
+  path: '/me/',
+  getParentRoute: () => AppAppRoute,
+} as any)
+const AppAppMeSessionsRoute = AppAppMeSessionsRouteImport.update({
+  id: '/me/sessions',
+  path: '/me/sessions',
+  getParentRoute: () => AppAppRoute,
 } as any)
 const AppShiftsManageUsersIndexRoute =
   AppShiftsManageUsersIndexRouteImport.update({
@@ -323,26 +322,15 @@ const AppShiftsManageUsersIndexRoute =
     path: '/',
     getParentRoute: () => AppShiftsManageUsersRoute,
   } as any)
-const AppAppMeIndexRoute = AppAppMeIndexRouteImport.update({
-  id: '/me/',
-  path: '/me/',
-  getParentRoute: () => AppAppRoute,
-} as any)
-const AppTicketsSubmitTicketTypeIdRoute =
-  AppTicketsSubmitTicketTypeIdRouteImport.update({
-    id: '/submit/$ticketTypeId',
-    path: '/submit/$ticketTypeId',
-    getParentRoute: () => AppTicketsRoute,
+const AppShiftsManageUsersUserIdRoute =
+  AppShiftsManageUsersUserIdRouteImport.update({
+    id: '/$userId',
+    path: '/$userId',
+    getParentRoute: () => AppShiftsManageUsersRoute,
   } as any)
-const AppTicketsMyTicketsTicketIdRoute =
-  AppTicketsMyTicketsTicketIdRouteImport.update({
-    id: '/$ticketId',
-    path: '/$ticketId',
-    getParentRoute: () => AppTicketsMyTicketsRoute,
-  } as any)
-const AppTicketsAdminTypesRoute = AppTicketsAdminTypesRouteImport.update({
-  id: '/admin/types',
-  path: '/admin/types',
+const AppTicketsAdminIndexRoute = AppTicketsAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => AppTicketsRoute,
 } as any)
 const AppTicketsAdminTicketIdRoute = AppTicketsAdminTicketIdRouteImport.update({
@@ -350,21 +338,33 @@ const AppTicketsAdminTicketIdRoute = AppTicketsAdminTicketIdRouteImport.update({
   path: '/admin/$ticketId',
   getParentRoute: () => AppTicketsRoute,
 } as any)
-const AppShiftsManageUsersUserIdRoute =
-  AppShiftsManageUsersUserIdRouteImport.update({
-    id: '/$userId',
-    path: '/$userId',
-    getParentRoute: () => AppShiftsManageUsersRoute,
-  } as any)
-const AppAppMeSessionsRoute = AppAppMeSessionsRouteImport.update({
-  id: '/me/sessions',
-  path: '/me/sessions',
-  getParentRoute: () => AppAppRoute,
+const AppTicketsAdminTypesRoute = AppTicketsAdminTypesRouteImport.update({
+  id: '/admin/types',
+  path: '/admin/types',
+  getParentRoute: () => AppTicketsRoute,
 } as any)
+const AppTicketsMyTicketsIndexRoute =
+  AppTicketsMyTicketsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppTicketsMyTicketsRoute,
+  } as any)
+const AppTicketsMyTicketsTicketIdRoute =
+  AppTicketsMyTicketsTicketIdRouteImport.update({
+    id: '/$ticketId',
+    path: '/$ticketId',
+    getParentRoute: () => AppTicketsMyTicketsRoute,
+  } as any)
+const AppTicketsSubmitTicketTypeIdRoute =
+  AppTicketsSubmitTicketTypeIdRouteImport.update({
+    id: '/submit/$ticketTypeId',
+    path: '/submit/$ticketTypeId',
+    getParentRoute: () => AppTicketsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppAppRouteWithChildren
+  '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/ota-session-login': typeof OtaSessionLoginRoute
   '/app/control': typeof AppControlRouteWithChildren
@@ -714,18 +714,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/ota-session-login': {
-      id: '/ota-session-login'
-      path: '/ota-session-login'
-      fullPath: '/ota-session-login'
-      preLoaderRoute: typeof OtaSessionLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -735,11 +728,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ota-session-login': {
+      id: '/ota-session-login'
+      path: '/ota-session-login'
+      fullPath: '/ota-session-login'
+      preLoaderRoute: typeof OtaSessionLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/_app': {
+      id: '/app/_app'
+      path: ''
+      fullPath: '/app'
+      preLoaderRoute: typeof AppAppRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/control': {
+      id: '/app/control'
+      path: '/control'
+      fullPath: '/app/control'
+      preLoaderRoute: typeof AppControlRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/inventory': {
+      id: '/app/inventory'
+      path: '/inventory'
+      fullPath: '/app/inventory'
+      preLoaderRoute: typeof AppInventoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/shifts': {
+      id: '/app/shifts'
+      path: '/shifts'
+      fullPath: '/app/shifts'
+      preLoaderRoute: typeof AppShiftsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tickets': {
+      id: '/app/tickets'
+      path: '/tickets'
+      fullPath: '/app/tickets'
+      preLoaderRoute: typeof AppTicketsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/control/$pointId': {
+      id: '/control/$pointId'
+      path: '/control/$pointId'
+      fullPath: '/control/$pointId'
+      preLoaderRoute: typeof ControlPointIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/submit/': {
@@ -756,284 +798,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SubmitTicketTypeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/control/$pointId': {
-      id: '/control/$pointId'
-      path: '/control/$pointId'
-      fullPath: '/control/$pointId'
-      preLoaderRoute: typeof ControlPointIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app/tickets': {
-      id: '/app/tickets'
-      path: '/tickets'
-      fullPath: '/app/tickets'
-      preLoaderRoute: typeof AppTicketsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/shifts': {
-      id: '/app/shifts'
-      path: '/shifts'
-      fullPath: '/app/shifts'
-      preLoaderRoute: typeof AppShiftsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/inventory': {
-      id: '/app/inventory'
-      path: '/inventory'
-      fullPath: '/app/inventory'
-      preLoaderRoute: typeof AppInventoryRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/control': {
-      id: '/app/control'
-      path: '/control'
-      fullPath: '/app/control'
-      preLoaderRoute: typeof AppControlRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/_app': {
-      id: '/app/_app'
-      path: ''
-      fullPath: '/app'
-      preLoaderRoute: typeof AppAppRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/tickets/': {
-      id: '/app/tickets/'
-      path: '/'
-      fullPath: '/app/tickets/'
-      preLoaderRoute: typeof AppTicketsIndexRouteImport
-      parentRoute: typeof AppTicketsRoute
-    }
-    '/app/shifts/': {
-      id: '/app/shifts/'
-      path: '/'
-      fullPath: '/app/shifts/'
-      preLoaderRoute: typeof AppShiftsIndexRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/inventory/': {
-      id: '/app/inventory/'
-      path: '/'
-      fullPath: '/app/inventory/'
-      preLoaderRoute: typeof AppInventoryIndexRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/app/control/': {
-      id: '/app/control/'
-      path: '/'
-      fullPath: '/app/control/'
-      preLoaderRoute: typeof AppControlIndexRouteImport
-      parentRoute: typeof AppControlRoute
-    }
     '/app/_app/': {
       id: '/app/_app/'
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppAppIndexRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/tickets/my-tickets': {
-      id: '/app/tickets/my-tickets'
-      path: '/my-tickets'
-      fullPath: '/app/tickets/my-tickets'
-      preLoaderRoute: typeof AppTicketsMyTicketsRouteImport
-      parentRoute: typeof AppTicketsRoute
-    }
-    '/app/shifts/shift-types': {
-      id: '/app/shifts/shift-types'
-      path: '/shift-types'
-      fullPath: '/app/shifts/shift-types'
-      preLoaderRoute: typeof AppShiftsShiftTypesRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/shift-schedules': {
-      id: '/app/shifts/shift-schedules'
-      path: '/shift-schedules'
-      fullPath: '/app/shifts/shift-schedules'
-      preLoaderRoute: typeof AppShiftsShiftSchedulesRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/scheduling': {
-      id: '/app/shifts/scheduling'
-      path: '/scheduling'
-      fullPath: '/app/shifts/scheduling'
-      preLoaderRoute: typeof AppShiftsSchedulingRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/schedule-overview': {
-      id: '/app/shifts/schedule-overview'
-      path: '/schedule-overview'
-      fullPath: '/app/shifts/schedule-overview'
-      preLoaderRoute: typeof AppShiftsScheduleOverviewRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/reports': {
-      id: '/app/shifts/reports'
-      path: '/reports'
-      fullPath: '/app/shifts/reports'
-      preLoaderRoute: typeof AppShiftsReportsRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/period-exceptions': {
-      id: '/app/shifts/period-exceptions'
-      path: '/period-exceptions'
-      fullPath: '/app/shifts/period-exceptions'
-      preLoaderRoute: typeof AppShiftsPeriodExceptionsRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/period-details': {
-      id: '/app/shifts/period-details'
-      path: '/period-details'
-      fullPath: '/app/shifts/period-details'
-      preLoaderRoute: typeof AppShiftsPeriodDetailsRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/my-shifts': {
-      id: '/app/shifts/my-shifts'
-      path: '/my-shifts'
-      fullPath: '/app/shifts/my-shifts'
-      preLoaderRoute: typeof AppShiftsMyShiftsRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/manage-users': {
-      id: '/app/shifts/manage-users'
-      path: '/manage-users'
-      fullPath: '/app/shifts/manage-users'
-      preLoaderRoute: typeof AppShiftsManageUsersRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/attendance-issues': {
-      id: '/app/shifts/attendance-issues'
-      path: '/attendance-issues'
-      fullPath: '/app/shifts/attendance-issues'
-      preLoaderRoute: typeof AppShiftsAttendanceIssuesRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/shifts/attendance': {
-      id: '/app/shifts/attendance'
-      path: '/attendance'
-      fullPath: '/app/shifts/attendance'
-      preLoaderRoute: typeof AppShiftsAttendanceRouteImport
-      parentRoute: typeof AppShiftsRoute
-    }
-    '/app/inventory/transactions': {
-      id: '/app/inventory/transactions'
-      path: '/transactions'
-      fullPath: '/app/inventory/transactions'
-      preLoaderRoute: typeof AppInventoryTransactionsRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/app/inventory/my-transactions': {
-      id: '/app/inventory/my-transactions'
-      path: '/my-transactions'
-      fullPath: '/app/inventory/my-transactions'
-      preLoaderRoute: typeof AppInventoryMyTransactionsRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/app/inventory/items': {
-      id: '/app/inventory/items'
-      path: '/items'
-      fullPath: '/app/inventory/items'
-      preLoaderRoute: typeof AppInventoryItemsRouteImport
-      parentRoute: typeof AppInventoryRoute
-    }
-    '/app/control/providers': {
-      id: '/app/control/providers'
-      path: '/providers'
-      fullPath: '/app/control/providers'
-      preLoaderRoute: typeof AppControlProvidersRouteImport
-      parentRoute: typeof AppControlRoute
-    }
-    '/app/control/points': {
-      id: '/app/control/points'
-      path: '/points'
-      fullPath: '/app/control/points'
-      preLoaderRoute: typeof AppControlPointsRouteImport
-      parentRoute: typeof AppControlRoute
-    }
-    '/app/control/logs': {
-      id: '/app/control/logs'
-      path: '/logs'
-      fullPath: '/app/control/logs'
-      preLoaderRoute: typeof AppControlLogsRouteImport
-      parentRoute: typeof AppControlRoute
-    }
-    '/app/control/gateways': {
-      id: '/app/control/gateways'
-      path: '/gateways'
-      fullPath: '/app/control/gateways'
-      preLoaderRoute: typeof AppControlGatewaysRouteImport
-      parentRoute: typeof AppControlRoute
-    }
-    '/app/_app/users': {
-      id: '/app/_app/users'
-      path: '/users'
-      fullPath: '/app/users'
-      preLoaderRoute: typeof AppAppUsersRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/suspensions': {
-      id: '/app/_app/suspensions'
-      path: '/suspensions'
-      fullPath: '/app/suspensions'
-      preLoaderRoute: typeof AppAppSuspensionsRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/sessions': {
-      id: '/app/_app/sessions'
-      path: '/sessions'
-      fullPath: '/app/sessions'
-      preLoaderRoute: typeof AppAppSessionsRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/roles': {
-      id: '/app/_app/roles'
-      path: '/roles'
-      fullPath: '/app/roles'
-      preLoaderRoute: typeof AppAppRolesRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/reports': {
-      id: '/app/_app/reports'
-      path: '/reports'
-      fullPath: '/app/reports'
-      preLoaderRoute: typeof AppAppReportsRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/my-agreements': {
-      id: '/app/_app/my-agreements'
-      path: '/my-agreements'
-      fullPath: '/app/my-agreements'
-      preLoaderRoute: typeof AppAppMyAgreementsRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/devices': {
-      id: '/app/_app/devices'
-      path: '/devices'
-      fullPath: '/app/devices'
-      preLoaderRoute: typeof AppAppDevicesRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/configuration': {
-      id: '/app/_app/configuration'
-      path: '/configuration'
-      fullPath: '/app/configuration'
-      preLoaderRoute: typeof AppAppConfigurationRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/audit-logs': {
-      id: '/app/_app/audit-logs'
-      path: '/audit-logs'
-      fullPath: '/app/audit-logs'
-      preLoaderRoute: typeof AppAppAuditLogsRouteImport
-      parentRoute: typeof AppAppRoute
-    }
-    '/app/_app/api-tokens': {
-      id: '/app/_app/api-tokens'
-      path: '/api-tokens'
-      fullPath: '/app/api-tokens'
-      preLoaderRoute: typeof AppAppApiTokensRouteImport
       parentRoute: typeof AppAppRoute
     }
     '/app/_app/agreements': {
@@ -1043,26 +812,236 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppAgreementsRouteImport
       parentRoute: typeof AppAppRoute
     }
-    '/app/tickets/my-tickets/': {
-      id: '/app/tickets/my-tickets/'
-      path: '/'
-      fullPath: '/app/tickets/my-tickets/'
-      preLoaderRoute: typeof AppTicketsMyTicketsIndexRouteImport
-      parentRoute: typeof AppTicketsMyTicketsRoute
+    '/app/_app/api-tokens': {
+      id: '/app/_app/api-tokens'
+      path: '/api-tokens'
+      fullPath: '/app/api-tokens'
+      preLoaderRoute: typeof AppAppApiTokensRouteImport
+      parentRoute: typeof AppAppRoute
     }
-    '/app/tickets/admin/': {
-      id: '/app/tickets/admin/'
-      path: '/admin'
-      fullPath: '/app/tickets/admin/'
-      preLoaderRoute: typeof AppTicketsAdminIndexRouteImport
+    '/app/_app/audit-logs': {
+      id: '/app/_app/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/app/audit-logs'
+      preLoaderRoute: typeof AppAppAuditLogsRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/configuration': {
+      id: '/app/_app/configuration'
+      path: '/configuration'
+      fullPath: '/app/configuration'
+      preLoaderRoute: typeof AppAppConfigurationRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/devices': {
+      id: '/app/_app/devices'
+      path: '/devices'
+      fullPath: '/app/devices'
+      preLoaderRoute: typeof AppAppDevicesRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/my-agreements': {
+      id: '/app/_app/my-agreements'
+      path: '/my-agreements'
+      fullPath: '/app/my-agreements'
+      preLoaderRoute: typeof AppAppMyAgreementsRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/reports': {
+      id: '/app/_app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppAppReportsRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/roles': {
+      id: '/app/_app/roles'
+      path: '/roles'
+      fullPath: '/app/roles'
+      preLoaderRoute: typeof AppAppRolesRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/sessions': {
+      id: '/app/_app/sessions'
+      path: '/sessions'
+      fullPath: '/app/sessions'
+      preLoaderRoute: typeof AppAppSessionsRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/suspensions': {
+      id: '/app/_app/suspensions'
+      path: '/suspensions'
+      fullPath: '/app/suspensions'
+      preLoaderRoute: typeof AppAppSuspensionsRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/_app/users': {
+      id: '/app/_app/users'
+      path: '/users'
+      fullPath: '/app/users'
+      preLoaderRoute: typeof AppAppUsersRouteImport
+      parentRoute: typeof AppAppRoute
+    }
+    '/app/control/': {
+      id: '/app/control/'
+      path: '/'
+      fullPath: '/app/control/'
+      preLoaderRoute: typeof AppControlIndexRouteImport
+      parentRoute: typeof AppControlRoute
+    }
+    '/app/control/gateways': {
+      id: '/app/control/gateways'
+      path: '/gateways'
+      fullPath: '/app/control/gateways'
+      preLoaderRoute: typeof AppControlGatewaysRouteImport
+      parentRoute: typeof AppControlRoute
+    }
+    '/app/control/logs': {
+      id: '/app/control/logs'
+      path: '/logs'
+      fullPath: '/app/control/logs'
+      preLoaderRoute: typeof AppControlLogsRouteImport
+      parentRoute: typeof AppControlRoute
+    }
+    '/app/control/points': {
+      id: '/app/control/points'
+      path: '/points'
+      fullPath: '/app/control/points'
+      preLoaderRoute: typeof AppControlPointsRouteImport
+      parentRoute: typeof AppControlRoute
+    }
+    '/app/control/providers': {
+      id: '/app/control/providers'
+      path: '/providers'
+      fullPath: '/app/control/providers'
+      preLoaderRoute: typeof AppControlProvidersRouteImport
+      parentRoute: typeof AppControlRoute
+    }
+    '/app/inventory/': {
+      id: '/app/inventory/'
+      path: '/'
+      fullPath: '/app/inventory/'
+      preLoaderRoute: typeof AppInventoryIndexRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/app/inventory/items': {
+      id: '/app/inventory/items'
+      path: '/items'
+      fullPath: '/app/inventory/items'
+      preLoaderRoute: typeof AppInventoryItemsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/app/inventory/my-transactions': {
+      id: '/app/inventory/my-transactions'
+      path: '/my-transactions'
+      fullPath: '/app/inventory/my-transactions'
+      preLoaderRoute: typeof AppInventoryMyTransactionsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/app/inventory/transactions': {
+      id: '/app/inventory/transactions'
+      path: '/transactions'
+      fullPath: '/app/inventory/transactions'
+      preLoaderRoute: typeof AppInventoryTransactionsRouteImport
+      parentRoute: typeof AppInventoryRoute
+    }
+    '/app/shifts/': {
+      id: '/app/shifts/'
+      path: '/'
+      fullPath: '/app/shifts/'
+      preLoaderRoute: typeof AppShiftsIndexRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/attendance': {
+      id: '/app/shifts/attendance'
+      path: '/attendance'
+      fullPath: '/app/shifts/attendance'
+      preLoaderRoute: typeof AppShiftsAttendanceRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/attendance-issues': {
+      id: '/app/shifts/attendance-issues'
+      path: '/attendance-issues'
+      fullPath: '/app/shifts/attendance-issues'
+      preLoaderRoute: typeof AppShiftsAttendanceIssuesRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/manage-users': {
+      id: '/app/shifts/manage-users'
+      path: '/manage-users'
+      fullPath: '/app/shifts/manage-users'
+      preLoaderRoute: typeof AppShiftsManageUsersRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/my-shifts': {
+      id: '/app/shifts/my-shifts'
+      path: '/my-shifts'
+      fullPath: '/app/shifts/my-shifts'
+      preLoaderRoute: typeof AppShiftsMyShiftsRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/period-details': {
+      id: '/app/shifts/period-details'
+      path: '/period-details'
+      fullPath: '/app/shifts/period-details'
+      preLoaderRoute: typeof AppShiftsPeriodDetailsRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/period-exceptions': {
+      id: '/app/shifts/period-exceptions'
+      path: '/period-exceptions'
+      fullPath: '/app/shifts/period-exceptions'
+      preLoaderRoute: typeof AppShiftsPeriodExceptionsRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/reports': {
+      id: '/app/shifts/reports'
+      path: '/reports'
+      fullPath: '/app/shifts/reports'
+      preLoaderRoute: typeof AppShiftsReportsRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/schedule-overview': {
+      id: '/app/shifts/schedule-overview'
+      path: '/schedule-overview'
+      fullPath: '/app/shifts/schedule-overview'
+      preLoaderRoute: typeof AppShiftsScheduleOverviewRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/scheduling': {
+      id: '/app/shifts/scheduling'
+      path: '/scheduling'
+      fullPath: '/app/shifts/scheduling'
+      preLoaderRoute: typeof AppShiftsSchedulingRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/shift-schedules': {
+      id: '/app/shifts/shift-schedules'
+      path: '/shift-schedules'
+      fullPath: '/app/shifts/shift-schedules'
+      preLoaderRoute: typeof AppShiftsShiftSchedulesRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/shifts/shift-types': {
+      id: '/app/shifts/shift-types'
+      path: '/shift-types'
+      fullPath: '/app/shifts/shift-types'
+      preLoaderRoute: typeof AppShiftsShiftTypesRouteImport
+      parentRoute: typeof AppShiftsRoute
+    }
+    '/app/tickets/': {
+      id: '/app/tickets/'
+      path: '/'
+      fullPath: '/app/tickets/'
+      preLoaderRoute: typeof AppTicketsIndexRouteImport
       parentRoute: typeof AppTicketsRoute
     }
-    '/app/shifts/manage-users/': {
-      id: '/app/shifts/manage-users/'
-      path: '/'
-      fullPath: '/app/shifts/manage-users/'
-      preLoaderRoute: typeof AppShiftsManageUsersIndexRouteImport
-      parentRoute: typeof AppShiftsManageUsersRoute
+    '/app/tickets/my-tickets': {
+      id: '/app/tickets/my-tickets'
+      path: '/my-tickets'
+      fullPath: '/app/tickets/my-tickets'
+      preLoaderRoute: typeof AppTicketsMyTicketsRouteImport
+      parentRoute: typeof AppTicketsRoute
     }
     '/app/_app/me/': {
       id: '/app/_app/me/'
@@ -1071,25 +1050,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppMeIndexRouteImport
       parentRoute: typeof AppAppRoute
     }
-    '/app/tickets/submit/$ticketTypeId': {
-      id: '/app/tickets/submit/$ticketTypeId'
-      path: '/submit/$ticketTypeId'
-      fullPath: '/app/tickets/submit/$ticketTypeId'
-      preLoaderRoute: typeof AppTicketsSubmitTicketTypeIdRouteImport
-      parentRoute: typeof AppTicketsRoute
+    '/app/_app/me/sessions': {
+      id: '/app/_app/me/sessions'
+      path: '/me/sessions'
+      fullPath: '/app/me/sessions'
+      preLoaderRoute: typeof AppAppMeSessionsRouteImport
+      parentRoute: typeof AppAppRoute
     }
-    '/app/tickets/my-tickets/$ticketId': {
-      id: '/app/tickets/my-tickets/$ticketId'
-      path: '/$ticketId'
-      fullPath: '/app/tickets/my-tickets/$ticketId'
-      preLoaderRoute: typeof AppTicketsMyTicketsTicketIdRouteImport
-      parentRoute: typeof AppTicketsMyTicketsRoute
+    '/app/shifts/manage-users/': {
+      id: '/app/shifts/manage-users/'
+      path: '/'
+      fullPath: '/app/shifts/manage-users/'
+      preLoaderRoute: typeof AppShiftsManageUsersIndexRouteImport
+      parentRoute: typeof AppShiftsManageUsersRoute
     }
-    '/app/tickets/admin/types': {
-      id: '/app/tickets/admin/types'
-      path: '/admin/types'
-      fullPath: '/app/tickets/admin/types'
-      preLoaderRoute: typeof AppTicketsAdminTypesRouteImport
+    '/app/shifts/manage-users/$userId': {
+      id: '/app/shifts/manage-users/$userId'
+      path: '/$userId'
+      fullPath: '/app/shifts/manage-users/$userId'
+      preLoaderRoute: typeof AppShiftsManageUsersUserIdRouteImport
+      parentRoute: typeof AppShiftsManageUsersRoute
+    }
+    '/app/tickets/admin/': {
+      id: '/app/tickets/admin/'
+      path: '/admin'
+      fullPath: '/app/tickets/admin/'
+      preLoaderRoute: typeof AppTicketsAdminIndexRouteImport
       parentRoute: typeof AppTicketsRoute
     }
     '/app/tickets/admin/$ticketId': {
@@ -1099,19 +1085,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTicketsAdminTicketIdRouteImport
       parentRoute: typeof AppTicketsRoute
     }
-    '/app/shifts/manage-users/$userId': {
-      id: '/app/shifts/manage-users/$userId'
-      path: '/$userId'
-      fullPath: '/app/shifts/manage-users/$userId'
-      preLoaderRoute: typeof AppShiftsManageUsersUserIdRouteImport
-      parentRoute: typeof AppShiftsManageUsersRoute
+    '/app/tickets/admin/types': {
+      id: '/app/tickets/admin/types'
+      path: '/admin/types'
+      fullPath: '/app/tickets/admin/types'
+      preLoaderRoute: typeof AppTicketsAdminTypesRouteImport
+      parentRoute: typeof AppTicketsRoute
     }
-    '/app/_app/me/sessions': {
-      id: '/app/_app/me/sessions'
-      path: '/me/sessions'
-      fullPath: '/app/me/sessions'
-      preLoaderRoute: typeof AppAppMeSessionsRouteImport
-      parentRoute: typeof AppAppRoute
+    '/app/tickets/my-tickets/': {
+      id: '/app/tickets/my-tickets/'
+      path: '/'
+      fullPath: '/app/tickets/my-tickets/'
+      preLoaderRoute: typeof AppTicketsMyTicketsIndexRouteImport
+      parentRoute: typeof AppTicketsMyTicketsRoute
+    }
+    '/app/tickets/my-tickets/$ticketId': {
+      id: '/app/tickets/my-tickets/$ticketId'
+      path: '/$ticketId'
+      fullPath: '/app/tickets/my-tickets/$ticketId'
+      preLoaderRoute: typeof AppTicketsMyTicketsTicketIdRouteImport
+      parentRoute: typeof AppTicketsMyTicketsRoute
+    }
+    '/app/tickets/submit/$ticketTypeId': {
+      id: '/app/tickets/submit/$ticketTypeId'
+      path: '/submit/$ticketTypeId'
+      fullPath: '/app/tickets/submit/$ticketTypeId'
+      preLoaderRoute: typeof AppTicketsSubmitTicketTypeIdRouteImport
+      parentRoute: typeof AppTicketsRoute
     }
   }
 }
