@@ -301,8 +301,7 @@ export function CreatePeriodSheet({
 				{creationType === "clone" && (
 					<div className="space-y-6 px-4">
 						<FieldLabel>
-							Select Period to Clone{" "}
-							<span className="text-destructive">*</span>
+							Select Period to Clone <span className="text-destructive">*</span>
 						</FieldLabel>
 						<PeriodSelector
 							selectedPeriodId={selectedPeriodId}
@@ -326,9 +325,14 @@ export function CreatePeriodSheet({
 							>
 								Cancel
 							</Button>
-							<Button 
+							<Button
 								type="button"
-								disabled={isCloning || selectedPeriodId === null || clonedPeriodName === null || clonedPeriodName === ""}
+								disabled={
+									isCloning ||
+									selectedPeriodId === null ||
+									clonedPeriodName === null ||
+									clonedPeriodName === ""
+								}
 								onClick={async () => {
 									if (selectedPeriodId === null) return;
 									const cloneName = clonedPeriodName;
@@ -341,7 +345,8 @@ export function CreatePeriodSheet({
 										});
 										handleSheetChange(false);
 									} catch (err) {
-										const message = err instanceof Error ? err.message : String(err);
+										const message =
+											err instanceof Error ? err.message : String(err);
 										setServerError(message);
 									} finally {
 										setIsCloning(false);

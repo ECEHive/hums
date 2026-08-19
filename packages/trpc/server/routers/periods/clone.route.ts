@@ -61,8 +61,8 @@ export async function cloneHandler(options: TCloneOptions) {
 				minMaxUnit: sourcePeriod.minMaxUnit,
 				roles: sourcePeriod.roles.length
 					? {
-						connect: sourcePeriod.roles.map((role) => ({ id: role.id })),
-					}
+							connect: sourcePeriod.roles.map((role) => ({ id: role.id })),
+						}
 					: undefined,
 			},
 		});
@@ -94,8 +94,8 @@ export async function cloneHandler(options: TCloneOptions) {
 					doRequireRoles: sourceShiftType.doRequireRoles,
 					roles: sourceShiftType.roles.length
 						? {
-							connect: sourceShiftType.roles.map((role) => ({ id: role.id })),
-						}
+								connect: sourceShiftType.roles.map((role) => ({ id: role.id })),
+							}
 						: undefined,
 				},
 			});
