@@ -13,7 +13,7 @@
 		"@ecehive/trpc": "workspace:*",
 		"@radix-ui/react-label": "^2.1.8",
 		"@radix-ui/react-separator": "^1.1.8",
-		"@radix-ui/react-slhttps://github.com/ECEHive/hums/pull/360/conflict?name=apps%252Fkiosk%252Fpackage.json&ancestor_oid=09d054678bc74b2087237ae02529cd770f0d2a4b&base_oid=dbb88f18df2984e33ffdaa01db8e2c85f7d36ecd&head_oid=2b7027ee48f02621e9056e27bd2c2c0a048f9c85ot": "^1.2.4",
+		"@radix-ui/react-slot": "^1.2.4",
 		"@sentry/react": "^10.48.0",
 		"@tanstack/devtools-vite": "^0.3.11",
 		"@tanstack/react-devtools": "^0.9.6",
