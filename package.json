@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/hums",
-	"version": "3.8.3",
+	"version": "3.8.4",
 	"type": "module",
 	"workspaces": [
 		"apps/*",

@@ -86,6 +86,17 @@ export function SearchableMultiSelect<T = string | number>({
 }: SearchableMultiSelectProps<T>) {
 	const [open, setOpen] = React.useState(false);
 	const [internalSearch, setInternalSearch] = React.useState("");
+	const rootRef = React.useRef<HTMLDivElement>(null);
+	const [popoverContainer, setPopoverContainer] = React.useState<HTMLElement | null>(null);
+
+	React.useEffect(() => {
+		const root = rootRef.current;
+		if (!root) return;
+		const container = root.closest(
+			"[data-slot='dialog-content'], [data-slot='sheet-content']",
+		) as HTMLElement | null;
+		setPopoverContainer(container);
+	}, []);
 
 	// Use controlled search if provided, otherwise use internal state
 	const search = searchValue ?? internalSearch;
@@ -138,7 +149,7 @@ export function SearchableMultiSelect<T = string | number>({
 	}
 
 	return (
-		<div className={cn("flex gap-2 w-full min-w-0", className)}>
+		<div ref={rootRef} className={cn("flex gap-2 w-full min-w-0", className)}>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<Button
@@ -189,7 +200,11 @@ export function SearchableMultiSelect<T = string | number>({
 						<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent className={cn(popoverWidth, "p-0")} align="start">
+				<PopoverContent
+					className={cn(popoverWidth, "p-0")}
+					align="start"
+					container={popoverContainer}
+				>
 					<Command shouldFilter={!onSearchChange}>
 						<CommandInput
 							placeholder={searchPlaceholder}
