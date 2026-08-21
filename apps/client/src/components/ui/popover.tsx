@@ -1,18 +1,49 @@
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import type * as React from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
+
+type PopoverContextValue = {
+	triggerElement: HTMLElement | null;
+	setTriggerElement: (element: HTMLElement | null) => void;
+};
+
+const PopoverContext = createContext<PopoverContextValue | null>(null);
 
 function Popover({
 	...props
 }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-	return <PopoverPrimitive.Root data-slot="popover" {...props} />;
+	const [triggerElement, setTriggerElement] = useState<HTMLElement | null>(null);
+
+	return (
+		<PopoverContext.Provider value={{ triggerElement, setTriggerElement }}>
+			<PopoverPrimitive.Root data-slot="popover" {...props} />
+		</PopoverContext.Provider>
+	);
 }
 
 function PopoverTrigger({
+	onPointerDownCapture,
+	onFocusCapture,
 	...props
 }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-	return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+	const context = useContext(PopoverContext);
+
+	return (
+		<PopoverPrimitive.Trigger
+			data-slot="popover-trigger"
+			onPointerDownCapture={(event) => {
+				context?.setTriggerElement(event.currentTarget as HTMLElement);
+				onPointerDownCapture?.(event);
+			}}
+			onFocusCapture={(event) => {
+				context?.setTriggerElement(event.currentTarget as HTMLElement);
+				onFocusCapture?.(event);
+			}}
+			{...props}
+		/>
+	);
 }
 
 function PopoverContent({
@@ -24,8 +55,26 @@ function PopoverContent({
 }: React.ComponentProps<typeof PopoverPrimitive.Content> & {
 	container?: HTMLElement | null;
 }) {
+	const context = useContext(PopoverContext);
+	const resolvedContainer = useMemo(() => {
+		if (container !== undefined) {
+			return container ?? undefined;
+		}
+
+		const triggerElement = context?.triggerElement;
+		if (!triggerElement) {
+			return undefined;
+		}
+
+		return (
+			(triggerElement.closest(
+				"[data-slot='dialog-content'], [data-slot='sheet-content']",
+			) as HTMLElement | null) ?? undefined
+		);
+	}, [container, context?.triggerElement]);
+
 	return (
-		<PopoverPrimitive.Portal container={container}>
+		<PopoverPrimitive.Portal container={resolvedContainer}>
 			<PopoverPrimitive.Content
 				data-slot="popover-content"
 				align={align}
