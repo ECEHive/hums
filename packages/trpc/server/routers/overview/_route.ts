@@ -15,6 +15,10 @@ import {
 	currentStaffingHandler,
 	ZCurrentStaffingSchema,
 } from "./currentStaffing.route";
+import {
+	equipmentStatusHandler,
+	ZEquipmentStatusSchema,
+} from "./equipmentStatus.route";
 import { openHoursHandler, ZOpenHoursSchema } from "./openHours.route";
 
 export const overviewRouter = router({
@@ -26,6 +30,9 @@ export const overviewRouter = router({
 		.input(ZBusynessAnalyticsSchema)
 		.query(busynessAnalyticsHandler),
 	openHours: publicProcedure.input(ZOpenHoursSchema).query(openHoursHandler),
+	equipmentStatus: publicProcedure
+		.input(ZEquipmentStatusSchema)
+		.query(equipmentStatusHandler),
 
 	// Protected endpoints (require overview device access)
 	currentStaffing: dashboardProtectedProcedure
