@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as OverviewRouteImport } from './routes/_overview'
 import { Route as OverviewIndexRouteImport } from './routes/_overview/index'
 import { Route as OverviewStaffingRouteImport } from './routes/_overview/staffing'
+import { Route as OverviewEquipmentRouteImport } from './routes/_overview/equipment'
 
 const OverviewRoute = OverviewRouteImport.update({
   id: '/_overview',
@@ -27,27 +28,40 @@ const OverviewStaffingRoute = OverviewStaffingRouteImport.update({
   path: '/staffing',
   getParentRoute: () => OverviewRoute,
 } as any)
+const OverviewEquipmentRoute = OverviewEquipmentRouteImport.update({
+  id: '/equipment',
+  path: '/equipment',
+  getParentRoute: () => OverviewRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof OverviewIndexRoute
+  '/equipment': typeof OverviewEquipmentRoute
   '/staffing': typeof OverviewStaffingRoute
 }
 export interface FileRoutesByTo {
+  '/equipment': typeof OverviewEquipmentRoute
   '/staffing': typeof OverviewStaffingRoute
   '/': typeof OverviewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_overview': typeof OverviewRouteWithChildren
+  '/_overview/equipment': typeof OverviewEquipmentRoute
   '/_overview/staffing': typeof OverviewStaffingRoute
   '/_overview/': typeof OverviewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/staffing'
+  fullPaths: '/' | '/equipment' | '/staffing'
   fileRoutesByTo: FileRoutesByTo
-  to: '/staffing' | '/'
-  id: '__root__' | '/_overview' | '/_overview/staffing' | '/_overview/'
+  to: '/equipment' | '/staffing' | '/'
+  id:
+    | '__root__'
+    | '/_overview'
+    | '/_overview/equipment'
+    | '/_overview/staffing'
+    | '/_overview/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,15 +91,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OverviewStaffingRouteImport
       parentRoute: typeof OverviewRoute
     }
+    '/_overview/equipment': {
+      id: '/_overview/equipment'
+      path: '/equipment'
+      fullPath: '/equipment'
+      preLoaderRoute: typeof OverviewEquipmentRouteImport
+      parentRoute: typeof OverviewRoute
+    }
   }
 }
 
 interface OverviewRouteChildren {
+  OverviewEquipmentRoute: typeof OverviewEquipmentRoute
   OverviewStaffingRoute: typeof OverviewStaffingRoute
   OverviewIndexRoute: typeof OverviewIndexRoute
 }
 
 const OverviewRouteChildren: OverviewRouteChildren = {
+  OverviewEquipmentRoute: OverviewEquipmentRoute,
   OverviewStaffingRoute: OverviewStaffingRoute,
   OverviewIndexRoute: OverviewIndexRoute,
 }
