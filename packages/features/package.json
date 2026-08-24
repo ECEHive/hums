@@ -14,7 +14,7 @@
 		"@ecehive/prisma": "workspace:*",
 		"@ecehive/user-data": "workspace:*",
 		"@js-temporal/polyfill": "^0.5.1",
-		"@trpc/server": "11.7.2"
+		"@trpc/server": "11.8.0"
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
