@@ -5,6 +5,7 @@ import {
 	MoonIcon,
 	SunIcon,
 	UsersIcon,
+	WrenchIcon,
 } from "lucide-react";
 import { useDevice } from "@/components/providers/device-provider";
 import { useTheme } from "@/components/providers/theme-provider";
@@ -40,6 +41,11 @@ const mainItems: SidebarItem[] = [
 		title: "Overview",
 		url: "/",
 		icon: HomeIcon,
+	},
+	{
+		title: "Equipment",
+		url: "/equipment",
+		icon: WrenchIcon,
 	},
 	{
 		title: "Staffing",

@@ -102,7 +102,6 @@ function App() {
 					<main className="min-w-full flex-1 overflow-hidden relative">
 						<FlowOverlays
 							errorDialog={inventoryWorkflow.errorDialog}
-							scanNotification={inventoryWorkflow.scanNotification}
 							successNotification={inventoryWorkflow.successNotification}
 							suspension={inventoryWorkflow.suspension}
 						/>

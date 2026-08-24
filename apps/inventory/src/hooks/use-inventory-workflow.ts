@@ -17,11 +17,6 @@ export type ErrorDialogState = {
 	isExiting: boolean;
 };
 
-export type ScanNotificationState = {
-	userName: string;
-	isExiting: boolean;
-};
-
 export type SuccessNotificationState = {
 	message: string;
 	isExiting: boolean;
@@ -57,7 +52,6 @@ export type ApprovalDialogState = {
 
 type InventoryWorkflowState = {
 	isProcessing: boolean;
-	scanNotification: ScanNotificationState | null;
 	successNotification: SuccessNotificationState | null;
 	errorDialog: ErrorDialogState;
 	suspension: SuspensionState | null;
@@ -88,7 +82,6 @@ type InventoryWorkflowAction =
 
 const INITIAL_STATE: InventoryWorkflowState = {
 	isProcessing: false,
-	scanNotification: null,
 	successNotification: null,
 	errorDialog: {
 		message: "",
@@ -108,23 +101,6 @@ const inventoryWorkflowReducer = (
 			return { ...state, isProcessing: true };
 		case "processing_end":
 			return { ...state, isProcessing: false };
-		case "scan_notification_set":
-			return {
-				...state,
-				scanNotification: {
-					userName: action.payload.userName,
-					isExiting: false,
-				},
-			};
-		case "scan_notification_exit_start":
-			return {
-				...state,
-				scanNotification: state.scanNotification
-					? { ...state.scanNotification, isExiting: true }
-					: null,
-			};
-		case "scan_notification_clear":
-			return { ...state, scanNotification: null };
 		case "success_notification_set":
 			return {
 				...state,
@@ -215,7 +191,6 @@ export function useInventoryWorkflow() {
 	const [state, dispatch] = useReducer(inventoryWorkflowReducer, INITIAL_STATE);
 	const {
 		isProcessing,
-		scanNotification,
 		successNotification,
 		errorDialog,
 		suspension,
@@ -223,7 +198,6 @@ export function useInventoryWorkflow() {
 		approvalDialog,
 	} = state;
 
-	const scanNotificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const scanExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const successNotificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const successExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -231,22 +205,6 @@ export function useInventoryWorkflow() {
 	const errorExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const suspensionExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-	const dismissScanNotification = useCallback(() => {
-		clearTimer(scanNotificationTimeoutRef);
-		clearTimer(scanExitTimeoutRef);
-		dispatch({ type: "scan_notification_clear" });
-	}, []);
-
-	const scheduleScanHide = useCallback(() => {
-		clearTimer(scanNotificationTimeoutRef);
-		scanNotificationTimeoutRef.current = setTimeout(() => {
-			dispatch({ type: "scan_notification_exit_start" });
-			scanExitTimeoutRef.current = setTimeout(() => {
-				dispatch({ type: "scan_notification_clear" });
-			}, FADE_OUT_DURATION_MS);
-		}, NOTIFICATION_DISPLAY_DURATION_MS);
-	}, []);
 
 	const showSuccess = useCallback((message: string) => {
 		clearTimer(successNotificationTimeoutRef);
@@ -381,7 +339,6 @@ export function useInventoryWorkflow() {
 				return;
 			}
 
-			dismissScanNotification();
 			dispatch({ type: "processing_start" });
 
 			try {
@@ -418,7 +375,7 @@ export function useInventoryWorkflow() {
 					return;
 				}
 
-				// User verified, show success notification and then transaction view
+				// User verified, show transaction view
 				dispatch({ type: "processing_end" });
 				dispatch({
 					type: "scan_notification_set",
@@ -431,19 +388,16 @@ export function useInventoryWorkflow() {
 						userId: result.user.id,
 					});
 
-				// After notification, hide it and show transaction view
-				scheduleScanHide();
-				setTimeout(() => {
-					dispatch({
-						type: "transaction_view_set",
-						payload: {
-							userName: result.user.name,
-							cardNumber,
-							canReturn: balanceResult.hasCheckedOutItems,
-							userId: result.user.id,
-						},
-					});
-				}, NOTIFICATION_DISPLAY_DURATION_MS + FADE_OUT_DURATION_MS);
+				// Show transaction view
+				dispatch({
+					type: "transaction_view_set",
+					payload: {
+						userName: result.user.name,
+						cardNumber,
+						canReturn: balanceResult.hasCheckedOutItems,
+						userId: result.user.id,
+					},
+				});
 			} catch (error: unknown) {
 				dispatch({ type: "processing_end" });
 				const message =
@@ -452,14 +406,7 @@ export function useInventoryWorkflow() {
 				showError(message);
 			}
 		},
-		[
-			approvalDialog,
-			dismissScanNotification,
-			handleApprovalScan,
-			log,
-			scheduleScanHide,
-			showError,
-		],
+		[approvalDialog, handleApprovalScan, log, showError],
 	);
 
 	const handleCheckout = useCallback(
@@ -640,7 +587,6 @@ export function useInventoryWorkflow() {
 
 	useEffect(() => {
 		return () => {
-			clearTimer(scanNotificationTimeoutRef);
 			clearTimer(scanExitTimeoutRef);
 			clearTimer(successNotificationTimeoutRef);
 			clearTimer(successExitTimeoutRef);
@@ -653,7 +599,6 @@ export function useInventoryWorkflow() {
 
 	return {
 		isProcessing,
-		scanNotification,
 		successNotification,
 		errorDialog,
 		suspension,
@@ -666,6 +611,5 @@ export function useInventoryWorkflow() {
 		handleApprovalCancel,
 		handleTransactionCancel,
 		showError,
-		dismissScanNotification,
 	};
 }
