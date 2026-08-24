@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/features",
-	"version": "3.8.4",
+	"version": "3.8.5",
 	"type": "module",
 	"main": "./src/index.ts",
 	"scripts": {
