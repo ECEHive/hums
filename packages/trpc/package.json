@@ -12,7 +12,7 @@
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
 		"typescript": "^6.0.3",
-		"vite": "^8.0.8"
+		"vite": "^8.2.2"
 	},
 	"dependencies": {
 		"@date-fns/tz": "^1.4.1",
