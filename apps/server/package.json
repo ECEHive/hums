@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/server",
-	"version": "3.8.5",
+	"version": "3.8.6",
 	"type": "module",
 	"scripts": {
 		"start": "bun ./src/index.ts",

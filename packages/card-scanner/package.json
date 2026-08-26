@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/card-scanner",
-	"version": "3.8.5",
+	"version": "3.8.6",
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts",
