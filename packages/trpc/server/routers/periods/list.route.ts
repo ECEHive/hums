@@ -57,7 +57,7 @@ export async function listHandler(options: TListOptions) {
 	const [result, total] = await Promise.all([
 		prisma.period.findMany({
 			where,
-			orderBy: { start: "asc" },
+			orderBy: { start: "desc" },
 			skip: offset,
 			take: limit,
 			include: {

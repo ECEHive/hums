@@ -103,7 +103,7 @@ function ManageUserDetailPage() {
 			return trpc.shiftAttendances.listForUser.query({
 				periodId: selectedPeriodId,
 				userId: userIdNum,
-				limit: 25,
+				limit: 1000,
 			});
 		},
 		enabled: Boolean(selectedPeriodId && userIdNum),

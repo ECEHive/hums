@@ -29,3 +29,7 @@ generated/
 
 docker-compose.yml
 docker-compose.yaml
+
+# Backups
+
+backups/
