@@ -108,6 +108,7 @@ export type AttendanceData = {
 	attendances: Array<{
 		id: number;
 		status: string;
+		isExcused: boolean;
 		scheduledHours: number | null;
 		actualHours: number | null;
 		shiftOccurrence: {
@@ -776,13 +777,16 @@ export function AttendanceSection({
 									record.shiftOccurrence.timestamp,
 									{ formatString: "MMM D, YYYY" },
 								);
-								const statusLabel = formatStatusLabel(record.status);
+								const statusLabel = formatStatusLabel(
+									record.isExcused ? "excused" : record.status,
+								);
 								const scheduledDisplay =
 									typeof record.scheduledHours === "number"
 										? formatDecimalHours(record.scheduledHours)
 										: "–";
-								const actualDisplay =
-									typeof record.actualHours === "number"
+								const actualDisplay = record.isExcused
+									? scheduledDisplay
+									: typeof record.actualHours === "number"
 										? formatDecimalHours(record.actualHours)
 										: "–";
 								return (

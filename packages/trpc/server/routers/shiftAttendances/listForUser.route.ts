@@ -8,7 +8,7 @@ import type { TPermissionProtectedProcedureContext } from "../../trpc";
 export const ZListForUserSchema = z.object({
 	periodId: z.number().min(1),
 	userId: z.number().min(1),
-	limit: z.number().min(1).max(100).optional(),
+	limit: z.number().min(1).max(1000).optional(),
 	offset: z.number().min(0).optional(),
 });
 
@@ -107,6 +107,7 @@ export async function listForUserHandler(options: TListForUserOptions) {
 				didArriveLate: true,
 				didLeaveEarly: true,
 				isMakeup: true,
+				isExcused: true,
 				createdAt: true,
 				shiftOccurrence: {
 					select: {
@@ -214,6 +215,7 @@ export async function listForUserHandler(options: TListForUserOptions) {
 
 type AttendanceSummaryRecord = {
 	status: ShiftAttendanceStatus;
+	isExcused: boolean;
 	timeIn: Date | null;
 	timeOut: Date | null;
 	shiftOccurrence: {
@@ -243,6 +245,7 @@ async function computeAttendanceSummary(
 			where,
 			select: {
 				status: true,
+				isExcused: true,
 				timeIn: true,
 				timeOut: true,
 				shiftOccurrence: {
@@ -303,6 +306,8 @@ function summarizeAttendanceRecords(
 			const actualHours =
 				(record.timeOut.getTime() - record.timeIn.getTime()) / (1000 * 60 * 60);
 			totalActualHours += actualHours;
+		} else if (record.isExcused) {
+			totalActualHours += scheduledHours;
 		}
 	}
 
