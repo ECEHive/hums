@@ -14,7 +14,7 @@
 	"dependencies": {
 		"@ecehive/env": "workspace:*",
 		"@prisma/adapter-pg": "^7.5.0",
-		"@prisma/client": "^7.3.0",
+		"@prisma/client": "^7.10.0",
 		"pg": "^8.16.3",
 		"prisma": "^7.9.1"
 	},
