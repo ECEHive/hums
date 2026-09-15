@@ -1,21 +1,22 @@
 import { trpc } from "@ecehive/trpc/client";
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, X } from "lucide-react";
+import { EyeIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ItemList } from "./item-list";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 interface InventoryTransactionViewProps {
 	userName: string;
-	canReturn: boolean; // True if user has items checked out
+	userCheckedOutItems: TransactionItem[];
 	onCheckout: (items: { sku: string; quantity: number }[]) => Promise<void>;
 	onReturn: (items: { sku: string; quantity: number }[]) => Promise<void>;
 	onCancel: () => void;
 	onError: (message: string) => void;
 }
 
-type TransactionItem = {
+export type TransactionItem = {
 	id: string;
 	name: string;
 	sku: string;
@@ -25,15 +26,15 @@ type TransactionItem = {
 
 export function InventoryTransactionView({
 	userName,
-	canReturn,
+	userCheckedOutItems,
 	onCheckout,
 	onReturn,
 	onCancel,
 	onError,
 }: InventoryTransactionViewProps) {
-	const [mode, setMode] = useState<"select" | "checkout" | "return" | null>(
-		null,
-	);
+	const [mode, setMode] = useState<
+		"select" | "checkout" | "return" | "my_checked_out" | null
+	>(null);
 	const [items, setItems] = useState<TransactionItem[]>([]);
 	const [currentSku, setCurrentSku] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -240,7 +241,7 @@ export function InventoryTransactionView({
 									</p>
 								</div>
 
-								<div className="flex gap-6 w-full max-w-2xl">
+								<div className="flex gap-10 w-full">
 									<Button
 										size="lg"
 										className="flex-1 h-32 text-2xl"
@@ -248,16 +249,60 @@ export function InventoryTransactionView({
 									>
 										Check Out Items
 									</Button>
-									{canReturn && (
-										<Button
-											size="lg"
-											variant="outline"
-											className="flex-1 h-32 text-2xl"
-											onClick={() => setMode("return")}
-										>
-											Return Items
-										</Button>
-									)}
+									<Button
+										size="lg"
+										variant="outline"
+										className="flex-1 h-32 text-2xl"
+										onClick={() => setMode("return")}
+									>
+										Return Items
+									</Button>
+								</div>
+
+								{userCheckedOutItems.length > 0 && (
+									<Button
+										size="default"
+										variant="outline"
+										className="h-16 w-full text-lg"
+										onClick={() => setMode("my_checked_out")}
+									>
+										<EyeIcon className="h-10 w-10 mr-2" />
+										{userCheckedOutItems.length} Checked Out Item
+										{userCheckedOutItems.length === 1 ? "" : "s"}
+									</Button>
+								)}
+							</motion.div>
+						) : mode === "my_checked_out" ? (
+							<motion.div
+								key="my_checked_out"
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -20 }}
+								className="flex flex-col gap-6"
+							>
+								<div className="text-center">
+									<h2 className="text-4xl font-bold mb-2">
+										My Checked Out Items
+									</h2>
+									<p className="text-xl text-muted-foreground">{userName}</p>
+								</div>
+
+								<ItemList
+									items={userCheckedOutItems}
+									handleUpdateQuantity={handleUpdateQuantity}
+									handleRemoveItem={handleRemoveItem}
+									mode={mode}
+								/>
+
+								<div className="flex gap-4">
+									<Button
+										size="lg"
+										variant="outline"
+										onClick={handleBack}
+										className="flex-1 h-14 text-lg"
+									>
+										Back
+									</Button>
 								</div>
 							</motion.div>
 						) : (
@@ -307,62 +352,12 @@ export function InventoryTransactionView({
 									</Button>
 								</div>
 
-								<div className="border rounded-lg p-4 min-h-[300px] max-h-[400px] overflow-y-auto">
-									{items.length === 0 ? (
-										<div className="flex items-center justify-center h-full text-muted-foreground text-lg">
-											No items added yet
-										</div>
-									) : (
-										<div className="space-y-3">
-											{items.map((item) => (
-												<div
-													key={item.id}
-													className="flex items-center gap-4 p-4 bg-background rounded-lg border"
-												>
-													<div className="flex-1">
-														<p className="font-mono text-xl font-semibold">
-															{item.name}
-														</p>
-													</div>
-													{item.itemType === "single" ? (
-														<span className="text-lg text-muted-foreground">
-															Individual item
-														</span>
-													) : (
-														<div className="flex items-center gap-2">
-															<Button
-																size="icon"
-																variant="outline"
-																onClick={() =>
-																	handleUpdateQuantity(item.id, -1)
-																}
-															>
-																<Minus className="h-4 w-4" />
-															</Button>
-															<span className="text-2xl font-bold w-12 text-center">
-																{item.quantity}
-															</span>
-															<Button
-																size="icon"
-																variant="outline"
-																onClick={() => handleUpdateQuantity(item.id, 1)}
-															>
-																<Plus className="h-4 w-4" />
-															</Button>
-														</div>
-													)}
-													<Button
-														size="icon"
-														variant="ghost"
-														onClick={() => handleRemoveItem(item.id)}
-													>
-														<X className="h-4 w-4" />
-													</Button>
-												</div>
-											))}
-										</div>
-									)}
-								</div>
+								<ItemList
+									items={items}
+									handleUpdateQuantity={handleUpdateQuantity}
+									handleRemoveItem={handleRemoveItem}
+									mode={mode}
+								/>
 
 								<div className="flex gap-4">
 									<Button

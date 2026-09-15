@@ -125,7 +125,9 @@ function App() {
 							!inventoryWorkflow.approvalDialog && (
 								<InventoryTransactionView
 									userName={inventoryWorkflow.transactionView.userName}
-									canReturn={inventoryWorkflow.transactionView.canReturn}
+									userCheckedOutItems={
+										inventoryWorkflow.transactionView.userCheckedOutItems
+									}
 									onCheckout={inventoryWorkflow.handleCheckout}
 									onReturn={inventoryWorkflow.handleReturn}
 									onCancel={inventoryWorkflow.handleTransactionCancel}

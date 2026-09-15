@@ -2,6 +2,7 @@ import { trpc } from "@ecehive/trpc/client";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type { RestrictedItem } from "@/components/approval-dialog";
+import type { TransactionItem } from "@/components/inventory-transaction-view";
 import { formatLog, getLogger } from "@/lib/logging";
 import { calculateReadingDuration } from "@/lib/utils";
 
@@ -34,7 +35,7 @@ export type SuspensionState = {
 export type TransactionViewState = {
 	userName: string;
 	cardNumber: string;
-	canReturn: boolean;
+	userCheckedOutItems: TransactionItem[];
 	userId: number;
 };
 
@@ -382,11 +383,16 @@ export function useInventoryWorkflow() {
 					payload: { userName: result.user.name },
 				});
 
-				// Check if user has any items checked out (net negative balance)
-				const balanceResult =
-					await trpc.inventory.transactions.checkUserBalance.query({
+				// Get user's checked out items, if any
+				const userCheckedOutItems =
+					await trpc.inventory.transactions.getUserCheckedOutItems.query({
 						userId: result.user.id,
 					});
+
+				console.log(
+					"User checked out items:",
+					userCheckedOutItems.checkedOutItems,
+				);
 
 				// Show transaction view
 				dispatch({
@@ -394,7 +400,7 @@ export function useInventoryWorkflow() {
 					payload: {
 						userName: result.user.name,
 						cardNumber,
-						canReturn: balanceResult.hasCheckedOutItems,
+						userCheckedOutItems: userCheckedOutItems.checkedOutItems,
 						userId: result.user.id,
 					},
 				});
