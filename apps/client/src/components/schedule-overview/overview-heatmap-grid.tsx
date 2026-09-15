@@ -68,18 +68,14 @@ function useCurrentTime(): { dayOfWeek: number; timeMinutes: number } {
 	return time;
 }
 
-// Ramp endpoints. Light mode darkens toward a saturated cyan as a block fills,
-// dark mode brightens; the text color is fixed per theme so every step along the
-// ramp clears 4.5:1 against its own background.
 const HEATMAP_HUE = 192;
 const HEATMAP_TEXT_LIGHT = "#104e64"; // cyan-900
 const HEATMAP_TEXT_DARK = "#cefafe"; // cyan-100
 
 /**
  * Calculate heatmap color based on fill ratio.
- * Fuller blocks are always more saturated than emptier ones, which is what the
- * legend promises. The legend chips are generated from this same function so
- * the two cannot drift apart.
+ * Higher fill -> more saturated.
+ * Text color is chosen for contrast.
  */
 export function getHeatmapStyles(
 	filled: number,
@@ -110,8 +106,6 @@ export function getHeatmapStyles(
 		};
 	}
 
-	// One continuous ramp for every partially or fully filled block, so a full
-	// block is never rendered lighter than a nearly-full one.
 	const saturation = isDarkMode
 		? Math.round(45 + clampedRatio * 38) // 45% to 83%
 		: Math.round(55 + clampedRatio * 35); // 55% to 90%

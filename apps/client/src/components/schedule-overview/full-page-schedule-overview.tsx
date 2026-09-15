@@ -45,8 +45,6 @@ interface FullPageScheduleOverviewProps {
 // Legend Component
 function OverviewLegend() {
 	const isDarkMode = useIsDarkMode();
-	// Chips come from the grid's own ramp, so the key always describes the
-	// cells it sits above.
 	const full = getHeatmapStyles(1, 1, isDarkMode);
 	const partial = getHeatmapStyles(1, 2, isDarkMode);
 
