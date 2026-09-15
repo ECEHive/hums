@@ -26,10 +26,6 @@ import {
 	ZCheckOutSchema,
 } from "./transactions/checkOut.route";
 import {
-	checkUserBalanceHandler,
-	ZCheckUserBalanceSchema,
-} from "./transactions/checkUserBalance.route";
-import {
 	getMyNetBalanceHandler,
 	ZGetMyNetBalanceSchema,
 } from "./transactions/getMyNetBalance.route";
@@ -37,6 +33,10 @@ import {
 	getNetBalanceHandler,
 	ZGetNetBalanceSchema,
 } from "./transactions/getNetBalance.route";
+import {
+	getUserCheckedOutItemsHandler,
+	ZGetUserCheckedOutItemsSchema,
+} from "./transactions/getUserCheckedOutItems.route";
 import {
 	listHandler as listTransactionsHandler,
 	ZListSchema as ZListTransactionsSchema,
@@ -87,9 +87,9 @@ export const inventoryRouter = router({
 		checkOut: inventoryProtectedProcedure
 			.input(ZCheckOutSchema)
 			.mutation(checkOutHandler),
-		checkUserBalance: inventoryProtectedProcedure
-			.input(ZCheckUserBalanceSchema)
-			.query(checkUserBalanceHandler),
+		getUserCheckedOutItems: inventoryProtectedProcedure
+			.input(ZGetUserCheckedOutItemsSchema)
+			.query(getUserCheckedOutItemsHandler),
 		list: permissionProtectedProcedure("inventory.transactions.list")
 			.input(ZListTransactionsSchema)
 			.query(listTransactionsHandler),
