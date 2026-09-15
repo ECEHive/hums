@@ -20,7 +20,7 @@ interface OverviewHeatmapGridProps {
 /**
  * Hook to detect dark mode by observing the document's class list.
  */
-function useIsDarkMode(): boolean {
+export function useIsDarkMode(): boolean {
 	const [isDark, setIsDark] = useState(() => {
 		if (typeof window === "undefined") return false;
 		return document.documentElement.classList.contains("dark");
@@ -68,11 +68,20 @@ function useCurrentTime(): { dayOfWeek: number; timeMinutes: number } {
 	return time;
 }
 
+// Ramp endpoints. Light mode darkens toward a saturated cyan as a block fills,
+// dark mode brightens; the text color is fixed per theme so every step along the
+// ramp clears 4.5:1 against its own background.
+const HEATMAP_HUE = 192;
+const HEATMAP_TEXT_LIGHT = "#104e64"; // cyan-900
+const HEATMAP_TEXT_DARK = "#cefafe"; // cyan-100
+
 /**
  * Calculate heatmap color based on fill ratio.
- * Higher fill = warmer color (more saturated).
+ * Fuller blocks are always more saturated than emptier ones, which is what the
+ * legend promises. The legend chips are generated from this same function so
+ * the two cannot drift apart.
  */
-function getHeatmapStyles(
+export function getHeatmapStyles(
 	filled: number,
 	total: number,
 	isDarkMode: boolean,
@@ -101,47 +110,28 @@ function getHeatmapStyles(
 		};
 	}
 
-	// Full slots - use a teal/cyan color
-	if (filled === total) {
-		return {
-			className: isDarkMode
-				? "border-cyan-500/60 bg-cyan-950/40 text-cyan-400"
-				: "border-cyan-500/50 bg-cyan-50 text-cyan-700",
-			style: {},
-			ariaLabel: `${filled} of ${total} slots filled (100%)`,
-		};
-	}
-
-	// Partial fill - gradient from gray to teal based on ratio
-	// Using HSL with hue 180 (cyan/teal)
-	const hue = 180;
+	// One continuous ramp for every partially or fully filled block, so a full
+	// block is never rendered lighter than a nearly-full one.
 	const saturation = isDarkMode
-		? Math.round(40 + clampedRatio * 30) // 40% to 70%
-		: Math.round(50 + clampedRatio * 30); // 50% to 80%
+		? Math.round(45 + clampedRatio * 38) // 45% to 83%
+		: Math.round(55 + clampedRatio * 35); // 55% to 90%
 
 	const bgLightness = isDarkMode
-		? Math.round(15 + clampedRatio * 10) // 15% to 25%
-		: Math.round(95 - clampedRatio * 10); // 95% to 85%
+		? Math.round(13 + clampedRatio * 16) // 13% to 29%
+		: Math.round(96 - clampedRatio * 38); // 96% to 58%
 
 	const borderLightness = isDarkMode
-		? Math.round(35 + clampedRatio * 15) // 35% to 50%
-		: Math.round(55 - clampedRatio * 15); // 55% to 40%
+		? Math.round(30 + clampedRatio * 25) // 30% to 55%
+		: Math.round(70 - clampedRatio * 35); // 70% to 35%
 
-	const textLightness = isDarkMode
-		? Math.round(55 + clampedRatio * 20) // 55% to 75%
-		: Math.round(40 - clampedRatio * 10); // 40% to 30%
-
-	const borderOpacity = 0.4 + clampedRatio * 0.3;
-	const bgOpacity = isDarkMode ? 0.3 + clampedRatio * 0.2 : 1;
+	const bgOpacity = isDarkMode ? 0.4 + clampedRatio * 0.42 : 1;
 
 	return {
 		className: "hover:scale-[1.02]",
 		style: {
-			borderColor: `hsla(${hue}, ${saturation}%, ${borderLightness}%, ${borderOpacity})`,
-			backgroundColor: isDarkMode
-				? `hsla(${hue}, ${saturation}%, ${bgLightness}%, ${bgOpacity})`
-				: `hsl(${hue}, ${saturation}%, ${bgLightness}%)`,
-			color: `hsl(${hue}, ${Math.round(saturation * 0.85)}%, ${textLightness}%)`,
+			borderColor: `hsl(${HEATMAP_HUE}, ${saturation}%, ${borderLightness}%)`,
+			backgroundColor: `hsla(${HEATMAP_HUE}, ${saturation}%, ${bgLightness}%, ${bgOpacity})`,
+			color: isDarkMode ? HEATMAP_TEXT_DARK : HEATMAP_TEXT_LIGHT,
 		},
 		ariaLabel: `${filled} of ${total} slots filled (${Math.round(clampedRatio * 100)}%)`,
 	};
@@ -263,7 +253,7 @@ export function OverviewHeatmapGrid({
 													<span className="text-base font-bold tabular-nums">
 														{blockData.filled}
 													</span>
-													<span className="text-[10px] opacity-80">
+													<span className="text-[10px]">
 														/{blockData.total}
 													</span>
 												</button>

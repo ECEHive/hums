@@ -20,7 +20,11 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { OverviewHeatmapGrid } from "./overview-heatmap-grid";
+import {
+	getHeatmapStyles,
+	OverviewHeatmapGrid,
+	useIsDarkMode,
+} from "./overview-heatmap-grid";
 import { OverviewMobileSheet } from "./overview-mobile-sheet";
 import { OverviewSidebar, OverviewSidebarEmpty } from "./overview-sidebar";
 import {
@@ -40,18 +44,36 @@ interface FullPageScheduleOverviewProps {
 
 // Legend Component
 function OverviewLegend() {
+	const isDarkMode = useIsDarkMode();
+	// Chips come from the grid's own ramp, so the key always describes the
+	// cells it sits above.
+	const full = getHeatmapStyles(1, 1, isDarkMode);
+	const partial = getHeatmapStyles(1, 2, isDarkMode);
+
 	return (
 		<div className="flex flex-wrap items-center gap-4 text-xs">
 			<div className="flex items-center gap-1.5">
-				<div className="w-3 h-3 rounded bg-cyan-500" />
+				<div
+					className="w-3 h-3 rounded border"
+					style={{
+						backgroundColor: full.style.backgroundColor,
+						borderColor: full.style.borderColor,
+					}}
+				/>
 				<span>Full</span>
 			</div>
 			<div className="flex items-center gap-1.5">
-				<div className="w-3 h-3 rounded bg-cyan-500/40" />
+				<div
+					className="w-3 h-3 rounded border"
+					style={{
+						backgroundColor: partial.style.backgroundColor,
+						borderColor: partial.style.borderColor,
+					}}
+				/>
 				<span>Partial</span>
 			</div>
 			<div className="flex items-center gap-1.5">
-				<div className="w-3 h-3 rounded bg-muted" />
+				<div className="w-3 h-3 rounded border border-muted bg-muted/40" />
 				<span>Empty</span>
 			</div>
 			<div className="flex items-center gap-1.5">
