@@ -1,6 +1,7 @@
 import { Clock, MapPin, User, Users } from "lucide-react";
 import { formatTimeRange } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
+import { getHeatmapStyles, useIsDarkMode } from "./overview-heatmap-grid";
 import type { OverviewSchedule } from "./overview-utils";
 
 interface OverviewShiftCardProps {
@@ -8,6 +9,13 @@ interface OverviewShiftCardProps {
 }
 
 export function OverviewShiftCard({ schedule }: OverviewShiftCardProps) {
+	const isDarkMode = useIsDarkMode();
+	const heatmap = getHeatmapStyles(
+		schedule.filledSlots,
+		schedule.slots,
+		isDarkMode,
+	);
+
 	const fillPercent =
 		schedule.slots > 0
 			? Math.round((schedule.filledSlots / schedule.slots) * 100)
@@ -17,12 +25,13 @@ export function OverviewShiftCard({ schedule }: OverviewShiftCardProps) {
 		<div
 			className={cn(
 				"rounded-xl border-2 p-4 transition-all",
-				schedule.filledSlots === schedule.slots
-					? "border-cyan-500/50 bg-cyan-50/50 dark:bg-cyan-950/20"
-					: schedule.filledSlots > 0
-						? "border-muted-foreground/30 bg-muted/10"
-						: "border-muted bg-muted/20",
+				schedule.filledSlots === 0 && "border-muted bg-muted/20",
 			)}
+			style={
+				schedule.filledSlots > 0
+					? { borderColor: heatmap.style.borderColor }
+					: undefined
+			}
 		>
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 flex-1">

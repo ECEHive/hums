@@ -241,12 +241,10 @@ export function generateColumns(options: ColumnsOptions): ColumnDef<Ticket>[] {
 				}
 
 				return (
-					<div className="flex items-center gap-1.5 text-primary">
-						<UserIcon className="h-3.5 w-3.5" />
-						<span className="truncate max-w-[150px]" title={handler.name}>
-							{handler.name}
-						</span>
-					</div>
+					<Badge className="max-w-[150px]" title={handler.name}>
+						<UserIcon />
+						<span className="truncate">{handler.name}</span>
+					</Badge>
 				);
 			},
 		});

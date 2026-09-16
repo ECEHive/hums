@@ -66,8 +66,8 @@ export function generateSummaryColumns(): ColumnDef<TransactionSummary>[] {
 								variant={quantity < 0 ? "default" : "secondary"}
 								className={
 									quantity < 0
-										? "bg-blue-600 hover:bg-blue-700 text-foreground"
-										: "bg-green-600 hover:bg-green-700 text-foreground"
+										? "bg-blue-600 text-white"
+										: "bg-green-600 text-black"
 								}
 							>
 								{quantity < 0 ? "Checked Out" : "Available"}
@@ -93,8 +93,8 @@ export function generateSummaryColumns(): ColumnDef<TransactionSummary>[] {
 							variant={quantity < 0 ? "default" : "secondary"}
 							className={
 								quantity < 0
-									? "bg-blue-600 hover:bg-blue-700 text-foreground"
-									: "bg-green-600 hover:bg-green-700 text-foreground"
+									? "bg-blue-600 text-white"
+									: "bg-green-600 text-black"
 							}
 						>
 							{quantity < 0 ? "Checked Out" : "Available"}
@@ -149,8 +149,8 @@ export function generateMySummaryColumns(): ColumnDef<MyTransactionSummary>[] {
 								variant={quantity < 0 ? "default" : "secondary"}
 								className={
 									quantity < 0
-										? "bg-blue-600 hover:bg-blue-700 text-foreground"
-										: "bg-green-600 hover:bg-green-700 text-foreground"
+										? "bg-blue-600 text-white"
+										: "bg-green-600 text-black"
 								}
 							>
 								{quantity < 0 ? "Checked Out" : "In Possession"}
@@ -176,8 +176,8 @@ export function generateMySummaryColumns(): ColumnDef<MyTransactionSummary>[] {
 							variant={quantity < 0 ? "default" : "secondary"}
 							className={
 								quantity < 0
-									? "bg-blue-600 hover:bg-blue-700 text-foreground"
-									: "bg-green-600 hover:bg-green-700 text-foreground"
+									? "bg-blue-600 text-white"
+									: "bg-green-600 text-black"
 							}
 						>
 							{quantity < 0 ? "Checked Out" : "In Possession"}
