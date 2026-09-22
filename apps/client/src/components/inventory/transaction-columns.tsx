@@ -50,17 +50,11 @@ const formatDate = (date: Date) => formatInAppTimezone(date);
 
 function getActionBadge(action: "CHECK_IN" | "CHECK_OUT") {
 	return action === "CHECK_IN" ? (
-		<Badge
-			variant="default"
-			className="bg-green-600 hover:bg-green-700 text-foreground"
-		>
+		<Badge variant="default" className="bg-green-600 text-black">
 			Check In
 		</Badge>
 	) : (
-		<Badge
-			variant="default"
-			className="bg-blue-600 hover:bg-blue-700 text-foreground"
-		>
+		<Badge variant="default" className="bg-blue-600 text-white">
 			Check Out
 		</Badge>
 	);
