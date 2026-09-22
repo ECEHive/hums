@@ -45,6 +45,7 @@ import { Route as AppControlProvidersRouteImport } from './routes/app/control/pr
 import { Route as AppControlPointsRouteImport } from './routes/app/control/points'
 import { Route as AppControlLogsRouteImport } from './routes/app/control/logs'
 import { Route as AppControlGatewaysRouteImport } from './routes/app/control/gateways'
+import { Route as AppAppWebhooksRouteImport } from './routes/app/_app/webhooks'
 import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
@@ -251,6 +252,11 @@ const AppControlGatewaysRoute = AppControlGatewaysRouteImport.update({
   path: '/gateways',
   getParentRoute: () => AppControlRoute,
 } as any)
+const AppAppWebhooksRoute = AppAppWebhooksRouteImport.update({
+  id: '/webhooks',
+  path: '/webhooks',
+  getParentRoute: () => AppAppRoute,
+} as any)
 const AppAppUsersRoute = AppAppUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/webhooks': typeof AppAppWebhooksRoute
   '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
@@ -439,6 +446,7 @@ export interface FileRoutesByTo {
   '/app/sessions': typeof AppAppSessionsRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
+  '/app/webhooks': typeof AppAppWebhooksRoute
   '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
@@ -496,6 +504,7 @@ export interface FileRoutesById {
   '/app/_app/sessions': typeof AppAppSessionsRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
   '/app/_app/users': typeof AppAppUsersRoute
+  '/app/_app/webhooks': typeof AppAppWebhooksRoute
   '/app/control/gateways': typeof AppControlGatewaysRoute
   '/app/control/logs': typeof AppControlLogsRoute
   '/app/control/points': typeof AppControlPointsRoute
@@ -556,6 +565,7 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/webhooks'
     | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
@@ -610,6 +620,7 @@ export interface FileRouteTypes {
     | '/app/sessions'
     | '/app/suspensions'
     | '/app/users'
+    | '/app/webhooks'
     | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/app/_app/sessions'
     | '/app/_app/suspensions'
     | '/app/_app/users'
+    | '/app/_app/webhooks'
     | '/app/control/gateways'
     | '/app/control/logs'
     | '/app/control/points'
@@ -966,6 +978,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppControlGatewaysRouteImport
       parentRoute: typeof AppControlRoute
     }
+    '/app/_app/webhooks': {
+      id: '/app/_app/webhooks'
+      path: '/webhooks'
+      fullPath: '/app/webhooks'
+      preLoaderRoute: typeof AppAppWebhooksRouteImport
+      parentRoute: typeof AppAppRoute
+    }
     '/app/_app/users': {
       id: '/app/_app/users'
       path: '/users'
@@ -1128,6 +1147,7 @@ interface AppAppRouteChildren {
   AppAppSessionsRoute: typeof AppAppSessionsRoute
   AppAppSuspensionsRoute: typeof AppAppSuspensionsRoute
   AppAppUsersRoute: typeof AppAppUsersRoute
+  AppAppWebhooksRoute: typeof AppAppWebhooksRoute
   AppAppIndexRoute: typeof AppAppIndexRoute
   AppAppMeSessionsRoute: typeof AppAppMeSessionsRoute
   AppAppMeIndexRoute: typeof AppAppMeIndexRoute
@@ -1145,6 +1165,7 @@ const AppAppRouteChildren: AppAppRouteChildren = {
   AppAppSessionsRoute: AppAppSessionsRoute,
   AppAppSuspensionsRoute: AppAppSuspensionsRoute,
   AppAppUsersRoute: AppAppUsersRoute,
+  AppAppWebhooksRoute: AppAppWebhooksRoute,
   AppAppIndexRoute: AppAppIndexRoute,
   AppAppMeSessionsRoute: AppAppMeSessionsRoute,
   AppAppMeIndexRoute: AppAppMeIndexRoute,

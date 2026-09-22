@@ -1,5 +1,6 @@
 import type { AuditLogSource } from "@ecehive/prisma";
 import { Prisma, prisma } from "@ecehive/prisma";
+import { sendActions } from "../webhookEndpoints/send";
 
 export type AuditLogContext = {
 	userId: number;
@@ -24,6 +25,9 @@ export async function createAuditLogEntry(payload: AuditLogPayload) {
 			source: payload.source,
 		},
 	});
+
+	// Send to webhook endpoints that are configured to receive actions
+	await sendActions(payload);
 }
 
 export type AuditLogger = {

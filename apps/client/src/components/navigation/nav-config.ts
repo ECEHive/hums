@@ -465,6 +465,13 @@ export const adminNavItems: NavGroup[] = [
 				description: "Manage API access tokens",
 			},
 			{
+				title: "Webhooks",
+				url: "/app/webhooks",
+				icon: PlugZapIcon,
+				permissions: { any: ["webhooks.endpoints.list"] },
+				description: "Manage webhook endpoints",
+			},
+			{
 				title: "Reports",
 				url: "/app/reports",
 				icon: ClipboardListIcon,
@@ -519,6 +526,7 @@ export function isAdminPath(pathname: string): boolean {
 		"/app/agreements",
 		"/app/devices",
 		"/app/api-tokens",
+		"/app/webhooks",
 		"/app/sessions",
 		"/app/security",
 		"/app/audit-logs",
