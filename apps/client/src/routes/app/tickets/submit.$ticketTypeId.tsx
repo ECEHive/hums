@@ -64,7 +64,7 @@ function SubmitTicketFormPage() {
 	const submitMutation = useMutation({
 		mutationFn: async (data: Record<string, unknown>) => {
 			if (!ticketType) throw new Error("Ticket type not loaded");
-			return await trpc.tickets.submit.mutate({
+			await trpc.tickets.submit.mutate({
 				ticketTypeId: ticketType.id,
 				data,
 			});

@@ -74,6 +74,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
 		title: "API Tokens",
 		breadcrumb: "API Tokens",
 	},
+	"/app/webhooks": {
+		title: "Webhooks",
+		breadcrumb: "Webhooks",
+	},
 	"/app/audit-logs": {
 		title: "Audit Logs",
 		breadcrumb: "Audit Logs",

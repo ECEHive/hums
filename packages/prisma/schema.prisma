@@ -246,6 +246,18 @@ model ApiToken {
   auditLogs   AuditLog[]
 }
 
+model WebhookEndpoint {
+  id          Int       @id @default(autoincrement())
+  name        String
+  url         String
+  secret      String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  sendActions String[]  @default([])
+  sendTickets Boolean   @default(false)
+}
+
 model AuditLog {
   id               Int            @id @default(autoincrement())
   userId           Int

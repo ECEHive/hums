@@ -1,4 +1,7 @@
 import { queueEmail } from "@ecehive/email";
+import { env } from "@ecehive/env";
+import type { TicketSendable } from "@ecehive/features/src/webhookEndpoints/send";
+import { sendTickets } from "@ecehive/features/src/webhookEndpoints/send";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -119,6 +122,26 @@ export async function submitTicketHandler({
 			},
 		});
 	}
+
+	// Send to webhook endpoints that are configured to receive tickets
+	const webhookData = Object.fromEntries(
+		Object.entries(validation.data).map(([fieldId, value]) => {
+			const field = fieldSchema?.fields.find(
+				(candidate) => candidate.id === fieldId,
+			);
+			return [field?.label ?? fieldId, value];
+		}),
+	);
+	const ticketSendable: TicketSendable = {
+		ticketTypeId: ticket.ticketTypeId,
+		ticketTypeName: ticketType.name,
+		ticketUrl: `${env.CLIENT_BASE_URL.replace(/\/$/, "").replace("http:", "https:")}/app/tickets/admin/${ticket.id}`,
+		data: webhookData,
+		submitterId: ticket.submitterId,
+		submitterEmail: ticket.submitterEmail,
+		submitterName: ticket.submitterName,
+	};
+	await sendTickets(ticketSendable);
 
 	return {
 		id: ticket.id,
