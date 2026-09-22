@@ -24,11 +24,13 @@ import { shiftTypesRouter } from "./routers/shiftTypes/_route";
 import { suspensionsRouter } from "./routers/suspensions/_route";
 import { ticketsRouter } from "./routers/tickets/_route";
 import { usersRouter } from "./routers/users/_route";
+import { webhookEndpointsRouter } from "./routers/webhookEndpoints/_route";
 import { router } from "./trpc";
 
 export const appRouter = router({
 	auth: authRouter,
 	apiTokens: apiTokensRouter,
+	webhookEndpoints: webhookEndpointsRouter,
 	auditLogs: auditLogsRouter,
 	config: configRouter,
 	control: controlRouter,
