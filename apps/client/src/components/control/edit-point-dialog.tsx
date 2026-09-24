@@ -147,21 +147,21 @@ export function EditControlPointDialog({
 		ipAddress?: string;
 	};
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: point.name,
 			description: point.description,
 			location: point.location,
-			controlClass: point.controlClass,
+			controlClass: point.controlClass as "SWITCH" | "DOOR",
 			canControlOnline: point.canControlOnline,
 			canControlWithCode: point.canControlWithCode,
 			providerId: point.provider.id,
 			tagName: config.tagName ?? "",
 			ipAddress: config.ipAddress ?? "",
 			autoTurnOffEnabled: point.autoTurnOffEnabled ?? false,
-			autoTurnOffMinutes: point.autoTurnOffMinutes ?? null,
+			autoTurnOffMinutes: (point.autoTurnOffMinutes ?? null) as number | null,
 			isActive: point.isActive,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},

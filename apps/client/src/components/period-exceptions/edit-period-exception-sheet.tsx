@@ -29,10 +29,7 @@ type FormValues = {
 	end: Date | null;
 };
 
-const dateFieldSchema = z.preprocess(
-	(value) => (value instanceof Date ? value : undefined),
-	z.date({ required_error: "This field is required" }),
-);
+const dateFieldSchema = z.date({ message: "This field is required" });
 
 const formSchema = z
 	.object({
@@ -80,12 +77,12 @@ export function EditPeriodExceptionSheet({
 		},
 	});
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: periodException.name,
 			start: periodException.start,
 			end: periodException.end,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},

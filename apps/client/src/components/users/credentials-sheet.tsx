@@ -38,7 +38,7 @@ type CredentialsSheetProps = {
 export function CredentialsSheet({
 	user,
 	trigger,
-}: CredentialsSheetProps): JSX.Element {
+}: CredentialsSheetProps): JSX.Element | null {
 	const [open, setOpen] = useState(false);
 	const [credentials, setCredentials] = useState<Credential[]>([]);
 	const [loading, setLoading] = useState(false);

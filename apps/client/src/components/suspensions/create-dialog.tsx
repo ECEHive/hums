@@ -47,6 +47,16 @@ const formSchema = z.object({
 	externalNotes: z.string().optional(),
 });
 
+type FormValues = {
+	userId?: number;
+	startDate: string;
+	startTime: string;
+	endDate: string;
+	endTime: string;
+	internalNotes?: string;
+	externalNotes?: string;
+};
+
 type CreateDialogProps = {
 	onUpdate?: () => void;
 };
@@ -88,14 +98,14 @@ export function SuspensionCreateDialog({
 
 	const form = useForm({
 		defaultValues: {
-			userId: undefined as number | undefined,
+			userId: undefined,
 			startDate: "",
 			startTime: "00:00:00",
 			endDate: "",
 			endTime: "23:59:59",
 			internalNotes: "",
 			externalNotes: "",
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},
