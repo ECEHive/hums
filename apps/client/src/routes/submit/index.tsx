@@ -71,7 +71,7 @@ function SubmitTicketPage() {
 
 	if (isLoading) {
 		return (
-			<div className="min-h-screen bg-background flex flex-col">
+			<div className="h-svh overflow-hidden bg-background flex flex-col">
 				<header className="border-b">
 					<div className="container mx-auto px-4 py-4 flex items-center justify-between">
 						<Logo className="h-8" />
@@ -85,7 +85,7 @@ function SubmitTicketPage() {
 						)}
 					</div>
 				</header>
-				<main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+				<main className="ticket-scrollbar-hidden min-h-0 flex-1 overflow-y-auto container mx-auto px-4 py-8 max-w-4xl">
 					<h1 className="text-2xl font-bold mb-2">Submit a Ticket</h1>
 					<p className="text-muted-foreground mb-8">
 						Choose the type of ticket you'd like to submit
@@ -102,7 +102,7 @@ function SubmitTicketPage() {
 
 	if (error) {
 		return (
-			<div className="min-h-screen bg-background flex flex-col">
+			<div className="h-svh overflow-hidden bg-background flex flex-col">
 				<header className="border-b">
 					<div className="container mx-auto px-4 py-4 flex items-center justify-between">
 						<Logo className="h-8" />
@@ -116,7 +116,7 @@ function SubmitTicketPage() {
 						)}
 					</div>
 				</header>
-				<main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+				<main className="ticket-scrollbar-hidden min-h-0 flex-1 overflow-y-auto container mx-auto px-4 py-8 max-w-4xl">
 					<h1 className="text-2xl font-bold mb-8">Submit a Ticket</h1>
 					<Alert variant="destructive">
 						<AlertTriangleIcon className="h-4 w-4" />
@@ -131,7 +131,7 @@ function SubmitTicketPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col">
+		<div className="h-svh overflow-hidden bg-background flex flex-col">
 			<header className="border-b">
 				<div className="container mx-auto px-4 py-4 flex items-center justify-between">
 					<Logo className="h-8" />
@@ -145,7 +145,7 @@ function SubmitTicketPage() {
 					)}
 				</div>
 			</header>
-			<main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+			<main className="ticket-scrollbar-hidden min-h-0 flex-1 overflow-y-auto container mx-auto px-4 py-8 max-w-4xl">
 				<h1 className="text-2xl font-bold mb-2">Submit a Ticket</h1>
 				<p className="text-muted-foreground mb-8">
 					Choose the type of ticket you'd like to submit
