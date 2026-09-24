@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { AuditLogApiTokenSelector } from "@/components/audit-logs/api-token-selector";
 import { createAuditLogColumns } from "@/components/audit-logs/columns";
+import { AuditLogsDataTable } from "@/components/audit-logs/data-table";
 import { AuditLogDetailsSheet } from "@/components/audit-logs/details-sheet";
 import type {
 	AuditLogFilterApiToken,
@@ -25,7 +26,6 @@ import {
 	TableToolbar,
 } from "@/components/layout";
 import {
-	DataTable,
 	FilterField,
 	TableFilters,
 	TablePaginationFooter,
@@ -358,12 +358,11 @@ function AuditLogsPage() {
 									</FilterField>
 								</TableFilters>
 							</TableToolbar>
-							<DataTable
+							<AuditLogsDataTable
 								columns={columns}
 								data={logs}
 								isLoading={isLoading || isFetching}
 								emptyMessage="No audit logs found"
-								emptyDescription="Try adjusting your filters"
 								onRowClick={handleSelectLog}
 							/>
 

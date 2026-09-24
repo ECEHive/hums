@@ -223,13 +223,7 @@ function ShiftSchedulesPage() {
 						) : (
 							<>
 								<DataTable
-									columns={generateShiftScheduleColumns({
-										onEdit: (id) => {
-											setSelectedId(id);
-											setEditOpen(true);
-										},
-										canEdit,
-									})}
+									columns={generateShiftScheduleColumns(currentUser)}
 									data={schedulesData?.shiftSchedules ?? []}
 									isLoading={schedulesLoading}
 									emptyMessage="No shift schedules found"
@@ -244,6 +238,8 @@ function ShiftSchedulesPage() {
 										currentCount={schedulesData.shiftSchedules.length}
 										total={schedulesData.total}
 										itemName="schedules"
+										pageSize={limit}
+										onPageSizeChange={() => {}}
 									/>
 								)}
 							</>

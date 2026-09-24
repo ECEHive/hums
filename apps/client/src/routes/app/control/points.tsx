@@ -68,6 +68,8 @@ type ControlPoint = {
 	canControlWithCode: boolean;
 	currentState: boolean;
 	isActive: boolean;
+	autoTurnOffEnabled: boolean;
+	autoTurnOffMinutes: number | null;
 	provider: {
 		id: number;
 		name: string;
