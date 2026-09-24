@@ -6,7 +6,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"check": "biome check --write",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"dependencies": {
 		"@ecehive/card-scanner": "workspace:*",
