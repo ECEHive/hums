@@ -87,8 +87,8 @@ export function CreateControlPointDialog({
 			providerId: number;
 			providerConfig: Record<string, unknown>;
 			authorizedRoleIds?: number[];
-			trainedRoleId?: number | null;
-			trainerRoleId?: number | null;
+			trainedRoleId?: number;
+			trainerRoleId?: number;
 			autoTurnOffEnabled?: boolean;
 			autoTurnOffMinutes?: number | null;
 			isActive: boolean;
@@ -98,21 +98,21 @@ export function CreateControlPointDialog({
 		},
 	});
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: "",
 			description: "",
 			location: "",
-			controlClass: "SWITCH",
+			controlClass: "SWITCH" as "SWITCH" | "DOOR",
 			canControlOnline: true,
 			canControlWithCode: false,
 			providerId: 0,
 			tagName: "",
 			ipAddress: "",
 			autoTurnOffEnabled: false,
-			autoTurnOffMinutes: null,
+			autoTurnOffMinutes: null as number | null,
 			isActive: true,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},
