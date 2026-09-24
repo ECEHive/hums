@@ -3,7 +3,7 @@ import type React from "react";
 import { Input } from "@/components/ui/input";
 
 interface SearchInputProps
-	extends Omit<React.ComponentProps<typeof Input>, "type"> {
+	extends Omit<React.ComponentProps<typeof Input>, "type" | "onChange"> {
 	value: string;
 	onChange: (value: string) => void;
 	onSearch?: () => void;

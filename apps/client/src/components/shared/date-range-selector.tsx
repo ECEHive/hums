@@ -69,8 +69,6 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 			return formatLocalInput(s, {
 				formatString: withTime ? undefined : "MMM D, YYYY",
 				includeTimezoneWhenDifferent: withTime,
-				// Value came directly from the picker, so treat it as local input
-				treatAsLocalInput: true,
 			});
 		}
 		if (s && e) {
