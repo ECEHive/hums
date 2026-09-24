@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { formatLog, getLogger } from "@/lib/logging";
 import { calculateReadingDuration } from "@/lib/utils";
-import type { TapEvent } from "@/types";
+import type { TapEvent, TapResponse } from "@/types";
 
 const SESSION_TYPE_TIMEOUT_MS = 15000;
 const TAP_OUT_ACTION_TIMEOUT_MS = 15000;
@@ -402,13 +402,13 @@ export function useTapWorkflow() {
 						forceShiftEarlyLeave: forceShiftEarlyLeave || false,
 					}),
 				);
-				const result = await trpc.sessions.tapInOut.mutate({
+				const result = (await trpc.sessions.tapInOut.mutate({
 					cardNumber,
 					sessionType,
 					tapAction,
 					forceEarlyLeave,
 					forceShiftEarlyLeave,
-				});
+				})) as TapResponse;
 
 				if (result.status === "choose_session_type") {
 					dispatch({ type: "processing_end" });
@@ -543,28 +543,29 @@ export function useTapWorkflow() {
 					result.status === "switched_to_regular"
 				) {
 					dispatch({ type: "processing_end" });
-					const event =
-						(result.status === "switched_to_staffing" ||
-							result.status === "switched_to_regular") &&
-						result.endedSession &&
-						result.newSession
-							? ({
-									status: result.status,
-									user: result.user,
-									endedSession: result.endedSession,
-									newSession: result.newSession,
-									id: crypto.randomUUID(),
-									timestamp: new Date(),
-								} satisfies TapEvent)
-							: result.session
-								? ({
-										status: result.status as "tapped_in" | "tapped_out",
-										user: result.user,
-										session: result.session,
-										id: crypto.randomUUID(),
-										timestamp: new Date(),
-									} satisfies TapEvent)
-								: null;
+					let event: TapEvent | null = null;
+					if ("session" in result) {
+						if (result.session) {
+							event = {
+								status: result.status,
+								user: result.user,
+								session: result.session,
+								id: crypto.randomUUID(),
+								timestamp: new Date(),
+							};
+						}
+					} else if ("endedSession" in result) {
+						if (result.endedSession && result.newSession) {
+							event = {
+								status: result.status,
+								user: result.user,
+								endedSession: result.endedSession,
+								newSession: result.newSession,
+								id: crypto.randomUUID(),
+								timestamp: new Date(),
+							};
+						}
+					}
 
 					if (!event) {
 						showError("Unexpected response from server");
@@ -725,7 +726,7 @@ export function useTapWorkflow() {
 			});
 		} catch (error) {
 			log.error(
-				formatLog({
+				formatLog("Login without card failed", {
 					action: "handleLoginWithoutCard",
 					success: false,
 					error,

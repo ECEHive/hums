@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 interface SuspensionDialogProps {
 	userName: string;
 	endDate: Date;
+	externalNotes?: string | null;
 	isExiting: boolean;
 }
 
