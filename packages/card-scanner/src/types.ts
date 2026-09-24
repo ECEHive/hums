@@ -1,3 +1,5 @@
+/// <reference types="w3c-web-serial" />
+
 /**
  * Card scan result emitted after successfully parsing serial data.
  */
