@@ -468,7 +468,7 @@ export const adminNavItems: NavGroup[] = [
 				title: "Webhooks",
 				url: "/app/webhooks",
 				icon: PlugZapIcon,
-				permissions: { any: ["webhooks.endpoints.list"] },
+				permissions: { any: ["webhookEndpoints.list"] },
 				description: "Manage webhook endpoints",
 			},
 			{
