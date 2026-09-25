@@ -45,6 +45,7 @@ const formSchema = z.object({
 	ipAddress: z.ipv4({ message: "Invalid IPv4 address" }),
 	autoTurnOffEnabled: z.boolean(),
 	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),
+	requiresBuddy: z.boolean(),
 	isActive: z.boolean(),
 });
 
@@ -60,6 +61,7 @@ type ControlPoint = {
 	canControlWithCode: boolean;
 	currentState: boolean;
 	isActive: boolean;
+	requiresBuddy: boolean;
 	autoTurnOffEnabled: boolean;
 	autoTurnOffMinutes: number | null;
 	provider: {
@@ -132,6 +134,7 @@ export function EditControlPointDialog({
 			trainerRoleId?: number | null;
 			autoTurnOffEnabled?: boolean;
 			autoTurnOffMinutes?: number | null;
+			requiresBuddy?: boolean;
 			isActive?: boolean;
 		}) => trpc.control.points.update.mutate(input),
 		onSuccess: () => {
@@ -160,6 +163,7 @@ export function EditControlPointDialog({
 			ipAddress: config.ipAddress ?? "",
 			autoTurnOffEnabled: point.autoTurnOffEnabled ?? false,
 			autoTurnOffMinutes: point.autoTurnOffMinutes ?? null,
+			requiresBuddy: point.requiresBuddy ?? false,
 			isActive: point.isActive,
 		},
 		validators: {
@@ -187,6 +191,7 @@ export function EditControlPointDialog({
 					autoTurnOffMinutes: value.autoTurnOffEnabled
 						? value.autoTurnOffMinutes
 						: null,
+					requiresBuddy: value.requiresBuddy,
 					isActive: value.isActive,
 				});
 				setOpen(false);
@@ -231,6 +236,8 @@ export function EditControlPointDialog({
 						pointDetails?.autoTurnOffMinutes ??
 						point.autoTurnOffMinutes ??
 						null,
+					requiresBuddy:
+						pointDetails?.requiresBuddy ?? point.requiresBuddy ?? false,
 					isActive: pointDetails?.isActive ?? point.isActive,
 				});
 				setAuthorizedRoles(
@@ -419,6 +426,10 @@ export function EditControlPointDialog({
 							onChange={setTrainedRole}
 							selectionMode="single"
 						/>
+						<p className="text-xs text-muted-foreground mt-1">
+							This role is granted when a user is trained through the control
+							kiosk, and should be included in the authorized roles above
+						</p>
 					</Field>
 
 					<Field>
@@ -428,6 +439,11 @@ export function EditControlPointDialog({
 							onChange={setTrainerRole}
 							selectionMode="single"
 						/>
+						<p className="text-xs text-muted-foreground mt-1">
+							Users with this role can train other users (assigning the role
+							above), mark the control point as active/inactive, and bypass
+							buddy requirements.
+						</p>
 					</Field>
 
 					<form.Field name="canControlOnline">
@@ -530,6 +546,26 @@ export function EditControlPointDialog({
 							)}
 						</form.Field>
 					</div>
+
+					<form.Field name="requiresBuddy">
+						{(field) => (
+							<div className="flex items-center space-x-2">
+								<Checkbox
+									id={field.name}
+									checked={field.state.value}
+									onCheckedChange={(checked) =>
+										field.handleChange(checked === true)
+									}
+								/>
+								<label
+									htmlFor={field.name}
+									className="text-sm font-medium leading-none"
+								>
+									Requires buddy (two people to operate)
+								</label>
+							</div>
+						)}
+					</form.Field>
 
 					<form.Field name="isActive">
 						{(field) => (
