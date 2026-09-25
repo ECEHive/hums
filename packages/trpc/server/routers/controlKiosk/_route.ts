@@ -25,6 +25,7 @@ import {
 } from "./tapInOut.route";
 import { trainUserHandler, ZTrainUserSchema } from "./trainUser.route";
 import { updatePointHandler, ZUpdatePointSchema } from "./updatePoint.route";
+import { validateUserHandler, ZValidateUserSchema } from "./validateUser.route";
 
 export const controlKioskRouter = router({
 	// Get control points available on this device
@@ -41,6 +42,11 @@ export const controlKioskRouter = router({
 	checkUserPermissions: controlProtectedProcedure
 		.input(ZCheckUserPermissionsSchema)
 		.query(checkUserPermissionsHandler),
+
+	// Validate if a user is registered in the system
+	validateUser: controlProtectedProcedure
+		.input(ZValidateUserSchema)
+		.query(validateUserHandler),
 
 	// Operate a control point as a user
 	operate: controlProtectedProcedure

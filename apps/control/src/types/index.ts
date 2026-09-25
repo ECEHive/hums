@@ -128,6 +128,7 @@ export type TapEvent = Extract<
 // Control Kiosk Types
 export type ControlPointWithStatus = {
 	id: string;
+	requiresBuddy: boolean;
 	name: string;
 	description: string | null;
 	location: string | null;

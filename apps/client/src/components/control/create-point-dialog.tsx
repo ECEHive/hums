@@ -47,6 +47,7 @@ const formSchema = z.object({
 	ipAddress: z.ipv4({ message: "Invalid IPv4 address" }),
 	autoTurnOffEnabled: z.boolean(),
 	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),
+	requiresBuddy: z.boolean(),
 	isActive: z.boolean(),
 });
 
@@ -87,10 +88,11 @@ export function CreateControlPointDialog({
 			providerId: number;
 			providerConfig: Record<string, unknown>;
 			authorizedRoleIds?: number[];
-			trainedRoleId?: number | null;
-			trainerRoleId?: number | null;
+			trainedRoleId?: number;
+			trainerRoleId?: number;
 			autoTurnOffEnabled?: boolean;
 			autoTurnOffMinutes?: number | null;
+			requiresBuddy: boolean;
 			isActive: boolean;
 		}) => trpc.control.points.create.mutate(input),
 		onSuccess: () => {
@@ -111,6 +113,7 @@ export function CreateControlPointDialog({
 			ipAddress: "",
 			autoTurnOffEnabled: false,
 			autoTurnOffMinutes: null,
+			requiresBuddy: false,
 			isActive: true,
 		},
 		validators: {
@@ -137,6 +140,7 @@ export function CreateControlPointDialog({
 					autoTurnOffMinutes: value.autoTurnOffEnabled
 						? value.autoTurnOffMinutes
 						: null,
+					requiresBuddy: value.requiresBuddy,
 					isActive: value.isActive,
 				});
 				setOpen(false);
@@ -366,7 +370,8 @@ export function CreateControlPointDialog({
 						/>
 						<p className="text-xs text-muted-foreground mt-1">
 							Users with this role can train other users (assigning the role
-							above) and mark the control point as active/inactive
+							above), mark the control point as active/inactive, and bypass
+							buddy requirements.
 						</p>
 					</Field>
 
@@ -470,6 +475,26 @@ export function CreateControlPointDialog({
 							)}
 						</form.Field>
 					</div>
+
+					<form.Field name="requiresBuddy">
+						{(field) => (
+							<div className="flex items-center space-x-2">
+								<Checkbox
+									id={field.name}
+									checked={field.state.value}
+									onCheckedChange={(checked) =>
+										field.handleChange(checked === true)
+									}
+								/>
+								<label
+									htmlFor={field.name}
+									className="text-sm font-medium leading-none"
+								>
+									Requires buddy (two people to operate)
+								</label>
+							</div>
+						)}
+					</form.Field>
 
 					<form.Field name="isActive">
 						{(field) => (
