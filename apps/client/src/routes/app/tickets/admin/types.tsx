@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
-import { RequirePermissions } from "@/auth/AuthProvider";
+import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
@@ -84,7 +84,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { RequiredPermissions } from "@/lib/permissions";
+import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
 /**
  * Available icons for ticket types
@@ -123,7 +123,7 @@ export const Route = createFileRoute("/app/tickets/admin/types")({
 		}),
 });
 
-export const permissions = ["tickets.types.manage"] as RequiredPermissions;
+export const permissions = ["tickets.types.view"] as RequiredPermissions;
 
 interface TicketType {
 	id: number;
@@ -141,12 +141,14 @@ interface TicketType {
 
 interface SortableTicketTypeCardProps {
 	ticketType: TicketType;
+	canManage: boolean;
 	onEdit: (ticketType: TicketType) => void;
 	onDelete: (ticketType: TicketType) => void;
 }
 
 function SortableTicketTypeCard({
 	ticketType,
+	canManage,
 	onEdit,
 	onDelete,
 }: SortableTicketTypeCardProps) {
@@ -157,7 +159,7 @@ function SortableTicketTypeCard({
 		transform,
 		transition,
 		isDragging,
-	} = useSortable({ id: ticketType.id });
+	} = useSortable({ id: ticketType.id, disabled: !canManage });
 
 	const style = {
 		transform: CSS.Transform.toString(transform),
@@ -174,13 +176,15 @@ function SortableTicketTypeCard({
 		>
 			<CardContent className="py-2 px-4">
 				<div className="flex items-center gap-4">
-					<div
-						className="text-muted-foreground cursor-grab touch-none"
-						{...attributes}
-						{...listeners}
-					>
-						<GripVerticalIcon className="h-5 w-5" />
-					</div>
+					{canManage && (
+						<div
+							className="text-muted-foreground cursor-grab touch-none"
+							{...attributes}
+							{...listeners}
+						>
+							<GripVerticalIcon className="h-5 w-5" />
+						</div>
+					)}
 
 					<div
 						className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0"
@@ -239,20 +243,24 @@ function SortableTicketTypeCard({
 								<EyeIcon className="h-4 w-4" />
 							</Button>
 						</Link>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => onEdit(ticketType)}
-						>
-							<EditIcon className="h-4 w-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => onDelete(ticketType)}
-						>
-							<Trash2Icon className="h-4 w-4 text-destructive" />
-						</Button>
+						{canManage && (
+							<>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => onEdit(ticketType)}
+								>
+									<EditIcon className="h-4 w-4" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => onDelete(ticketType)}
+								>
+									<Trash2Icon className="h-4 w-4 text-destructive" />
+								</Button>
+							</>
+						)}
 					</div>
 				</div>
 			</CardContent>
@@ -261,6 +269,10 @@ function SortableTicketTypeCard({
 }
 
 function TicketTypesManagementPage() {
+	const authUser = useCurrentUser();
+	const canManageTicketTypes = checkPermissions(authUser, [
+		"tickets.types.manage",
+	]);
 	const queryClient = useQueryClient();
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [editingType, setEditingType] = useState<TicketType | null>(null);
@@ -376,10 +388,12 @@ function TicketTypesManagementPage() {
 			<PageHeader>
 				<PageTitle>Ticket Types</PageTitle>
 				<PageActions>
-					<Button onClick={() => setIsCreateDialogOpen(true)}>
-						<PlusIcon className="h-4 w-4 mr-2" />
-						Add Ticket Type
-					</Button>
+					{canManageTicketTypes && (
+						<Button onClick={() => setIsCreateDialogOpen(true)}>
+							<PlusIcon className="h-4 w-4 mr-2" />
+							Add Ticket Type
+						</Button>
+					)}
 				</PageActions>
 			</PageHeader>
 
@@ -413,6 +427,7 @@ function TicketTypesManagementPage() {
 									<SortableTicketTypeCard
 										key={ticketType.id}
 										ticketType={ticketType as TicketType}
+										canManage={canManageTicketTypes}
 										onEdit={(t) => setEditingType(t)}
 										onDelete={(t) => setDeletingType(t)}
 									/>
@@ -424,19 +439,23 @@ function TicketTypesManagementPage() {
 			</PageContent>
 
 			{/* Create Sheet */}
-			<TicketTypeSheet
-				mode="create"
-				open={isCreateDialogOpen}
-				onOpenChange={setIsCreateDialogOpen}
-			/>
+			{canManageTicketTypes && (
+				<TicketTypeSheet
+					mode="create"
+					open={isCreateDialogOpen}
+					onOpenChange={setIsCreateDialogOpen}
+				/>
+			)}
 
 			{/* Edit Sheet */}
-			<TicketTypeSheet
-				mode="edit"
-				ticketType={editingType}
-				open={!!editingType}
-				onOpenChange={(open) => !open && setEditingType(null)}
-			/>
+			{canManageTicketTypes && (
+				<TicketTypeSheet
+					mode="edit"
+					ticketType={editingType}
+					open={!!editingType}
+					onOpenChange={(open) => !open && setEditingType(null)}
+				/>
+			)}
 
 			{/* Delete Confirmation Dialog */}
 			<Dialog

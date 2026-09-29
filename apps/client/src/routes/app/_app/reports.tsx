@@ -56,7 +56,7 @@ export const Route = createFileRoute("/app/_app/reports")({
 		RequirePermissions({
 			permissions,
 			children: <GlobalReportsPage />,
-			forbiddenFallback: <MissingPermissions />,
+			fallback: <MissingPermissions />,
 		}),
 });
 

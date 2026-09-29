@@ -1,12 +1,12 @@
 {
 	"name": "@ecehive/kiosk",
-	"version": "3.9.0",
+	"version": "3.9.1",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
 		"check": "biome check --write",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"dependencies": {
 		"@ecehive/card-scanner": "workspace:*",

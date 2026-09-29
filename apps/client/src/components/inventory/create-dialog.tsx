@@ -42,6 +42,10 @@ const formSchema = z.object({
 	link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
 	itemType: z.enum(["multiple", "single", "consumable"]).optional(),
+	transactionRateLimit: z.number().int().min(1).optional(),
+	transactionRateLimitPeriod: z
+		.enum(["day", "week", "month", "semester"])
+		.optional(),
 	initialQuantity: z.number().int().min(0).optional(),
 });
 
@@ -87,7 +91,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		approvalRoleIds?: number[];
 	};
 
-	type FormValues = Omit<CreateItemInput, "approvalRoleIds">;
+	type FormValues = z.input<typeof formSchema>;
 
 	const createItemMutation = useMutation({
 		mutationFn: (input: CreateItemInput) =>
@@ -97,7 +101,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		},
 	});
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: "",
 			description: "",
@@ -110,7 +114,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			transactionRateLimit: undefined,
 			transactionRateLimitPeriod: undefined,
 			initialQuantity: undefined,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},
@@ -157,6 +161,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 					isActive: true,
 					initialQuantity: undefined,
 					itemType: "multiple",
+					transactionRateLimit: undefined,
 					transactionRateLimitPeriod: undefined,
 				});
 				setApprovalRoles([]);

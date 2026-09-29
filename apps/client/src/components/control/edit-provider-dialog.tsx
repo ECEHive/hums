@@ -81,13 +81,13 @@ export function EditProviderDialog({
 		accessToken?: string;
 	};
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: provider.name,
 			baseUrl: config.baseUrl ?? "",
 			accessToken: config.accessToken ?? "",
 			isActive: provider.isActive,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},

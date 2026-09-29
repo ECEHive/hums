@@ -3,6 +3,15 @@
 
 @plugin "@tailwindcss/typography";
 
+.ticket-scrollbar-hidden {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.ticket-scrollbar-hidden::-webkit-scrollbar {
+	display: none;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

@@ -23,6 +23,7 @@ export interface UpdateControlPointInput {
 	authorizedUserIds?: number[];
 	autoTurnOffEnabled?: boolean;
 	autoTurnOffMinutes?: number | null;
+	requiresBuddy?: boolean;
 	isActive?: boolean;
 }
 
@@ -85,6 +86,7 @@ export async function updateControlPoint(input: UpdateControlPointInput) {
 			: undefined,
 		autoTurnOffEnabled: input.autoTurnOffEnabled,
 		autoTurnOffMinutes: input.autoTurnOffMinutes,
+		requiresBuddy: input.requiresBuddy,
 		isActive: input.isActive,
 	};
 

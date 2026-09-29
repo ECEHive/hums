@@ -8,7 +8,7 @@ import {
 	RefreshCcwIcon,
 } from "lucide-react";
 import React from "react";
-import { RequireAuth } from "@/auth/AuthProvider";
+import { RequireAuth, useCurrentUser } from "@/auth/AuthProvider";
 import {
 	Page,
 	PageActions,
@@ -56,6 +56,7 @@ const DEFAULT_FILTERS: MyTicketsFilters = {
 };
 
 function MyTicketsPage() {
+	const authUser = useCurrentUser();
 	const {
 		page,
 		setPage,
@@ -102,7 +103,7 @@ function MyTicketsPage() {
 		},
 	});
 
-	const columns = generateColumns({ linkTo: "my-tickets" });
+	const columns = generateColumns({ authUser, linkTo: "my-tickets" });
 	const { totalPages } = usePaginationInfo({
 		total: data.total,
 		pageSize,

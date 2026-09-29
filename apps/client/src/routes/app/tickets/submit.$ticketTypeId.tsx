@@ -64,7 +64,7 @@ function SubmitTicketFormPage() {
 	const submitMutation = useMutation({
 		mutationFn: async (data: Record<string, unknown>) => {
 			if (!ticketType) throw new Error("Ticket type not loaded");
-			await trpc.tickets.submit.mutate({
+			return await trpc.tickets.submit.mutate({
 				ticketTypeId: ticketType.id,
 				data,
 			});
@@ -155,8 +155,10 @@ function SubmitTicketFormPage() {
 		ticketType.fieldSchema &&
 		typeof ticketType.fieldSchema === "object" &&
 		"fields" in ticketType.fieldSchema &&
-		Array.isArray((ticketType.fieldSchema as { fields: unknown }).fields)
-			? (ticketType.fieldSchema as { fields: TicketField[] }).fields
+		Array.isArray(
+			(ticketType.fieldSchema as unknown as { fields: unknown }).fields,
+		)
+			? (ticketType.fieldSchema as unknown as { fields: TicketField[] }).fields
 			: [];
 
 	// Check if there are no fields defined

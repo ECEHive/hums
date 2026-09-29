@@ -1,6 +1,6 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { logger } from "../lib/logging";
 import { calculateReadingDuration } from "../lib/utils";
 import type { ControlPointWithStatus } from "../types";
@@ -46,7 +46,15 @@ interface ControlKioskState {
 	trainingStatusType: "success" | "error" | null;
 	lastTrainedUserName: string | null;
 	controlLogsPoint: ControlPointWithStatus | null;
+	buddyScanRequired: boolean;
 }
+
+type PendingOperation = {
+	controlPointId: string;
+	action: "TURN_ON" | "TURN_OFF" | "UNLOCK";
+	operatorId: string;
+	operatorCardNumber: string;
+};
 
 type ControlLogEntry = {
 	id: string;
@@ -63,6 +71,7 @@ interface UseControlWorkflowOptions {
 export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 	const { onSuccess, onError } = options;
 	const queryClient = useQueryClient();
+	const pendingOperationRef = useRef<PendingOperation | null>(null);
 
 	const [state, setState] = useState<ControlKioskState>({
 		mode: "idle",
@@ -77,6 +86,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		trainingStatusType: null,
 		lastTrainedUserName: null,
 		controlLogsPoint: null,
+		buddyScanRequired: false,
 	});
 
 	// Get control points available on this device
@@ -155,6 +165,59 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 			}));
 			onError?.(errorMsg);
 			setTimeout(() => resetToIdle(), calculateReadingDuration(errorMsg));
+		},
+	});
+
+	// Validate user mutation
+	const validateUserMutation = useMutation({
+		mutationFn: (input: { cardNumber: string }) =>
+			trpc.controlKiosk.validateUser.query(input),
+		onSuccess: (data) => {
+			const pendingOperation = pendingOperationRef.current;
+			if (!data.isValid || !data.userId) {
+				const errorMsg = "Buddy card is not valid for this operation";
+				setState((prev) => ({
+					...prev,
+					mode: "authenticated",
+					error: errorMsg,
+					buddyScanRequired: true,
+				}));
+				onError?.(errorMsg);
+			} else if (pendingOperation?.operatorId === String(data.userId)) {
+				const errorMsg = "You cannot use your own card as the buddy card";
+				setState((prev) => ({
+					...prev,
+					mode: "authenticated",
+					error: errorMsg,
+					buddyScanRequired: true,
+				}));
+				onError?.(errorMsg);
+			} else {
+				pendingOperationRef.current = null;
+				setState((prev) => ({
+					...prev,
+					mode: "authenticated",
+					error: null,
+					buddyScanRequired: false,
+				}));
+				if (pendingOperation) {
+					operateMutation.mutate({
+						...pendingOperation,
+						cardNumber: pendingOperation.operatorCardNumber,
+					});
+				}
+			}
+		},
+		onError: (error: Error) => {
+			logger.error("Failed to validate user:", error);
+			const errorMsg = error.message || "Failed to validate user";
+			setState((prev) => ({
+				...prev,
+				mode: "authenticated",
+				error: errorMsg,
+				buddyScanRequired: true,
+			}));
+			onError?.(errorMsg);
 		},
 	});
 
@@ -377,6 +440,22 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		[checkPermissionsMutation],
 	);
 
+	const handleBuddyCardScan = useCallback(
+		async (cardNumber: string) => {
+			logger.info("Buddy card scanned for control access");
+
+			// Authenticate the buddy user
+			setState((prev) => ({
+				...prev,
+				mode: "processing",
+				error: null,
+			}));
+
+			validateUserMutation.mutate({ cardNumber });
+		},
+		[validateUserMutation],
+	);
+
 	const operateControlPoint = useCallback(
 		(controlPoint: ControlPointWithStatus) => {
 			if (state.mode !== "authenticated" || !state.authenticatedUser) {
@@ -393,9 +472,6 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 				return;
 			}
 
-			// Track which point is being operated (no mode change, so no fullscreen overlay)
-			setState((prev) => ({ ...prev, operatingPointId: controlPoint.id }));
-
 			// Determine action based on control class and current state
 			const action: "TURN_ON" | "TURN_OFF" | "UNLOCK" =
 				controlPoint.controlClass === "DOOR"
@@ -403,6 +479,27 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 					: controlPoint.currentState
 						? "TURN_OFF"
 						: "TURN_ON";
+
+			const canManage = state.authenticatedUser.managedControlPointIds.includes(
+				controlPoint.id,
+			);
+			if (action === "TURN_ON" && controlPoint.requiresBuddy && !canManage) {
+				pendingOperationRef.current = {
+					controlPointId: controlPoint.id,
+					action,
+					operatorId: state.authenticatedUser.id,
+					operatorCardNumber: state.authenticatedUser.cardNumber,
+				};
+				setState((prev) => ({
+					...prev,
+					buddyScanRequired: true,
+					operatingPointId: controlPoint.id,
+				}));
+				return;
+			}
+
+			// Track which point is being operated (no mode change, so no fullscreen overlay)
+			setState((prev) => ({ ...prev, operatingPointId: controlPoint.id }));
 
 			operateMutation.mutate({
 				controlPointId: controlPoint.id,
@@ -414,6 +511,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 	);
 
 	const resetToIdle = useCallback(() => {
+		pendingOperationRef.current = null;
 		setState((prev) => ({
 			...prev,
 			mode: "idle",
@@ -421,6 +519,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 			error: null,
 			showSessionSelection: false,
 			operatingPointId: null,
+			buddyScanRequired: false,
 			pendingConfirmation: null,
 			selectedControlPoint: null,
 			trainingControlPoint: null,
@@ -691,6 +790,7 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 			operateMutation.isPending ||
 			tapInOutMutation.isPending,
 		handleCardScan,
+		handleBuddyCardScan,
 		handleTrainingCardScan,
 		operateControlPoint,
 		logout,
@@ -720,5 +820,6 @@ export function useControlWorkflow(options: UseControlWorkflowOptions = {}) {
 		controlLogsPoint: state.controlLogsPoint,
 		openControlLogsDialog,
 		closeControlLogsDialog,
+		buddyScanRequired: state.buddyScanRequired,
 	};
 }

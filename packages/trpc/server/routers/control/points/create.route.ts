@@ -20,6 +20,7 @@ export const ZCreatePointSchema = z.object({
 	authorizedUserIds: z.array(z.number().int()).optional(),
 	autoTurnOffEnabled: z.boolean().optional(),
 	autoTurnOffMinutes: z.number().int().min(1).optional().nullable(),
+	requiresBuddy: z.boolean().optional(),
 	isActive: z.boolean().optional(),
 });
 

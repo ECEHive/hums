@@ -223,7 +223,7 @@ function SubmitTicketFormPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex flex-col">
+		<div className="h-svh overflow-hidden bg-background flex flex-col">
 			<header className="border-b">
 				<div className="container mx-auto px-4 py-4 flex items-center justify-between">
 					<Logo className="h-8" />
@@ -234,7 +234,7 @@ function SubmitTicketFormPage() {
 					)}
 				</div>
 			</header>
-			<main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+			<main className="ticket-scrollbar-hidden min-h-0 flex-1 overflow-y-auto container mx-auto px-4 py-8 max-w-2xl">
 				<h1 className="text-2xl font-bold mb-2">{ticketType.name}</h1>
 				{ticketType.description && (
 					<p className="text-muted-foreground mb-8">{ticketType.description}</p>

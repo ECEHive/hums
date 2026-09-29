@@ -1,8 +1,9 @@
+import type { Options } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { cn } from "@/lib/utils";
 
-const rehypePlugins = [rehypeSanitize] as const;
+const rehypePlugins: Options["rehypePlugins"] = [rehypeSanitize];
 
 interface MarkdownProps {
 	children: string;

@@ -31,7 +31,9 @@ interface DynamicTicketFormProps {
 }
 
 // Build Zod schema from field definitions (client-side version)
-function buildZodSchema(fields: TicketField[]): z.ZodSchema {
+function buildZodSchema(
+	fields: TicketField[],
+): z.ZodObject<Record<string, z.ZodTypeAny>> {
 	const shape: Record<string, z.ZodTypeAny> = {};
 
 	for (const field of fields) {
@@ -254,16 +256,14 @@ function getDefaultValues(fields: TicketField[]): Record<string, unknown> {
 	return defaults;
 }
 
-export function DynamicTicketForm({
-	fields,
-	onSubmit,
-	isSubmitting = false,
-	submitButtonText = "Submit",
-}: DynamicTicketFormProps) {
+function useDynamicForm(
+	fields: TicketField[],
+	onSubmit: (data: Record<string, unknown>) => void,
+) {
 	const schema = useMemo(() => buildZodSchema(fields), [fields]);
 	const defaultValues = useMemo(() => getDefaultValues(fields), [fields]);
 
-	const form = useForm({
+	return useForm({
 		defaultValues,
 		validators: {
 			onSubmit: schema,
@@ -286,6 +286,17 @@ export function DynamicTicketForm({
 			onSubmit(cleanedData);
 		},
 	});
+}
+
+type DynamicFormInstance = ReturnType<typeof useDynamicForm>;
+
+export function DynamicTicketForm({
+	fields,
+	onSubmit,
+	isSubmitting = false,
+	submitButtonText = "Submit",
+}: DynamicTicketFormProps) {
+	const form = useDynamicForm(fields, onSubmit);
 
 	const canSubmit = useStore(form.store, (state) => state.canSubmit);
 
@@ -330,7 +341,7 @@ export function DynamicTicketForm({
 
 interface DynamicFieldProps {
 	field: TicketField;
-	form: ReturnType<typeof useForm>;
+	form: DynamicFormInstance;
 }
 
 function DynamicField({ field, form }: DynamicFieldProps) {

@@ -282,6 +282,7 @@ function ControlKioskApp() {
 		controlLogs,
 		isControlLogsLoading,
 		handleCardScan,
+		handleBuddyCardScan,
 		handleTrainingCardScan,
 		operateControlPoint,
 		logout,
@@ -300,6 +301,7 @@ function ControlKioskApp() {
 		openTrainingDialog,
 		closeTrainingDialog,
 		isTrainingUser,
+		buddyScanRequired,
 		controlLogsPoint,
 		openControlLogsDialog,
 		closeControlLogsDialog,
@@ -317,6 +319,9 @@ function ControlKioskApp() {
 		onScan: (cardNumber) => {
 			if (trainingControlPoint) {
 				handleTrainingCardScan(cardNumber);
+				return;
+			} else if (buddyScanRequired) {
+				handleBuddyCardScan(cardNumber);
 				return;
 			}
 			handleCardScan(cardNumber);
@@ -1051,6 +1056,65 @@ function ControlKioskApp() {
 									{state.error}
 								</p>
 							</div>
+						</motion.div>
+					)}
+
+					{state.buddyScanRequired && (
+						<motion.div
+							className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+						>
+							<motion.div
+								className="w-full max-w-2xl rounded-3xl bg-card p-8 shadow-xl border border-border"
+								initial={{ opacity: 0, scale: 0.95, y: 16 }}
+								animate={{ opacity: 1, scale: 1, y: 0 }}
+								exit={{ opacity: 0, scale: 0.95, y: 16 }}
+								transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+							>
+								<div className="flex flex-col gap-6">
+									<div>
+										<p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+											Buddy Access
+										</p>
+										<h2 className="text-3xl font-bold">Scan a buddy card</h2>
+									</div>
+									<div className="flex items-center gap-4 rounded-2xl border border-border bg-background p-6">
+										<div className="relative flex items-center justify-center">
+											<motion.div
+												className="absolute h-4 w-4 rounded-full bg-primary/20"
+												animate={{ scale: [1, 3], opacity: [0.6, 0.2] }}
+												transition={{
+													duration: 1.6,
+													repeat: Infinity,
+													ease: "easeOut",
+												}}
+											/>
+											<motion.div
+												className="h-4 w-4 rounded-full bg-primary"
+												animate={{ opacity: [0.3, 1, 0.3] }}
+												transition={{ duration: 1.6, repeat: Infinity }}
+											/>
+										</div>
+										<div>
+											<p className="text-lg font-semibold">
+												Scan card to operate tool
+											</p>
+											<p className="text-sm text-muted-foreground">
+												A different registered user must confirm they are
+												present. They must remain present until the tool is done
+												being used.
+											</p>
+										</div>
+									</div>
+									{state.error && (
+										<div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+											{state.error}
+										</div>
+									)}
+								</div>
+							</motion.div>
 						</motion.div>
 					)}
 				</AnimatePresence>

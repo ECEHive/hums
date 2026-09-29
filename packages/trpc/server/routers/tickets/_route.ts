@@ -79,10 +79,10 @@ export const ticketsRouter = router({
 	getMy: protectedProcedure.input(ZGetMyTicketSchema).query(getMyTicketHandler),
 
 	// Admin ticket management
-	list: permissionProtectedProcedure("tickets.manage")
+	list: permissionProtectedProcedure("tickets.view")
 		.input(ZListTicketsSchema)
 		.query(listTicketsHandler),
-	get: permissionProtectedProcedure("tickets.manage")
+	get: permissionProtectedProcedure("tickets.view")
 		.input(ZGetTicketSchema)
 		.query(getTicketHandler),
 	updateStatus: permissionProtectedProcedure("tickets.manage")

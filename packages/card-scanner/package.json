@@ -1,10 +1,13 @@
 {
 	"name": "@ecehive/card-scanner",
-	"version": "3.9.0",
+	"version": "3.9.1",
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts",
 		"./react": "./src/react.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"tslog": "^4.10.2"
@@ -19,6 +22,7 @@
 	},
 	"devDependencies": {
 		"@ecehive/config": "workspace:*",
-		"@types/w3c-web-serial": "^1.0.8"
+		"@types/w3c-web-serial": "^1.0.8",
+		"typescript": "^6.0.3"
 	}
 }
