@@ -100,12 +100,12 @@ export function CreateControlPointDialog({
 		},
 	});
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: "",
 			description: "",
 			location: "",
-			controlClass: "SWITCH",
+			controlClass: "SWITCH" as "SWITCH" | "DOOR",
 			canControlOnline: true,
 			canControlWithCode: false,
 			providerId: 0,
@@ -115,7 +115,7 @@ export function CreateControlPointDialog({
 			autoTurnOffMinutes: null,
 			requiresBuddy: false,
 			isActive: true,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},

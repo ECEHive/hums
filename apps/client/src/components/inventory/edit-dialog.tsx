@@ -42,7 +42,14 @@ const formSchema = z.object({
 	location: z.string().max(255).optional(),
 	minQuantity: z.number().int().min(0).optional(),
 	link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+	quantity: z.number().int().optional().nullable(),
 	isActive: z.boolean().optional(),
+	itemType: z.enum(["multiple", "single", "consumable"]).optional(),
+	transactionRateLimit: z.number().int().min(1).optional(),
+	transactionRateLimitPeriod: z
+		.enum(["day", "week", "month", "semester"])
+		.optional()
+		.nullable(),
 });
 
 type EditDialogProps = {
@@ -103,9 +110,9 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		},
 	});
 
-	type FormValues = UpdateItemInput & { quantity?: number | null };
+	type FormValues = z.input<typeof formSchema>;
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			id: item.id,
 			name: item.name,
@@ -119,7 +126,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 			itemType: item.itemType,
 			transactionRateLimit: item.transactionRateLimit ?? undefined,
 			transactionRateLimitPeriod: item.transactionRateLimitPeriod ?? undefined,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},
@@ -437,7 +444,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 										<span className="text-muted-foreground">(optional)</span>
 									</FieldLabel>
 									<Select
-										value={field.state.value}
+										value={field.state.value ?? undefined}
 										onValueChange={(value) =>
 											field.handleChange(
 												value === "none"

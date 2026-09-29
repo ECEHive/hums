@@ -44,6 +44,8 @@ const formSchema = z.object({
 	externalNotes: z.string().optional(),
 });
 
+type FormValues = z.input<typeof formSchema>;
+
 type UpdateDialogProps = {
 	suspension: Suspension;
 	onUpdate?: () => void;
@@ -81,7 +83,7 @@ export function SuspensionUpdateDialog({
 			endTime: formatTimeForInput(suspension.endDate),
 			internalNotes: suspension.internalNotes ?? "",
 			externalNotes: suspension.externalNotes ?? "",
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},

@@ -88,13 +88,13 @@ export function CreateGatewayDialog({
 		},
 	});
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: "",
 			description: "",
 			isActive: true,
-			actions: [],
-		},
+			actions: [] as FormValues["actions"],
+		} as FormValues,
 		validators: { onSubmit: formSchema },
 		onSubmit: async ({ value }) => {
 			try {

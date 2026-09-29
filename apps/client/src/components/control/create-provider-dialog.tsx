@@ -64,14 +64,14 @@ export function CreateProviderDialog({
 		},
 	});
 
-	const form = useForm<FormValues>({
+	const form = useForm({
 		defaultValues: {
 			name: "",
-			providerType: "GEORGIA_TECH_PLC",
+			providerType: "GEORGIA_TECH_PLC" as const,
 			baseUrl: "",
 			accessToken: "",
 			isActive: true,
-		},
+		} as FormValues,
 		validators: {
 			onSubmit: formSchema,
 		},
