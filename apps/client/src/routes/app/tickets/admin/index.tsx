@@ -8,7 +8,7 @@ import {
 	SettingsIcon,
 } from "lucide-react";
 import React, { useEffect } from "react";
-import { RequirePermissions } from "@/auth/AuthProvider";
+import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
@@ -39,7 +39,7 @@ import {
 import { clearAdminTicketsMemory } from "@/hooks/use-admin-tickets-memory";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { usePersistedTableState } from "@/hooks/use-persisted-table-state";
-import type { RequiredPermissions } from "@/lib/permissions";
+import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/tickets/admin/")({
 	component: () =>
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/app/tickets/admin/")({
 		}),
 });
 
-export const permissions = ["tickets.manage"] as RequiredPermissions;
+export const permissions = ["tickets.view"] as RequiredPermissions;
 
 type AdminTicketsFilters = {
 	status: string;
@@ -65,6 +65,10 @@ const DEFAULT_FILTERS: AdminTicketsFilters = {
 };
 
 function AdminTicketsPage() {
+	const authUser = useCurrentUser();
+	const canManageTicketTypes = checkPermissions(authUser, [
+		"tickets.types.manage",
+	]);
 	// Clear the "memory" when visiting the tickets list page
 	// This ensures clicking the sidebar will go to this page next time
 	useEffect(() => {
@@ -142,6 +146,7 @@ function AdminTicketsPage() {
 	});
 
 	const columns = generateColumns({
+		authUser,
 		linkTo: "admin",
 		showSubmitter: true,
 		showHandler: true,
@@ -174,12 +179,14 @@ function AdminTicketsPage() {
 							<RefreshCcwIcon className="size-4" />
 						)}
 					</Button>
-					<Link to="/app/tickets/admin/types">
-						<Button variant="outline">
-							<SettingsIcon className="h-4 w-4 mr-2" />
-							Manage Types
-						</Button>
-					</Link>
+					{canManageTicketTypes && (
+						<Link to="/app/tickets/admin/types">
+							<Button variant="outline">
+								<SettingsIcon className="h-4 w-4 mr-2" />
+								Manage Types
+							</Button>
+						</Link>
+					)}
 				</PageActions>
 			</PageHeader>
 

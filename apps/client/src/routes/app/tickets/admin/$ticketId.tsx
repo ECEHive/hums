@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { RequirePermissions } from "@/auth/AuthProvider";
+import { RequirePermissions, useCurrentUser } from "@/auth/AuthProvider";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import { Page, PageContent, PageHeader, PageTitle } from "@/components/layout";
 import { DynamicTicketDetails, type TicketField } from "@/components/tickets";
@@ -53,7 +53,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdminTicketsMemory } from "@/hooks/use-admin-tickets-memory";
-import type { RequiredPermissions } from "@/lib/permissions";
+import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/tickets/admin/$ticketId")({
@@ -65,7 +65,7 @@ export const Route = createFileRoute("/app/tickets/admin/$ticketId")({
 		}),
 });
 
-export const permissions = ["tickets.manage"] as RequiredPermissions;
+export const permissions = ["tickets.view"] as RequiredPermissions;
 
 const ticketTypeIcons: Record<
 	string,
@@ -91,6 +91,8 @@ const statusStyles: Record<
 };
 
 function AdminTicketDetailPage() {
+	const authUser = useCurrentUser();
+	const canManageTickets = checkPermissions(authUser, ["tickets.manage"]);
 	const { ticketId } = Route.useParams();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -350,16 +352,17 @@ function AdminTicketDetailPage() {
 							<CardHeader>
 								<CardTitle className="flex items-center justify-between">
 									Internal Notes
-									{(notesModified || resolutionModified) && (
-										<Button
-											size="sm"
-											onClick={saveNotes}
-											disabled={updateNotesMutation.isPending}
-										>
-											<SaveIcon className="h-4 w-4 mr-2" />
-											Save Notes
-										</Button>
-									)}
+									{canManageTickets &&
+										(notesModified || resolutionModified) && (
+											<Button
+												size="sm"
+												onClick={saveNotes}
+												disabled={updateNotesMutation.isPending}
+											>
+												<SaveIcon className="h-4 w-4 mr-2" />
+												Save Notes
+											</Button>
+										)}
 								</CardTitle>
 								<CardDescription>
 									These notes are only visible to staff members
@@ -370,6 +373,7 @@ function AdminTicketDetailPage() {
 									placeholder="Add internal notes about this ticket..."
 									value={internalNotes}
 									onChange={(e) => handleInternalNotesChange(e.target.value)}
+									disabled={!canManageTickets}
 									rows={3}
 								/>
 							</CardContent>
@@ -388,6 +392,7 @@ function AdminTicketDetailPage() {
 									placeholder="Add resolution notes (visible to submitter)..."
 									value={resolutionNotes}
 									onChange={(e) => handleResolutionNotesChange(e.target.value)}
+									disabled={!canManageTickets}
 									rows={3}
 								/>
 							</CardContent>
@@ -445,141 +450,146 @@ function AdminTicketDetailPage() {
 					{/* Sidebar */}
 					<div className="space-y-6">
 						{/* Status & Assignment Card */}
-						<Card>
-							<CardHeader>
-								<CardTitle>Manage Ticket</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div>
-									<label
-										htmlFor="ticketStatus"
-										className="text-sm font-medium mb-2 block"
-									>
-										Status
-									</label>
-									<Select
-										value={selectedStatus}
-										onValueChange={handleStatusChange}
-										disabled={updateStatusMutation.isPending}
-									>
-										<SelectTrigger id="ticketStatus">
-											<SelectValue placeholder="Select status" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="pending">Pending</SelectItem>
-											<SelectItem value="in_progress">In Progress</SelectItem>
-											<SelectItem value="resolved">Resolved</SelectItem>
-											<SelectItem value="closed">Closed</SelectItem>
-											<SelectItem value="cancelled">Cancelled</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
+						{canManageTickets && (
+							<Card>
+								<CardHeader>
+									<CardTitle>Manage Ticket</CardTitle>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									<div>
+										<label
+											htmlFor="ticketStatus"
+											className="text-sm font-medium mb-2 block"
+										>
+											Status
+										</label>
+										<Select
+											value={selectedStatus}
+											onValueChange={handleStatusChange}
+											disabled={updateStatusMutation.isPending}
+										>
+											<SelectTrigger id="ticketStatus">
+												<SelectValue placeholder="Select status" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="pending">Pending</SelectItem>
+												<SelectItem value="in_progress">In Progress</SelectItem>
+												<SelectItem value="resolved">Resolved</SelectItem>
+												<SelectItem value="closed">Closed</SelectItem>
+												<SelectItem value="cancelled">Cancelled</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
 
-								<Separator />
+									<Separator />
 
-								<div>
-									<label
-										htmlFor="assignedTo"
-										className="text-sm font-medium mb-2 block"
-									>
-										Assigned To
-									</label>
-									<Popover
-										open={userSelectOpen}
-										onOpenChange={setUserSelectOpen}
-									>
-										<PopoverTrigger asChild>
-											<Button
-												variant="outline"
-												role="combobox"
-												aria-expanded={userSelectOpen}
-												className="w-full justify-between"
-												disabled={assignMutation.isPending}
-											>
-												{selectedHandler && selectedHandler !== "unassigned" ? (
-													<span className="truncate">
-														{selectedHandlerUser?.name ??
-															ticket?.handler?.name ??
-															"Loading..."}
-													</span>
-												) : (
-													"Unassigned"
-												)}
-												<ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="w-[300px] p-0">
-											<Command shouldFilter={false}>
-												<CommandInput
-													placeholder="Search users..."
-													value={userSearch}
-													onValueChange={setUserSearch}
-												/>
-												<CommandList>
-													<CommandEmpty>
-														{usersLoading ? "Loading..." : "No users found."}
-													</CommandEmpty>
-													<CommandGroup>
-														<CommandItem
-															value="unassigned"
-															onSelect={() => {
-																handleAssignmentChange("unassigned");
-																setUserSelectOpen(false);
-															}}
-														>
-															<CheckIcon
-																className={cn(
-																	"mr-2 h-4 w-4",
-																	!selectedHandler ||
-																		selectedHandler === "unassigned"
-																		? "opacity-100"
-																		: "opacity-0",
-																)}
-															/>
-															Unassigned
-														</CommandItem>
-														{users?.users?.map(
-															(user: {
-																id: number;
-																name: string;
-																username: string;
-																email: string;
-															}) => (
-																<CommandItem
-																	key={user.id}
-																	value={user.id.toString()}
-																	onSelect={() => {
-																		handleAssignmentChange(user.id.toString());
-																		setUserSelectOpen(false);
-																	}}
-																>
-																	<CheckIcon
-																		className={cn(
-																			"mr-2 h-4 w-4",
-																			selectedHandler === user.id.toString()
-																				? "opacity-100"
-																				: "opacity-0",
-																		)}
-																	/>
-																	<div className="flex flex-col">
-																		<span className="font-medium">
-																			{user.name}
-																		</span>
-																		<span className="text-xs text-muted-foreground">
-																			{user.username} • {user.email}
-																		</span>
-																	</div>
-																</CommandItem>
-															),
-														)}
-													</CommandGroup>
-												</CommandList>
-											</Command>
-										</PopoverContent>
-									</Popover>
-								</div>
-							</CardContent>
-						</Card>
+									<div>
+										<label
+											htmlFor="assignedTo"
+											className="text-sm font-medium mb-2 block"
+										>
+											Assigned To
+										</label>
+										<Popover
+											open={userSelectOpen}
+											onOpenChange={setUserSelectOpen}
+										>
+											<PopoverTrigger asChild>
+												<Button
+													variant="outline"
+													role="combobox"
+													aria-expanded={userSelectOpen}
+													className="w-full justify-between"
+													disabled={assignMutation.isPending}
+												>
+													{selectedHandler &&
+													selectedHandler !== "unassigned" ? (
+														<span className="truncate">
+															{selectedHandlerUser?.name ??
+																ticket?.handler?.name ??
+																"Loading..."}
+														</span>
+													) : (
+														"Unassigned"
+													)}
+													<ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent className="w-[300px] p-0">
+												<Command shouldFilter={false}>
+													<CommandInput
+														placeholder="Search users..."
+														value={userSearch}
+														onValueChange={setUserSearch}
+													/>
+													<CommandList>
+														<CommandEmpty>
+															{usersLoading ? "Loading..." : "No users found."}
+														</CommandEmpty>
+														<CommandGroup>
+															<CommandItem
+																value="unassigned"
+																onSelect={() => {
+																	handleAssignmentChange("unassigned");
+																	setUserSelectOpen(false);
+																}}
+															>
+																<CheckIcon
+																	className={cn(
+																		"mr-2 h-4 w-4",
+																		!selectedHandler ||
+																			selectedHandler === "unassigned"
+																			? "opacity-100"
+																			: "opacity-0",
+																	)}
+																/>
+																Unassigned
+															</CommandItem>
+															{users?.users?.map(
+																(user: {
+																	id: number;
+																	name: string;
+																	username: string;
+																	email: string;
+																}) => (
+																	<CommandItem
+																		key={user.id}
+																		value={user.id.toString()}
+																		onSelect={() => {
+																			handleAssignmentChange(
+																				user.id.toString(),
+																			);
+																			setUserSelectOpen(false);
+																		}}
+																	>
+																		<CheckIcon
+																			className={cn(
+																				"mr-2 h-4 w-4",
+																				selectedHandler === user.id.toString()
+																					? "opacity-100"
+																					: "opacity-0",
+																			)}
+																		/>
+																		<div className="flex flex-col">
+																			<span className="font-medium">
+																				{user.name}
+																			</span>
+																			<span className="text-xs text-muted-foreground">
+																				{user.username} • {user.email}
+																			</span>
+																		</div>
+																	</CommandItem>
+																),
+															)}
+														</CommandGroup>
+													</CommandList>
+												</Command>
+											</PopoverContent>
+										</Popover>
+									</div>
+								</CardContent>
+							</Card>
+						)}
 
 						{/* Submitter Info */}
 						<Card>
