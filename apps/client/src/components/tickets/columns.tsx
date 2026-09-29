@@ -7,6 +7,7 @@ import {
 	PackageIcon,
 	UserIcon,
 } from "lucide-react";
+import type { AuthUser } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -117,6 +118,7 @@ function TicketLink({
 }
 
 type ColumnsOptions = {
+	authUser: AuthUser | null;
 	linkTo: "my-tickets" | "admin";
 	showSubmitter?: boolean;
 	showHandler?: boolean;
