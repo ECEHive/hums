@@ -497,6 +497,7 @@ model ControlPoint {
   autoTurnOffEnabled Boolean                @default(false)
   autoTurnOffMinutes Int?
   isActive           Boolean                @default(true)
+  requiresBuddy      Boolean                @default(false)
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @default(now()) @updatedAt
   providerId         Int

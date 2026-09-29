@@ -44,7 +44,7 @@ export function UpdateWebhookEndpointSheet({
 
 	const currentUser = useAuth().user;
 	const canUpdateWebhookEndpoint =
-		currentUser && checkPermissions(currentUser, ["webhooks.endpoints.update"]);
+		currentUser && checkPermissions(currentUser, ["webhookEndpoints.update"]);
 
 	useEffect(() => {
 		if (!open) return;

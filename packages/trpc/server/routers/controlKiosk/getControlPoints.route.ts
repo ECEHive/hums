@@ -28,6 +28,7 @@ export async function getControlPointsHandler({
 		},
 		select: {
 			id: true,
+			requiresBuddy: true,
 			name: true,
 			description: true,
 			location: true,

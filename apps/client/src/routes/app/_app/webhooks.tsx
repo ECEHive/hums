@@ -65,7 +65,7 @@ import { usePersistedFilters } from "@/hooks/use-persisted-filters";
 import { useDebounce } from "@/lib/debounce";
 import { checkPermissions } from "@/lib/permissions";
 
-export const permissions = ["webhooks.endpoints.list"];
+export const permissions = ["webhookEndpoints.list"];
 
 enum WebhookStatusFilter {
 	All = "all",
@@ -85,13 +85,13 @@ export const Route = createFileRoute("/app/_app/webhooks")({
 function WebhooksPage() {
 	const { user } = useAuth();
 	const canCreate = user
-		? checkPermissions(user, ["webhooks.endpoints.create"])
+		? checkPermissions(user, ["webhookEndpoints.create"])
 		: false;
 	const canUpdate = user
-		? checkPermissions(user, ["webhooks.endpoints.update"])
+		? checkPermissions(user, ["webhookEndpoints.update"])
 		: false;
 	const canDelete = user
-		? checkPermissions(user, ["webhooks.endpoints.delete"])
+		? checkPermissions(user, ["webhookEndpoints.delete"])
 		: false;
 
 	const { filters, setFilters } = usePersistedFilters<{ search: string }>({
