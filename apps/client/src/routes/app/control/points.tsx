@@ -68,6 +68,7 @@ type ControlPoint = {
 	canControlWithCode: boolean;
 	currentState: boolean;
 	isActive: boolean;
+	requiresBuddy: boolean;
 	autoTurnOffEnabled: boolean;
 	autoTurnOffMinutes: number | null;
 	provider: {
