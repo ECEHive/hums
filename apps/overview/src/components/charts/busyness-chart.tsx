@@ -164,26 +164,24 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 
 	const dayData = data.find((d) => d.dayOfWeek === selectedDay);
 
-	// Find max value for color scaling
+	// Max across all days so axis is consistent for the whole week
 	const maxAverage = useMemo(() => {
-		return Math.max(
-			...(dayData?.hourlyData.map((h) => h.averageCount) ?? [1]),
-			1,
+		const averages = data.flatMap((d) =>
+			d.hourlyData.filter(isDisplayedHour).map((h) => h.averageCount),
 		);
-	}, [dayData]);
+		return Math.max(Math.ceil(Math.max(...averages, 0)), 1);
+	}, [data]);
 
 	// Format data for chart - only show during the day (8am to 8pm)
 	const chartData = useMemo(() => {
 		return (
-			dayData?.hourlyData
-				.filter((h) => h.hour >= 8 && h.hour <= 20)
-				.map((h) => ({
-					hour: formatHour(h.hour),
-					hourNum: h.hour,
-					average: h.averageCount,
-					max: h.maxCount,
-					isCurrent: selectedDay === today && h.hour === currentHour,
-				})) ?? []
+			dayData?.hourlyData.filter(isDisplayedHour).map((h) => ({
+				hour: formatHour(h.hour),
+				hourNum: h.hour,
+				average: h.averageCount,
+				max: h.maxCount,
+				isCurrent: selectedDay === today && h.hour === currentHour,
+			})) ?? []
 		);
 	}, [dayData, selectedDay, today, currentHour]);
 
@@ -277,6 +275,8 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 							tickLine={false}
 							axisLine={false}
 							width={32}
+							domain={[0, maxAverage]}
+							allowDecimals={false}
 							tickFormatter={(value) => Math.round(value).toString()}
 							tick={<CustomYTick />}
 						/>
@@ -360,6 +360,10 @@ export function BusynessChart({ data, current }: BusynessChartProps) {
 			)}
 		</div>
 	);
+}
+
+function isDisplayedHour(h: HourlyData): boolean {
+	return h.hour >= 8 && h.hour <= 20;
 }
 
 function formatHour(hour: number): string {
