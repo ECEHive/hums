@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { usePaginationInfo } from "@/hooks/use-pagination-info";
 import { useTableState } from "@/hooks/use-table-state";
-import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/shifts/shift-types")({
 	component: () =>
@@ -39,10 +39,7 @@ export const Route = createFileRoute("/app/shifts/shift-types")({
 		}),
 });
 
-export const permissions = {
-	all: ["shift_types.list"],
-	any: ["shift_types.create", "shift_types.update", "shift_types.delete"],
-} as RequiredPermissions;
+export const permissions = ["shift_types.list"];
 
 function ShiftTypesPage() {
 	const { period: periodId } = usePeriod();

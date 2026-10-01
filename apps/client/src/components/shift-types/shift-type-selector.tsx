@@ -29,6 +29,7 @@ type ShiftTypeSelectorProps = {
 	onChange: (shiftType: ShiftType | null) => void;
 	periodId: number;
 	placeholder?: string;
+	disabled?: boolean;
 };
 
 export function ShiftTypeSelector({
@@ -36,6 +37,7 @@ export function ShiftTypeSelector({
 	onChange,
 	periodId,
 	placeholder = "Select shift type...",
+	disabled = false,
 }: ShiftTypeSelectorProps) {
 	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState("");
@@ -75,6 +77,7 @@ export function ShiftTypeSelector({
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
+					disabled={disabled}
 					role="combobox"
 					aria-expanded={open}
 					className="w-full justify-between"
