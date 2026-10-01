@@ -72,6 +72,7 @@ interface EditShiftScheduleSheetProps {
 	onOpenChange: (open: boolean) => void;
 	trigger?: React.ReactNode;
 	shiftSchedule: ShiftSchedule;
+	readOnly?: boolean;
 }
 
 export function EditShiftScheduleSheet({
@@ -79,6 +80,7 @@ export function EditShiftScheduleSheet({
 	onOpenChange,
 	trigger,
 	shiftSchedule,
+	readOnly = false,
 }: EditShiftScheduleSheetProps) {
 	const queryClient = useQueryClient();
 	const [serverError, setServerError] = useState<string | null>(null);
@@ -183,9 +185,13 @@ export function EditShiftScheduleSheet({
 			{trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
 			<SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
 				<SheetHeader>
-					<SheetTitle>Edit Shift Schedule</SheetTitle>
+					<SheetTitle>
+						{readOnly ? "View Shift Schedule" : "Edit Shift Schedule"}
+					</SheetTitle>
 					<SheetDescription>
-						Update the details for this shift schedule.
+						{readOnly
+							? "View the details for this shift schedule."
+							: "Update the details for this shift schedule."}
 					</SheetDescription>
 				</SheetHeader>
 				<form
@@ -215,6 +221,7 @@ export function EditShiftScheduleSheet({
 											<ShiftTypeSelector
 												periodId={shiftSchedule.periodId}
 												value={selectedShiftType}
+												disabled={readOnly}
 												onChange={(value) => {
 													setSelectedShiftType(value);
 													field.handleChange(value?.id ?? 0);
@@ -248,6 +255,7 @@ export function EditShiftScheduleSheet({
 												min={1}
 												max={100}
 												value={field.state.value}
+												disabled={readOnly}
 												onBlur={field.handleBlur}
 												onChange={(e) =>
 													field.handleChange(
@@ -285,6 +293,7 @@ export function EditShiftScheduleSheet({
 											</FieldLabel>
 											<Select
 												value={String(field.state.value)}
+												disabled={readOnly}
 												onValueChange={(value) =>
 													field.handleChange(Number.parseInt(value, 10))
 												}
@@ -329,6 +338,7 @@ export function EditShiftScheduleSheet({
 													id={field.name}
 													name={field.name}
 													value={field.state.value}
+													disabled={readOnly}
 													onBlur={field.handleBlur}
 													onChange={(value) => field.handleChange(value)}
 													aria-invalid={isInvalid}
@@ -355,6 +365,7 @@ export function EditShiftScheduleSheet({
 													id={field.name}
 													name={field.name}
 													value={field.state.value}
+													disabled={readOnly}
 													onBlur={field.handleBlur}
 													onChange={(value) => field.handleChange(value)}
 													aria-invalid={isInvalid}
@@ -384,22 +395,24 @@ export function EditShiftScheduleSheet({
 						onClick={() => handleSheetChange(false)}
 						disabled={isSubmitting}
 					>
-						Cancel
+						{readOnly ? "Close" : "Cancel"}
 					</Button>
-					<Button
-						form={formId}
-						type="submit"
-						disabled={!canSubmit || isSubmitting}
-					>
-						{isSubmitting ? (
-							<>
-								<Spinner className="mr-2 size-4" />
-								Saving...
-							</>
-						) : (
-							"Save Changes"
-						)}
-					</Button>
+					{!readOnly && (
+						<Button
+							form={formId}
+							type="submit"
+							disabled={!canSubmit || isSubmitting}
+						>
+							{isSubmitting ? (
+								<>
+									<Spinner className="mr-2 size-4" />
+									Saving...
+								</>
+							) : (
+								"Save Changes"
+							)}
+						</Button>
+					)}
 				</SheetFooter>
 			</SheetContent>
 		</Sheet>

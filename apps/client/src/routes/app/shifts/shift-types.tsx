@@ -39,10 +39,7 @@ export const Route = createFileRoute("/app/shifts/shift-types")({
 		}),
 });
 
-export const permissions = {
-	all: ["shift_types.list"],
-	any: ["shift_types.create", "shift_types.update", "shift_types.delete"],
-} as RequiredPermissions;
+export const permissions = ["shift_types.list"];
 
 function ShiftTypesPage() {
 	const { period: periodId } = usePeriod();

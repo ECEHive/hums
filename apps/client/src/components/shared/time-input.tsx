@@ -12,6 +12,7 @@ interface TimeInputProps {
 	id?: string;
 	name?: string;
 	onBlur?: () => void;
+	disabled?: boolean;
 	"aria-invalid"?: boolean;
 }
 
@@ -23,6 +24,7 @@ export function TimeInput({
 	id,
 	name,
 	onBlur,
+	disabled = false,
 	"aria-invalid": ariaInvalid,
 }: TimeInputProps) {
 	// Strip seconds if present (e.g., "10:00:00" -> "10:00")
@@ -86,6 +88,7 @@ export function TimeInput({
 				className={cn("pl-9", className)}
 				id={id}
 				name={name}
+				disabled={disabled}
 				aria-invalid={ariaInvalid}
 				title={`Time in ${getAppTimezoneDisplayLabel()}`}
 				maxLength={5}
