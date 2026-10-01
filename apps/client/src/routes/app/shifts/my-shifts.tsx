@@ -135,6 +135,8 @@ function MyShifts() {
 	const [dropTarget, setDropTarget] = React.useState<ShiftOccurrenceRow | null>(
 		null,
 	);
+	const [dropConfirmationTarget, setDropConfirmationTarget] =
+		React.useState<ShiftOccurrenceRow | null>(null);
 	const [makeupTarget, setMakeupTarget] =
 		React.useState<ShiftOccurrenceRow | null>(null);
 	const [isDropping, setIsDropping] = React.useState(false);
@@ -175,8 +177,7 @@ function MyShifts() {
 
 	const handleDropClick = React.useCallback(
 		(occurrence: ShiftOccurrenceRow) => {
-			setDropNotes("");
-			setDropTarget(occurrence);
+			setDropConfirmationTarget(occurrence);
 		},
 		[],
 	);
@@ -214,6 +215,20 @@ function MyShifts() {
 		},
 		[canMakeupPermission, resetMakeupToFirstPage, setMakeupFilters],
 	);
+
+	const handleMakeupFromDropConfirmation = React.useCallback(() => {
+		if (!dropConfirmationTarget) return;
+		const occurrence = dropConfirmationTarget;
+		setDropConfirmationTarget(null);
+		handleMakeupClick(occurrence);
+	}, [dropConfirmationTarget, handleMakeupClick]);
+
+	const handleContinueToDrop = React.useCallback(() => {
+		if (!dropConfirmationTarget) return;
+		setDropNotes("");
+		setDropTarget(dropConfirmationTarget);
+		setDropConfirmationTarget(null);
+	}, [dropConfirmationTarget]);
 
 	const tableColumns = React.useMemo(
 		() =>
@@ -326,6 +341,7 @@ function MyShifts() {
 		makeupHourOptions.some((option) => option.value === makeupStartHour);
 	const modificationWindow = makeupOptionsData?.modificationWindow;
 	const dropDialogOpen = Boolean(dropTarget);
+	const dropConfirmationDialogOpen = Boolean(dropConfirmationTarget);
 	const dropSummary = dropTarget ? formatShiftSummary(dropTarget) : "";
 	const makeupSummary = makeupTarget ? formatShiftSummary(makeupTarget) : "";
 	const makeupWindowClosed = modificationWindow
@@ -361,6 +377,10 @@ function MyShifts() {
 		setDropNotes("");
 	}, []);
 
+	const closeDropConfirmation = React.useCallback(() => {
+		setDropConfirmationTarget(null);
+	}, []);
+
 	const closeMakeupSheet = React.useCallback(() => {
 		setMakeupTarget(null);
 		setSelectedMakeupOccurrenceId(null);
@@ -375,6 +395,15 @@ function MyShifts() {
 			}
 		},
 		[isDropping, closeDropDialog],
+	);
+
+	const handleDropConfirmationOpenChange = React.useCallback(
+		(open: boolean) => {
+			if (!open) {
+				closeDropConfirmation();
+			}
+		},
+		[closeDropConfirmation],
 	);
 
 	const handleMakeupSheetOpenChange = React.useCallback(
@@ -541,6 +570,39 @@ function MyShifts() {
 						</div>
 					)}
 				</TableContainer>
+
+				<Dialog
+					open={dropConfirmationDialogOpen}
+					onOpenChange={handleDropConfirmationOpenChange}
+				>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>
+								Are you sure you want to drop this shift?
+							</DialogTitle>
+							<DialogDescription>
+								A makeup shift can keep this drop from counting against your
+								attendance.
+							</DialogDescription>
+						</DialogHeader>
+						{dropConfirmationTarget ? (
+							<Alert>
+								<AlertTitle>{dropConfirmationTarget.shiftTypeName}</AlertTitle>
+								<AlertDescription>
+									{formatShiftSummary(dropConfirmationTarget)}
+								</AlertDescription>
+							</Alert>
+						) : null}
+						<DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+							<Button variant="outline" onClick={handleContinueToDrop}>
+								Continue to dropping shift
+							</Button>
+							<Button onClick={handleMakeupFromDropConfirmation}>
+								Makeup shift instead
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 
 				<Dialog open={dropDialogOpen} onOpenChange={handleDropDialogOpenChange}>
 					<DialogContent>

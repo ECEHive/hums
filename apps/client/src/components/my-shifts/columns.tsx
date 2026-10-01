@@ -243,7 +243,7 @@ export function createColumns(
 						{canDrop ? (
 							<Button
 								size="sm"
-								variant="secondary"
+								variant="outline"
 								onClick={() => options.onDrop(occurrence)}
 							>
 								Drop
@@ -252,7 +252,7 @@ export function createColumns(
 						{canMakeup ? (
 							<Button
 								size="sm"
-								variant="outline"
+								variant="secondary"
 								onClick={() => options.onMakeup(occurrence)}
 							>
 								Makeup
