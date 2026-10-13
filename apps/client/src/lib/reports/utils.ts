@@ -4,8 +4,9 @@
  * @returns Formatted string (e.g. "1:15")
  */
 export function formatHours(hours: number): string {
-	const h = Math.floor(hours);
-	const m = Math.round((hours - h) * 60);
+	const totalMinutes = Math.round(hours * 60);
+	const h = Math.floor(totalMinutes / 60);
+	const m = totalMinutes % 60;
 	return `${h}:${m.toString().padStart(2, "0")}`;
 }
 
@@ -46,8 +47,9 @@ export function formatDateTime(date: Date | null | undefined): string {
  * Format duration in minutes to a human-readable string
  */
 export function formatDuration(minutes: number): string {
-	const hours = Math.floor(minutes / 60);
-	const mins = Math.round(minutes % 60);
+	const totalMinutes = Math.round(minutes);
+	const hours = Math.floor(totalMinutes / 60);
+	const mins = totalMinutes % 60;
 	if (hours === 0) return `${mins}m`;
 	if (mins === 0) return `${hours}h`;
 	return `${hours}h ${mins}m`;
