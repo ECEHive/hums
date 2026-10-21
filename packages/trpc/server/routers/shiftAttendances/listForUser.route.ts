@@ -102,12 +102,19 @@ export async function listForUserHandler(options: TListForUserOptions) {
 				id: true,
 				status: true,
 				droppedNotes: true,
+				excuseNotes: true,
 				timeIn: true,
 				timeOut: true,
 				didArriveLate: true,
 				didLeaveEarly: true,
 				isMakeup: true,
 				isExcused: true,
+				reviewedBy: {
+					select: {
+						name: true,
+						username: true,
+					},
+				},
 				createdAt: true,
 				shiftOccurrence: {
 					select: {
