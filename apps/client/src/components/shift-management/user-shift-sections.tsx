@@ -1,10 +1,16 @@
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import { DownloadIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { TablePagination } from "@/components/shared/table-pagination";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -21,6 +27,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { exportToCSV } from "@/lib/reports";
 import { formatDateInAppTimezone, formatTimeRange } from "@/lib/timezone";
 import { formatDecimalHours } from "@/lib/utils";
 
@@ -108,7 +115,13 @@ export type AttendanceData = {
 	attendances: Array<{
 		id: number;
 		status: string;
+		isMakeup: boolean;
+		didArriveLate: boolean;
+		didLeaveEarly: boolean;
 		isExcused: boolean;
+		droppedNotes: string | null;
+		excuseNotes: string | null;
+		reviewedBy: { name: string | null; username: string } | null;
 		scheduledHours: number | null;
 		actualHours: number | null;
 		shiftOccurrence: {
@@ -128,11 +141,99 @@ function getErrorMessage(error: unknown) {
 	return "Something went wrong";
 }
 
-function formatStatusLabel(status: string) {
-	return status
-		.split("_")
-		.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-		.join(" ");
+function getStatusLabel(record: { status: string }) {
+	switch (record.status) {
+		case "dropped_makeup":
+			return "Dropped w/ makeup";
+		default:
+			return record.status.charAt(0).toUpperCase() + record.status.slice(1);
+	}
+}
+
+function getStatusLabels(record: {
+	status: string;
+	didArriveLate: boolean;
+	didLeaveEarly: boolean;
+	isMakeup: boolean;
+	isExcused: boolean;
+}) {
+	return [
+		getStatusLabel(record),
+		record.isExcused ? "Excused" : null,
+		record.isMakeup ? "Makeup" : null,
+		record.didArriveLate ? "Arrived Late" : null,
+		record.didLeaveEarly ? "Left Early" : null,
+	].filter((label): label is string => label !== null);
+}
+
+function generateStatusLabels(record: {
+	status: string;
+	didArriveLate: boolean;
+	didLeaveEarly: boolean;
+	isMakeup: boolean;
+	isExcused: boolean;
+	droppedNotes: string | null;
+	excuseNotes: string | null;
+	reviewedBy: { name: string | null; username: string } | null;
+}) {
+	const statusLabel = getStatusLabel(record);
+	const isDropped =
+		record.status === "dropped" || record.status === "dropped_makeup";
+	const droppedBadge = isDropped ? (
+		<Popover>
+			<PopoverTrigger asChild>
+				<Badge
+					asChild
+					variant={statusLabel === "Absent" ? "destructive" : "outline"}
+					className="cursor-pointer"
+				>
+					<button type="button">{statusLabel}</button>
+				</Badge>
+			</PopoverTrigger>
+			<PopoverContent className="space-y-2 text-sm">
+				<p className="font-medium">Drop reason</p>
+				<p className="text-muted-foreground">
+					{record.droppedNotes || "No reason provided."}
+				</p>
+			</PopoverContent>
+		</Popover>
+	) : statusLabel === "Absent" ? (
+		<Badge variant="destructive">{statusLabel}</Badge>
+	) : (
+		<Badge variant="outline">{statusLabel}</Badge>
+	);
+	const excusedBadge = record.isExcused ? (
+		<Popover>
+			<PopoverTrigger asChild>
+				<Badge asChild className="cursor-pointer bg-green-500">
+					<button type="button">Excused</button>
+				</Badge>
+			</PopoverTrigger>
+			<PopoverContent className="space-y-2 text-sm">
+				<p className="font-medium">Excuse reason</p>
+				<p className="text-muted-foreground">
+					{record.excuseNotes || "No reason provided."}
+				</p>
+				{record.reviewedBy ? (
+					<p className="text-muted-foreground">
+						Excused by {record.reviewedBy.name || record.reviewedBy.username}
+					</p>
+				) : null}
+			</PopoverContent>
+		</Popover>
+	) : null;
+
+	return (
+		<div className="flex flex-wrap gap-1">
+			{droppedBadge}
+			{excusedBadge}
+			{record.isMakeup && (
+				<Badge className="bg-blue-500 text-white">Makeup</Badge>
+			)}
+			{record.didArriveLate && <Badge variant="default">Arrived Late</Badge>}
+			{record.didLeaveEarly && <Badge variant="default">Left Early</Badge>}
+		</div>
+	);
 }
 
 function createDefaultFilters(): ScheduleFilters {
@@ -709,11 +810,13 @@ export function UpcomingSection({ query, activeUserId }: UpcomingSectionProps) {
 type AttendanceSectionProps = {
 	query: UseQueryResult<AttendanceData | null, Error>;
 	activeUserId: number | null;
+	username: string;
 };
 
 export function AttendanceSection({
 	query,
 	activeUserId,
+	username,
 }: AttendanceSectionProps) {
 	const [page, setPage] = useState(1);
 
@@ -733,6 +836,46 @@ export function AttendanceSection({
 	const visibleRecords = hasRecords
 		? records.slice(startIndex, startIndex + ATTENDANCE_PAGE_SIZE)
 		: [];
+
+	const exportAttendance = () => {
+		const rows = records.map((record) => {
+			const scheduledDisplay =
+				typeof record.scheduledHours === "number"
+					? formatDecimalHours(record.scheduledHours)
+					: "–";
+			const actualDisplay = record.isExcused
+				? scheduledDisplay
+				: typeof record.actualHours === "number"
+					? formatDecimalHours(record.actualHours)
+					: "–";
+			const notes = [
+				record.droppedNotes
+					? `${getStatusLabel(record)}: ${record.droppedNotes}`
+					: null,
+				record.isExcused
+					? `Excused by ${record.reviewedBy?.name || record.reviewedBy?.username || "Unknown"}${record.excuseNotes ? `: ${record.excuseNotes}` : ""}`
+					: null,
+			].filter((note): note is string => note !== null);
+
+			return {
+				start: formatDateInAppTimezone(record.shiftOccurrence.timestamp, {
+					formatString: "MMM D, YYYY h:mm A",
+				}),
+				shift: record.shiftOccurrence.shiftSchedule.shiftType.name,
+				status: getStatusLabels(record).join(", "),
+				hours: `${actualDisplay} / ${scheduledDisplay}`,
+				notes: notes.join("; "),
+			};
+		});
+
+		exportToCSV(rows, `${username}-attendance-history`, [
+			{ key: "start", label: "Start" },
+			{ key: "shift", label: "Shift" },
+			{ key: "status", label: "Status" },
+			{ key: "hours", label: "Hours" },
+			{ key: "notes", label: "Notes" },
+		]);
+	};
 
 	if (query.isLoading) {
 		return (
@@ -762,10 +905,16 @@ export function AttendanceSection({
 				</p>
 			) : (
 				<>
+					<div className="flex justify-end">
+						<Button variant="outline" size="sm" onClick={exportAttendance}>
+							<DownloadIcon className="h-4 w-4" />
+							Export CSV
+						</Button>
+					</div>
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Date</TableHead>
+								<TableHead>Start</TableHead>
 								<TableHead>Shift</TableHead>
 								<TableHead>Status</TableHead>
 								<TableHead>Hours</TableHead>
@@ -773,12 +922,9 @@ export function AttendanceSection({
 						</TableHeader>
 						<TableBody>
 							{visibleRecords.map((record) => {
-								const date = formatDateInAppTimezone(
+								const start = formatDateInAppTimezone(
 									record.shiftOccurrence.timestamp,
-									{ formatString: "MMM D, YYYY" },
-								);
-								const statusLabel = formatStatusLabel(
-									record.isExcused ? "excused" : record.status,
+									{ formatString: "MMM D, YYYY h:mm A" },
 								);
 								const scheduledDisplay =
 									typeof record.scheduledHours === "number"
@@ -791,12 +937,21 @@ export function AttendanceSection({
 										: "–";
 								return (
 									<TableRow key={record.id}>
-										<TableCell>{date}</TableCell>
+										<TableCell>{start}</TableCell>
 										<TableCell>
 											{record.shiftOccurrence.shiftSchedule.shiftType.name}
 										</TableCell>
 										<TableCell>
-											<Badge variant="outline">{statusLabel}</Badge>
+											{generateStatusLabels({
+												status: record.status,
+												didArriveLate: record.didArriveLate,
+												didLeaveEarly: record.didLeaveEarly,
+												isMakeup: record.isMakeup,
+												isExcused: record.isExcused,
+												droppedNotes: record.droppedNotes,
+												excuseNotes: record.excuseNotes,
+												reviewedBy: record.reviewedBy,
+											})}
 										</TableCell>
 										<TableCell>
 											{actualDisplay} / {scheduledDisplay}

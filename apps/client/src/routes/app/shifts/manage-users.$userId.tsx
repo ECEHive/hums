@@ -283,6 +283,7 @@ function ManageUserDetailPage() {
 										<AttendanceSection
 											query={attendanceQuery}
 											activeUserId={userIdNum}
+											username={user?.username ?? `user-${userIdNum}`}
 										/>
 									</CardContent>
 								</Card>
