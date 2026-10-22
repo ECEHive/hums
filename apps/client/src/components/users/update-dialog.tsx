@@ -21,11 +21,13 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { checkPermissions } from "@/lib/permissions";
+import { Textarea } from "../ui/textarea";
 
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(100),
 	email: z.email("Email must be valid"),
 	slackUsername: z.string(),
+	internalNotes: z.string(),
 });
 
 type UpdateDialogProps = {
@@ -35,6 +37,7 @@ type UpdateDialogProps = {
 		name: string;
 		email: string;
 		slackUsername?: string;
+		internalNotes?: string;
 	};
 	onUpdate?: () => void;
 };
@@ -54,22 +57,31 @@ export function UserUpdateDialog({
 			name,
 			email,
 			slackUsername,
+			internalNotes,
 		}: {
 			id: number;
 			name: string;
 			email: string;
 			slackUsername?: string | null;
+			internalNotes?: string | null;
 		}) => {
 			// Pass through slackUsername as given:
 			// - undefined -> omit (leave unchanged)
 			// - null -> set column to NULL (clear)
 			// - string -> set to that value (may be empty string)
 			// Cast through unknown to satisfy generated trpc client types
-			const payload = { id, name, email, slackUsername } as unknown as {
+			const payload = {
+				id,
+				name,
+				email,
+				slackUsername,
+				internalNotes,
+			} as unknown as {
 				id: number;
 				name: string;
 				email: string;
 				slackUsername?: string | undefined;
+				internalNotes?: string | undefined;
 			};
 			return trpc.users.update.mutate(payload);
 		},
@@ -83,6 +95,7 @@ export function UserUpdateDialog({
 			name: user.name,
 			email: user.email,
 			slackUsername: user.slackUsername ?? "",
+			internalNotes: user.internalNotes ?? "",
 		},
 		validators: {
 			onSubmit: formSchema,
@@ -94,21 +107,31 @@ export function UserUpdateDialog({
 					name: string;
 					email: string;
 					slackUsername?: string | null;
+					internalNotes?: string | null;
 				} = { id: user.id, name: value.name, email: value.email };
 
-				// If the slackUsername field is empty string, we interpret that as
+				// If the slackUsername/internalNotes field is empty string, we interpret that as
 				// an explicit clear request only if the original value was non-empty.
 				// In that case, send `null` so the DB column is set to NULL. If the
 				// original value was already empty/null, omit the field to avoid
 				// unnecessary writes.
-				const original = user.slackUsername ?? "";
+				const originalSlackUsername = user.slackUsername ?? "";
 				if (value.slackUsername === "") {
-					if (original !== "") {
+					if (originalSlackUsername !== "") {
 						payload.slackUsername = null;
 					}
 					// else omit
 				} else {
 					payload.slackUsername = value.slackUsername;
+				}
+				const originalInternalNotes = user.internalNotes ?? "";
+				if (value.internalNotes === "") {
+					if (originalInternalNotes !== "") {
+						payload.internalNotes = null;
+					}
+					// else omit
+				} else {
+					payload.internalNotes = value.internalNotes;
 				}
 
 				await updateUserMutation.mutateAsync(payload);
@@ -233,6 +256,33 @@ export function UserUpdateDialog({
 										onChange={(e) => field.handleChange(e.target.value)}
 										placeholder="gburdell3"
 										autoComplete="off"
+									/>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					/>
+
+					<form.Field
+						name="internalNotes"
+						children={(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>
+										Internal Notes
+										<span className="text-muted-foreground">(optional)</span>
+									</FieldLabel>
+									<Textarea
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="Add internal notes about this user"
+										autoComplete="off"
+										className="max-h-64"
 									/>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>

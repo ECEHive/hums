@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { TagsIcon } from "lucide-react";
+import { StickyNoteIcon, TagsIcon } from "lucide-react";
 import type { AuthUser } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { checkPermissions } from "@/lib/permissions";
@@ -8,6 +8,11 @@ import { CredentialsSheet } from "./credentials-sheet";
 import { ImpersonateUserButton } from "./impersonate-button";
 import { RolesDialog } from "./roles-dialog";
 import { UserUpdateDialog } from "./update-dialog";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type User = {
 	id: number;
@@ -19,6 +24,7 @@ type User = {
 	updatedAt: Date;
 	department: string | null;
 	affiliation: string | null;
+	internalNotes: string;
 	roles: {
 		id: number;
 		name: string;
@@ -36,6 +42,25 @@ export function generateColumns(user: AuthUser | null): ColumnDef<User>[] {
 		{
 			accessorKey: "name",
 			header: "Name",
+			cell: ({ row }) => {
+				return (
+					<div className="flex items-center gap-2">
+						<span>{row.original.name}</span>
+						{row.original.internalNotes ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button variant="ghost" size="icon" className="h-6 w-6">
+										<StickyNoteIcon className="h-4 w-4 text-muted-foreground" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<div className="text-sm">{row.original.internalNotes}</div>
+								</TooltipContent>
+							</Tooltip>
+						) : null}
+					</div>
+				);
+			},
 		},
 		{
 			accessorKey: "username",
