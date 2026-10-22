@@ -127,9 +127,12 @@ type Issue = {
  * Get the excuse status of an issue based on its review state.
  */
 function getExcuseStatus(issue: Issue): ExcuseStatus {
+	// Excused issues are always shown as excused
 	if (issue.isExcused) return "excused";
-	if (issue.reviewedAt) return "unexcused";
-	return "pending";
+	// Unreviewed dropped shifts are considered pending
+	if (issue.status === "dropped" && !issue.reviewedAt) return "pending";
+	// All other issues are considered unexcused, but can be still be excused from the unexcused list
+	return "unexcused";
 }
 
 function getIssueType(issue: Issue): string {
