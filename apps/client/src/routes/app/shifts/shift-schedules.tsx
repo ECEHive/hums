@@ -36,7 +36,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
+import { checkPermissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/app/shifts/shift-schedules")({
 	component: () =>
@@ -47,14 +47,7 @@ export const Route = createFileRoute("/app/shifts/shift-schedules")({
 		}),
 });
 
-export const permissions = {
-	all: ["shift_schedules.list"],
-	any: [
-		"shift_schedules.create",
-		"shift_schedules.update",
-		"shift_schedules.delete",
-	],
-} as RequiredPermissions;
+export const permissions = ["shift_schedules.list"];
 
 function ShiftSchedulesPage() {
 	const { period: periodId } = usePeriod();
@@ -121,10 +114,15 @@ function ShiftSchedulesPage() {
 	});
 
 	const currentUser = useCurrentUser();
-	const canCreate =
-		currentUser && checkPermissions(currentUser, ["shift_schedules.create"]);
-	const canDelete =
-		currentUser && checkPermissions(currentUser, ["shift_schedules.delete"]);
+	const canCreate = Boolean(
+		currentUser && checkPermissions(currentUser, ["shift_schedules.create"]),
+	);
+	const canDelete = Boolean(
+		currentUser && checkPermissions(currentUser, ["shift_schedules.delete"]),
+	);
+	const canEdit = Boolean(
+		currentUser && checkPermissions(currentUser, ["shift_schedules.update"]),
+	);
 
 	if (periodId === null) {
 		return <PeriodNotSelected />;
@@ -270,6 +268,7 @@ function ShiftSchedulesPage() {
 						open={editOpen}
 						onOpenChange={setEditOpen}
 						shiftSchedule={selectedData.shiftSchedule}
+						readOnly={!canEdit}
 					/>
 				)}
 			</PageContent>

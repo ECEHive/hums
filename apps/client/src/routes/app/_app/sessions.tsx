@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	ClockIcon,
+	DownloadIcon,
 	Loader2Icon,
 	RefreshCcwIcon,
 	UserCog,
@@ -24,6 +25,7 @@ import {
 import { AdminSessionManagementDialog } from "@/components/sessions/admin-session-management-dialog";
 import { generateColumns } from "@/components/sessions/columns";
 import { CurrentStaffingCard } from "@/components/sessions/current-staffing-card";
+import { SessionsExportDialog } from "@/components/sessions/sessions-export-dialog";
 import {
 	DataTable,
 	FilterField,
@@ -93,6 +95,7 @@ function SessionsPage() {
 
 	const filterSessionType = filters?.sessionType ?? null;
 	const [manageDialogOpen, setManageDialogOpen] = useState(false);
+	const [exportDialogOpen, setExportDialogOpen] = useState(false);
 	const [activeTab, setActiveTab] = useState<"list" | "staffing">("list");
 
 	const canManageSessions = user && checkPermissions(user, ["sessions.manage"]);
@@ -288,40 +291,49 @@ function SessionsPage() {
 												}}
 											/>
 										</TableSearchInput>
-										<TableFilters
-											activeFiltersCount={filterSessionType ? 1 : 0}
-											hasActiveFilters={!!filterSessionType}
-											onReset={() => {
-												setFilters(DEFAULT_FILTERS);
-												resetToFirstPage();
-											}}
-										>
-											<FilterField label="Session Type">
-												<Select
-													value={filterSessionType || "all"}
-													onValueChange={(value) => {
-														setFilters((prev) => ({
-															...DEFAULT_FILTERS,
-															...prev,
-															sessionType:
-																value === "all"
-																	? null
-																	: (value as "regular" | "staffing"),
-														}));
-														resetToFirstPage();
-													}}
-												>
-													<SelectTrigger>
-														<SelectValue placeholder="All types" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="all">All types</SelectItem>
-														<SelectItem value="regular">Regular</SelectItem>
-														<SelectItem value="staffing">Staffing</SelectItem>
-													</SelectContent>
-												</Select>
-											</FilterField>
-										</TableFilters>
+										<div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+											<TableFilters
+												activeFiltersCount={filterSessionType ? 1 : 0}
+												hasActiveFilters={!!filterSessionType}
+												onReset={() => {
+													setFilters(DEFAULT_FILTERS);
+													resetToFirstPage();
+												}}
+											>
+												<FilterField label="Session Type">
+													<Select
+														value={filterSessionType || "all"}
+														onValueChange={(value) => {
+															setFilters((prev) => ({
+																...DEFAULT_FILTERS,
+																...prev,
+																sessionType:
+																	value === "all"
+																		? null
+																		: (value as "regular" | "staffing"),
+															}));
+															resetToFirstPage();
+														}}
+													>
+														<SelectTrigger>
+															<SelectValue placeholder="All types" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="all">All types</SelectItem>
+															<SelectItem value="regular">Regular</SelectItem>
+															<SelectItem value="staffing">Staffing</SelectItem>
+														</SelectContent>
+													</Select>
+												</FilterField>
+											</TableFilters>
+											<Button
+												variant="outline"
+												onClick={() => setExportDialogOpen(true)}
+											>
+												<DownloadIcon className="mr-2 h-4 w-4" />
+												Export CSV
+											</Button>
+										</div>
 									</TableToolbar>
 
 									<DataTable
@@ -363,6 +375,14 @@ function SessionsPage() {
 			<AdminSessionManagementDialog
 				open={manageDialogOpen}
 				onOpenChange={setManageDialogOpen}
+			/>
+			<SessionsExportDialog
+				open={exportDialogOpen}
+				onOpenChange={setExportDialogOpen}
+				sessionType={filterSessionType}
+				onSessionTypeChange={(sessionType) =>
+					setFilters((prev) => ({ ...prev, sessionType }))
+				}
 			/>
 		</Page>
 	);

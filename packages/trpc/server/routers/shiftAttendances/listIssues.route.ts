@@ -186,14 +186,16 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 		const excuseStatusConditions: Array<{
 			isExcused?: boolean;
 			reviewedAt?: null | { not: null };
+			status?: ShiftAttendanceStatus;
 		}> = [];
 
 		for (const status of uniqueExcuseStatus) {
 			if (status === "pending") {
-				// Pending: not excused AND not reviewed
+				// Pending: not excused AND not reviewed for dropped shifts only
 				excuseStatusConditions.push({
 					isExcused: false,
 					reviewedAt: null,
+					status: "dropped",
 				});
 			} else if (status === "excused") {
 				// Excused: isExcused is true
