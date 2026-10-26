@@ -41,7 +41,7 @@
 		"@tanstack/react-query": "^5.96.2",
 		"@tanstack/react-query-devtools": "^5.91.2",
 		"@tanstack/react-router": "^1.168.23",
-		"@tanstack/react-table": "^8.21.3",
+		"@tanstack/react-table": "^9.2.4",
 		"@trpc/client": "11.15.0",
 		"@trpc/tanstack-react-query": "11.16.0",
 		"@vitejs/plugin-basic-ssl": "^2.1.4",
