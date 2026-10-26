@@ -61,6 +61,11 @@ export function SuspensionUpdateDialog({
 	const [endDatePopoverOpen, setEndDatePopoverOpen] = useState(false);
 	const queryClient = useQueryClient();
 	const formId = useId();
+	const currentDate = new Date();
+	const startMonth = new Date(currentDate);
+	startMonth.setFullYear(currentDate.getFullYear() - 1);
+	const endMonth = new Date(currentDate);
+	endMonth.setFullYear(currentDate.getFullYear() + 10);
 
 	const updateMutation = useMutation({
 		mutationFn: (input: {
@@ -206,6 +211,8 @@ export function SuspensionUpdateDialog({
 															mode="single"
 															selected={selectedDate}
 															captionLayout="dropdown"
+															startMonth={startMonth}
+															endMonth={endMonth}
 															onSelect={(date) => {
 																if (date) {
 																	const year = date.getFullYear();
@@ -293,6 +300,8 @@ export function SuspensionUpdateDialog({
 															mode="single"
 															selected={selectedDate}
 															captionLayout="dropdown"
+															startMonth={startMonth}
+															endMonth={endMonth}
 															onSelect={(date) => {
 																if (date) {
 																	const year = date.getFullYear();
