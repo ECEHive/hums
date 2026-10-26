@@ -339,6 +339,7 @@ model Item {
   minQuantity                 Int?
   isActive                    Boolean                     @default(true)
   itemType                    ItemType                    @default(multiple)
+  inSpaceOnly                 Boolean                     @default(false)
   transactionRateLimit        Float?                      // Max transactions per period, null for no limit
   transactionRateLimitPeriod  TransactionRateLimitPeriod? // day, week, month, semester
   createdAt                   DateTime                    @default(now())

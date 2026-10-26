@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
 	ClockIcon,
 	CookieIcon,
+	DoorClosedLockedIcon,
 	EllipsisIcon,
 	LinkIcon,
 	LockIcon,
@@ -90,6 +91,16 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 											{row.transactionRateLimitPeriod}
 										</div>
 									</div>
+								</TooltipContent>
+							</Tooltip>
+						) : null}
+						{row.inSpaceOnly ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<DoorClosedLockedIcon className="h-4 w-4 text-muted-foreground" />
+								</TooltipTrigger>
+								<TooltipContent>
+									This item is in-space only (requires active session)
 								</TooltipContent>
 							</Tooltip>
 						) : null}
