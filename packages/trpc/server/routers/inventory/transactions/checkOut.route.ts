@@ -215,6 +215,24 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 		}
 	}
 
+	// Check for in-space only items: user must have an active session
+	const inSpaceOnlyItems = foundItems.filter((item) => item.inSpaceOnly);
+	if (inSpaceOnlyItems.length > 0) {
+		const activeSession = await prisma.session.findFirst({
+			where: {
+				userId,
+				endedAt: null,
+			},
+		});
+
+		if (!activeSession) {
+			throw new TRPCError({
+				code: "FORBIDDEN",
+				message: `Cannot check out in-space only items without an active session. Items: ${inSpaceOnlyItems.map((i) => i.name).join(", ")}`,
+			});
+		}
+	}
+
 	// Create transactions in a single DB transaction
 	const created = await prisma.$transaction(
 		items.map((it) =>

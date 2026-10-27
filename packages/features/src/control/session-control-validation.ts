@@ -87,6 +87,22 @@ export async function getUserActiveControlPoints(tx: DbClient, userId: number) {
 }
 
 /**
+ * Get the list of items that are currently checked out by the user and are in-space only.
+ * This is used to prevent users from ending their session while they have in-space only items checked out.
+ */
+export async function getUserInSpaceItems(tx: DbClient, userId: number) {
+	return await tx.$queryRaw<Array<{ name: string }>>`
+		SELECT i."name"
+		FROM "InventoryTransaction" it
+		INNER JOIN "Item" i ON i.id = it."itemId"
+		WHERE it."userId" = ${userId}
+			AND i."inSpaceOnly" = true
+		GROUP BY i.id, i."name"
+		HAVING SUM(it.quantity) < 0
+	`;
+}
+
+/**
  * Check if a user has any active control points (control points that are ON
  * and the user was the last one to turn them on).
  * Returns true if the user has at least one active control point.
@@ -112,6 +128,7 @@ export async function validateCanEndSession(
 	userId: number,
 ): Promise<void> {
 	const activePoints = await getUserActiveControlPoints(tx, userId);
+	const inSpaceItems = await getUserInSpaceItems(tx, userId);
 
 	if (activePoints.length > 0) {
 		const pointNames = activePoints
@@ -121,6 +138,15 @@ export async function validateCanEndSession(
 		throw new TRPCError({
 			code: "PRECONDITION_FAILED",
 			message: `You cannot end your session while you have active control points. Please turn off the following first: ${pointNames}`,
+		});
+	}
+
+	if (inSpaceItems.length > 0) {
+		const itemNames = inSpaceItems.map((i) => i.name).join(", ");
+
+		throw new TRPCError({
+			code: "PRECONDITION_FAILED",
+			message: `You cannot end your session while you have in-space only items checked out. Please return the following first: ${itemNames}`,
 		});
 	}
 }
