@@ -1,13 +1,21 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDownIcon } from "lucide-react";
+import { Check, ChevronDownIcon, ChevronsUpDown } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import { z } from "zod";
 import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	Dialog,
 	DialogClose,
@@ -25,16 +33,10 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { checkPermissions } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 import { parseDateTimeInput } from "./datetime";
 
 const formSchema = z.object({
@@ -67,20 +69,28 @@ export function SuspensionCreateDialog({
 	const [open, setOpen] = useState(false);
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [userSearch, setUserSearch] = useState("");
+	const [userSelectOpen, setUserSelectOpen] = useState(false);
+	const [selectedUser, setSelectedUser] = useState<{
+		id: number;
+		name: string;
+		username: string;
+		email: string;
+	} | null>(null);
 	const [startDatePopoverOpen, setStartDatePopoverOpen] = useState(false);
 	const [endDatePopoverOpen, setEndDatePopoverOpen] = useState(false);
 	const queryClient = useQueryClient();
 	const formId = useId();
 
 	const { data: usersData } = useQuery({
-		queryKey: ["users", { search: userSearch, limit: 20 }],
+		queryKey: ["users", "list", userSearch || undefined],
 		queryFn: async () => {
-			return await trpc.users.list.query({
+			const result = await trpc.users.list.query({
 				search: userSearch || undefined,
-				limit: 20,
+				limit: 25,
 			});
+			return result.users;
 		},
-		enabled: open,
+		enabled: open && userSelectOpen,
 	});
 
 	const createMutation = useMutation({
@@ -155,6 +165,8 @@ export function SuspensionCreateDialog({
 				form.reset();
 				setServerError(null);
 				setUserSearch("");
+				setUserSelectOpen(false);
+				setSelectedUser(null);
 			}
 		},
 		[form],
@@ -193,31 +205,70 @@ export function SuspensionCreateDialog({
 							return (
 								<Field data-invalid={isInvalid}>
 									<FieldLabel htmlFor={field.name}>User</FieldLabel>
-									<Select
-										value={field.state.value?.toString() ?? ""}
-										onValueChange={(value) =>
-											field.handleChange(Number.parseInt(value, 10))
-										}
+									<Popover
+										open={userSelectOpen}
+										onOpenChange={setUserSelectOpen}
 									>
-										<SelectTrigger>
-											<SelectValue placeholder="Select a user" />
-										</SelectTrigger>
-										<SelectContent>
-											<div className="p-2">
-												<Input
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												role="combobox"
+												aria-expanded={userSelectOpen}
+												className="w-full justify-between"
+											>
+												{selectedUser ? (
+													<span className="truncate">{selectedUser.name}</span>
+												) : (
+													"Select a user..."
+												)}
+												<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-[400px] p-0">
+											<Command shouldFilter={false}>
+												<CommandInput
 													placeholder="Search users..."
 													value={userSearch}
-													onChange={(e) => setUserSearch(e.target.value)}
-													className="mb-2"
+													onValueChange={setUserSearch}
 												/>
-											</div>
-											{usersData?.users.map((u) => (
-												<SelectItem key={u.id} value={u.id.toString()}>
-													{u.name} ({u.username})
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+												<CommandList>
+													<CommandEmpty>
+														{usersData ? "No users found." : "Loading..."}
+													</CommandEmpty>
+													<CommandGroup>
+														{usersData?.map((user) => (
+															<CommandItem
+																key={user.id}
+																value={user.id.toString()}
+																onSelect={() => {
+																	field.handleChange(user.id);
+																	setSelectedUser(user);
+																	setUserSelectOpen(false);
+																}}
+															>
+																<Check
+																	className={cn(
+																		"mr-2 h-4 w-4",
+																		selectedUser?.id === user.id
+																			? "opacity-100"
+																			: "opacity-0",
+																	)}
+																/>
+																<div className="flex flex-col">
+																	<span className="font-medium">
+																		{user.name}
+																	</span>
+																	<span className="text-xs text-muted-foreground">
+																		{user.username} • {user.email}
+																	</span>
+																</div>
+															</CommandItem>
+														))}
+													</CommandGroup>
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>
 							);

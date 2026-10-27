@@ -11,7 +11,8 @@ export function cn(...inputs: ClassValue[]) {
  * @returns Formatted string (e.g. "1:15")
  */
 export function formatDecimalHours(decimalHours: number): string {
-	const h = Math.floor(decimalHours);
-	const m = Math.round((decimalHours - h) * 60);
+	const totalMinutes = Math.round(decimalHours * 60);
+	const h = Math.floor(totalMinutes / 60);
+	const m = totalMinutes % 60;
 	return `${h}:${m.toString().padStart(2, "0")}`;
 }

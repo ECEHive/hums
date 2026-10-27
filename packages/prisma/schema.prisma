@@ -48,6 +48,7 @@ model User {
   authorizedControlPoints ControlPoint[]         @relation("ControlPointUsers")
   controlLogs             ControlLog[]
   credentials             Credential[]
+  internalNotes           String?
 }
 
 model Role {
@@ -247,15 +248,15 @@ model ApiToken {
 }
 
 model WebhookEndpoint {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   url         String
   secret      String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
-  sendActions String[]  @default([])
-  sendTickets Boolean   @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  sendActions String[] @default([])
+  sendTickets Boolean  @default(false)
 }
 
 model AuditLog {
