@@ -45,6 +45,7 @@ const formSchema = z.object({
 	quantity: z.number().int().optional().nullable(),
 	isActive: z.boolean().optional(),
 	itemType: z.enum(["multiple", "single", "consumable"]).optional(),
+	inSpaceOnly: z.boolean().optional(),
 	transactionRateLimit: z.number().int().min(1).optional(),
 	transactionRateLimitPeriod: z
 		.enum(["day", "week", "month", "semester"])
@@ -63,6 +64,7 @@ type EditDialogProps = {
 		link?: string | null;
 		isActive: boolean;
 		itemType: "multiple" | "single" | "consumable";
+		inSpaceOnly: boolean;
 		transactionRateLimit?: number | null;
 		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester" | null;
 		approvalRoles?: { id: number; name: string }[];
@@ -89,6 +91,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 		link?: string;
 		isActive?: boolean;
 		itemType?: "multiple" | "single" | "consumable";
+		inSpaceOnly?: boolean;
 		transactionRateLimit?: number;
 		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester" | null;
 		approvalRoleIds?: number[];
@@ -124,6 +127,7 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 			quantity: undefined,
 			isActive: item.isActive,
 			itemType: item.itemType,
+			inSpaceOnly: item.inSpaceOnly,
 			transactionRateLimit: item.transactionRateLimit ?? undefined,
 			transactionRateLimitPeriod: item.transactionRateLimitPeriod ?? undefined,
 		} as FormValues,
@@ -411,6 +415,29 @@ export function EditDialog({ item, onUpdate }: EditDialogProps): JSX.Element {
 										</SelectItem>
 									</SelectContent>
 								</Select>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
+					<form.Field name="inSpaceOnly">
+						{(field) => (
+							<Field>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(checked) => field.handleChange(!!checked)}
+										onBlur={field.handleBlur}
+									/>
+									<FieldLabel htmlFor={field.name} className="!mt-0">
+										In-Space Only
+									</FieldLabel>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									Item requires an active session for checkout, and blocks
+									session ending until returned.
+								</p>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>
 						)}

@@ -11,6 +11,7 @@ export const ZCreateItemSchema = z.object({
 	link: z.string().url().optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
 	itemType: z.enum(["multiple", "single", "consumable"]).optional(),
+	inSpaceOnly: z.boolean().optional(),
 	transactionRateLimit: z.number().optional(),
 	transactionRateLimitPeriod: z
 		.enum(["day", "week", "month", "semester"])
