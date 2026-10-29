@@ -21,6 +21,7 @@ import { shiftAttendancesRouter } from "./routers/shiftAttendances/_route";
 import { shiftOccurrencesRouter } from "./routers/shiftOccurrences/_route";
 import { shiftSchedulesRouter } from "./routers/shiftSchedules/_route";
 import { shiftTypesRouter } from "./routers/shiftTypes/_route";
+import { staffingRouter } from "./routers/staffing/_route";
 import { suspensionsRouter } from "./routers/suspensions/_route";
 import { ticketsRouter } from "./routers/tickets/_route";
 import { usersRouter } from "./routers/users/_route";
@@ -48,6 +49,7 @@ export const appRouter = router({
 	shiftOccurrences: shiftOccurrencesRouter,
 	shiftAttendances: shiftAttendancesRouter,
 	sessions: sessionsRouter,
+	staffing: staffingRouter,
 	suspensions: suspensionsRouter,
 	devices: devicesRouter,
 	oneTimeLoginCodes: oneTimeLoginCodesRouter,
