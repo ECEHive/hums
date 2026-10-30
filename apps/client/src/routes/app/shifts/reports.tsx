@@ -189,6 +189,9 @@ function ReportsPage() {
 	// Track if report has been generated
 	const [hasGenerated, setHasGenerated] = useState(false);
 
+	// Rows in the order the table shows them (after sorting)
+	const [sortedRows, setSortedRows] = useState<Record<string, unknown>[]>([]);
+
 	// Get period data
 	const { data: periodData, isLoading: periodLoading } = useQuery({
 		queryKey: ["period", Number(selectedPeriodId)],
@@ -543,7 +546,7 @@ function ReportsPage() {
 
 	// Handle CSV export (unified for all reports)
 	const handleExportCSV = useCallback(() => {
-		if (!reportData || reportData.length === 0) return;
+		if (sortedRows.length === 0) return;
 
 		const columns = columnsToExportFormat(currentColumns);
 		const filename =
@@ -552,7 +555,7 @@ function ReportsPage() {
 				: (currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ??
 					"report");
 
-		exportReport("csv", reportData as Record<string, unknown>[], {
+		exportReport("csv", sortedRows, {
 			filename,
 			title:
 				selectedReportId === "schedule-export"
@@ -562,7 +565,7 @@ function ReportsPage() {
 			columns,
 		});
 	}, [
-		reportData,
+		sortedRows,
 		currentColumns,
 		currentReportConfig,
 		periodData?.period?.name,
@@ -572,7 +575,7 @@ function ReportsPage() {
 
 	// Handle HTML/Print export (unified for all reports)
 	const handleExportHTML = useCallback(() => {
-		if (!reportData || reportData.length === 0) return;
+		if (sortedRows.length === 0) return;
 
 		const columns = columnsToExportFormat(currentColumns);
 		const filename =
@@ -581,7 +584,7 @@ function ReportsPage() {
 				: (currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ??
 					"report");
 
-		exportReport("html", reportData as Record<string, unknown>[], {
+		exportReport("html", sortedRows, {
 			filename,
 			title:
 				selectedReportId === "schedule-export"
@@ -591,7 +594,7 @@ function ReportsPage() {
 			columns,
 		});
 	}, [
-		reportData,
+		sortedRows,
 		currentColumns,
 		currentReportConfig,
 		periodData?.period?.name,
@@ -918,7 +921,7 @@ function ReportsPage() {
 							</Button>
 
 							{/* Export buttons - only shown after report is generated */}
-							{hasGenerated && reportData.length > 0 && (
+							{hasGenerated && sortedRows.length > 0 && (
 								<>
 									<Button
 										variant="outline"
@@ -951,6 +954,8 @@ function ReportsPage() {
 							columns={currentColumns}
 							data={reportData}
 							isLoading={isLoading}
+							enableSorting
+							onSortedRowsChange={setSortedRows}
 							emptyMessage="No data found"
 							emptyDescription="Try adjusting your filters or date range"
 						/>
