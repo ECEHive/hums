@@ -1,5 +1,6 @@
 import type * as React from "react";
 import { useEffect, useId, useState } from "react";
+import { endOfDay, startOfDay } from "@/components/periods/date-range-helpers";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -162,10 +163,14 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 									let start = (r as { from?: Date; to?: Date }).from;
 									let end = (r as { from?: Date; to?: Date }).to;
 
-									// Apply times if withTime is enabled
+									// Apply times if withTime is enabled. Otherwise cover
+									// whole days so the end date is included.
 									if (withTime) {
 										start = updateTimeOnDate(start, startTime);
 										end = updateTimeOnDate(end, endTime);
+									} else {
+										start = start && startOfDay(start);
+										end = end && endOfDay(end);
 									}
 
 									const nn: Range = [start, end];
@@ -176,7 +181,9 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 									if (withTime) {
 										date = updateTimeOnDate(date, startTime) || date;
 									}
-									const nn: Range = [date, date];
+									const nn: Range = withTime
+										? [date, date]
+										: [startOfDay(date), endOfDay(date)];
 									setRange(nn);
 									onChange?.(nn);
 								}
