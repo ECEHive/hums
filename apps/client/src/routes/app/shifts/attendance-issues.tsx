@@ -6,6 +6,8 @@ import {
 	AlertCircle,
 	CalendarX,
 	CheckCircle,
+	ChevronLeft,
+	ChevronRight,
 	Clock,
 	Eye,
 	LogOut,
@@ -13,7 +15,7 @@ import {
 	ShieldCheck,
 	XCircle,
 } from "lucide-react";
-import { type MouseEvent, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/auth/AuthProvider";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
@@ -236,6 +238,21 @@ function AttendanceIssuesPage() {
 	const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 	const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 	const [excuseNotes, setExcuseNotes] = useState("");
+	// After handling an issue from the details dialog, move on to the next one
+	// once the list has refreshed. requestedAt makes sure we use fresh data.
+	const [advanceAfter, setAdvanceAfter] = useState<{
+		id: number;
+		index: number;
+		requestedAt: number;
+	} | null>(null);
+	// When navigating across pages, which issue to select once the page loads
+	const [selectOnLoad, setSelectOnLoad] = useState<"first" | "last" | null>(
+		null,
+	);
+	// Set when "Grant Excuse" in the details dialog opens the notes dialog
+	const grantFromDetailsRef = useRef<{ id: number; index: number } | null>(
+		null,
+	);
 
 	const hasPermission =
 		!!currentUser && checkPermissions(currentUser, permissions);
@@ -250,7 +267,12 @@ function AttendanceIssuesPage() {
 		(isDefaultExcuseStatus ? 0 : 1) +
 		(hasDateFilter ? 1 : 0);
 
-	const { data: issuesData, isLoading } = useQuery({
+	const {
+		data: issuesData,
+		isLoading,
+		isFetching,
+		dataUpdatedAt,
+	} = useQuery({
 		queryKey: [
 			"attendanceIssues",
 			selectedPeriodId,
@@ -289,12 +311,20 @@ function AttendanceIssuesPage() {
 		},
 		onSuccess: () => {
 			toast.success("The attendance has been excused successfully.");
+			const fromDetails = grantFromDetailsRef.current;
+			grantFromDetailsRef.current = null;
+			if (fromDetails) {
+				setAdvanceAfter({ ...fromDetails, requestedAt: Date.now() });
+			} else {
+				setSelectedIssue(null);
+			}
 			queryClient.invalidateQueries({ queryKey: ["attendanceIssues"] });
 			setExcuseDialogOpen(false);
-			setSelectedIssue(null);
 			setExcuseNotes("");
 		},
 		onError: (error) => {
+			grantFromDetailsRef.current = null;
+			setAdvanceAfter(null);
 			toast.error(error.message || "Failed to grant excuse");
 		},
 	});
@@ -321,6 +351,7 @@ function AttendanceIssuesPage() {
 			queryClient.invalidateQueries({ queryKey: ["attendanceIssues"] });
 		},
 		onError: (error) => {
+			setAdvanceAfter(null);
 			toast.error(error.message || "Failed to mark as reviewed");
 		},
 	});
@@ -334,6 +365,68 @@ function AttendanceIssuesPage() {
 		offset,
 		currentCount: issues.length,
 	});
+
+	// Position of the open issue in the current page of results
+	const selectedIndex = selectedIssue
+		? issues.findIndex((i) => i.id === selectedIssue.id)
+		: -1;
+	const canGoPrevious = selectedIndex > 0 || page > 1;
+	const canGoNext =
+		(selectedIndex !== -1 && selectedIndex < issues.length - 1) ||
+		page < totalPages;
+
+	const goToIssue = (index: number) => {
+		if (index >= 0 && index < issues.length) {
+			setSelectedIssue(issues[index]);
+		} else if (index >= issues.length && page < totalPages) {
+			setSelectOnLoad("first");
+			setPage(page + 1);
+		} else if (index < 0 && page > 1) {
+			setSelectOnLoad("last");
+			setPage(page - 1);
+		}
+	};
+
+	// Select the first/last issue after moving to another page
+	useEffect(() => {
+		if (!selectOnLoad || isFetching || issues.length === 0) return;
+		setSelectedIssue(
+			selectOnLoad === "first" ? issues[0] : issues[issues.length - 1],
+		);
+		setSelectOnLoad(null);
+	}, [selectOnLoad, isFetching, issues]);
+
+	// After handling an issue, show the next one from the refreshed list.
+	// With the default "pending" filter the handled issue drops out of the
+	// list, so the next issue slides into its spot.
+	useEffect(() => {
+		if (!advanceAfter || isFetching) return;
+		if (dataUpdatedAt < advanceAfter.requestedAt) return;
+		setAdvanceAfter(null);
+
+		const { id, index } = advanceAfter;
+		const next = issues[index]?.id === id ? issues[index + 1] : issues[index];
+		if (next) {
+			setSelectedIssue(next);
+			setDetailsDialogOpen(true);
+		} else if (issues[index]?.id === id && page < totalPages) {
+			setSelectOnLoad("first");
+			setPage(page + 1);
+			setDetailsDialogOpen(true);
+		} else {
+			setSelectedIssue(null);
+			setDetailsDialogOpen(false);
+			toast.info("No more issues to review.");
+		}
+	}, [
+		advanceAfter,
+		isFetching,
+		dataUpdatedAt,
+		issues,
+		page,
+		totalPages,
+		setPage,
+	]);
 
 	const openExcuseDialog = (issue: Issue) => {
 		setSelectedIssue(issue);
@@ -723,13 +816,51 @@ function AttendanceIssuesPage() {
 
 				{/* Details Dialog */}
 				<Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-					<DialogContent className="max-w-lg">
+					<DialogContent
+						className="max-w-lg"
+						onKeyDown={(event) => {
+							if (event.key === "ArrowLeft" && canGoPrevious) {
+								event.preventDefault();
+								goToIssue(selectedIndex - 1);
+							} else if (event.key === "ArrowRight" && canGoNext) {
+								event.preventDefault();
+								goToIssue(selectedIndex + 1);
+							}
+						}}
+					>
 						<DialogHeader>
 							<DialogTitle>Attendance Details</DialogTitle>
 							<DialogDescription>
 								Full details for this attendance record
 							</DialogDescription>
 						</DialogHeader>
+
+						{/* Previous / next issue */}
+						<div className="flex items-center justify-between">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => goToIssue(selectedIndex - 1)}
+								disabled={!canGoPrevious || isFetching}
+							>
+								<ChevronLeft className="h-4 w-4 mr-1" />
+								Previous
+							</Button>
+							<span className="text-sm text-muted-foreground">
+								{selectedIndex === -1
+									? ""
+									: `${offset + selectedIndex + 1} of ${total}`}
+							</span>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => goToIssue(selectedIndex + 1)}
+								disabled={!canGoNext || isFetching}
+							>
+								Next
+								<ChevronRight className="h-4 w-4 ml-1" />
+							</Button>
+						</div>
 
 						{selectedIssue && (
 							<div className="space-y-4">
@@ -975,8 +1106,12 @@ function AttendanceIssuesPage() {
 										<Button
 											variant="outline"
 											onClick={(event) => {
+												setAdvanceAfter({
+													id: selectedIssue.id,
+													index: selectedIndex,
+													requestedAt: Date.now(),
+												});
 												handleMarkUnexcusedClick(selectedIssue, event);
-												setDetailsDialogOpen(false);
 											}}
 											disabled={markReviewedMutation.isPending}
 										>
@@ -985,6 +1120,10 @@ function AttendanceIssuesPage() {
 										</Button>
 										<Button
 											onClick={(event) => {
+												grantFromDetailsRef.current = {
+													id: selectedIssue.id,
+													index: selectedIndex,
+												};
 												setDetailsDialogOpen(false);
 												handleGrantExcuseClick(selectedIssue, event);
 											}}
@@ -998,6 +1137,10 @@ function AttendanceIssuesPage() {
 								getExcuseStatus(selectedIssue) === "unexcused" && (
 									<Button
 										onClick={(event) => {
+											grantFromDetailsRef.current = {
+												id: selectedIssue.id,
+												index: selectedIndex,
+											};
 											setDetailsDialogOpen(false);
 											handleGrantExcuseClick(selectedIssue, event);
 										}}
@@ -1017,7 +1160,21 @@ function AttendanceIssuesPage() {
 				</Dialog>
 
 				{/* Excuse Dialog */}
-				<Dialog open={excuseDialogOpen} onOpenChange={setExcuseDialogOpen}>
+				<Dialog
+					open={excuseDialogOpen}
+					onOpenChange={(open) => {
+						setExcuseDialogOpen(open);
+						// Cancelling after "Grant Excuse" in details goes back to details
+						if (
+							!open &&
+							grantFromDetailsRef.current &&
+							!grantExcuseMutation.isPending
+						) {
+							grantFromDetailsRef.current = null;
+							setDetailsDialogOpen(true);
+						}
+					}}
+				>
 					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Grant Excuse</DialogTitle>
@@ -1068,7 +1225,13 @@ function AttendanceIssuesPage() {
 						<DialogFooter>
 							<Button
 								variant="outline"
-								onClick={() => setExcuseDialogOpen(false)}
+								onClick={() => {
+									setExcuseDialogOpen(false);
+									if (grantFromDetailsRef.current) {
+										grantFromDetailsRef.current = null;
+										setDetailsDialogOpen(true);
+									}
+								}}
 							>
 								Cancel
 							</Button>
