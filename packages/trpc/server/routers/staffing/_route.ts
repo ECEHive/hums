@@ -1,9 +1,11 @@
-import z from "zod";
-import { protectedProcedure, router } from "../../trpc";
-import { getCurrentStaffing } from "../../utils/current-staffing";
+import { permissionProtectedProcedure, router } from "../../trpc";
+import {
+	currentStaffingHandler,
+	ZCurrentStaffingSchema,
+} from "./currentStaffing.route";
 
 export const staffingRouter = router({
-	currentStaffing: protectedProcedure
-		.input(z.object({}))
-		.query(() => getCurrentStaffing()),
+	currentStaffing: permissionProtectedProcedure("shift_schedules.list")
+		.input(ZCurrentStaffingSchema)
+		.query(currentStaffingHandler),
 });

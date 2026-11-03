@@ -109,24 +109,14 @@ export const appModules: AppModule[] = [
 					},
 				],
 			},
-		],
-	},
-	{
-		id: "staffing",
-		name: "Staffing",
-		description: "Current and upcoming staffing",
-		icon: UsersIcon,
-		basePath: "/app/staffing",
-		color: "text-cyan-500",
-		permissions: [],
-		groups: [
 			{
+				name: "Administration",
 				items: [
 					{
 						title: "Staffing",
 						url: "/app/staffing",
 						icon: UsersIcon,
-						permissions: [],
+						permissions: { any: ["shift_schedules.list"] },
 						description: "View current and upcoming shifts",
 					},
 				],
