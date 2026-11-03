@@ -235,6 +235,7 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 					userId: r.userId,
 					action: "CHECK_IN",
 					quantity: r.quantity,
+					notes: `Automatically returned: checked out by ${user.name} (${user.username})`,
 				},
 				include: {
 					item: true,
