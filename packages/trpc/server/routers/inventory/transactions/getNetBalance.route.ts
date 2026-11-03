@@ -1,4 +1,4 @@
-import { prisma } from "@ecehive/prisma";
+import { Prisma, prisma } from "@ecehive/prisma";
 import z from "zod";
 import type { TPermissionProtectedProcedureContext } from "../../../trpc";
 
@@ -95,6 +95,49 @@ export async function getNetBalanceHandler(options: TGetNetBalanceOptions) {
 		}
 	}
 
+	// Find who currently has each item checked out (negative balance per user)
+	const itemIds = result.map((item) => item.itemId);
+	const holders =
+		itemIds.length === 0
+			? []
+			: await prisma.$queryRaw<
+					Array<{
+						itemId: string;
+						userId: number;
+						userName: string;
+						username: string;
+						quantity: bigint;
+					}>
+				>`
+				SELECT
+					it."itemId",
+					u.id as "userId",
+					u.name as "userName",
+					u.username,
+					-SUM(it.quantity)::bigint as quantity
+				FROM "InventoryTransaction" it
+				INNER JOIN "User" u ON it."userId" = u.id
+				WHERE it."itemId" IN (${Prisma.join(itemIds)})
+				GROUP BY it."itemId", u.id, u.name, u.username
+				HAVING SUM(it.quantity) < 0
+				ORDER BY u.name ASC
+			`;
+
+	const holdersByItem = new Map<
+		string,
+		Array<{ userId: number; name: string; username: string; quantity: number }>
+	>();
+	for (const holder of holders) {
+		const list = holdersByItem.get(holder.itemId) ?? [];
+		list.push({
+			userId: holder.userId,
+			name: holder.userName,
+			username: holder.username,
+			quantity: Number(holder.quantity),
+		});
+		holdersByItem.set(holder.itemId, list);
+	}
+
 	// Convert bigint to number
 	return result.map((item) => ({
 		itemId: item.itemId,
@@ -102,5 +145,6 @@ export async function getNetBalanceHandler(options: TGetNetBalanceOptions) {
 		itemSku: item.itemSku,
 		itemType: item.itemType,
 		netQuantity: Number(item.netQuantity),
+		checkedOutBy: holdersByItem.get(item.itemId) ?? [],
 	}));
 }
