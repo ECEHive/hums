@@ -1,3 +1,5 @@
+import { endOfDay } from "@/components/periods/date-range-helpers";
+
 /**
  * Format a decimal hour value into h:mm format.
  * @param hours - Hours as a decimal number (e.g. 1.25)
@@ -179,10 +181,12 @@ export function getStandardDatePresets(
 					lastSunday.getMonth(),
 					lastSunday.getDate() - 14,
 				);
-				const endOfLast2Weeks = new Date(
-					lastSunday.getFullYear(),
-					lastSunday.getMonth(),
-					lastSunday.getDate() - 1,
+				const endOfLast2Weeks = endOfDay(
+					new Date(
+						lastSunday.getFullYear(),
+						lastSunday.getMonth(),
+						lastSunday.getDate() - 1,
+					),
 				);
 				return { start: startOfLast2Weeks, end: endOfLast2Weeks };
 			},
@@ -197,10 +201,8 @@ export function getStandardDatePresets(
 					now.getMonth() - 1,
 					1,
 				);
-				const lastDayOfLastMonth = new Date(
-					now.getFullYear(),
-					now.getMonth(),
-					0,
+				const lastDayOfLastMonth = endOfDay(
+					new Date(now.getFullYear(), now.getMonth(), 0),
 				);
 				return { start: firstDayOfLastMonth, end: lastDayOfLastMonth };
 			},
