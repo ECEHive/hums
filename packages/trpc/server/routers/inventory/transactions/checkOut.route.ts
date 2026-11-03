@@ -128,8 +128,16 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 		}
 	}
 
-	// Validate single items: quantity must be 1 and the item must not already be checked out
+	// Validate single items: quantity must be 1. If someone else still has the
+	// item checked out, it was physically returned but never recorded, so return
+	// it on their behalf. If this user already has it, there's nothing to do.
 	const singleItems = foundItems.filter((i) => i.itemType === "single");
+	const autoReturns: Array<{
+		itemId: string;
+		userId: number;
+		quantity: number;
+	}> = [];
+	const alreadyHeldItemIds = new Set<string>();
 	if (singleItems.length > 0) {
 		// Enforce quantity of 1 for single items
 		for (const singleItem of singleItems) {
@@ -142,31 +150,33 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 			}
 		}
 
-		// Check if any single items are already checked out (net balance < 0)
+		// Find who currently has each single item checked out (net balance < 0)
 		const singleItemIds = singleItems.map((i) => i.id);
-		const balances = await prisma.$queryRaw<
-			Array<{ itemId: string; netQuantity: bigint }>
+		const holders = await prisma.$queryRaw<
+			Array<{ itemId: string; userId: number; netQuantity: bigint }>
 		>`
-			SELECT "itemId", SUM(quantity)::bigint as "netQuantity"
+			SELECT "itemId", "userId", SUM(quantity)::bigint as "netQuantity"
 			FROM "InventoryTransaction"
 			WHERE "itemId" IN (${Prisma.join(singleItemIds)})
-			GROUP BY "itemId"
+			GROUP BY "itemId", "userId"
+			HAVING SUM(quantity) < 0
 		`;
 
-		const balanceMap = new Map<string, number>(
-			balances.map((b) => [b.itemId, Number(b.netQuantity)]),
-		);
-
-		for (const singleItem of singleItems) {
-			const balance = balanceMap.get(singleItem.id) ?? 0;
-			if (balance < 0) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: `"${singleItem.name}" is currently checked out and must be returned before it can be checked out again`,
+		for (const holder of holders) {
+			if (holder.userId === userId) {
+				alreadyHeldItemIds.add(holder.itemId);
+			} else {
+				autoReturns.push({
+					itemId: holder.itemId,
+					userId: holder.userId,
+					quantity: -Number(holder.netQuantity),
 				});
 			}
 		}
 	}
+	const itemsToCheckOut = items.filter(
+		(it) => !alreadyHeldItemIds.has(it.itemId),
+	);
 
 	// Check for items that require approval
 	const itemsRequiringApproval = foundItems.filter(
@@ -234,8 +244,30 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 	}
 
 	// Create transactions in a single DB transaction
-	const created = await prisma.$transaction(
-		items.map((it) =>
+	const created = await prisma.$transaction([
+		// Return unrecorded single items for their previous holders first
+		...autoReturns.map((r) =>
+			prisma.inventoryTransaction.create({
+				data: {
+					itemId: r.itemId,
+					userId: r.userId,
+					action: "CHECK_IN",
+					quantity: r.quantity,
+					notes: `Automatically returned: checked out by ${user.name} (${user.username})`,
+				},
+				include: {
+					item: true,
+					user: {
+						select: {
+							id: true,
+							name: true,
+							username: true,
+						},
+					},
+				},
+			}),
+		),
+		...itemsToCheckOut.map((it) =>
 			prisma.inventoryTransaction.create({
 				data: {
 					itemId: it.itemId,
@@ -256,7 +288,8 @@ export async function checkOutHandler(options: TCheckOutOptions) {
 				},
 			}),
 		),
-	);
+	]);
 
-	return created;
+	// Only return this user's checkouts, not the automatic returns
+	return created.slice(autoReturns.length);
 }
