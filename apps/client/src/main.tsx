@@ -34,7 +34,6 @@ const router = createRouter({
 		Sentry.captureException(error);
 		return <ErrorPage error={error} />;
 	},
-	defaultViewTransition: true,
 });
 
 // Register the router instance for type safety
