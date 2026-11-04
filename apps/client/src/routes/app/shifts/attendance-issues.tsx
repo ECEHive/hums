@@ -91,9 +91,9 @@ export const permissions = ["shift_attendances.excuse"] as RequiredPermissions;
 
 /**
  * Excuse status values for attendance issues:
- * - pending: Issue has not been reviewed (reviewedAt is null, isExcused is false)
+ * - pending: An unreviewed dropped shift (reviewedAt is null, isExcused is false)
  * - excused: Issue has been excused (isExcused is true)
- * - unexcused: Issue has been reviewed and marked as unexcused (reviewedAt is set, isExcused is false)
+ * - unexcused: A non-dropped issue that is not excused, or a reviewed dropped shift
  */
 type ExcuseStatus = "pending" | "excused" | "unexcused";
 
@@ -334,7 +334,7 @@ function AttendanceIssuesPage() {
 			return trpc.shiftAttendances.revokeExcuse.mutate({ attendanceId });
 		},
 		onSuccess: () => {
-			toast.success("The excuse has been revoked. Issue is now pending.");
+			toast.success("The excuse has been revoked.");
 			queryClient.invalidateQueries({ queryKey: ["attendanceIssues"] });
 		},
 		onError: (error) => {
