@@ -142,6 +142,8 @@ export async function generateHandler(options: TGenerateOptions) {
 		attendances?: Array<{
 			status: string;
 			isExcused: boolean;
+			didArriveLate: boolean;
+			didLeaveEarly: boolean;
 			timeIn: Date | null;
 			timeOut: Date | null;
 			shiftOccurrence: {
@@ -186,6 +188,9 @@ export async function generateHandler(options: TGenerateOptions) {
 			pastAttendedTime: number;
 			pastMissedTime: number;
 			pastAttendancePercentage: number;
+			droppedShifts: number;
+			droppedWithMakeupShifts: number;
+			lateLeftEarlyShifts: number;
 		}[];
 		total: number;
 	} = { reports: [], total: usersWithRelations.length };
@@ -194,11 +199,24 @@ export async function generateHandler(options: TGenerateOptions) {
 		let pastScheduledTime = 0;
 		let pastAttendedTime = 0;
 		let pastMissedTime = 0;
+		let droppedShifts = 0;
+		let droppedWithMakeupShifts = 0;
+		let lateLeftEarlyShifts = 0;
 
 		for (const attendance of u.attendances ?? []) {
 			const status = attendance.status as ShiftAttendanceStatus;
 
-			// Skip dropped shifts - they don't count toward scheduled or attended time
+			if (status === "dropped") {
+				droppedShifts++;
+				continue;
+			}
+
+			if (status === "dropped_makeup") {
+				droppedWithMakeupShifts++;
+				continue;
+			}
+
+			// Skip excluded shifts - they don't count toward scheduled or attended time
 			if (isExcludedFromAttendanceRate(status)) {
 				continue;
 			}
@@ -215,6 +233,10 @@ export async function generateHandler(options: TGenerateOptions) {
 				pastScheduledTime += scheduledHours;
 				pastAttendedTime += scheduledHours; // Full credit
 				continue;
+			}
+
+			if (attendance.didArriveLate || attendance.didLeaveEarly) {
+				lateLeftEarlyShifts++;
 			}
 
 			const attendedHours =
@@ -266,6 +288,9 @@ export async function generateHandler(options: TGenerateOptions) {
 			pastScheduledTime,
 			pastAttendedTime,
 			pastMissedTime,
+			droppedShifts,
+			droppedWithMakeupShifts,
+			lateLeftEarlyShifts,
 			pastAttendancePercentage:
 				pastScheduledTime > 0
 					? (pastAttendedTime / pastScheduledTime) * 100
