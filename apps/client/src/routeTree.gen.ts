@@ -48,6 +48,7 @@ import { Route as AppControlGatewaysRouteImport } from './routes/app/control/gat
 import { Route as AppAppWebhooksRouteImport } from './routes/app/_app/webhooks'
 import { Route as AppAppUsersRouteImport } from './routes/app/_app/users'
 import { Route as AppAppSuspensionsRouteImport } from './routes/app/_app/suspensions'
+import { Route as AppAppStaffingRouteImport } from './routes/app/_app/staffing'
 import { Route as AppAppSessionsRouteImport } from './routes/app/_app/sessions'
 import { Route as AppAppRolesRouteImport } from './routes/app/_app/roles'
 import { Route as AppAppReportsRouteImport } from './routes/app/_app/reports'
@@ -267,6 +268,11 @@ const AppAppSuspensionsRoute = AppAppSuspensionsRouteImport.update({
   path: '/suspensions',
   getParentRoute: () => AppAppRoute,
 } as any)
+const AppAppStaffingRoute = AppAppStaffingRouteImport.update({
+  id: '/staffing',
+  path: '/staffing',
+  getParentRoute: () => AppAppRoute,
+} as any)
 const AppAppSessionsRoute = AppAppSessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
@@ -389,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/app/reports': typeof AppAppReportsRoute
   '/app/roles': typeof AppAppRolesRoute
   '/app/sessions': typeof AppAppSessionsRoute
+  '/app/staffing': typeof AppAppStaffingRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
   '/app/webhooks': typeof AppAppWebhooksRoute
@@ -444,6 +451,7 @@ export interface FileRoutesByTo {
   '/app/reports': typeof AppAppReportsRoute
   '/app/roles': typeof AppAppRolesRoute
   '/app/sessions': typeof AppAppSessionsRoute
+  '/app/staffing': typeof AppAppStaffingRoute
   '/app/suspensions': typeof AppAppSuspensionsRoute
   '/app/users': typeof AppAppUsersRoute
   '/app/webhooks': typeof AppAppWebhooksRoute
@@ -502,6 +510,7 @@ export interface FileRoutesById {
   '/app/_app/reports': typeof AppAppReportsRoute
   '/app/_app/roles': typeof AppAppRolesRoute
   '/app/_app/sessions': typeof AppAppSessionsRoute
+  '/app/_app/staffing': typeof AppAppStaffingRoute
   '/app/_app/suspensions': typeof AppAppSuspensionsRoute
   '/app/_app/users': typeof AppAppUsersRoute
   '/app/_app/webhooks': typeof AppAppWebhooksRoute
@@ -563,6 +572,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
+    | '/app/staffing'
     | '/app/suspensions'
     | '/app/users'
     | '/app/webhooks'
@@ -618,6 +628,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/roles'
     | '/app/sessions'
+    | '/app/staffing'
     | '/app/suspensions'
     | '/app/users'
     | '/app/webhooks'
@@ -675,6 +686,7 @@ export interface FileRouteTypes {
     | '/app/_app/reports'
     | '/app/_app/roles'
     | '/app/_app/sessions'
+    | '/app/_app/staffing'
     | '/app/_app/suspensions'
     | '/app/_app/users'
     | '/app/_app/webhooks'
@@ -999,6 +1011,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppSuspensionsRouteImport
       parentRoute: typeof AppAppRoute
     }
+    '/app/_app/staffing': {
+      id: '/app/_app/staffing'
+      path: '/staffing'
+      fullPath: '/app/staffing'
+      preLoaderRoute: typeof AppAppStaffingRouteImport
+      parentRoute: typeof AppAppRoute
+    }
     '/app/_app/sessions': {
       id: '/app/_app/sessions'
       path: '/sessions'
@@ -1145,6 +1164,7 @@ interface AppAppRouteChildren {
   AppAppReportsRoute: typeof AppAppReportsRoute
   AppAppRolesRoute: typeof AppAppRolesRoute
   AppAppSessionsRoute: typeof AppAppSessionsRoute
+  AppAppStaffingRoute: typeof AppAppStaffingRoute
   AppAppSuspensionsRoute: typeof AppAppSuspensionsRoute
   AppAppUsersRoute: typeof AppAppUsersRoute
   AppAppWebhooksRoute: typeof AppAppWebhooksRoute
@@ -1163,6 +1183,7 @@ const AppAppRouteChildren: AppAppRouteChildren = {
   AppAppReportsRoute: AppAppReportsRoute,
   AppAppRolesRoute: AppAppRolesRoute,
   AppAppSessionsRoute: AppAppSessionsRoute,
+  AppAppStaffingRoute: AppAppStaffingRoute,
   AppAppSuspensionsRoute: AppAppSuspensionsRoute,
   AppAppUsersRoute: AppAppUsersRoute,
   AppAppWebhooksRoute: AppAppWebhooksRoute,
