@@ -10,6 +10,7 @@ import {
 	Loader2,
 	Printer,
 	RefreshCwIcon,
+	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from "@/auth/AuthProvider";
@@ -39,6 +40,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	type MultiSelectOption,
@@ -56,7 +58,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 import { reportConfigs } from "@/lib/reports/configs";
 import { columnsToExportFormat, exportReport } from "@/lib/reports/export";
-import type { ReportConfig } from "@/lib/reports/types";
+import type { ReportConfig, UserAttendanceReport } from "@/lib/reports/types";
 import {
 	compareTimeSlots,
 	DAYS_OF_WEEK,
@@ -188,6 +190,9 @@ function ReportsPage() {
 
 	// Track if report has been generated
 	const [hasGenerated, setHasGenerated] = useState(false);
+	const [attendanceThreshold, setAttendanceThreshold] = useState("");
+	const [appliedAttendanceThreshold, setAppliedAttendanceThreshold] =
+		useState("");
 
 	// Get period data
 	const { data: periodData, isLoading: periodLoading } = useQuery({
@@ -467,6 +472,30 @@ function ReportsPage() {
 		selectedShiftTypes,
 	]);
 
+	const thresholdValue = Number(appliedAttendanceThreshold);
+	const hasAttendanceThreshold =
+		appliedAttendanceThreshold.trim() !== "" &&
+		Number.isFinite(thresholdValue) &&
+		thresholdValue >= 0 &&
+		thresholdValue <= 100;
+	const filteredReportData =
+		selectedReportId === "user-attendance" && hasAttendanceThreshold
+			? (reportData as UserAttendanceReport[]).filter(
+					(report) => report.pastAttendancePercentage < thresholdValue,
+				)
+			: reportData;
+	const attendanceReports =
+		selectedReportId === "user-attendance"
+			? (reportData as UserAttendanceReport[])
+			: [];
+	const averageAttendance =
+		attendanceReports.length > 0
+			? attendanceReports.reduce(
+					(total, report) => total + report.pastAttendancePercentage,
+					0,
+				) / attendanceReports.length
+			: null;
+
 	// Get display shift types for schedule export
 	const displayShiftTypes = useMemo(() => {
 		if (!exportData) return [];
@@ -509,6 +538,7 @@ function ReportsPage() {
 
 	// Handle report generation
 	const handleGenerateReport = useCallback(async () => {
+		setAppliedAttendanceThreshold(attendanceThreshold);
 		setHasGenerated(true);
 
 		switch (selectedReportId) {
@@ -532,6 +562,7 @@ function ReportsPage() {
 				break;
 		}
 	}, [
+		attendanceThreshold,
 		selectedReportId,
 		refetchAttendance,
 		refetchSession,
@@ -543,7 +574,7 @@ function ReportsPage() {
 
 	// Handle CSV export (unified for all reports)
 	const handleExportCSV = useCallback(() => {
-		if (!reportData || reportData.length === 0) return;
+		if (!filteredReportData || filteredReportData.length === 0) return;
 
 		const columns = columnsToExportFormat(currentColumns);
 		const filename =
@@ -552,7 +583,7 @@ function ReportsPage() {
 				: (currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ??
 					"report");
 
-		exportReport("csv", reportData as Record<string, unknown>[], {
+		exportReport("csv", filteredReportData as Record<string, unknown>[], {
 			filename,
 			title:
 				selectedReportId === "schedule-export"
@@ -562,7 +593,7 @@ function ReportsPage() {
 			columns,
 		});
 	}, [
-		reportData,
+		filteredReportData,
 		currentColumns,
 		currentReportConfig,
 		periodData?.period?.name,
@@ -572,7 +603,7 @@ function ReportsPage() {
 
 	// Handle HTML/Print export (unified for all reports)
 	const handleExportHTML = useCallback(() => {
-		if (!reportData || reportData.length === 0) return;
+		if (!filteredReportData || filteredReportData.length === 0) return;
 
 		const columns = columnsToExportFormat(currentColumns);
 		const filename =
@@ -581,7 +612,7 @@ function ReportsPage() {
 				: (currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ??
 					"report");
 
-		exportReport("html", reportData as Record<string, unknown>[], {
+		exportReport("html", filteredReportData as Record<string, unknown>[], {
 			filename,
 			title:
 				selectedReportId === "schedule-export"
@@ -591,7 +622,7 @@ function ReportsPage() {
 			columns,
 		});
 	}, [
-		reportData,
+		filteredReportData,
 		currentColumns,
 		currentReportConfig,
 		periodData?.period?.name,
@@ -781,6 +812,55 @@ function ReportsPage() {
 							</div>
 						)}
 
+						{/* Attendance percentage filter */}
+						{selectedReportId === "user-attendance" && (
+							<div className="space-y-2">
+								<Label htmlFor="attendance-threshold">
+									Attendance below (%)
+								</Label>
+								<div className="relative max-w-xs">
+									<Input
+										id="attendance-threshold"
+										type="number"
+										min={0}
+										max={100}
+										step="any"
+										placeholder="All attendance percentages"
+										value={attendanceThreshold}
+										onChange={(event) =>
+											setAttendanceThreshold(event.target.value)
+										}
+										className={attendanceThreshold ? "pr-9" : undefined}
+									/>
+									{attendanceThreshold && (
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											className="absolute top-1/2 right-1 -translate-y-1/2"
+											aria-label="Clear attendance filter"
+											title="Clear attendance filter"
+											onClick={() => setAttendanceThreshold("")}
+										>
+											<X className="h-3.5 w-3.5" />
+										</Button>
+									)}
+								</div>
+								<p className="text-sm text-muted-foreground">
+									{!hasGenerated || attendanceLoading
+										? "— users below —% attendance"
+										: hasAttendanceThreshold
+											? `${filteredReportData.length} ${filteredReportData.length === 1 ? "user" : "users"} below ${thresholdValue}% attendance`
+											: "All attendance percentages"}
+								</p>
+								<p className="text-sm text-muted-foreground">
+									Average attendance:{" "}
+									{averageAttendance === null
+										? "—"
+										: `${averageAttendance.toFixed(2)}%`}
+								</p>
+							</div>
+						)}
+
 						{/* Shift Type Selection (for shift-related reports) */}
 						{(selectedReportId === "shift-coverage" ||
 							selectedReportId === "user-schedule-summary" ||
@@ -918,7 +998,7 @@ function ReportsPage() {
 							</Button>
 
 							{/* Export buttons - only shown after report is generated */}
-							{hasGenerated && reportData.length > 0 && (
+							{hasGenerated && filteredReportData.length > 0 && (
 								<>
 									<Button
 										variant="outline"
@@ -949,15 +1029,15 @@ function ReportsPage() {
 					<TableContainer>
 						<DataTable
 							columns={currentColumns}
-							data={reportData}
+							data={filteredReportData}
 							isLoading={isLoading}
 							emptyMessage="No data found"
 							emptyDescription="Try adjusting your filters or date range"
 						/>
-						{reportData.length > 0 && (
+						{filteredReportData.length > 0 && (
 							<div className="flex justify-center py-4">
 								<p className="text-sm text-muted-foreground">
-									Showing {reportData.length} records
+									Showing {filteredReportData.length} records
 								</p>
 							</div>
 						)}

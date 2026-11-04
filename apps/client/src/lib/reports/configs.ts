@@ -7,6 +7,7 @@ import {
 	UserSearchIcon,
 	UsersIcon,
 } from "lucide-react";
+import { createElement } from "react";
 import type {
 	ExportFormat,
 	ReportConfig,
@@ -54,7 +55,16 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 		{
 			accessorKey: "name",
 			header: "Full Name",
-			cell: ({ row }) => row.original.name,
+			cell: ({ row }) =>
+				createElement(
+					"a",
+					{
+						href: `/app/shifts/manage-users/${row.original.id}`,
+						className:
+							"font-medium text-primary underline-offset-4 hover:underline",
+					},
+					row.original.name,
+				),
 		},
 		{
 			accessorKey: "username",
@@ -63,12 +73,12 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 		},
 		{
 			accessorKey: "periodScheduledTime",
-			header: "Scheduled Time",
+			header: "Total Scheduled Time",
 			cell: ({ row }) => formatHours(row.original.periodScheduledTime),
 		},
 		{
 			accessorKey: "pastScheduledTime",
-			header: "Past Scheduled",
+			header: "Currently Expected Time",
 			cell: ({ row }) => formatHours(row.original.pastScheduledTime),
 		},
 		{
@@ -86,6 +96,21 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 			header: "Attendance %",
 			cell: ({ row }) =>
 				formatPercentage(row.original.pastAttendancePercentage),
+		},
+		{
+			accessorKey: "droppedShifts",
+			header: "Dropped",
+			cell: ({ row }) => row.original.droppedShifts,
+		},
+		{
+			accessorKey: "droppedWithMakeupShifts",
+			header: "Dropped w/ Makeup",
+			cell: ({ row }) => row.original.droppedWithMakeupShifts,
+		},
+		{
+			accessorKey: "lateLeftEarlyShifts",
+			header: "Late/Left Early",
+			cell: ({ row }) => row.original.lateLeftEarlyShifts,
 		},
 	],
 	exportFormats: DEFAULT_EXPORT_FORMATS,
