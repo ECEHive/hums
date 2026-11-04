@@ -15,3 +15,13 @@ function setBoundary(date: Date, boundary: "start" | "end") {
 	}
 	return date;
 }
+
+/** Midnight at the start of the given day (local time) */
+export function startOfDay(date: Date): Date {
+	return setBoundary(new Date(date), "start");
+}
+
+/** The last millisecond of the given day (local time) */
+export function endOfDay(date: Date): Date {
+	return setBoundary(new Date(date), "end");
+}

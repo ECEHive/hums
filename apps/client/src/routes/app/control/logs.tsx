@@ -79,13 +79,23 @@ function LogsPage() {
 	const { page, setPage, pageSize, setPageSize, offset, resetToFirstPage } =
 		useTableState();
 
+	const [pointFilter, setPointFilter] = React.useState<string>("all");
 	const [actionFilter, setActionFilter] = React.useState<string>("all");
 	const [successFilter, setSuccessFilter] = React.useState<string>("all");
+
+	// Control points for the filter dropdown (100 is the API's max page size)
+	const { data: pointsData } = useQuery({
+		queryKey: ["control", "points", "list", "logs-filter"],
+		queryFn: async () => await trpc.control.points.list.query({ limit: 100 }),
+		retry: false,
+	});
+	const controlPoints = pointsData?.points ?? [];
 
 	const queryParams = React.useMemo(() => {
 		return {
 			offset,
 			limit: pageSize,
+			controlPointId: pointFilter === "all" ? undefined : pointFilter,
 			action:
 				actionFilter === "all"
 					? undefined
@@ -93,7 +103,7 @@ function LogsPage() {
 			success:
 				successFilter === "all" ? undefined : successFilter === "success",
 		};
-	}, [offset, pageSize, actionFilter, successFilter]);
+	}, [offset, pageSize, pointFilter, actionFilter, successFilter]);
 
 	const {
 		data = { logs: [], total: 0 },
@@ -199,8 +209,33 @@ function LogsPage() {
 			<PageContent>
 				<TableContainer>
 					<TableToolbar>
-						<TableSearchInput>
-							<div className="flex items-center gap-2">
+						<TableSearchInput className="max-w-none">
+							<div className="flex flex-wrap items-center gap-2">
+								<Select
+									value={pointFilter}
+									onValueChange={(value) => {
+										setPointFilter(value);
+										resetToFirstPage();
+									}}
+								>
+									<SelectTrigger className="w-[200px]">
+										<SelectValue placeholder="Control Point" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">All Control Points</SelectItem>
+										{controlPoints.map((point) => (
+											<SelectItem key={point.id} value={point.id}>
+												{point.name}
+												{point.location && (
+													<span className="text-muted-foreground">
+														{" "}
+														· {point.location}
+													</span>
+												)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 								<Select
 									value={actionFilter}
 									onValueChange={(value) => {

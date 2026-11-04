@@ -42,6 +42,7 @@ const formSchema = z.object({
 	link: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 	isActive: z.boolean().optional(),
 	itemType: z.enum(["multiple", "single", "consumable"]).optional(),
+	inSpaceOnly: z.boolean().optional(),
 	transactionRateLimit: z.number().int().min(1).optional(),
 	transactionRateLimitPeriod: z
 		.enum(["day", "week", "month", "semester"])
@@ -85,6 +86,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 		link?: string;
 		isActive?: boolean;
 		itemType?: "multiple" | "single" | "consumable";
+		inSpaceOnly?: boolean;
 		transactionRateLimit?: number;
 		transactionRateLimitPeriod?: "day" | "week" | "month" | "semester";
 		initialQuantity?: number;
@@ -111,6 +113,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 			link: "",
 			isActive: true,
 			itemType: "multiple",
+			inSpaceOnly: false,
 			transactionRateLimit: undefined,
 			transactionRateLimitPeriod: undefined,
 			initialQuantity: undefined,
@@ -161,6 +164,7 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 					isActive: true,
 					initialQuantity: undefined,
 					itemType: "multiple",
+					inSpaceOnly: false,
 					transactionRateLimit: undefined,
 					transactionRateLimitPeriod: undefined,
 				});
@@ -394,6 +398,29 @@ export function CreateDialog({ onUpdate }: CreateDialogProps): JSX.Element {
 										</SelectItem>
 									</SelectContent>
 								</Select>
+								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							</Field>
+						)}
+					</form.Field>
+
+					<form.Field name="inSpaceOnly">
+						{(field) => (
+							<Field>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id={field.name}
+										checked={field.state.value}
+										onCheckedChange={(checked) => field.handleChange(!!checked)}
+										onBlur={field.handleBlur}
+									/>
+									<FieldLabel htmlFor={field.name} className="!mt-0">
+										In-Space Only
+									</FieldLabel>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									Item requires an active session for checkout, and blocks
+									session ending until returned.
+								</p>
 								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
 							</Field>
 						)}

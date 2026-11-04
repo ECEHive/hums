@@ -35,6 +35,7 @@ import {
 	ShieldIcon,
 	TicketIcon,
 	UserIcon,
+	UsersIcon,
 } from "lucide-react";
 import type { RequiredPermissions } from "@/lib/permissions";
 
@@ -105,6 +106,18 @@ export const appModules: AppModule[] = [
 						icon: ClockIcon,
 						permissions: [],
 						description: "View your session history",
+					},
+				],
+			},
+			{
+				name: "Administration",
+				items: [
+					{
+						title: "Staffing",
+						url: "/app/staffing",
+						icon: UsersIcon,
+						permissions: { any: ["shift_schedules.list"] },
+						description: "View current and upcoming shifts",
 					},
 				],
 			},
