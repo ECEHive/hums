@@ -1,4 +1,8 @@
-import { assertCanAccessPeriod, getUserWithRoles } from "@ecehive/features";
+import {
+	assertCanAccessPeriod,
+	getUserWithRoles,
+	queueExcuseDecisionEmail,
+} from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -135,6 +139,10 @@ export async function grantExcuseHandler(options: TGrantExcuseOptions) {
 			},
 		},
 	});
+
+	if (attendance.excuseRequestedAt) {
+		await queueExcuseDecisionEmail(prisma, attendanceId, "granted");
+	}
 
 	return {
 		success: true,

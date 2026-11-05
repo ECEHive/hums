@@ -3,6 +3,7 @@ export { getEmailProvider } from "./providers";
 export type { QueueEmailParams } from "./queue";
 export { clearQueue, getQueueStatus, queueEmail, queueEmails } from "./queue";
 export type {
+	ExcuseDecisionEmailProps,
 	RenderEmailOptions,
 	RenderedEmail,
 	TicketAssignmentEmailProps,
@@ -11,6 +12,7 @@ export type {
 } from "./template-renderer";
 export { renderEmail } from "./template-renderer";
 export type { SessionAutoLogoutEmailProps } from "./templates/SessionAutoLogoutEmail";
+export type { ShiftIssueNoticeEmailProps } from "./templates/ShiftIssueNoticeEmail";
 export type { SuspensionNoticeEmailProps } from "./templates/SuspensionNoticeEmail";
 export type { WelcomeEmailProps } from "./templates/WelcomeEmail";
 export { htmlToPlainText } from "./text-generator";

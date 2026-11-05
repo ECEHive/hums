@@ -1,3 +1,8 @@
+import {
+	computeOccurrenceEnd,
+	computeOccurrenceStart,
+	getExcuseRequestEligibility,
+} from "@ecehive/features";
 import { prisma, type ShiftAttendanceStatus } from "@ecehive/prisma";
 import z from "zod";
 import type { TProtectedProcedureContext } from "../../trpc";
@@ -6,6 +11,8 @@ export const ZListMySchema = z.object({
 	limit: z.number().min(1).max(100).optional(),
 	offset: z.number().min(0).optional(),
 	periodId: z.number().min(1).optional(),
+	/** Fetch a single attendance record (needed for email link to specific record with issue) */
+	attendanceId: z.number().min(1).optional(),
 });
 
 export type TListMySchema = z.infer<typeof ZListMySchema>;
@@ -17,11 +24,12 @@ export type TListMyOptions = {
 
 export async function listMyHandler(options: TListMyOptions) {
 	const userId = options.ctx.user.id;
-	const { limit = 50, offset = 0, periodId } = options.input;
+	const { limit = 50, offset = 0, periodId, attendanceId } = options.input;
 
 	// Build where clause
 	const where: {
 		userId: number;
+		id?: number;
 		shiftOccurrence?: {
 			shiftSchedule?: {
 				shiftType?: {
@@ -30,6 +38,10 @@ export async function listMyHandler(options: TListMyOptions) {
 			};
 		};
 	} = { userId };
+
+	if (attendanceId) {
+		where.id = attendanceId;
+	}
 
 	if (periodId) {
 		where.shiftOccurrence = {
@@ -62,6 +74,8 @@ export async function listMyHandler(options: TListMyOptions) {
 				isMakeup: true,
 				isExcused: true,
 				excuseNotes: true,
+				excuseRequestReason: true,
+				excuseRequestedAt: true,
 				reviewedAt: true,
 				reviewedBy: {
 					select: {
@@ -169,8 +183,33 @@ export async function listMyHandler(options: TListMyOptions) {
 		};
 	});
 
+	// Determine whether the user can still request an excuse for each attendance
+	const now = new Date();
+	const attendancesWithExcuseRequests = attendancesWithPercentage.map(
+		(attendance) => {
+			const { startTime, endTime } = attendance.shiftOccurrence.shiftSchedule;
+			const shiftEnd = computeOccurrenceEnd(
+				computeOccurrenceStart(attendance.shiftOccurrence.timestamp, startTime),
+				startTime,
+				endTime,
+			);
+			const eligibility = getExcuseRequestEligibility(
+				attendance,
+				shiftEnd,
+				now,
+			);
+			return {
+				...attendance,
+				canRequestExcuse: eligibility.eligible,
+				excuseRequestDeadline: eligibility.eligible
+					? eligibility.deadline
+					: null,
+			};
+		},
+	);
+
 	return {
-		attendances: attendancesWithPercentage,
+		attendances: attendancesWithExcuseRequests,
 		total,
 	};
 }

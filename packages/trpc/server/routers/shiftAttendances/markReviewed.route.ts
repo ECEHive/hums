@@ -1,4 +1,8 @@
-import { assertCanAccessPeriod, getUserWithRoles } from "@ecehive/features";
+import {
+	assertCanAccessPeriod,
+	getUserWithRoles,
+	queueExcuseDecisionEmail,
+} from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
@@ -122,6 +126,10 @@ export async function markReviewedHandler(options: TMarkReviewedOptions) {
 			code: "BAD_REQUEST",
 			message: "This attendance has already been reviewed",
 		});
+	}
+
+	if (attendance.excuseRequestedAt) {
+		await queueExcuseDecisionEmail(prisma, attendanceId, "denied");
 	}
 
 	// Fetch the updated record for the response
