@@ -91,9 +91,9 @@ export const permissions = ["shift_attendances.excuse"] as RequiredPermissions;
 
 /**
  * Excuse status values for attendance issues:
- * - pending: An unreviewed dropped shift (reviewedAt is null, isExcused is false)
+ * - pending: An unreviewed dropped shift or excuse request (reviewedAt is null, isExcused is false)
  * - excused: Issue has been excused (isExcused is true)
- * - unexcused: A non-dropped issue that is not excused, or a reviewed dropped shift
+ * - unexcused: A non-dropped, unrequested issue that is not excused, or a reviewed dropped shift or denied excuse request
  */
 type ExcuseStatus = "pending" | "excused" | "unexcused";
 
@@ -107,6 +107,8 @@ type Issue = {
 	didLeaveEarly: boolean;
 	droppedNotes: string | null;
 	excuseNotes: string | null;
+	excuseRequestReason: string | null;
+	excuseRequestedAt: Date | null;
 	reviewedBy: { id: number; name: string; username: string } | null;
 	reviewedAt: Date | null;
 	timeIn: Date | null;
@@ -131,8 +133,12 @@ type Issue = {
 function getExcuseStatus(issue: Issue): ExcuseStatus {
 	// Excused issues are always shown as excused
 	if (issue.isExcused) return "excused";
-	// Unreviewed dropped shifts are considered pending
-	if (issue.status === "dropped" && !issue.reviewedAt) return "pending";
+	// Unreviewed dropped shifts and excuse requests are considered pending
+	if (
+		(issue.status === "dropped" || issue.excuseRequestedAt) &&
+		!issue.reviewedAt
+	)
+		return "pending";
 	// All other issues are considered unexcused, but can be still be excused from the unexcused list
 	return "unexcused";
 }
@@ -545,10 +551,17 @@ function AttendanceIssuesPage() {
 				}
 				if (status === "unexcused") {
 					return (
-						<Badge variant="destructive">
-							<XCircle className="h-3 w-3 mr-1" />
-							Unexcused
-						</Badge>
+						<div className="flex flex-col items-start gap-1">
+							<Badge variant="destructive">
+								<XCircle className="h-3 w-3 mr-1" />
+								Unexcused
+							</Badge>
+							{!issue.excuseRequestedAt && !issue.reviewedAt && (
+								<span className="text-xs text-muted-foreground">
+									Not requested
+								</span>
+							)}
+						</div>
 					);
 				}
 				// pending
@@ -1004,13 +1017,42 @@ function AttendanceIssuesPage() {
 									</>
 								)}
 
+								{/* User's excuse request */}
+								{selectedIssue.excuseRequestReason && (
+									<>
+										<Separator />
+										<div>
+											<h4 className="text-sm font-medium text-muted-foreground mb-1">
+												Excuse Request
+											</h4>
+											{selectedIssue.excuseRequestedAt && (
+												<div className="text-sm">
+													<span className="text-muted-foreground">
+														Requested on:{" "}
+													</span>
+													{new Date(
+														selectedIssue.excuseRequestedAt,
+													).toLocaleDateString()}{" "}
+													at{" "}
+													{new Date(
+														selectedIssue.excuseRequestedAt,
+													).toLocaleTimeString()}
+												</div>
+											)}
+											<div className="rounded-md bg-muted p-3 text-sm mt-1 whitespace-pre-wrap">
+												{selectedIssue.excuseRequestReason}
+											</div>
+										</div>
+									</>
+								)}
+
 								{/* User's Notes (dropped reason) */}
 								{selectedIssue.droppedNotes && (
 									<>
 										<Separator />
 										<div>
 											<h4 className="text-sm font-medium text-muted-foreground mb-1">
-												User's Reason
+												Drop Reason
 											</h4>
 											<div className="rounded-md bg-muted p-3 text-sm whitespace-pre-wrap">
 												{selectedIssue.droppedNotes}
@@ -1200,9 +1242,17 @@ function AttendanceIssuesPage() {
 											{getIssueType(selectedIssue)}
 										</Badge>
 									</div>
+									{selectedIssue.excuseRequestReason && (
+										<div className="mt-2 text-sm">
+											<span className="font-medium">Excuse request: </span>
+											<span className="text-muted-foreground whitespace-pre-wrap">
+												{selectedIssue.excuseRequestReason}
+											</span>
+										</div>
+									)}
 									{selectedIssue.droppedNotes && (
 										<div className="mt-2 text-sm">
-											<span className="font-medium">User's reason: </span>
+											<span className="font-medium">Drop reason: </span>
 											<span className="text-muted-foreground">
 												{selectedIssue.droppedNotes}
 											</span>

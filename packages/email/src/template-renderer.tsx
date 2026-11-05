@@ -2,10 +2,20 @@ import { getLogger } from "@ecehive/logger";
 import { renderToStaticMarkup } from "react-dom/server";
 import { getEmailLogosAsync } from "./logo-loader";
 import {
+	ExcuseDecisionEmail,
+	type ExcuseDecisionEmailProps,
+	getExcuseDecisionSubject,
+} from "./templates/ExcuseDecisionEmail";
+import {
 	getSessionAutoLogoutSubject,
 	SessionAutoLogoutEmail,
 	type SessionAutoLogoutEmailProps,
 } from "./templates/SessionAutoLogoutEmail";
+import {
+	ShiftIssueNoticeEmail,
+	type ShiftIssueNoticeEmailProps,
+	ShiftIssueNoticeEmailSubject,
+} from "./templates/ShiftIssueNoticeEmail";
 import {
 	SuspensionNoticeEmail,
 	type SuspensionNoticeEmailProps,
@@ -37,7 +47,9 @@ const logger = getLogger("email:renderer");
 
 // Re-export template props for external use
 export type {
+	ExcuseDecisionEmailProps,
 	SessionAutoLogoutEmailProps,
+	ShiftIssueNoticeEmailProps,
 	SuspensionNoticeEmailProps,
 	TicketAssignmentEmailProps,
 	TicketConfirmationEmailProps,
@@ -69,6 +81,14 @@ export type RenderEmailOptions =
 	| {
 			template: "ticket-status-update";
 			data: TicketStatusUpdateEmailProps;
+	  }
+	| {
+			template: "shift-issue-notice";
+			data: ShiftIssueNoticeEmailProps;
+	  }
+	| {
+			template: "excuse-decision";
+			data: ExcuseDecisionEmailProps;
 	  };
 
 export interface RenderedEmail {
@@ -138,6 +158,22 @@ export async function renderEmail(
 					<TicketStatusUpdateEmail {...options.data} logos={logos} />,
 				);
 				subject = TicketStatusUpdateEmailSubject;
+				break;
+			}
+
+			case "shift-issue-notice": {
+				html = renderToStaticMarkup(
+					<ShiftIssueNoticeEmail {...options.data} logos={logos} />,
+				);
+				subject = ShiftIssueNoticeEmailSubject;
+				break;
+			}
+
+			case "excuse-decision": {
+				html = renderToStaticMarkup(
+					<ExcuseDecisionEmail {...options.data} logos={logos} />,
+				);
+				subject = getExcuseDecisionSubject(options.data.decision);
 				break;
 			}
 		}

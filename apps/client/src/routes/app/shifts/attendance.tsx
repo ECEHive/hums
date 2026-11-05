@@ -1,12 +1,17 @@
 import { trpc } from "@ecehive/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
 	CalendarCheckIcon,
 	CalendarClockIcon,
 	CalendarXIcon,
 } from "lucide-react";
-import { columns } from "@/components/attendance/columns";
+import { useEffect, useMemo, useState } from "react";
+import {
+	type AttendanceRecord,
+	createColumns,
+} from "@/components/attendance/columns";
+import { RequestExcuseDialog } from "@/components/attendance/request-excuse-dialog";
 import { PeriodNotSelected } from "@/components/errors/period-not-selected";
 import { RequireShiftAccess } from "@/components/guards/require-shift-access";
 import {
@@ -31,7 +36,16 @@ import { useTableState } from "@/hooks/use-table-state";
 import type { RequiredPermissions } from "@/lib/permissions";
 import { formatDecimalHours } from "@/lib/utils";
 
+type AttendanceSearch = {
+	/** Attendance ID to open the excuse request dialog for (linked from emails) */
+	excuse?: number;
+};
+
 export const Route = createFileRoute("/app/shifts/attendance")({
+	validateSearch: (search: Record<string, unknown>): AttendanceSearch => {
+		const excuse = Number(search.excuse);
+		return Number.isInteger(excuse) && excuse > 0 ? { excuse } : {};
+	},
 	component: () => (
 		<RequireShiftAccess>
 			<AttendancePage />
@@ -43,6 +57,11 @@ export const permissions = [] as RequiredPermissions;
 
 function AttendancePage() {
 	const { period: selectedPeriodId } = usePeriod();
+	const { excuse: linkedAttendanceId } = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+	const [excuseAttendance, setExcuseAttendance] =
+		useState<AttendanceRecord | null>(null);
+	const [excuseDialogOpen, setExcuseDialogOpen] = useState(false);
 	const { page, setPage, pageSize, setPageSize, offset, resetToFirstPage } =
 		useTableState({ initialPageSize: 20, persistKey: "my-attendance" });
 	const limit = pageSize;
@@ -70,6 +89,42 @@ function AttendancePage() {
 		},
 		enabled: !!selectedPeriodId,
 	});
+
+	// Load the attendance linked from an email directly, since it may not be
+	// on the current page or in the selected period
+	const { data: linkedAttendanceData } = useQuery({
+		queryKey: ["myAttendance", "linked", linkedAttendanceId],
+		queryFn: async () => {
+			if (!linkedAttendanceId) return null;
+			return trpc.shiftAttendances.listMy.query({
+				attendanceId: linkedAttendanceId,
+				limit: 1,
+			});
+		},
+		enabled: !!linkedAttendanceId,
+	});
+
+	useEffect(() => {
+		const linkedAttendance = linkedAttendanceData?.attendances[0];
+		if (!linkedAttendance) return;
+		if (linkedAttendance.canRequestExcuse) {
+			setExcuseAttendance(linkedAttendance);
+			setExcuseDialogOpen(true);
+		}
+		// Clear the search param so the dialog doesn't reopen
+		navigate({ search: {}, replace: true });
+	}, [linkedAttendanceData, navigate]);
+
+	const columns = useMemo(
+		() =>
+			createColumns({
+				onRequestExcuse: (attendance) => {
+					setExcuseAttendance(attendance);
+					setExcuseDialogOpen(true);
+				},
+			}),
+		[],
+	);
 
 	const attendances = attendanceData?.attendances ?? [];
 	const total = attendanceData?.total ?? 0;
@@ -200,6 +255,12 @@ function AttendancePage() {
 						</TableContainer>
 					</CardContent>
 				</Card>
+
+				<RequestExcuseDialog
+					attendance={excuseAttendance}
+					open={excuseDialogOpen}
+					onOpenChange={setExcuseDialogOpen}
+				/>
 			</PageContent>
 		</Page>
 	);

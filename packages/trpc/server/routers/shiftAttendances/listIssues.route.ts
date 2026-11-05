@@ -6,9 +6,9 @@ import type { TPermissionProtectedProcedureContext } from "../../trpc";
 
 /**
  * Excuse status values:
- * - pending: An unreviewed dropped shift (reviewedAt is null, isExcused is false)
+ * - pending: An unreviewed dropped shift or excuse request (reviewedAt is null, isExcused is false)
  * - excused: Issue has been excused (isExcused is true)
- * - unexcused: Issue is not excused; dropped shifts must also have been reviewed
+ * - unexcused: Issue is not excused; dropped shifts and excuse requests must also have been reviewed
  */
 export const excuseStatusValues = ["pending", "excused", "unexcused"] as const;
 export type ExcuseStatus = (typeof excuseStatusValues)[number];
@@ -21,9 +21,9 @@ export const ZListIssuesSchema = z.object({
 		.default("all"),
 	/**
 	 * Filter by excuse status (multi-select).
-	 * - pending: An unreviewed dropped shift (reviewedAt is null, isExcused is false)
+	 * - pending: An unreviewed dropped shift or excuse request (reviewedAt is null, isExcused is false)
 	 * - excused: Has been excused (isExcused is true)
-	 * - unexcused: Not excused, excluding unreviewed dropped shifts
+	 * - unexcused: Not excused, excluding unreviewed dropped shifts and excuse requests
 	 */
 	excuseStatus: z
 		.array(z.enum(excuseStatusValues))
@@ -123,6 +123,7 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 				OR?: Array<{
 					status?: ShiftAttendanceStatus | { not: ShiftAttendanceStatus };
 					reviewedAt?: { not: null };
+					excuseRequestedAt?: null | { not: null };
 				}>;
 			}>;
 		}>;
@@ -195,16 +196,17 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 			OR?: Array<{
 				status?: ShiftAttendanceStatus | { not: ShiftAttendanceStatus };
 				reviewedAt?: { not: null };
+				excuseRequestedAt?: null | { not: null };
 			}>;
 		}> = [];
 
 		for (const status of uniqueExcuseStatus) {
 			if (status === "pending") {
-				// Pending: not excused AND not reviewed for dropped shifts only
+				// Pending: not excused AND not reviewed for dropped shifts and excuse requests
 				excuseStatusConditions.push({
 					isExcused: false,
 					reviewedAt: null,
-					status: "dropped",
+					OR: [{ excuseRequestedAt: { not: null } }, { status: "dropped" }],
 				});
 			} else if (status === "excused") {
 				// Excused: isExcused is true
@@ -213,12 +215,12 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 				});
 			} else if (status === "unexcused") {
 				// Non-dropped issues are unexcused as soon as they are auto-created.
-				// Dropped issues remain pending until explicitly reviewed.
+				// Dropped issues and excuse requests remain pending until explicitly reviewed.
 				excuseStatusConditions.push({
 					isExcused: false,
 					OR: [
-						{ status: { not: "dropped" } },
-						{ status: "dropped", reviewedAt: { not: null } },
+						{ status: { not: "dropped" }, excuseRequestedAt: null },
+						{ reviewedAt: { not: null } },
 					],
 				});
 			}
@@ -294,6 +296,8 @@ export async function listIssuesHandler(options: TListIssuesOptions) {
 		didLeaveEarly: issue.didLeaveEarly,
 		droppedNotes: issue.droppedNotes,
 		excuseNotes: issue.excuseNotes,
+		excuseRequestReason: issue.excuseRequestReason,
+		excuseRequestedAt: issue.excuseRequestedAt,
 		reviewedBy: issue.reviewedBy,
 		reviewedAt: issue.reviewedAt,
 		timeIn: issue.timeIn,

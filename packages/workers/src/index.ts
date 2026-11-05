@@ -2,6 +2,7 @@ import { getLogger } from "@ecehive/logger";
 import { autoTurnOffControlPointsJob } from "./jobs/auto-turn-off-control-points";
 import { cleanupExpiredCodesJob } from "./jobs/cleanup-expired-codes";
 import { endOldSessionsJob } from "./jobs/end-old-sessions";
+import { sendShiftIssueNoticesJob } from "./jobs/send-shift-issue-notices";
 import { sendSuspensionNoticesJob } from "./jobs/send-suspension-notices";
 import { updateShiftAttendanceJob } from "./jobs/update-shift-attendance";
 
@@ -12,6 +13,7 @@ export function start() {
 	endOldSessionsJob.start();
 	cleanupExpiredCodesJob.start();
 	sendSuspensionNoticesJob.start();
+	sendShiftIssueNoticesJob.start();
 	autoTurnOffControlPointsJob.start();
 	logger.info("Background workers initialized", {
 		jobs: [
@@ -19,6 +21,7 @@ export function start() {
 			"endOldSessions",
 			"cleanupExpiredCodes",
 			"sendSuspensionNotices",
+			"sendShiftIssueNotices",
 			"autoTurnOffControlPoints",
 		],
 	});
