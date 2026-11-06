@@ -139,6 +139,9 @@ function GlobalReportsPage() {
 	// Track if report has been generated
 	const [hasGenerated, setHasGenerated] = useState(false);
 
+	// Rows in the order the table shows them (after sorting)
+	const [sortedRows, setSortedRows] = useState<Record<string, unknown>[]>([]);
+
 	// Get the current report config
 	const currentReportConfig = globalReportConfigs.find(
 		(r) => r.id === selectedReportId,
@@ -300,35 +303,35 @@ function GlobalReportsPage() {
 
 	// Handle CSV export
 	const handleExportCSV = useCallback(() => {
-		if (!reportData || reportData.length === 0) return;
+		if (sortedRows.length === 0) return;
 
 		const columns = columnsToExportFormat(currentColumns);
 		const filename =
 			currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ?? "report";
 
-		exportReport("csv", reportData as Record<string, unknown>[], {
+		exportReport("csv", sortedRows, {
 			filename,
 			title: currentReportConfig?.name ?? "Report",
 			subtitle: "Global Report",
 			columns,
 		});
-	}, [reportData, currentColumns, currentReportConfig]);
+	}, [sortedRows, currentColumns, currentReportConfig]);
 
 	// Handle HTML/Print export
 	const handleExportHTML = useCallback(() => {
-		if (!reportData || reportData.length === 0) return;
+		if (sortedRows.length === 0) return;
 
 		const columns = columnsToExportFormat(currentColumns);
 		const filename =
 			currentReportConfig?.name.toLowerCase().replace(/ /g, "-") ?? "report";
 
-		exportReport("html", reportData as Record<string, unknown>[], {
+		exportReport("html", sortedRows, {
 			filename,
 			title: currentReportConfig?.name ?? "Report",
 			subtitle: "Global Report",
 			columns,
 		});
-	}, [reportData, currentColumns, currentReportConfig]);
+	}, [sortedRows, currentColumns, currentReportConfig]);
 
 	// Apply date preset
 	const applyPreset = useCallback(
@@ -526,7 +529,7 @@ function GlobalReportsPage() {
 							</Button>
 
 							{/* Export buttons - only shown after report is generated */}
-							{hasGenerated && reportData.length > 0 && (
+							{hasGenerated && sortedRows.length > 0 && (
 								<>
 									<Button
 										variant="outline"
@@ -559,6 +562,8 @@ function GlobalReportsPage() {
 							columns={currentColumns}
 							data={reportData}
 							isLoading={isLoading}
+							enableSorting
+							onSortedRowsChange={setSortedRows}
 							emptyMessage="No data found"
 							emptyDescription="Try adjusting your filters or date range"
 						/>
