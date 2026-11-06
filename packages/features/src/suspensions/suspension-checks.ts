@@ -7,6 +7,14 @@ export interface ActiveSuspension {
 	externalNotes: string | null;
 }
 
+/** Prisma filter for currently active suspensions (startDate <= at AND endDate > at) */
+export function activeSuspensionWhere(at: Date): Prisma.SuspensionWhereInput {
+	return {
+		startDate: { lte: at },
+		endDate: { gt: at },
+	};
+}
+
 /**
  * Check if a user has an active suspension
  * An active suspension is one where startDate <= now AND endDate > now
@@ -21,8 +29,7 @@ export async function getActiveSuspension(
 	const suspension = await tx.suspension.findFirst({
 		where: {
 			userId,
-			startDate: { lte: now },
-			endDate: { gt: now },
+			...activeSuspensionWhere(now),
 		},
 		select: {
 			id: true,
@@ -63,8 +70,7 @@ export async function getActiveSuspensions(
 	const suspensions = await tx.suspension.findMany({
 		where: {
 			userId,
-			startDate: { lte: now },
-			endDate: { gt: now },
+			...activeSuspensionWhere(now),
 		},
 		select: {
 			id: true,
@@ -79,14 +85,13 @@ export async function getActiveSuspensions(
 }
 
 /**
- * Get suspensions that are starting soon and need email notifications
+ * Get active suspensions that still need an email notification
  * Returns suspensions where:
- * - startDate is within the next N minutes
  * - emailSentAt is null (email not yet sent)
+ * - startDate has passed and endDate has not
  */
-export async function getSuspensionsStartingSoon(
+export async function getUnnotifiedSuspensions(
 	tx: Prisma.TransactionClient,
-	withinMinutes: number = 5,
 ): Promise<
 	Array<{
 		id: number;
@@ -101,16 +106,10 @@ export async function getSuspensionsStartingSoon(
 		};
 	}>
 > {
-	const now = new Date();
-	const cutoff = new Date(now.getTime() + withinMinutes * 60 * 1000);
-
 	const suspensions = await tx.suspension.findMany({
 		where: {
 			emailSentAt: null,
-			startDate: {
-				gt: now,
-				lte: cutoff,
-			},
+			...activeSuspensionWhere(new Date()),
 		},
 		select: {
 			id: true,
@@ -132,14 +131,21 @@ export async function getSuspensionsStartingSoon(
 }
 
 /**
- * Mark a suspension as having its email sent
+ * Mark emailSentAt for suspensions that have been notified, so emails are not double sent.
+ * Returns false if email has already been sent or suspension is not active.
  */
-export async function markSuspensionEmailSent(
+export async function claimSuspensionEmail(
 	tx: Prisma.TransactionClient,
 	suspensionId: number,
-): Promise<void> {
-	await tx.suspension.update({
-		where: { id: suspensionId },
-		data: { emailSentAt: new Date() },
+): Promise<boolean> {
+	const now = new Date();
+	const claimed = await tx.suspension.updateMany({
+		where: {
+			id: suspensionId,
+			emailSentAt: null,
+			...activeSuspensionWhere(now),
+		},
+		data: { emailSentAt: now },
 	});
+	return claimed.count > 0;
 }

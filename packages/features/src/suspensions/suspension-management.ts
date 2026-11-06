@@ -1,4 +1,5 @@
 import type { Prisma } from "@ecehive/prisma";
+import { activeSuspensionWhere } from "./suspension-checks";
 
 export interface CreateSuspensionParams {
 	userId: number;
@@ -147,11 +148,7 @@ export async function listSuspensions(
 
 	if (active !== undefined) {
 		if (active) {
-			// Active suspensions: startDate <= now && endDate > now
-			filters.push({
-				startDate: { lte: now },
-				endDate: { gt: now },
-			});
+			filters.push(activeSuspensionWhere(now));
 		} else {
 			// Inactive suspensions: endDate <= now OR startDate > now
 			filters.push({
