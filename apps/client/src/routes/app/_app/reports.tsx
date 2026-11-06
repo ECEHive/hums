@@ -21,6 +21,7 @@ import {
 	PageTitle,
 	TableContainer,
 } from "@/components/layout";
+import { endOfDay } from "@/components/periods/date-range-helpers";
 import type { Role } from "@/components/roles/role-multiselect";
 import { RoleMultiSelect } from "@/components/roles/role-multiselect";
 import { DataTable } from "@/components/shared";
@@ -77,7 +78,9 @@ function getGlobalDatePresets() {
 	const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 	const startOfYear = new Date(now.getFullYear(), 0, 1);
 	const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-	const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+	const endOfLastMonth = endOfDay(
+		new Date(now.getFullYear(), now.getMonth(), 0),
+	);
 
 	return [
 		{

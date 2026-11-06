@@ -115,15 +115,8 @@ export function InventoryTransactionView({
 						onError("Cannot add inactive item");
 						return;
 					}
-					// For single items during checkout, check if already checked out
-					if (item.itemType === "single" && mode === "checkout") {
-						if (item.isCheckedOut) {
-							onError(
-								`"${item.name}" is currently checked out and must be returned before it can be checked out again`,
-							);
-							return;
-						}
-					}
+					// Single items that are still checked out can be checked out again:
+					// the server returns them for the previous holder automatically.
 					// For single items during return, check if it's actually checked out
 					if (item.itemType === "single" && mode === "return") {
 						if (!item.isCheckedOut) {

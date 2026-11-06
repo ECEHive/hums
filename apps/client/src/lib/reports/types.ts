@@ -95,6 +95,9 @@ export interface UserAttendanceReport {
 	pastAttendedTime: number;
 	pastMissedTime: number;
 	pastAttendancePercentage: number;
+	droppedShifts: number;
+	droppedWithMakeupShifts: number;
+	lateLeftEarlyShifts: number;
 }
 
 /**
