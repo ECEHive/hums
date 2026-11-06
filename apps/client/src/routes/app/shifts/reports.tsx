@@ -481,12 +481,16 @@ function ReportsPage() {
 		Number.isFinite(thresholdValue) &&
 		thresholdValue >= 0 &&
 		thresholdValue <= 100;
-	const filteredReportData =
-		selectedReportId === "user-attendance" && hasAttendanceThreshold
-			? (reportData as UserAttendanceReport[]).filter(
-					(report) => report.pastAttendancePercentage < thresholdValue,
-				)
-			: reportData;
+	// Memoized so the table doesn't see new data every render (sorting syncs rows back up)
+	const filteredReportData = useMemo(
+		() =>
+			selectedReportId === "user-attendance" && hasAttendanceThreshold
+				? (reportData as UserAttendanceReport[]).filter(
+						(report) => report.pastAttendancePercentage < thresholdValue,
+					)
+				: reportData,
+		[selectedReportId, hasAttendanceThreshold, reportData, thresholdValue],
+	);
 	const attendanceReports =
 		selectedReportId === "user-attendance"
 			? (reportData as UserAttendanceReport[])
