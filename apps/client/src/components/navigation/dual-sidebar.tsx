@@ -3,6 +3,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
 	BugIcon,
+	CheckIcon,
 	ChevronRightIcon,
 	DoorOpenIcon,
 	ExternalLinkIcon,
@@ -554,7 +555,7 @@ function NavItemLink({ item, isActive, onClick }: NavItemLinkProps) {
 function UserMenu() {
 	const user = useCurrentUser();
 	const { logout } = useAuth();
-	const { setTheme } = useTheme();
+	const { theme, setTheme } = useTheme();
 
 	return (
 		<div className="border-t p-2">
@@ -592,14 +593,17 @@ function UserMenu() {
 					<DropdownMenuItem onSelect={() => setTheme("light")}>
 						<SunIcon className="h-4 w-4" />
 						Light
+						{theme === "light" && <CheckIcon className="ml-auto h-4 w-4" />}
 					</DropdownMenuItem>
 					<DropdownMenuItem onSelect={() => setTheme("dark")}>
 						<MoonIcon className="h-4 w-4" />
 						Dark
+						{theme === "dark" && <CheckIcon className="ml-auto h-4 w-4" />}
 					</DropdownMenuItem>
 					<DropdownMenuItem onSelect={() => setTheme("system")}>
 						<SunMoonIcon className="h-4 w-4" />
 						System
+						{theme === "system" && <CheckIcon className="ml-auto h-4 w-4" />}
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<a
@@ -686,7 +690,7 @@ export function MobileTabBar() {
 	const { modulePaths } = useAppNavigation();
 	const isMobile = useIsMobile();
 	const { logout } = useAuth();
-	const { setTheme } = useTheme();
+	const { theme, setTheme } = useTheme();
 
 	const currentModule = getCurrentModule(pathname);
 	const isAdmin = isAdminPath(pathname);
@@ -792,14 +796,17 @@ export function MobileTabBar() {
 						<DropdownMenuItem onSelect={() => setTheme("light")}>
 							<SunIcon className="h-4 w-4" />
 							Light
+							{theme === "light" && <CheckIcon className="ml-auto h-4 w-4" />}
 						</DropdownMenuItem>
 						<DropdownMenuItem onSelect={() => setTheme("dark")}>
 							<MoonIcon className="h-4 w-4" />
 							Dark
+							{theme === "dark" && <CheckIcon className="ml-auto h-4 w-4" />}
 						</DropdownMenuItem>
 						<DropdownMenuItem onSelect={() => setTheme("system")}>
 							<SunMoonIcon className="h-4 w-4" />
 							System
+							{theme === "system" && <CheckIcon className="ml-auto h-4 w-4" />}
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<a
