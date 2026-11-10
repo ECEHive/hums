@@ -1,8 +1,9 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatInAppTimezone, formatTimeRange } from "@/lib/timezone";
 
-type AttendanceRecord = {
+export type AttendanceRecord = {
 	id: number;
 	status: string;
 	timeIn: Date | null;
@@ -13,6 +14,10 @@ type AttendanceRecord = {
 	isMakeup: boolean | null;
 	isExcused: boolean;
 	excuseNotes: string | null;
+	excuseRequestReason: string | null;
+	excuseRequestedAt: Date | null;
+	canRequestExcuse: boolean;
+	excuseRequestDeadline: Date | null;
 	reviewedBy: { id: number; name: string } | null;
 	reviewedAt: Date | null;
 	droppedNotes: string | null;
@@ -30,7 +35,41 @@ type AttendanceRecord = {
 	};
 };
 
+type ColumnOptions = {
+	onRequestExcuse: (attendance: AttendanceRecord) => void;
+};
+
 const formatDate = (date: Date) => formatInAppTimezone(date);
+
+/**
+ * Get display labels for the attendance issues on a record.
+ */
+export function getIssueLabels(attendance: AttendanceRecord): string[] {
+	const labels: string[] = [];
+	if (attendance.status === "absent") labels.push("Absent");
+	if (attendance.didArriveLate) labels.push("Arrived Late");
+	if (attendance.didLeaveEarly) labels.push("Left Early");
+	return labels;
+}
+
+/**
+ * Status of the user's excuse request, if they submitted one.
+ */
+function getExcuseRequestBadge(attendance: AttendanceRecord) {
+	if (!attendance.excuseRequestedAt || attendance.isExcused) return null;
+	if (attendance.reviewedAt) {
+		return (
+			<Badge key="excuse-denied" variant="destructive">
+				Excuse Denied
+			</Badge>
+		);
+	}
+	return (
+		<Badge key="excuse-requested" variant="secondary">
+			Excuse Requested
+		</Badge>
+	);
+}
 
 const formatDuration = (timeIn: Date | null, timeOut: Date | null) => {
 	if (!timeIn) return "-";
@@ -148,6 +187,10 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
 						</Badge>,
 					);
 				}
+				const excuseRequestBadge = getExcuseRequestBadge(attendance);
+				if (excuseRequestBadge) {
+					badges.push(excuseRequestBadge);
+				}
 				return badges.length > 0 ? (
 					<div className="flex flex-wrap gap-1">{badges}</div>
 				) : null;
@@ -212,3 +255,33 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
 		},
 	},
 ];
+
+/**
+ * Attendance columns plus an action to request an excuse.
+ */
+export function createColumns(
+	options: ColumnOptions,
+): ColumnDef<AttendanceRecord>[] {
+	return [
+		...columns,
+		{
+			id: "actions",
+			header: () => <span className="sr-only">Actions</span>,
+			cell: ({ row }) => {
+				const attendance = row.original;
+				if (!attendance.canRequestExcuse) return null;
+				return (
+					<div className="flex justify-end">
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => options.onRequestExcuse(attendance)}
+						>
+							Request Excuse
+						</Button>
+					</div>
+				);
+			},
+		},
+	];
+}
