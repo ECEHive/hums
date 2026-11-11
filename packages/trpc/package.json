@@ -1,6 +1,6 @@
 {
 	"name": "@ecehive/trpc",
-	"version": "3.9.3",
+	"version": "3.10.0",
 	"type": "module",
 	"exports": {
 		"./client": "./client/index.ts",
