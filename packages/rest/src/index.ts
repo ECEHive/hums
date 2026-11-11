@@ -4,6 +4,7 @@ import { controlGatewayRoutes } from "./routes/control-gateways";
 import { controlPointsRoutes } from "./routes/control-points";
 import { openHoursRoutes } from "./routes/open-hours";
 import { rolesRoutes } from "./routes/roles";
+import { shiftOccurrencesRoutes } from "./routes/shifts";
 import { slackRoutes } from "./routes/slack";
 import { usersRoutes } from "./routes/users";
 
@@ -43,6 +44,10 @@ export const restApiRoute: FastifyPluginAsync = async (fastify) => {
 		// Register route modules
 		protectedRoutes.register(usersRoutes, {
 			prefix: "/users",
+		});
+
+		protectedRoutes.register(shiftOccurrencesRoutes, {
+			prefix: "/shifts",
 		});
 
 		protectedRoutes.register(rolesRoutes, {
