@@ -67,6 +67,16 @@ Makeup shift flow:
 
 ## Excusing Attendance
 
+### Excuse Requests
+
+Members request excuses for their own attendance issues (up to 24 hours later), and staff review those requests:
+
+1. After a shift ends with an issue (absent, late, or left early), the member is emailed a summary with a link to request an excuse.
+2. The member submits a reason from **Shifts → Attendance**. This sets `excuseRequestReason` and `excuseRequestedAt` on the attendance record.
+3. Staff see the request as **pending** on the **Attendance Issues** page and either grant the excuse or mark it unexcused. The member is emailed the decision.
+
+### Granting Excuses
+
 Administrators with the `shift_attendances.excuse` permission can excuse attendance records. This is useful for:
 - Legitimate emergencies
 - Medical issues
@@ -151,6 +161,7 @@ The background worker that updates attendance statuses will not overwrite these 
 | Route | Description |
 |-------|-------------|
 | `shiftAttendances.myStats` | Get personal attendance statistics |
+| `shiftAttendances.requestExcuse` | Request an excuse for an attendance issue |
 | `shiftDrops.drop` | Drop an upcoming shift |
 | `shiftDrops.makeDrop` | Schedule a makeup shift |
 
@@ -172,6 +183,13 @@ Runs periodically to update attendance statuses:
    - If member checked in → `present`
    - If no check-in → `absent`
 3. Skips protected statuses (`dropped`, `dropped_makeup`, `excused`)
+
+### Send Shift Issue Notices Worker
+
+Runs every 5 minutes:
+1. Finds unexcused, unreviewed, unrequested attendance records with issues
+2. Emails shifts that ended at least 5 minutes ago (once the attendance worker has finalized the record) and are still within the 24-hour excuse request window
+3. Sets `issueEmailSentAt` and emails the member a link to request an excuse
 
 ## Report Generation
 

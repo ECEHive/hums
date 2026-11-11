@@ -9,7 +9,7 @@ function Page({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			data-slot="page"
 			className={cn(
-				"container pt-0 space-y-4 md:space-y-6 p-4 md:p-6 pt-0 md:pt-0",
+				"w-full pt-0 space-y-4 md:space-y-6 p-4 md:p-6 pt-0 md:pt-0",
 				className,
 			)}
 			{...props}

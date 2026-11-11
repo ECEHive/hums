@@ -9,6 +9,10 @@ import { listIssuesHandler, ZListIssuesSchema } from "./listIssues.route";
 import { listMyHandler, ZListMySchema } from "./listMy.route";
 import { markReviewedHandler, ZMarkReviewedSchema } from "./markReviewed.route";
 import { myStatsHandler, ZMyStatsSchema } from "./myStats.route";
+import {
+	requestExcuseHandler,
+	ZRequestExcuseSchema,
+} from "./requestExcuse.route";
 import { revokeExcuseHandler, ZRevokeExcuseSchema } from "./revokeExcuse.route";
 
 export const shiftAttendancesRouter = router({
@@ -17,6 +21,9 @@ export const shiftAttendancesRouter = router({
 		.input(ZListForUserSchema)
 		.query(listForUserHandler),
 	myStats: protectedProcedure.input(ZMyStatsSchema).query(myStatsHandler),
+	requestExcuse: protectedProcedure
+		.input(ZRequestExcuseSchema)
+		.mutation(requestExcuseHandler),
 	// Admin routes for managing attendance issues
 	listIssues: permissionProtectedProcedure("shift_attendances.excuse")
 		.input(ZListIssuesSchema)

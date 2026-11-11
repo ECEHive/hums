@@ -190,7 +190,7 @@ async function listLowQuantityItems(options: {
 				OR i.location ILIKE ${searchPattern}
 			))
 			AND (${isActive}::boolean IS NULL OR i."isActive" = ${isActive})
-		HAVING (s.quantity + COALESCE(
+			AND (s.quantity + COALESCE(
 			(SELECT SUM(t.quantity) 
 			 FROM "InventoryTransaction" t 
 			 WHERE t."itemId" = i.id AND t."createdAt" > s."takenAt"),

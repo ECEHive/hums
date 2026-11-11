@@ -158,25 +158,28 @@ model ShiftOccurrence {
 }
 
 model ShiftAttendance {
-  id                Int                   @id @default(autoincrement())
-  shiftOccurrenceId Int
-  userId            Int
-  status            ShiftAttendanceStatus @default(absent)
-  timeIn            DateTime?
-  timeOut           DateTime?
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @default(now()) @updatedAt
-  didArriveLate     Boolean               @default(false)
-  didLeaveEarly     Boolean               @default(false)
-  droppedNotes      String?
-  isMakeup          Boolean               @default(false)
-  excuseNotes       String?
-  isExcused         Boolean               @default(false)
-  reviewedAt        DateTime?
-  reviewedById      Int?
-  reviewedBy        User?                 @relation("ShiftAttendanceReviewedBy", fields: [reviewedById], references: [id])
-  shiftOccurrence   ShiftOccurrence       @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
-  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  Int                   @id @default(autoincrement())
+  shiftOccurrenceId   Int
+  userId              Int
+  status              ShiftAttendanceStatus @default(absent)
+  timeIn              DateTime?
+  timeOut             DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @default(now()) @updatedAt
+  didArriveLate       Boolean               @default(false)
+  didLeaveEarly       Boolean               @default(false)
+  droppedNotes        String?
+  isMakeup            Boolean               @default(false)
+  excuseNotes         String?
+  isExcused           Boolean               @default(false)
+  reviewedAt          DateTime?
+  reviewedById        Int?
+  excuseRequestReason String?
+  excuseRequestedAt   DateTime?
+  issueEmailSentAt    DateTime?
+  reviewedBy          User?                 @relation("ShiftAttendanceReviewedBy", fields: [reviewedById], references: [id])
+  shiftOccurrence     ShiftOccurrence       @relation(fields: [shiftOccurrenceId], references: [id], onDelete: Cascade)
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([shiftOccurrenceId, userId])
 }

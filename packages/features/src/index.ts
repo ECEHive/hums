@@ -3,6 +3,7 @@ export * from "./affiliation";
 export * from "./api-tokens";
 export * from "./assignments/generators";
 export * from "./attendance";
+export * from "./attendance/excuse-decision-email";
 export * from "./audit-logs/list-audit-logs";
 export * from "./audit-logs/logger";
 export * from "./branding";

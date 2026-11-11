@@ -206,6 +206,14 @@ export async function checkInHandler(options: TCheckInOptions) {
 		}
 	}
 
+	// When someone other than the borrower returns a single item, note who did
+	const returnedByNote = `Returned by ${user.name} (${user.username})`;
+	const notesFor = (it: (typeof items)[number]) => {
+		const borrowerId = userIdOverrides.get(it.itemId);
+		if (borrowerId === undefined || borrowerId === userId) return it.notes;
+		return it.notes ? `${returnedByNote}. ${it.notes}` : returnedByNote;
+	};
+
 	// Create transactions in a single DB transaction
 	// For single items, use the overridden userId (the original borrower)
 	const created = await prisma.$transaction(
@@ -216,7 +224,7 @@ export async function checkInHandler(options: TCheckInOptions) {
 					userId: userIdOverrides.get(it.itemId) ?? userId,
 					action: "CHECK_IN",
 					quantity: it.quantity,
-					notes: it.notes,
+					notes: notesFor(it),
 				},
 				include: {
 					item: true,
