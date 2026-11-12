@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserUpdateDialog } from "@/components/users/update-dialog";
 import { useManageUsersMemory } from "@/hooks/use-manage-users-memory";
 import { checkPermissions, type RequiredPermissions } from "@/lib/permissions";
 
@@ -190,7 +191,24 @@ function ManageUserDetailPage() {
 						{/* User Summary Card */}
 						<Card>
 							<CardHeader>
-								<CardTitle>User Summary</CardTitle>
+								<div className="flex items-center justify-between gap-2">
+									<CardTitle>User Summary</CardTitle>
+									{user && (
+										<UserUpdateDialog
+											user={{
+												id: user.id,
+												username: user.username,
+												name: user.name,
+												email: user.email,
+												slackUsername: user.slackUsername ?? undefined,
+												internalNotes: user.internalNotes,
+											}}
+											onUpdate={() => {
+												void userQuery.refetch();
+											}}
+										/>
+									)}
+								</div>
 							</CardHeader>
 							<CardContent className="space-y-4">
 								<div className="grid gap-4 md:grid-cols-2">
@@ -219,6 +237,16 @@ function ManageUserDetailPage() {
 										label="Attendance records"
 										value={attendanceCount}
 									/>
+								</div>
+								<div>
+									<p className="text-sm font-medium mb-2">Internal notes</p>
+									<div className="rounded-md border px-3 py-2 text-sm whitespace-pre-wrap">
+										{user?.internalNotes?.trim() || (
+											<span className="text-muted-foreground">
+												No internal notes
+											</span>
+										)}
+									</div>
 								</div>
 							</CardContent>
 						</Card>
