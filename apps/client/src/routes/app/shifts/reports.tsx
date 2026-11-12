@@ -12,7 +12,7 @@ import {
 	RefreshCwIcon,
 	X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCurrentUser } from "@/auth/AuthProvider";
 import { RequirePermissions } from "@/components/guards/require-permissions";
 import {
@@ -202,27 +202,25 @@ function ReportsPage() {
 		queryKey: ["period", Number(selectedPeriodId)],
 		queryFn: async () => {
 			if (!selectedPeriodId) return null;
-			const res = await trpc.periods.get.query({
+			return await trpc.periods.get.query({
 				id: Number(selectedPeriodId),
 			});
-			// Initialize dates from period
-			if (res?.period) {
-				setStartDate(res.period.start);
-				setEndDate(res.period.end);
-			}
-			return res;
 		},
 		enabled: selectedPeriodId !== null,
 	});
 
-	// Initialize selected staffing roles from period data
+	// Initialize dates and roles once per period, so refetches don't reset them
+	const initializedPeriodId = useRef<number | null>(null);
 	useEffect(() => {
-		if (periodData?.period?.roles) {
-			setSelectedStaffingRoles(
-				periodData.period.roles.map((r) => ({ id: r.id, name: r.name })),
-			);
-		}
-	}, [periodData?.period?.roles]);
+		const period = periodData?.period;
+		if (!period || initializedPeriodId.current === period.id) return;
+		initializedPeriodId.current = period.id;
+		setStartDate(period.start);
+		setEndDate(period.end);
+		setSelectedStaffingRoles(
+			period.roles.map((r) => ({ id: r.id, name: r.name })),
+		);
+	}, [periodData?.period]);
 
 	// Get the current report config
 	const currentReportConfig = reportConfigs.find(
