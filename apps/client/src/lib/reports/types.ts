@@ -90,6 +90,7 @@ export interface UserAttendanceReport {
 	id: number;
 	name: string;
 	username: string;
+	internalNotes: string | null;
 	periodScheduledTime: number;
 	pastScheduledTime: number;
 	pastAttendedTime: number;

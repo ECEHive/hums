@@ -72,6 +72,18 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 			cell: ({ row }) => row.original.username,
 		},
 		{
+			accessorKey: "internalNotes",
+			header: "Internal Notes",
+			cell: ({ row }) =>
+				row.original.internalNotes
+					? createElement(
+							"div",
+							{ className: "max-w-sm whitespace-pre-wrap text-sm" },
+							row.original.internalNotes,
+						)
+					: "—",
+		},
+		{
 			accessorKey: "periodScheduledTime",
 			header: "Total Scheduled Time",
 			cell: ({ row }) => formatHours(row.original.periodScheduledTime),
