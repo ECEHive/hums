@@ -564,6 +564,7 @@ function GlobalReportsPage() {
 							isLoading={isLoading}
 							enableSorting
 							onSortedRowsChange={setSortedRows}
+							stickyFirstColumn
 							emptyMessage="No data found"
 							emptyDescription="Try adjusting your filters or date range"
 						/>
