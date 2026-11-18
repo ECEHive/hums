@@ -6,8 +6,9 @@
  * 1. Every action is checked (equipment, authorization, active session)
  *    without contacting a provider. If any action can't run, the invocation
  *    is rejected.
- * 2. Every TOGGLE reads its switch's live state. If any read fails, the
- *    invocation is rejected.
+ * 2. The gateway's control points are locked, so concurrent invocations
+ *    can't interleave. Every TOGGLE reads its switch's live state. If any
+ *    read fails, the invocation is rejected.
  * 3. The actions run in order, stopping at the first failed write. Providers
  *    have no transactions, so actions that already ran are reported, not
  *    undone.
@@ -20,6 +21,7 @@ import type {
 } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { hashCredential } from "../credentials/hash";
+import { withPointLocks } from "./point-locks";
 import { getControlProvider } from "./providers";
 import type { ControlOperationResult } from "./providers/types";
 import { getUserActiveSession } from "./session-control-validation";
@@ -147,8 +149,12 @@ export async function invokeControlGateway(
 		actions.map((a) => checkAction(a, user, roleIds, hasSession)),
 	);
 
-	const planned = await planActions(actions, user);
-	const results = await runActions(planned, user);
+	// Two scans of a TOGGLE at once would both read the same state and write
+	// the same target, so the read and the write must not interleave.
+	const results = await withPointLocks(
+		actions.map((a) => a.controlPoint.id),
+		async () => runActions(await planActions(actions, user), user),
+	);
 
 	return {
 		gatewayId: gateway.id,

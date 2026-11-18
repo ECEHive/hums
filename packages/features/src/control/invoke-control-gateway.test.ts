@@ -361,6 +361,33 @@ describe("TOGGLE", () => {
 	});
 });
 
+describe("concurrent scans", () => {
+	it("flips a TOGGLE twice when two scans arrive at once", async () => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([{ action: "TOGGLE", controlPoint: point() }]),
+		);
+		// A slow PLC: without a lock both scans would read "off".
+		let plcState = false;
+		mockProvider.readState.mockImplementation(async () => {
+			await new Promise((r) => setTimeout(r, 10));
+			return { success: true, state: plcState };
+		});
+		mockProvider.writeState.mockImplementation(
+			async (_p: unknown, _c: unknown, state: boolean) => {
+				await new Promise((r) => setTimeout(r, 10));
+				plcState = state;
+				return { success: true };
+			},
+		);
+
+		const [first, second] = await Promise.all([invoke(), invoke()]);
+
+		expect(first.results).toMatchObject([{ resolvedAction: "TURN_ON" }]);
+		expect(second.results).toMatchObject([{ resolvedAction: "TURN_OFF" }]);
+		expect(plcState).toBe(false);
+	});
+});
+
 describe("active session", () => {
 	it.each([
 		["TURN_ON", "SWITCH"],
