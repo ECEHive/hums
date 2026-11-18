@@ -114,8 +114,13 @@ export function GatewayActionsEditor({
 								</SelectTrigger>
 								<SelectContent>
 									{controlPoints.map((p) => (
-										<SelectItem key={p.id} value={p.id}>
+										<SelectItem
+											key={p.id}
+											value={p.id}
+											disabled={p.requiresBuddy}
+										>
 											{p.name}
+											{p.requiresBuddy && " (requires buddy, not supported)"}
 										</SelectItem>
 									))}
 								</SelectContent>

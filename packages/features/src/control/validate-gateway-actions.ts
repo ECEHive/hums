@@ -20,7 +20,7 @@ export async function validateGatewayActions(
 	const uniqueIds = Array.from(new Set(ids));
 	const points = await prisma.controlPoint.findMany({
 		where: { id: { in: uniqueIds } },
-		select: { id: true, name: true, controlClass: true },
+		select: { id: true, name: true, controlClass: true, requiresBuddy: true },
 	});
 	const pointsById = new Map(points.map((p) => [p.id, p]));
 
@@ -44,6 +44,12 @@ export async function validateGatewayActions(
 	for (const action of actions) {
 		const point = pointsById.get(action.controlPointId);
 		if (!point) continue;
+
+		if (point.requiresBuddy) {
+			badRequest(
+				`Buddy-required control points cannot be used in gateways (point: ${point.name})`,
+			);
+		}
 
 		if (point.controlClass === "DOOR" && action.action !== "UNLOCK") {
 			badRequest(

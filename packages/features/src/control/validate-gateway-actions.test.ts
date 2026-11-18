@@ -10,14 +10,31 @@ import { validateGatewayActions } from "./validate-gateway-actions";
 
 const SAW = "00000000-0000-4000-8000-000000000001";
 const DOOR = "00000000-0000-4000-8000-000000000002";
+const BUDDY = "00000000-0000-4000-8000-000000000003";
 
 beforeEach(() => {
 	mockPrisma.controlPoint.findMany.mockImplementation(
 		({ where }: { where: { id: { in: string[] } } }) =>
 			Promise.resolve(
 				[
-					{ id: SAW, name: "Bandsaw", controlClass: "SWITCH" },
-					{ id: DOOR, name: "Shop door", controlClass: "DOOR" },
+					{
+						id: SAW,
+						name: "Bandsaw",
+						controlClass: "SWITCH",
+						requiresBuddy: false,
+					},
+					{
+						id: DOOR,
+						name: "Shop door",
+						controlClass: "DOOR",
+						requiresBuddy: false,
+					},
+					{
+						id: BUDDY,
+						name: "Lathe",
+						controlClass: "SWITCH",
+						requiresBuddy: true,
+					},
 				].filter((p) => where.id.in.includes(p.id)),
 			),
 	);
@@ -51,6 +68,7 @@ describe("validateGatewayActions", () => {
 	it.each([
 		[SAW, "UNLOCK", "Switch control points"],
 		[DOOR, "TURN_ON", "Door control points"],
+		[BUDDY, "TURN_ON", "Buddy-required"],
 		["00000000-0000-4000-8000-000000000009", "TURN_ON", "not found"],
 	] as const)("rejects %s with %s", async (controlPointId, action, message) => {
 		await expect(

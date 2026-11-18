@@ -30,6 +30,7 @@ export interface InvokeControlGatewayInput {
 export type BlockReason =
 	| "POINT_INACTIVE"
 	| "PROVIDER_INACTIVE"
+	| "REQUIRES_BUDDY"
 	| "NOT_AUTHORIZED"
 	| "NO_ACTIVE_SESSION";
 
@@ -204,6 +205,9 @@ function checkAction(
 
 	if (!point.isActive) return blocked("POINT_INACTIVE");
 	if (!point.provider.isActive) return blocked("PROVIDER_INACTIVE");
+	// Gateways can't collect a second card. Create and update reject buddy
+	// points; this catches points flagged after they were added.
+	if (point.requiresBuddy) return blocked("REQUIRES_BUDDY");
 	if (!user.isSystemUser) {
 		const unrestricted =
 			point.authorizedUsers.length === 0 && point.authorizedRoles.length === 0;

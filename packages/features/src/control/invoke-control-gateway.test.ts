@@ -49,6 +49,7 @@ function point(overrides: Record<string, unknown> = {}) {
 		controlClass: "SWITCH",
 		currentState: false,
 		isActive: true,
+		requiresBuddy: false,
 		providerConfig: {},
 		provider: { isActive: true, providerType: "GEORGIA_TECH_PLC", config: {} },
 		authorizedRoles: [{ id: 10 }],
@@ -300,6 +301,29 @@ describe("active session", () => {
 		const result = await invoke("333");
 
 		expect(result.results[0].status).toBe("done");
+		delete users["333"];
+	});
+});
+
+describe("requiresBuddy", () => {
+	it("rejects buddy-required points, including for system users", async () => {
+		users["333"] = { ...operator, id: 3, isSystemUser: true };
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([
+				{ action: "TURN_ON", controlPoint: point({ requiresBuddy: true }) },
+			]),
+		);
+
+		for (const credentialValue of ["111", "333"]) {
+			const error = await expectGatewayError(
+				invoke(credentialValue),
+				"ACTION_UNAVAILABLE",
+			);
+			expect(error.results).toMatchObject([
+				{ status: "blocked", reason: "REQUIRES_BUDDY" },
+			]);
+		}
+		expect(mockProvider.writeState).not.toHaveBeenCalled();
 		delete users["333"];
 	});
 });
