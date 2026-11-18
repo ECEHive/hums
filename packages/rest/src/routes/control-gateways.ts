@@ -9,7 +9,11 @@
  * standard API token auth guard.
  */
 
-import { GatewayError, invokeControlGateway } from "@ecehive/features";
+import {
+	GatewayError,
+	type GatewayErrorCode,
+	invokeControlGateway,
+} from "@ecehive/features";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { internalError, validationError } from "../shared/validation";
@@ -23,6 +27,15 @@ const InvokeGatewayBodySchema = z.object({
 const GatewayAccessTokenHeaderSchema = z.object({
 	"x-gateway-token": z.string().min(1, "Gateway access token is required"),
 });
+
+const GATEWAY_ERROR_STATUS: Record<GatewayErrorCode, number> = {
+	INVALID_TOKEN: 401,
+	INVALID_CREDENTIAL: 401,
+	GATEWAY_INACTIVE: 403,
+	NOT_AUTHORIZED: 403,
+	ACTION_UNAVAILABLE: 409,
+	EXECUTION_FAILED: 502,
+};
 
 // ===== Routes =====
 
@@ -62,18 +75,12 @@ export const controlGatewayRoutes: FastifyPluginAsync = async (fastify) => {
 			};
 		} catch (error) {
 			if (error instanceof GatewayError) {
-				const statusMap: Record<string, number> = {
-					INVALID_TOKEN: 401,
-					GATEWAY_INACTIVE: 403,
-					INVALID_CREDENTIAL: 401,
-				};
-				const status = statusMap[error.code] ?? 400;
-
-				return reply.code(status).send({
+				return reply.code(GATEWAY_ERROR_STATUS[error.code]).send({
 					success: false,
 					error: {
 						code: error.code,
 						message: error.message,
+						...(error.results ? { details: { results: error.results } } : {}),
 					},
 				});
 			}

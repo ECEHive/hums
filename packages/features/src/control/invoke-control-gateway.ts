@@ -1,33 +1,48 @@
 /**
  * Control Gateways - Invoke
  *
- * Handles the invocation of a control gateway. When called with
- * an access token and a credential value, it:
- * 1. Finds the gateway by access token
- * 2. Finds the user by credential hash
- * 3. Checks which gateway actions the user is authorized to perform
- * 4. Executes authorized actions on the control points
+ * Runs every action on a gateway for the user behind a credential, or none
+ * of them:
+ * 1. Every action is checked without contacting a provider. If any action
+ *    can't run, the invocation is rejected.
+ * 2. The actions run in order, stopping at the first failed write. Providers
+ *    have no transactions, so actions that already ran are reported, not
+ *    undone.
  */
 
-import type { ControlAction, ControlProviderType } from "@ecehive/prisma";
+import type {
+	ControlAction,
+	ControlProviderType,
+	Prisma,
+} from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { hashCredential } from "../credentials/hash";
 import { getControlProvider } from "./providers";
+import type { ControlOperationResult } from "./providers/types";
 
 export interface InvokeControlGatewayInput {
 	accessToken: string;
 	credentialValue: string;
 }
 
-export interface GatewayActionResult {
+export type BlockReason =
+	| "POINT_INACTIVE"
+	| "PROVIDER_INACTIVE"
+	| "NOT_AUTHORIZED";
+
+/** Reasons that depend on who scanned, rather than on the equipment. */
+const USER_REASONS: ReadonlySet<BlockReason> = new Set(["NOT_AUTHORIZED"]);
+
+export type GatewayActionResult = {
 	controlPointId: string;
 	controlPointName: string;
 	action: ControlAction;
-	success: boolean;
-	error?: string;
-	skipped?: boolean;
-	skipReason?: string;
-}
+} & (
+	| { status: "done"; newState: boolean }
+	| { status: "blocked"; reason: BlockReason }
+	| { status: "failed"; message: string }
+	| { status: "not_run" }
+);
 
 export interface InvokeControlGatewayResult {
 	gatewayId: number;
@@ -37,175 +52,92 @@ export interface InvokeControlGatewayResult {
 	results: GatewayActionResult[];
 }
 
+export type GatewayErrorCode =
+	| "INVALID_TOKEN"
+	| "GATEWAY_INACTIVE"
+	| "INVALID_CREDENTIAL"
+	| "NOT_AUTHORIZED"
+	| "ACTION_UNAVAILABLE"
+	| "EXECUTION_FAILED";
+
+export class GatewayError extends Error {
+	readonly code: GatewayErrorCode;
+	/** Every action's outcome, for errors raised after the actions were known. */
+	readonly results?: GatewayActionResult[];
+
+	constructor(
+		code: GatewayErrorCode,
+		message: string,
+		results?: GatewayActionResult[],
+	) {
+		super(message);
+		this.name = "GatewayError";
+		this.code = code;
+		this.results = results;
+	}
+}
+
+const gatewayInclude = {
+	actions: {
+		orderBy: { id: "asc" },
+		include: {
+			controlPoint: {
+				include: {
+					provider: true,
+					authorizedRoles: { select: { id: true } },
+					authorizedUsers: { select: { id: true } },
+				},
+			},
+		},
+	},
+} satisfies Prisma.ControlGatewayInclude;
+
+type GatewayAction = Prisma.ControlGatewayGetPayload<{
+	include: typeof gatewayInclude;
+}>["actions"][number];
+
+type PlannedAction = {
+	gatewayAction: GatewayAction;
+	resolvedAction: ControlAction;
+	previousState: boolean;
+};
+
 /**
- * Invokes a control gateway, executing authorized actions for the user
- * identified by the provided credential value
+ * Returns only when every action succeeded; otherwise throws a GatewayError
+ * whose `results` say what happened to each action.
  */
 export async function invokeControlGateway(
 	input: InvokeControlGatewayInput,
 ): Promise<InvokeControlGatewayResult> {
-	// Find the gateway by access token
 	const gateway = await prisma.controlGateway.findUnique({
 		where: { accessToken: input.accessToken },
-		include: {
-			actions: {
-				include: {
-					controlPoint: {
-						include: {
-							provider: true,
-							authorizedRoles: { select: { id: true } },
-							trainedRole: { select: { id: true, name: true } },
-							trainerRole: { select: { id: true, name: true } },
-							authorizedUsers: { select: { id: true } },
-						},
-					},
-				},
-			},
-		},
+		include: gatewayInclude,
 	});
-
 	if (!gateway) {
 		throw new GatewayError("INVALID_TOKEN", "Invalid gateway access token");
 	}
-
 	if (!gateway.isActive) {
 		throw new GatewayError("GATEWAY_INACTIVE", "This gateway is not active");
 	}
 
-	// Find user by credential hash
-	const hash = hashCredential(input.credentialValue);
-	const credential = await prisma.credential.findUnique({
-		where: { hash },
-		include: {
-			user: {
-				include: {
-					roles: { select: { id: true } },
-				},
-			},
-		},
-	});
-
-	if (!credential) {
+	const user = await findUserByCredential(input.credentialValue);
+	if (!user) {
 		throw new GatewayError(
 			"INVALID_CREDENTIAL",
 			"No user found for the provided credential",
 		);
 	}
 
-	const user = credential.user;
-	const userRoleIds = new Set(user.roles.map((r) => r.id));
+	const { actions } = gateway;
+	const roleIds = new Set(user.roles.map((r) => r.id));
+	rejectIfBlocked(actions.map((a) => checkAction(a, user, roleIds)));
 
-	// Execute each configured action, checking authorization per action
-	const results: GatewayActionResult[] = [];
-
-	for (const gatewayAction of gateway.actions) {
-		const point = gatewayAction.controlPoint;
-
-		// Check if control point is active
-		if (!point.isActive) {
-			results.push({
-				controlPointId: point.id,
-				controlPointName: point.name,
-				action: gatewayAction.action,
-				success: false,
-				skipped: true,
-				skipReason: "Control point is not active",
-			});
-			continue;
-		}
-
-		// Check if provider is active
-		if (!point.provider.isActive) {
-			results.push({
-				controlPointId: point.id,
-				controlPointName: point.name,
-				action: gatewayAction.action,
-				success: false,
-				skipped: true,
-				skipReason: "Control provider is not active",
-			});
-			continue;
-		}
-
-		// Check user authorization for this control point
-		if (!user.isSystemUser) {
-			const isDirectlyAuthorized = point.authorizedUsers.some(
-				(u) => u.id === user.id,
-			);
-			const isRoleAuthorized = point.authorizedRoles.some((r) =>
-				userRoleIds.has(r.id),
-			);
-			const hasNoRestrictions =
-				point.authorizedUsers.length === 0 &&
-				point.authorizedRoles.length === 0;
-
-			if (!isDirectlyAuthorized && !isRoleAuthorized && !hasNoRestrictions) {
-				results.push({
-					controlPointId: point.id,
-					controlPointName: point.name,
-					action: gatewayAction.action,
-					success: false,
-					skipped: true,
-					skipReason: "User is not authorized for this control point",
-				});
-				continue;
-			}
-		}
-
-		// Execute the action
-		try {
-			const provider = getControlProvider(
-				point.provider.providerType as ControlProviderType,
-			);
-
-			const targetState =
-				gatewayAction.action === "TURN_ON" || gatewayAction.action === "UNLOCK";
-
-			const operationResult = await provider.writeState(
-				point.provider.config,
-				point.providerConfig,
-				targetState,
-				user.username,
-			);
-
-			// Log the operation
-			await prisma.controlLog.create({
-				data: {
-					controlPointId: point.id,
-					userId: user.id,
-					action: gatewayAction.action,
-					previousState: point.currentState,
-					newState: operationResult.success ? targetState : null,
-					success: operationResult.success,
-					errorMessage: operationResult.errorMessage,
-				},
-			});
-
-			// Update control point state for switches
-			if (operationResult.success && point.controlClass === "SWITCH") {
-				await prisma.controlPoint.update({
-					where: { id: point.id },
-					data: { currentState: targetState },
-				});
-			}
-
-			results.push({
-				controlPointId: point.id,
-				controlPointName: point.name,
-				action: gatewayAction.action,
-				success: operationResult.success,
-				error: operationResult.errorMessage,
-			});
-		} catch (error) {
-			results.push({
-				controlPointId: point.id,
-				controlPointName: point.name,
-				action: gatewayAction.action,
-				success: false,
-				error: error instanceof Error ? error.message : String(error),
-			});
-		}
-	}
+	const planned = actions.map((gatewayAction) => ({
+		gatewayAction,
+		resolvedAction: gatewayAction.action,
+		previousState: gatewayAction.controlPoint.currentState,
+	}));
+	const results = await runActions(planned, user);
 
 	return {
 		gatewayId: gateway.id,
@@ -216,15 +148,168 @@ export async function invokeControlGateway(
 	};
 }
 
-/**
- * Structured error for gateway operations
- */
-export class GatewayError extends Error {
-	code: string;
+async function findUserByCredential(value: string) {
+	const credential = await prisma.credential.findUnique({
+		where: { hash: hashCredential(value) },
+		include: {
+			user: { include: { roles: { select: { id: true } } } },
+		},
+	});
+	return credential?.user ?? null;
+}
 
-	constructor(code: string, message: string) {
-		super(message);
-		this.name = "GatewayError";
-		this.code = code;
+type GatewayUser = NonNullable<
+	Awaited<ReturnType<typeof findUserByCredential>>
+>;
+
+function describe(gatewayAction: GatewayAction) {
+	return {
+		controlPointId: gatewayAction.controlPoint.id,
+		controlPointName: gatewayAction.controlPoint.name,
+		action: gatewayAction.action,
+	};
+}
+
+function notRun(gatewayAction: GatewayAction): GatewayActionResult {
+	return { ...describe(gatewayAction), status: "not_run" };
+}
+
+function errorMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+/** The action's result if it is blocked, or not_run if it may run. */
+function checkAction(
+	gatewayAction: GatewayAction,
+	user: GatewayUser,
+	roleIds: Set<number>,
+): GatewayActionResult {
+	const point = gatewayAction.controlPoint;
+	const blocked = (reason: BlockReason): GatewayActionResult => ({
+		...describe(gatewayAction),
+		status: "blocked",
+		reason,
+	});
+
+	if (!point.isActive) return blocked("POINT_INACTIVE");
+	if (!point.provider.isActive) return blocked("PROVIDER_INACTIVE");
+	if (!user.isSystemUser) {
+		const unrestricted =
+			point.authorizedUsers.length === 0 && point.authorizedRoles.length === 0;
+		const authorized =
+			unrestricted ||
+			point.authorizedUsers.some((u) => u.id === user.id) ||
+			point.authorizedRoles.some((r) => roleIds.has(r.id));
+		if (!authorized) return blocked("NOT_AUTHORIZED");
 	}
+	return notRun(gatewayAction);
+}
+
+function rejectIfBlocked(checked: GatewayActionResult[]): void {
+	const reasons = checked.flatMap((r) =>
+		r.status === "blocked" ? [r.reason] : [],
+	);
+	if (reasons.length === 0) return;
+
+	// Equipment problems take precedence: nobody could run this gateway now.
+	if (!reasons.every((r) => USER_REASONS.has(r))) {
+		throw new GatewayError(
+			"ACTION_UNAVAILABLE",
+			"Not every action on this gateway can run",
+			checked,
+		);
+	}
+	throw new GatewayError(
+		"NOT_AUTHORIZED",
+		"User is not authorized for every action on this gateway",
+		checked,
+	);
+}
+
+async function runActions(
+	planned: PlannedAction[],
+	user: GatewayUser,
+): Promise<GatewayActionResult[]> {
+	const results: GatewayActionResult[] = [];
+	for (const [i, p] of planned.entries()) {
+		const { gatewayAction } = p;
+		const targetState = isOnState(p.resolvedAction);
+		const write = await writeAction(p, targetState, user);
+		if (!write.success) {
+			const name = gatewayAction.controlPoint.name;
+			throw new GatewayError(
+				"EXECUTION_FAILED",
+				i === 0
+					? `${name} failed; nothing was run`
+					: `${name} failed after ${i} of ${planned.length} actions ran; those were not undone`,
+				[
+					...results,
+					{
+						...describe(gatewayAction),
+						status: "failed",
+						message: write.errorMessage ?? "The provider reported a failure",
+					},
+					...planned.slice(i + 1).map((q) => notRun(q.gatewayAction)),
+				],
+			);
+		}
+		results.push({
+			...describe(gatewayAction),
+			status: "done",
+			newState: targetState,
+		});
+	}
+	return results;
+}
+
+function isOnState(action: ControlAction): boolean {
+	return action === "TURN_ON" || action === "UNLOCK";
+}
+
+/**
+ * Writes the target state and records the outcome. Only the write decides
+ * success: a database error afterwards propagates instead of being reported
+ * as a failed action, since the equipment has already changed.
+ */
+async function writeAction(
+	planned: PlannedAction,
+	targetState: boolean,
+	user: GatewayUser,
+): Promise<ControlOperationResult> {
+	const point = planned.gatewayAction.controlPoint;
+
+	let write: ControlOperationResult;
+	try {
+		write = await getControlProvider(
+			point.provider.providerType as ControlProviderType,
+		).writeState(
+			point.provider.config,
+			point.providerConfig,
+			targetState,
+			user.username,
+		);
+	} catch (error) {
+		write = { success: false, errorMessage: errorMessage(error) };
+	}
+
+	await prisma.controlLog.create({
+		data: {
+			controlPointId: point.id,
+			userId: user.id,
+			action: planned.resolvedAction,
+			previousState: planned.previousState,
+			newState: write.success ? targetState : null,
+			success: write.success,
+			errorMessage: write.errorMessage,
+		},
+	});
+
+	if (write.success && point.controlClass === "SWITCH") {
+		await prisma.controlPoint.update({
+			where: { id: point.id },
+			data: { currentState: targetState },
+		});
+	}
+
+	return write;
 }
