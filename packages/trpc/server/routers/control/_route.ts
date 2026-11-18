@@ -21,6 +21,10 @@ import {
 	ZListGatewaysSchema,
 } from "./gateways/list.route";
 import {
+	regenerateGatewayTokenHandler,
+	ZRegenerateGatewayTokenSchema,
+} from "./gateways/regenerate-token.route";
+import {
 	updateGatewayHandler,
 	ZUpdateGatewaySchema,
 } from "./gateways/update.route";
@@ -124,6 +128,9 @@ export const controlRouter = router({
 		update: permissionProtectedProcedure("control.gateways.update")
 			.input(ZUpdateGatewaySchema)
 			.mutation(updateGatewayHandler),
+		regenerateToken: permissionProtectedProcedure("control.gateways.update")
+			.input(ZRegenerateGatewayTokenSchema)
+			.mutation(regenerateGatewayTokenHandler),
 		delete: permissionProtectedProcedure("control.gateways.delete")
 			.input(ZDeleteGatewaySchema)
 			.mutation(deleteGatewayHandler),

@@ -22,6 +22,7 @@ export * from "./list-control-providers";
 export * from "./operate-control-points";
 // Provider Utilities
 export * from "./providers";
+export * from "./regenerate-control-gateway-token";
 // Session-Control Point Validation
 export * from "./session-control-validation";
 export * from "./update-control-gateway";

@@ -19,7 +19,7 @@ export interface CreateControlGatewayInput {
 /**
  * Generates a cryptographically secure access token for a gateway
  */
-function generateAccessToken(): string {
+export function generateAccessToken(): string {
 	const bytes = crypto.getRandomValues(new Uint8Array(32));
 	return Array.from(bytes)
 		.map((b) => b.toString(16).padStart(2, "0"))
