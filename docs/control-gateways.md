@@ -16,16 +16,17 @@ Control Gateways allow external systems to trigger control point actions via a s
 
 ## Overview
 
-A **Control Gateway** acts as a bridge between an external system and one or more HUMS control points (doors, switches, etc.). The external system authenticates using the gateway's access token and identifies the acting user with a credential value (e.g., a card scan). HUMS then checks the user's authorization for each configured action and executes them.
+A **Control Gateway** acts as a bridge between an external system and one or more HUMS control points (doors, switches, etc.). The external system authenticates using the gateway's access token and identifies the acting user with a credential value (e.g., a card scan). HUMS runs every configured action, or none of them.
 
 ### Flow
 
 1. External system sends `POST /api/rest/control/gateways/invoke` with the gateway access token and a credential value.
 2. HUMS validates the access token and looks up the gateway.
 3. HUMS identifies the user from the credential value (via HMAC-SHA256 hash lookup).
-4. For each action configured on the gateway, HUMS checks if the user is authorized.
-5. Authorized actions are executed on the corresponding control points.
-6. A summary of results is returned.
+4. HUMS checks every action: equipment state, authorization and active session (see [Authorization Model](#authorization-model)). If any action can't run, the request is rejected and nothing runs.
+5. HUMS locks the gateway's control points, so concurrent invocations can't interleave, and reads the live state of every `TOGGLE` switch. If any read fails, the request is rejected and nothing runs.
+6. The actions run in order. If one fails, the rest are not run. Actions that already ran are reported, not undone, since providers have no transactions.
+7. A summary of results is returned.
 
 ---
 
@@ -52,8 +53,13 @@ Each gateway can have multiple actions. An action pairs a **control point** with
 | `UNLOCK` | Door | Unlocks a door control point |
 | `TURN_ON` | Switch | Turns on a switch control point |
 | `TURN_OFF` | Switch | Turns off a switch control point |
+| `TOGGLE` | Switch | Reads the switch's live state from its provider and writes the opposite |
 
-Action types are validated against the control point's class — doors only support `UNLOCK`, and switches only support `TURN_ON` / `TURN_OFF`.
+Action types are validated against the control point's class — doors only support `UNLOCK`, and switches support `TURN_ON`, `TURN_OFF` and `TOGGLE`. Each control point can appear in a gateway only once.
+
+Control points with **Requires buddy** set can't be added to a gateway, because a gateway takes only one card. The admin dialogs show them disabled. If a point is switched to requires-buddy after it was added, invocations fail with `ACTION_UNAVAILABLE`.
+
+`TOGGLE` never trusts the cached `currentState`. A failed read is logged as a failed `READ_STATE`. Control logs record the resolved `TURN_ON` / `TURN_OFF`, never `TOGGLE`, because the session-end check looks for the user's last successful `TURN_ON`.
 
 ---
 
@@ -68,7 +74,7 @@ Control gateways are managed from the **Control > Gateways** page in the admin c
 | `control.gateways.list` | View the list of gateways |
 | `control.gateways.get` | View gateway details |
 | `control.gateways.create` | Create new gateways |
-| `control.gateways.update` | Edit existing gateways |
+| `control.gateways.update` | Edit existing gateways and regenerate their tokens |
 | `control.gateways.delete` | Delete gateways |
 
 ### Creating a Gateway
@@ -79,11 +85,15 @@ Control gateways are managed from the **Control > Gateways** page in the admin c
 4. Add one or more actions by selecting a control point and the desired operation.
 5. Click **Create**.
 
-After creation, the access token is displayed **once** in a dialog. Copy and store it immediately — the token cannot be retrieved again. If lost, you must create a new gateway.
+After creation, the access token is displayed **once** in a dialog. Copy and store it immediately — the token cannot be retrieved again.
 
 ### Editing a Gateway
 
-You can update a gateway's name, description, active status, and actions at any time. The access token cannot be changed or viewed after initial creation.
+You can update a gateway's name, description, active status, and actions at any time.
+
+### Regenerating the Token
+
+The key button on a gateway's row replaces its access token and shows the new one once. The old token stops working immediately, so any device using it fails until it is given the new token. Use this when a token is lost or may have leaked.
 
 ### Deleting a Gateway
 
@@ -118,9 +128,11 @@ This endpoint does **not** use the standard API token authentication. Instead, i
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `credentialValue` | string | Yes | The raw credential value (e.g., a card number) to identify the user |
+| `credentialValue` | string | Yes | The credential value (e.g., a card number) to identify the user. It is hashed as sent, so card readers must send the parsed form `@ecehive/card-scanner` produces (9-digit zero-padded card number, or the full 16-digit mobile credential). |
 
 ### Success Response
+
+Returned only when every action succeeded.
 
 ```json
 {
@@ -135,7 +147,9 @@ This endpoint does **not** use the standard API token authentication. Instead, i
         "controlPointId": "uuid-here",
         "controlPointName": "Front Door",
         "action": "UNLOCK",
-        "success": true
+        "status": "done",
+        "resolvedAction": "UNLOCK",
+        "newState": true
       }
     ]
   }
@@ -144,22 +158,29 @@ This endpoint does **not** use the standard API token authentication. Instead, i
 
 ### Result Fields
 
-Each entry in `results` contains:
+Each entry in `results` (on success, or in `error.details.results` on failure) contains:
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `controlPointId` | string | The control point's UUID |
 | `controlPointName` | string | Human-readable name |
-| `action` | string | The action that was attempted |
-| `success` | boolean | Whether the action executed successfully |
-| `error` | string? | Error message if `success` is `false` |
-| `skipped` | boolean? | `true` if the action was skipped |
-| `skipReason` | string? | Reason the action was skipped |
+| `action` | string | The action configured on the gateway (may be `TOGGLE`) |
+| `status` | string | `done`, `blocked`, `failed` or `not_run` |
+| `resolvedAction` | string | `done` only. The action performed; `TOGGLE` resolves to `TURN_ON` or `TURN_OFF` |
+| `newState` | boolean | `done` only. The state written |
+| `reason` | string | `blocked` only. One of the reasons below |
+| `message` | string | `failed` only. Why the provider read or write failed |
 
-Actions may be skipped when:
-- The control point is inactive
-- The control provider is inactive
-- The user is not authorized for the control point
+`not_run` means the action could have run, but didn't because another action was blocked or failed.
+
+| `reason` | Meaning |
+|----------|---------|
+| `POINT_INACTIVE` | The control point is inactive |
+| `PROVIDER_INACTIVE` | The control provider is inactive |
+| `REQUIRES_BUDDY` | The control point requires a buddy |
+| `TOGGLE_NOT_SWITCH` | The action is `TOGGLE` on a door |
+| `NOT_AUTHORIZED` | The user is not authorized for the control point |
+| `NO_ACTIVE_SESSION` | The user has no active session |
 
 ---
 
@@ -174,7 +195,11 @@ Authorization is determined per control point:
 3. **Role-based authorization**: The user has a role listed in the control point's authorized roles.
 4. **Unrestricted**: The control point has no authorized users or roles configured (open to all).
 
-If a user is not authorized for a particular action, that action is skipped with a `skipReason` of `"User is not authorized for this control point"`. Other actions in the same gateway invocation are still attempted.
+If the user is not authorized for any one action, the request fails with `NOT_AUTHORIZED` and nothing runs.
+
+### Active Session
+
+Every action requires the user to have an active general or staffing session, matching the control kiosk. System users are exempt. The check runs before any provider is contacted.
 
 ---
 
@@ -187,10 +212,13 @@ If a user is not authorized for a particular action, that action is skipped with
   "success": false,
   "error": {
     "code": "ERROR_CODE",
-    "message": "Human-readable error message"
+    "message": "Human-readable error message",
+    "details": { "results": [] }
   }
 }
 ```
+
+`details.results` gives the outcome of every action. It is present for `NOT_AUTHORIZED`, `ACTION_UNAVAILABLE`, `CONTROL_UNAVAILABLE` and `EXECUTION_FAILED`.
 
 ### Error Codes
 
@@ -200,7 +228,12 @@ If a user is not authorized for a particular action, that action is skipped with
 | `INVALID_TOKEN` | 401 | The access token does not match any gateway |
 | `INVALID_CREDENTIAL` | 401 | No user found for the provided credential value |
 | `GATEWAY_INACTIVE` | 403 | The gateway exists but is not active |
+| `NOT_AUTHORIZED` | 403 | Every blocked action has reason `NOT_AUTHORIZED` or `NO_ACTIVE_SESSION`; nothing ran |
+| `ACTION_UNAVAILABLE` | 409 | An action is blocked for any other reason, so it can't run for anyone right now; nothing ran. Takes precedence over `NOT_AUTHORIZED`. |
+| `CONTROL_UNAVAILABLE` | 502 | A `TOGGLE` switch's live state couldn't be read; nothing ran |
+| `EXECUTION_FAILED` | 502 | An action failed while running. The message says how many actions ran before it; those were not undone. |
 | `VALIDATION_ERROR` | 400 | Request body validation failed |
+| `INTERNAL_ERROR` | 500 | Includes a database error after an action ran. The equipment may have changed; check the control logs. |
 
 ---
 
@@ -230,38 +263,39 @@ curl -X POST "https://your-domain.com/api/rest/control/gateways/invoke" \
         "controlPointId": "a1b2c3d4-...",
         "controlPointName": "Lab Door",
         "action": "UNLOCK",
-        "success": true
+        "status": "done",
+        "resolvedAction": "UNLOCK",
+        "newState": true
       }
     ]
   }
 }
 ```
 
-### Response — Unauthorized User
+### Response — Unauthorized User (403)
 
 ```json
 {
-  "success": true,
-  "data": {
-    "gatewayId": 1,
-    "gatewayName": "Lab Entry Gateway",
-    "userId": 99,
-    "username": "visitor1",
-    "results": [
-      {
-        "controlPointId": "a1b2c3d4-...",
-        "controlPointName": "Lab Door",
-        "action": "UNLOCK",
-        "success": false,
-        "skipped": true,
-        "skipReason": "User is not authorized for this control point"
-      }
-    ]
+  "success": false,
+  "error": {
+    "code": "NOT_AUTHORIZED",
+    "message": "User is not authorized for every action on this gateway",
+    "details": {
+      "results": [
+        {
+          "controlPointId": "a1b2c3d4-...",
+          "controlPointName": "Lab Door",
+          "action": "UNLOCK",
+          "status": "blocked",
+          "reason": "NOT_AUTHORIZED"
+        }
+      ]
+    }
   }
 }
 ```
 
-### Response — Invalid Token
+### Response — Invalid Token (401)
 
 ```json
 {
