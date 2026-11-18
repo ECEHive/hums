@@ -231,7 +231,7 @@ function EditGatewayForm({
 								onChange={(e) => field.handleChange(e.target.value)}
 								onBlur={field.handleBlur}
 							/>
-							<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							<FieldError errors={field.state.meta.errors} />
 						</Field>
 					)}
 				</form.Field>
@@ -247,7 +247,7 @@ function EditGatewayForm({
 								onBlur={field.handleBlur}
 								rows={2}
 							/>
-							<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+							<FieldError errors={field.state.meta.errors} />
 						</Field>
 					)}
 				</form.Field>

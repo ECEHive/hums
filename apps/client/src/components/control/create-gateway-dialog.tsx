@@ -160,7 +160,7 @@ export function CreateGatewayDialog({
 									onBlur={field.handleBlur}
 									placeholder="e.g., Front Door Gateway"
 								/>
-								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								<FieldError errors={field.state.meta.errors} />
 							</Field>
 						)}
 					</form.Field>
@@ -177,7 +177,7 @@ export function CreateGatewayDialog({
 									placeholder="Optional description..."
 									rows={2}
 								/>
-								<FieldError>{field.state.meta.errors.join(", ")}</FieldError>
+								<FieldError errors={field.state.meta.errors} />
 							</Field>
 						)}
 					</form.Field>
