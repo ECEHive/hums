@@ -171,10 +171,17 @@ function LogsPage() {
 						Success
 					</Badge>
 				) : (
-					<Badge variant="destructive">
-						<XCircleIcon className="h-3 w-3 mr-1" />
-						Failed
-					</Badge>
+					<div className="space-y-1">
+						<Badge variant="destructive">
+							<XCircleIcon className="h-3 w-3 mr-1" />
+							Failed
+						</Badge>
+						{row.original.errorMessage && (
+							<p className="text-xs text-muted-foreground max-w-xs break-words">
+								{row.original.errorMessage}
+							</p>
+						)}
+					</div>
 				),
 		},
 	];
