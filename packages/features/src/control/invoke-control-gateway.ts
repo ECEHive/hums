@@ -3,8 +3,9 @@
  *
  * Runs every action on a gateway for the user behind a credential, or none
  * of them:
- * 1. Every action is checked without contacting a provider. If any action
- *    can't run, the invocation is rejected.
+ * 1. Every action is checked (equipment, authorization, active session)
+ *    without contacting a provider. If any action can't run, the invocation
+ *    is rejected.
  * 2. The actions run in order, stopping at the first failed write. Providers
  *    have no transactions, so actions that already ran are reported, not
  *    undone.
@@ -19,6 +20,7 @@ import { prisma } from "@ecehive/prisma";
 import { hashCredential } from "../credentials/hash";
 import { getControlProvider } from "./providers";
 import type { ControlOperationResult } from "./providers/types";
+import { getUserActiveSession } from "./session-control-validation";
 
 export interface InvokeControlGatewayInput {
 	accessToken: string;
@@ -28,10 +30,14 @@ export interface InvokeControlGatewayInput {
 export type BlockReason =
 	| "POINT_INACTIVE"
 	| "PROVIDER_INACTIVE"
-	| "NOT_AUTHORIZED";
+	| "NOT_AUTHORIZED"
+	| "NO_ACTIVE_SESSION";
 
 /** Reasons that depend on who scanned, rather than on the equipment. */
-const USER_REASONS: ReadonlySet<BlockReason> = new Set(["NOT_AUTHORIZED"]);
+const USER_REASONS: ReadonlySet<BlockReason> = new Set([
+	"NOT_AUTHORIZED",
+	"NO_ACTIVE_SESSION",
+]);
 
 export type GatewayActionResult = {
 	controlPointId: string;
@@ -130,7 +136,11 @@ export async function invokeControlGateway(
 
 	const { actions } = gateway;
 	const roleIds = new Set(user.roles.map((r) => r.id));
-	rejectIfBlocked(actions.map((a) => checkAction(a, user, roleIds)));
+	const hasSession =
+		user.isSystemUser || (await getUserActiveSession(prisma, user.id)) !== null;
+	rejectIfBlocked(
+		actions.map((a) => checkAction(a, user, roleIds, hasSession)),
+	);
 
 	const planned = actions.map((gatewayAction) => ({
 		gatewayAction,
@@ -183,6 +193,7 @@ function checkAction(
 	gatewayAction: GatewayAction,
 	user: GatewayUser,
 	roleIds: Set<number>,
+	hasSession: boolean,
 ): GatewayActionResult {
 	const point = gatewayAction.controlPoint;
 	const blocked = (reason: BlockReason): GatewayActionResult => ({
@@ -201,6 +212,9 @@ function checkAction(
 			point.authorizedUsers.some((u) => u.id === user.id) ||
 			point.authorizedRoles.some((r) => roleIds.has(r.id));
 		if (!authorized) return blocked("NOT_AUTHORIZED");
+		// Matches the control kiosk: operating any point requires being signed
+		// in to the space.
+		if (!hasSession) return blocked("NO_ACTIVE_SESSION");
 	}
 	return notRun(gatewayAction);
 }
@@ -221,7 +235,9 @@ function rejectIfBlocked(checked: GatewayActionResult[]): void {
 	}
 	throw new GatewayError(
 		"NOT_AUTHORIZED",
-		"User is not authorized for every action on this gateway",
+		reasons.every((r) => r === "NO_ACTIVE_SESSION")
+			? "User must sign in to the space before using this gateway"
+			: "User is not authorized for every action on this gateway",
 		checked,
 	);
 }

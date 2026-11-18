@@ -4,6 +4,7 @@ const { mockPrisma, mockProvider } = vi.hoisted(() => ({
 	mockPrisma: {
 		controlGateway: { findUnique: vi.fn() },
 		credential: { findUnique: vi.fn() },
+		session: { findFirst: vi.fn() },
 		controlLog: { create: vi.fn() },
 		controlPoint: { update: vi.fn() },
 	},
@@ -89,6 +90,7 @@ beforeEach(() => {
 			return Promise.resolve(user ? { user } : null);
 		},
 	);
+	mockPrisma.session.findFirst.mockResolvedValue({ id: 99 });
 	mockProvider.writeState.mockResolvedValue({ success: true });
 });
 
@@ -248,6 +250,57 @@ describe("all or nothing", () => {
 				newState: false,
 			},
 		]);
+	});
+});
+
+describe("active session", () => {
+	it.each([
+		["TURN_ON", "SWITCH"],
+		["TURN_OFF", "SWITCH"],
+		["UNLOCK", "DOOR"],
+	])("is required for %s", async (action, controlClass) => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([{ action, controlPoint: point({ controlClass }) }]),
+		);
+		mockPrisma.session.findFirst.mockResolvedValue(null);
+
+		const error = await expectGatewayError(invoke(), "NOT_AUTHORIZED");
+
+		expect(mockProvider.writeState).not.toHaveBeenCalled();
+		expect(error.results).toMatchObject([
+			{ status: "blocked", reason: "NO_ACTIVE_SESSION" },
+		]);
+		expect(error.message).toContain("sign in");
+	});
+
+	it("says not authorized when the user also lacks a permission", async () => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([
+				{ action: "TURN_ON", controlPoint: point() },
+				{
+					action: "TURN_ON",
+					controlPoint: point({ id: "p2", authorizedRoles: [{ id: 999 }] }),
+				},
+			]),
+		);
+		mockPrisma.session.findFirst.mockResolvedValue(null);
+
+		const error = await expectGatewayError(invoke(), "NOT_AUTHORIZED");
+
+		expect(error.message).toContain("not authorized");
+	});
+
+	it("is not required for system users", async () => {
+		users["333"] = { ...operator, id: 3, isSystemUser: true };
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([{ action: "TURN_ON", controlPoint: point() }]),
+		);
+		mockPrisma.session.findFirst.mockResolvedValue(null);
+
+		const result = await invoke("333");
+
+		expect(result.results[0].status).toBe("done");
+		delete users["333"];
 	});
 });
 
