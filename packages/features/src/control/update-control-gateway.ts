@@ -5,18 +5,17 @@
 import type { ControlAction } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
-
-export interface UpdateControlGatewayActionInput {
-	controlPointId: string;
-	action: "TURN_ON" | "TURN_OFF" | "UNLOCK";
-}
+import {
+	type GatewayActionInput,
+	validateGatewayActions,
+} from "./validate-gateway-actions";
 
 export interface UpdateControlGatewayInput {
 	id: number;
 	name?: string;
 	description?: string | null;
 	isActive?: boolean;
-	actions?: UpdateControlGatewayActionInput[];
+	actions?: GatewayActionInput[];
 }
 
 /**
@@ -34,49 +33,7 @@ export async function updateControlGateway(input: UpdateControlGatewayInput) {
 		});
 	}
 
-	// Validate actions if being updated
-	if (input.actions && input.actions.length > 0) {
-		const controlPointIds = Array.from(
-			new Set(input.actions.map((a) => a.controlPointId)),
-		);
-		const existingPoints = await prisma.controlPoint.findMany({
-			where: { id: { in: controlPointIds } },
-			select: { id: true, controlClass: true },
-		});
-
-		const existingIds = new Set(existingPoints.map((p) => p.id));
-		const missingIds = controlPointIds.filter((id) => !existingIds.has(id));
-		if (missingIds.length > 0) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: `Control points not found: ${missingIds.join(", ")}`,
-			});
-		}
-
-		// Validate action compatibility with control class
-		for (const action of input.actions) {
-			const point = existingPoints.find((p) => p.id === action.controlPointId);
-			if (!point) continue;
-
-			if (point.controlClass === "DOOR" && action.action !== "UNLOCK") {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: `Door control points can only use the UNLOCK action (point: ${action.controlPointId})`,
-				});
-			}
-
-			if (
-				point.controlClass === "SWITCH" &&
-				action.action !== "TURN_ON" &&
-				action.action !== "TURN_OFF"
-			) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: `Switch control points can only use TURN_ON or TURN_OFF actions (point: ${action.controlPointId})`,
-				});
-			}
-		}
-	}
+	if (input.actions) await validateGatewayActions(input.actions);
 
 	// Use a transaction to update gateway and replace actions atomically
 	const gateway = await prisma.$transaction(async (tx) => {

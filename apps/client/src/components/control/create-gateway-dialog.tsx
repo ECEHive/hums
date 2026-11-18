@@ -26,18 +26,17 @@ import { checkPermissions } from "@/lib/permissions";
 import {
 	type GatewayActionRow,
 	GatewayActionsEditor,
+	gatewayActionsError,
 } from "./gateway-actions-editor";
 
+// Actions are validated on their own field: TanStack Form never clears a
+// schema error on a nested path like actions[0].controlPointId, which kept
+// Create disabled after one failed check.
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255),
 	description: z.string().max(1000).optional(),
 	isActive: z.boolean(),
-	actions: z.array(
-		z.object({
-			controlPointId: z.string().uuid(),
-			action: z.enum(["TURN_ON", "TURN_OFF", "UNLOCK"]),
-		}),
-	),
+	actions: z.array(z.custom<GatewayActionRow>()),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -85,6 +84,7 @@ export function CreateGatewayDialog({
 		} as FormValues,
 		validators: { onSubmit: formSchema },
 		onSubmit: async ({ value }) => {
+			setServerError(null);
 			try {
 				const result = await createMutation.mutateAsync({
 					name: value.name,
@@ -182,12 +182,18 @@ export function CreateGatewayDialog({
 						)}
 					</form.Field>
 
-					<form.Field name="actions">
+					<form.Field
+						name="actions"
+						validators={{
+							onSubmit: ({ value }) => gatewayActionsError(value),
+						}}
+					>
 						{(field) => (
 							<GatewayActionsEditor
 								actions={field.state.value}
 								onChange={field.handleChange}
 								controlPoints={controlPoints}
+								error={field.state.meta.errors.join(" ")}
 							/>
 						)}
 					</form.Field>

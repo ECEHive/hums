@@ -2,6 +2,7 @@ import type { trpc } from "@ecehive/trpc/client";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import type { JSX } from "react/jsx-runtime";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field";
 import {
 	Select,
 	SelectContent,
@@ -30,6 +31,20 @@ const ACTION_LABELS: Record<GatewayActionValue, string> = {
 const DOOR_ACTIONS: GatewayActionValue[] = ["UNLOCK"];
 const SWITCH_ACTIONS: GatewayActionValue[] = ["TURN_ON", "TURN_OFF"];
 
+/** Use as the actions field's onSubmit validator. */
+export function gatewayActionsError(
+	actions: GatewayActionRow[],
+): string | undefined {
+	if (actions.some((a) => !a.controlPointId)) {
+		return "Choose a control point for every action.";
+	}
+	const ids = actions.map((a) => a.controlPointId);
+	if (new Set(ids).size !== ids.length) {
+		return "Each control point can only be used once.";
+	}
+	return undefined;
+}
+
 // Both selects ignore "": inside a <form>, Radix's hidden native <select> fires
 // a change to "" when the value is briefly missing from its options (e.g. the
 // action list switching between switch and door actions), which would
@@ -38,10 +53,12 @@ export function GatewayActionsEditor({
 	actions,
 	onChange,
 	controlPoints,
+	error,
 }: {
 	actions: GatewayActionRow[];
 	onChange: (actions: GatewayActionRow[]) => void;
 	controlPoints: ControlPointOption[];
+	error?: string;
 }): JSX.Element {
 	const updateRow = (index: number, row: GatewayActionRow) =>
 		onChange(actions.map((a, i) => (i === index ? row : a)));
@@ -139,6 +156,7 @@ export function GatewayActionsEditor({
 					);
 				})}
 			</div>
+			{error && <FieldError>{error}</FieldError>}
 		</div>
 	);
 }

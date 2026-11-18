@@ -4,18 +4,16 @@
 
 import type { ControlAction } from "@ecehive/prisma";
 import { prisma } from "@ecehive/prisma";
-import { TRPCError } from "@trpc/server";
-
-export interface CreateControlGatewayActionInput {
-	controlPointId: string;
-	action: "TURN_ON" | "TURN_OFF" | "UNLOCK";
-}
+import {
+	type GatewayActionInput,
+	validateGatewayActions,
+} from "./validate-gateway-actions";
 
 export interface CreateControlGatewayInput {
 	name: string;
 	description?: string;
 	isActive?: boolean;
-	actions: CreateControlGatewayActionInput[];
+	actions: GatewayActionInput[];
 }
 
 /**
@@ -32,49 +30,7 @@ function generateAccessToken(): string {
  * Creates a new control gateway with associated actions
  */
 export async function createControlGateway(input: CreateControlGatewayInput) {
-	// Validate that all referenced control points exist
-	if (input.actions.length > 0) {
-		const controlPointIds = Array.from(
-			new Set(input.actions.map((a) => a.controlPointId)),
-		);
-		const existingPoints = await prisma.controlPoint.findMany({
-			where: { id: { in: controlPointIds } },
-			select: { id: true, controlClass: true },
-		});
-
-		const existingIds = new Set(existingPoints.map((p) => p.id));
-		const missingIds = controlPointIds.filter((id) => !existingIds.has(id));
-		if (missingIds.length > 0) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: `Control points not found: ${missingIds.join(", ")}`,
-			});
-		}
-
-		// Validate action compatibility with control class
-		for (const action of input.actions) {
-			const point = existingPoints.find((p) => p.id === action.controlPointId);
-			if (!point) continue;
-
-			if (point.controlClass === "DOOR" && action.action !== "UNLOCK") {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: `Door control points can only use the UNLOCK action (point: ${action.controlPointId})`,
-				});
-			}
-
-			if (
-				point.controlClass === "SWITCH" &&
-				action.action !== "TURN_ON" &&
-				action.action !== "TURN_OFF"
-			) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: `Switch control points can only use TURN_ON or TURN_OFF actions (point: ${action.controlPointId})`,
-				});
-			}
-		}
-	}
+	await validateGatewayActions(input.actions);
 
 	const accessToken = generateAccessToken();
 
