@@ -30,6 +30,10 @@ const ACTION_LABELS: Record<GatewayActionValue, string> = {
 const DOOR_ACTIONS: GatewayActionValue[] = ["UNLOCK"];
 const SWITCH_ACTIONS: GatewayActionValue[] = ["TURN_ON", "TURN_OFF"];
 
+// Both selects ignore "": inside a <form>, Radix's hidden native <select> fires
+// a change to "" when the value is briefly missing from its options (e.g. the
+// action list switching between switch and door actions), which would
+// otherwise wipe the selection.
 export function GatewayActionsEditor({
 	actions,
 	onChange,
@@ -78,12 +82,13 @@ export function GatewayActionsEditor({
 							<Select
 								value={row.controlPointId}
 								onValueChange={(controlPointId) => {
+									if (!controlPointId) return;
 									const next = controlPoints.find(
 										(p) => p.id === controlPointId,
 									);
 									let action = row.action;
 									if (next?.controlClass === "DOOR") action = "UNLOCK";
-									else if (next && action === "UNLOCK") action = "TURN_ON";
+									else if (action === "UNLOCK") action = "TURN_ON";
 									updateRow(index, { controlPointId, action });
 								}}
 							>
@@ -101,12 +106,13 @@ export function GatewayActionsEditor({
 
 							<Select
 								value={row.action}
-								onValueChange={(action) =>
+								onValueChange={(action) => {
+									if (!action) return;
 									updateRow(index, {
 										...row,
 										action: action as GatewayActionValue,
-									})
-								}
+									});
+								}}
 							>
 								<SelectTrigger className="w-[130px]">
 									<SelectValue />
