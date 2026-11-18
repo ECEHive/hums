@@ -44,7 +44,7 @@ describe("validateGatewayActions", () => {
 	it("accepts one valid action per point", async () => {
 		await expect(
 			validateGatewayActions([
-				{ controlPointId: SAW, action: "TURN_ON" },
+				{ controlPointId: SAW, action: "TOGGLE" },
 				{ controlPointId: DOOR, action: "UNLOCK" },
 			]),
 		).resolves.toBeUndefined();
@@ -68,6 +68,7 @@ describe("validateGatewayActions", () => {
 	it.each([
 		[SAW, "UNLOCK", "Switch control points"],
 		[DOOR, "TURN_ON", "Door control points"],
+		[DOOR, "TOGGLE", "Door control points"],
 		[BUDDY, "TURN_ON", "Buddy-required"],
 		["00000000-0000-4000-8000-000000000009", "TURN_ON", "not found"],
 	] as const)("rejects %s with %s", async (controlPointId, action, message) => {

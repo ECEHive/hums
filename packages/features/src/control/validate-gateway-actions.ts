@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 
 export interface GatewayActionInput {
 	controlPointId: string;
-	action: "TURN_ON" | "TURN_OFF" | "UNLOCK";
+	action: "TURN_ON" | "TURN_OFF" | "UNLOCK" | "TOGGLE";
 }
 
 function badRequest(message: string): never {
@@ -59,7 +59,7 @@ export async function validateGatewayActions(
 
 		if (point.controlClass === "SWITCH" && action.action === "UNLOCK") {
 			badRequest(
-				`Switch control points can only use TURN_ON or TURN_OFF actions (point: ${point.name})`,
+				`Switch control points can only use TURN_ON, TURN_OFF or TOGGLE actions (point: ${point.name})`,
 			);
 		}
 	}

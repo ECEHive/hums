@@ -551,6 +551,9 @@ enum ControlAction {
   TURN_OFF
   UNLOCK
   READ_STATE
+  // Gateway-only: resolved to TURN_ON / TURN_OFF at invoke time from the
+  // provider's live state. Control logs always record the resolved action.
+  TOGGLE
 }
 
 // ===== Control Gateways =====

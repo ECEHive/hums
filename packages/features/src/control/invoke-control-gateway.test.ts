@@ -9,6 +9,7 @@ const { mockPrisma, mockProvider } = vi.hoisted(() => ({
 		controlPoint: { update: vi.fn() },
 	},
 	mockProvider: {
+		readState: vi.fn(),
 		writeState: vi.fn(),
 	},
 }));
@@ -241,6 +242,7 @@ describe("all or nothing", () => {
 				controlPointName: "Allowed",
 				action: "TURN_ON",
 				status: "done",
+				resolvedAction: "TURN_ON",
 				newState: true,
 			},
 			{
@@ -248,8 +250,113 @@ describe("all or nothing", () => {
 				controlPointName: "Bandsaw",
 				action: "TURN_OFF",
 				status: "done",
+				resolvedAction: "TURN_OFF",
 				newState: false,
 			},
+		]);
+	});
+});
+
+describe("TOGGLE", () => {
+	it("turns an off switch on, using the live state, and logs TURN_ON", async () => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			// Cached state says on; the provider says off. The provider wins.
+			gateway([
+				{ action: "TOGGLE", controlPoint: point({ currentState: true }) },
+			]),
+		);
+		mockProvider.readState.mockResolvedValue({ success: true, state: false });
+
+		const result = await invoke();
+
+		expect(mockProvider.writeState).toHaveBeenCalledWith({}, {}, true, "op");
+		expect(mockPrisma.controlLog.create).toHaveBeenCalledWith({
+			data: expect.objectContaining({
+				action: "TURN_ON",
+				previousState: false,
+				newState: true,
+			}),
+		});
+		expect(result.results).toMatchObject([
+			{
+				action: "TOGGLE",
+				status: "done",
+				resolvedAction: "TURN_ON",
+				newState: true,
+			},
+		]);
+	});
+
+	it("turns an on switch off", async () => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([{ action: "TOGGLE", controlPoint: point() }]),
+		);
+		mockProvider.readState.mockResolvedValue({ success: true, state: true });
+
+		const result = await invoke();
+
+		expect(mockProvider.writeState).toHaveBeenCalledWith({}, {}, false, "op");
+		expect(result.results).toMatchObject([
+			{ status: "done", resolvedAction: "TURN_OFF", newState: false },
+		]);
+	});
+
+	it("runs nothing when a live state cannot be read", async () => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([
+				{ action: "TURN_ON", controlPoint: point({ id: "p0" }) },
+				{ action: "TOGGLE", controlPoint: point() },
+			]),
+		);
+		mockProvider.readState.mockResolvedValue({
+			success: false,
+			errorMessage: "PLC timeout",
+		});
+
+		const error = await expectGatewayError(invoke(), "CONTROL_UNAVAILABLE");
+
+		expect(mockProvider.writeState).not.toHaveBeenCalled();
+		expect(mockPrisma.controlLog.create).toHaveBeenCalledTimes(1);
+		expect(mockPrisma.controlLog.create).toHaveBeenCalledWith({
+			data: expect.objectContaining({
+				controlPointId: "p1",
+				userId: 1,
+				action: "READ_STATE",
+				success: false,
+				errorMessage: "PLC timeout",
+			}),
+		});
+		expect(error.results).toMatchObject([
+			{ status: "not_run" },
+			{ status: "failed", message: expect.stringContaining("PLC timeout") },
+		]);
+	});
+
+	it("treats a provider exception as a failed read", async () => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([{ action: "TOGGLE", controlPoint: point() }]),
+		);
+		mockProvider.readState.mockRejectedValue(new Error("socket hang up"));
+
+		const error = await expectGatewayError(invoke(), "CONTROL_UNAVAILABLE");
+
+		expect(error.results).toMatchObject([
+			{ status: "failed", message: expect.stringContaining("socket hang up") },
+		]);
+	});
+
+	it("is rejected on door control points", async () => {
+		mockPrisma.controlGateway.findUnique.mockResolvedValue(
+			gateway([
+				{ action: "TOGGLE", controlPoint: point({ controlClass: "DOOR" }) },
+			]),
+		);
+
+		const error = await expectGatewayError(invoke(), "ACTION_UNAVAILABLE");
+
+		expect(mockProvider.readState).not.toHaveBeenCalled();
+		expect(error.results).toMatchObject([
+			{ status: "blocked", reason: "TOGGLE_NOT_SWITCH" },
 		]);
 	});
 });
@@ -258,6 +365,7 @@ describe("active session", () => {
 	it.each([
 		["TURN_ON", "SWITCH"],
 		["TURN_OFF", "SWITCH"],
+		["TOGGLE", "SWITCH"],
 		["UNLOCK", "DOOR"],
 	])("is required for %s", async (action, controlClass) => {
 		mockPrisma.controlGateway.findUnique.mockResolvedValue(
@@ -267,6 +375,8 @@ describe("active session", () => {
 
 		const error = await expectGatewayError(invoke(), "NOT_AUTHORIZED");
 
+		// No PLC traffic at all for a user who is not signed in.
+		expect(mockProvider.readState).not.toHaveBeenCalled();
 		expect(mockProvider.writeState).not.toHaveBeenCalled();
 		expect(error.results).toMatchObject([
 			{ status: "blocked", reason: "NO_ACTIVE_SESSION" },

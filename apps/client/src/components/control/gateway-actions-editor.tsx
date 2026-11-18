@@ -11,7 +11,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 
-export type GatewayActionValue = "TURN_ON" | "TURN_OFF" | "UNLOCK";
+export type GatewayActionValue = "TURN_ON" | "TURN_OFF" | "UNLOCK" | "TOGGLE";
 
 export type GatewayActionRow = {
 	controlPointId: string;
@@ -26,10 +26,11 @@ const ACTION_LABELS: Record<GatewayActionValue, string> = {
 	TURN_ON: "Turn On",
 	TURN_OFF: "Turn Off",
 	UNLOCK: "Unlock",
+	TOGGLE: "Toggle",
 };
 
 const DOOR_ACTIONS: GatewayActionValue[] = ["UNLOCK"];
-const SWITCH_ACTIONS: GatewayActionValue[] = ["TURN_ON", "TURN_OFF"];
+const SWITCH_ACTIONS: GatewayActionValue[] = ["TURN_ON", "TURN_OFF", "TOGGLE"];
 
 /** Use as the actions field's onSubmit validator. */
 export function gatewayActionsError(

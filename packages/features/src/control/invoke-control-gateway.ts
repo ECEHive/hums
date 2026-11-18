@@ -6,7 +6,9 @@
  * 1. Every action is checked (equipment, authorization, active session)
  *    without contacting a provider. If any action can't run, the invocation
  *    is rejected.
- * 2. The actions run in order, stopping at the first failed write. Providers
+ * 2. Every TOGGLE reads its switch's live state. If any read fails, the
+ *    invocation is rejected.
+ * 3. The actions run in order, stopping at the first failed write. Providers
  *    have no transactions, so actions that already ran are reported, not
  *    undone.
  */
@@ -31,6 +33,7 @@ export type BlockReason =
 	| "POINT_INACTIVE"
 	| "PROVIDER_INACTIVE"
 	| "REQUIRES_BUDDY"
+	| "TOGGLE_NOT_SWITCH"
 	| "NOT_AUTHORIZED"
 	| "NO_ACTIVE_SESSION";
 
@@ -45,7 +48,7 @@ export type GatewayActionResult = {
 	controlPointName: string;
 	action: ControlAction;
 } & (
-	| { status: "done"; newState: boolean }
+	| { status: "done"; resolvedAction: ControlAction; newState: boolean }
 	| { status: "blocked"; reason: BlockReason }
 	| { status: "failed"; message: string }
 	| { status: "not_run" }
@@ -65,6 +68,7 @@ export type GatewayErrorCode =
 	| "INVALID_CREDENTIAL"
 	| "NOT_AUTHORIZED"
 	| "ACTION_UNAVAILABLE"
+	| "CONTROL_UNAVAILABLE"
 	| "EXECUTION_FAILED";
 
 export class GatewayError extends Error {
@@ -143,11 +147,7 @@ export async function invokeControlGateway(
 		actions.map((a) => checkAction(a, user, roleIds, hasSession)),
 	);
 
-	const planned = actions.map((gatewayAction) => ({
-		gatewayAction,
-		resolvedAction: gatewayAction.action,
-		previousState: gatewayAction.controlPoint.currentState,
-	}));
+	const planned = await planActions(actions, user);
 	const results = await runActions(planned, user);
 
 	return {
@@ -208,6 +208,9 @@ function checkAction(
 	// Gateways can't collect a second card. Create and update reject buddy
 	// points; this catches points flagged after they were added.
 	if (point.requiresBuddy) return blocked("REQUIRES_BUDDY");
+	if (gatewayAction.action === "TOGGLE" && point.controlClass !== "SWITCH") {
+		return blocked("TOGGLE_NOT_SWITCH");
+	}
 	if (!user.isSystemUser) {
 		const unrestricted =
 			point.authorizedUsers.length === 0 && point.authorizedRoles.length === 0;
@@ -246,6 +249,87 @@ function rejectIfBlocked(checked: GatewayActionResult[]): void {
 	);
 }
 
+type Resolution =
+	| { ok: true; planned: PlannedAction }
+	| { ok: false; message: string };
+
+async function planActions(
+	actions: GatewayAction[],
+	user: GatewayUser,
+): Promise<PlannedAction[]> {
+	const resolutions: Resolution[] = [];
+	for (const gatewayAction of actions) {
+		resolutions.push(await resolveAction(gatewayAction, user));
+	}
+
+	const planned = resolutions.flatMap((r) => (r.ok ? [r.planned] : []));
+	if (planned.length < actions.length) {
+		throw new GatewayError(
+			"CONTROL_UNAVAILABLE",
+			"Could not read the current state of a control point; nothing was run",
+			actions.map((a, i) => {
+				const r = resolutions[i];
+				return r.ok
+					? notRun(a)
+					: { ...describe(a), status: "failed", message: r.message };
+			}),
+		);
+	}
+	return planned;
+}
+
+async function resolveAction(
+	gatewayAction: GatewayAction,
+	user: GatewayUser,
+): Promise<Resolution> {
+	const point = gatewayAction.controlPoint;
+	if (gatewayAction.action !== "TOGGLE") {
+		return {
+			ok: true,
+			planned: {
+				gatewayAction,
+				resolvedAction: gatewayAction.action,
+				previousState: point.currentState,
+			},
+		};
+	}
+
+	// Toggle from the equipment's real state, never the cached one: a stale
+	// currentState would turn the tool the wrong way.
+	let read: ControlOperationResult;
+	try {
+		read = await getControlProvider(
+			point.provider.providerType as ControlProviderType,
+		).readState(point.provider.config, point.providerConfig);
+	} catch (error) {
+		read = { success: false, errorMessage: errorMessage(error) };
+	}
+	if (!read.success || read.state === undefined) {
+		const message = read.errorMessage ?? "The provider returned no state";
+		await prisma.controlLog.create({
+			data: {
+				controlPointId: point.id,
+				userId: user.id,
+				action: "READ_STATE",
+				success: false,
+				errorMessage: message,
+			},
+		});
+		return {
+			ok: false,
+			message: `Could not read the current state: ${message}`,
+		};
+	}
+	return {
+		ok: true,
+		planned: {
+			gatewayAction,
+			resolvedAction: read.state ? "TURN_OFF" : "TURN_ON",
+			previousState: read.state,
+		},
+	};
+}
+
 async function runActions(
 	planned: PlannedAction[],
 	user: GatewayUser,
@@ -276,6 +360,7 @@ async function runActions(
 		results.push({
 			...describe(gatewayAction),
 			status: "done",
+			resolvedAction: p.resolvedAction,
 			newState: targetState,
 		});
 	}
@@ -312,6 +397,8 @@ async function writeAction(
 		write = { success: false, errorMessage: errorMessage(error) };
 	}
 
+	// Always log the resolved action, never TOGGLE: session-end checks look for
+	// the user's last successful TURN_ON.
 	await prisma.controlLog.create({
 		data: {
 			controlPointId: point.id,
