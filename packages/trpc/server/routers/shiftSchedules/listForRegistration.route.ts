@@ -110,7 +110,7 @@ export async function listForRegistrationHandler(
 	const userSchedulesInPeriod = userRegisteredSchedules.filter(
 		(schedule) => schedule.shiftType?.periodId === period.id,
 	);
-	const schedulesForOverlap = userRegisteredSchedules.map(
+	const schedulesForOverlap = userSchedulesInPeriod.map(
 		({ shiftType, ...rest }) => rest,
 	);
 
