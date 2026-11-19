@@ -14,6 +14,7 @@ export const ZSubmitTicketSchema = z.object({
 	// For anonymous submissions
 	submitterEmail: z.string().email().optional(),
 	submitterName: z.string().max(200).optional(),
+	anonymous: z.boolean(),
 });
 
 export async function submitTicketHandler({
@@ -69,8 +70,9 @@ export async function submitTicketHandler({
 	}
 
 	// Get user info if authenticated
+	console.log(input.anonymous);
 	let submitter = null;
-	if (ctx.userId) {
+	if (!input.anonymous && ctx.userId) {
 		submitter = await prisma.user.findUnique({
 			where: { id: ctx.userId },
 		});
@@ -81,7 +83,7 @@ export async function submitTicketHandler({
 		data: {
 			ticketTypeId: input.ticketTypeId,
 			data: validation.data as object,
-			submitterId: ctx.userId ?? null,
+			submitterId: (!input.anonymous ? ctx.userId : null) ?? null,
 			submitterEmail: submitter?.email ?? input.submitterEmail ?? null,
 			submitterName: submitter?.name ?? input.submitterName ?? null,
 			status: "pending",

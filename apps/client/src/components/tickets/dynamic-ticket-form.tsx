@@ -1,5 +1,5 @@
 import { useForm, useStore } from "@tanstack/react-form";
-import { Loader2Icon } from "lucide-react";
+import { HatGlassesIcon, Loader2Icon } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,9 @@ interface DynamicTicketFormProps {
 	fields: TicketField[];
 	onSubmit: (data: Record<string, unknown>) => void;
 	isSubmitting?: boolean;
+	requiresAuth: boolean;
 	submitButtonText?: string;
+	setAnonymous: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Build Zod schema from field definitions (client-side version)
@@ -294,7 +296,9 @@ export function DynamicTicketForm({
 	fields,
 	onSubmit,
 	isSubmitting = false,
+	requiresAuth = false,
 	submitButtonText = "Submit",
+	setAnonymous,
 }: DynamicTicketFormProps) {
 	const form = useDynamicForm(fields, onSubmit);
 
@@ -311,30 +315,59 @@ export function DynamicTicketForm({
 	return (
 		<form
 			className="space-y-4"
-			onSubmit={(e) => {
-				e.preventDefault();
-				form.handleSubmit();
-			}}
 			noValidate
 		>
 			{fields.map((field) => (
 				<DynamicField key={field.id} field={field} form={form} />
 			))}
 
-			<Button
-				type="submit"
-				className="w-full"
-				disabled={isSubmitting || !canSubmit}
-			>
-				{isSubmitting ? (
-					<>
-						<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-						Submitting...
-					</>
-				) : (
-					submitButtonText
-				)}
-			</Button>
+			<div className="grid grid-cols-2 gap-2">
+				<Button
+					type="submit"
+					className={requiresAuth ? "col-span-full w-full" : "w-full"}
+					disabled={isSubmitting || !canSubmit}
+					onClick={(e) => {
+						e.preventDefault();
+						setAnonymous(false);
+						form.handleSubmit();
+					}}
+				>
+					{isSubmitting ? (
+						<>
+							<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+							Submitting...
+						</>
+					) : (
+						submitButtonText
+					)}
+				</Button>
+
+				{!requiresAuth && setAnonymous ? (
+					<Button
+						type="submit"
+						variant="outline"
+						className="w-full"
+						disabled={isSubmitting || !canSubmit}
+						onClick={(e) => {
+							e.preventDefault();
+							setAnonymous(true);
+							form.handleSubmit();
+						}}
+					>
+						{isSubmitting ? (
+							<>
+								<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+								Submitting...
+							</>
+						) : (
+							<>
+								<HatGlassesIcon />
+								{`${submitButtonText} Anonymously`}
+							</>
+						)}
+					</Button>
+				) : null}
+			</div>
 		</form>
 	);
 }

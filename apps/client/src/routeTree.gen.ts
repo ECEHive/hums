@@ -62,7 +62,6 @@ import { Route as AppTicketsMyTicketsIndexRouteImport } from './routes/app/ticke
 import { Route as AppTicketsAdminIndexRouteImport } from './routes/app/tickets/admin/index'
 import { Route as AppShiftsManageUsersIndexRouteImport } from './routes/app/shifts/manage-users.index'
 import { Route as AppAppMeIndexRouteImport } from './routes/app/_app/me/index'
-import { Route as AppTicketsSubmitTicketTypeIdRouteImport } from './routes/app/tickets/submit.$ticketTypeId'
 import { Route as AppTicketsMyTicketsTicketIdRouteImport } from './routes/app/tickets/my-tickets/$ticketId'
 import { Route as AppTicketsAdminTypesRouteImport } from './routes/app/tickets/admin/types'
 import { Route as AppTicketsAdminTicketIdRouteImport } from './routes/app/tickets/admin/$ticketId'
@@ -340,12 +339,6 @@ const AppAppMeIndexRoute = AppAppMeIndexRouteImport.update({
   path: '/me/',
   getParentRoute: () => AppAppRoute,
 } as any)
-const AppTicketsSubmitTicketTypeIdRoute =
-  AppTicketsSubmitTicketTypeIdRouteImport.update({
-    id: '/submit/$ticketTypeId',
-    path: '/submit/$ticketTypeId',
-    getParentRoute: () => AppTicketsRoute,
-  } as any)
 const AppTicketsMyTicketsTicketIdRoute =
   AppTicketsMyTicketsTicketIdRouteImport.update({
     id: '/$ticketId',
@@ -428,7 +421,6 @@ export interface FileRoutesByFullPath {
   '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
-  '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/me/': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
   '/app/tickets/admin/': typeof AppTicketsAdminIndexRoute
@@ -481,7 +473,6 @@ export interface FileRoutesByTo {
   '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
-  '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/me': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users': typeof AppShiftsManageUsersIndexRoute
   '/app/tickets/admin': typeof AppTicketsAdminIndexRoute
@@ -543,7 +534,6 @@ export interface FileRoutesById {
   '/app/tickets/admin/$ticketId': typeof AppTicketsAdminTicketIdRoute
   '/app/tickets/admin/types': typeof AppTicketsAdminTypesRoute
   '/app/tickets/my-tickets/$ticketId': typeof AppTicketsMyTicketsTicketIdRoute
-  '/app/tickets/submit/$ticketTypeId': typeof AppTicketsSubmitTicketTypeIdRoute
   '/app/_app/me/': typeof AppAppMeIndexRoute
   '/app/shifts/manage-users/': typeof AppShiftsManageUsersIndexRoute
   '/app/tickets/admin/': typeof AppTicketsAdminIndexRoute
@@ -605,7 +595,6 @@ export interface FileRouteTypes {
     | '/app/tickets/admin/$ticketId'
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
-    | '/app/tickets/submit/$ticketTypeId'
     | '/app/me/'
     | '/app/shifts/manage-users/'
     | '/app/tickets/admin/'
@@ -658,7 +647,6 @@ export interface FileRouteTypes {
     | '/app/tickets/admin/$ticketId'
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
-    | '/app/tickets/submit/$ticketTypeId'
     | '/app/me'
     | '/app/shifts/manage-users'
     | '/app/tickets/admin'
@@ -719,7 +707,6 @@ export interface FileRouteTypes {
     | '/app/tickets/admin/$ticketId'
     | '/app/tickets/admin/types'
     | '/app/tickets/my-tickets/$ticketId'
-    | '/app/tickets/submit/$ticketTypeId'
     | '/app/_app/me/'
     | '/app/shifts/manage-users/'
     | '/app/tickets/admin/'
@@ -1109,13 +1096,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppMeIndexRouteImport
       parentRoute: typeof AppAppRoute
     }
-    '/app/tickets/submit/$ticketTypeId': {
-      id: '/app/tickets/submit/$ticketTypeId'
-      path: '/submit/$ticketTypeId'
-      fullPath: '/app/tickets/submit/$ticketTypeId'
-      preLoaderRoute: typeof AppTicketsSubmitTicketTypeIdRouteImport
-      parentRoute: typeof AppTicketsRoute
-    }
     '/app/tickets/my-tickets/$ticketId': {
       id: '/app/tickets/my-tickets/$ticketId'
       path: '/$ticketId'
@@ -1298,7 +1278,6 @@ interface AppTicketsRouteChildren {
   AppTicketsIndexRoute: typeof AppTicketsIndexRoute
   AppTicketsAdminTicketIdRoute: typeof AppTicketsAdminTicketIdRoute
   AppTicketsAdminTypesRoute: typeof AppTicketsAdminTypesRoute
-  AppTicketsSubmitTicketTypeIdRoute: typeof AppTicketsSubmitTicketTypeIdRoute
   AppTicketsAdminIndexRoute: typeof AppTicketsAdminIndexRoute
 }
 
@@ -1307,7 +1286,6 @@ const AppTicketsRouteChildren: AppTicketsRouteChildren = {
   AppTicketsIndexRoute: AppTicketsIndexRoute,
   AppTicketsAdminTicketIdRoute: AppTicketsAdminTicketIdRoute,
   AppTicketsAdminTypesRoute: AppTicketsAdminTypesRoute,
-  AppTicketsSubmitTicketTypeIdRoute: AppTicketsSubmitTicketTypeIdRoute,
   AppTicketsAdminIndexRoute: AppTicketsAdminIndexRoute,
 }
 

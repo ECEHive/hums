@@ -43,6 +43,7 @@ function SubmitTicketFormPage() {
 		null,
 	);
 	const [serverError, setServerError] = useState<string | null>(null);
+	const [anonymous, setAnonymous] = useState(false);
 
 	// Parse ticket type ID
 	const parsedId = Number.parseInt(ticketTypeId, 10);
@@ -67,6 +68,7 @@ function SubmitTicketFormPage() {
 			return await trpc.tickets.submit.mutate({
 				ticketTypeId: ticketType.id,
 				data,
+				anonymous,
 			});
 		},
 		onSuccess: (result) => {
@@ -268,6 +270,8 @@ function SubmitTicketFormPage() {
 								}}
 								isSubmitting={submitMutation.isPending}
 								submitButtonText="Submit Ticket"
+								requiresAuth={requiresAuth}
+								setAnonymous={setAnonymous}
 							/>
 						)}
 					</CardContent>
