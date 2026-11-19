@@ -139,6 +139,7 @@ export async function generateHandler(options: TGenerateOptions) {
 		id: number;
 		username: string;
 		name: string;
+		internalNotes: string | null;
 		attendances?: Array<{
 			status: string;
 			isExcused: boolean;
@@ -162,6 +163,7 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: true,
 			username: true,
 			name: true,
+			internalNotes: true,
 			attendances: {
 				where: attendanceIncludeWhere,
 				include: {
@@ -183,6 +185,7 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: number;
 			name: string;
 			username: string;
+			internalNotes: string | null;
 			periodScheduledTime: number;
 			pastScheduledTime: number;
 			pastAttendedTime: number;
@@ -284,6 +287,7 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: u.id,
 			name: u.name,
 			username: u.username,
+			internalNotes: u.internalNotes,
 			periodScheduledTime,
 			pastScheduledTime,
 			pastAttendedTime,
