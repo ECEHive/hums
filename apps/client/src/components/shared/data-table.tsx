@@ -39,7 +39,16 @@ interface DataTableProps<TData, TValue> {
 	enableSorting?: boolean;
 	/** Called with the rows in their current display order */
 	onSortedRowsChange?: (rows: TData[]) => void;
+	/** Keep the first column visible while scrolling horizontally */
+	stickyFirstColumn?: boolean;
 }
+
+// Sticky cells need an opaque background so scrolled content doesn't show
+// through. The body cell mirrors the row's translucent hover/selected tint.
+const stickyHeadClass =
+	"sticky left-0 z-20 bg-muted shadow-[inset_-1px_0_0_var(--border)]";
+const stickyCellClass =
+	"sticky left-0 z-10 bg-background shadow-[inset_-1px_0_0_var(--border)] group-hover:bg-[color-mix(in_oklab,var(--muted)_50%,var(--background))] group-data-[state=selected]:bg-muted";
 
 /** Turn a cell value into something comparable */
 function normalizeValue(value: unknown): string | number | null {
@@ -98,6 +107,7 @@ export function DataTable<TData, TValue>({
 	className,
 	enableSorting = false,
 	onSortedRowsChange,
+	stickyFirstColumn = false,
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -125,16 +135,24 @@ export function DataTable<TData, TValue>({
 				<TableHeader className="bg-muted">
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
-							{headerGroup.headers.map((header) => {
+							{headerGroup.headers.map((header, index) => {
+								const stickyClass =
+									stickyFirstColumn && index === 0
+										? stickyHeadClass
+										: undefined;
 								if (header.isPlaceholder) {
-									return <TableHead key={header.id} />;
+									return <TableHead key={header.id} className={stickyClass} />;
 								}
 								const content = flexRender(
 									header.column.columnDef.header,
 									header.getContext(),
 								);
 								if (!header.column.getCanSort()) {
-									return <TableHead key={header.id}>{content}</TableHead>;
+									return (
+										<TableHead key={header.id} className={stickyClass}>
+											{content}
+										</TableHead>
+									);
 								}
 								const sorted = header.column.getIsSorted();
 								const SortIcon =
@@ -146,6 +164,7 @@ export function DataTable<TData, TValue>({
 								return (
 									<TableHead
 										key={header.id}
+										className={stickyClass}
 										aria-sort={
 											sorted === "asc"
 												? "ascending"
@@ -184,9 +203,17 @@ export function DataTable<TData, TValue>({
 							<TableRow
 								key={row.id}
 								data-state={row.getIsSelected() && "selected"}
+								className={stickyFirstColumn ? "group" : undefined}
 							>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
+								{row.getVisibleCells().map((cell, index) => (
+									<TableCell
+										key={cell.id}
+										className={
+											stickyFirstColumn && index === 0
+												? stickyCellClass
+												: undefined
+										}
+									>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</TableCell>
 								))}
