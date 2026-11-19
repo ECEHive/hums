@@ -13,7 +13,7 @@ export const ZCreateGatewaySchema = z.object({
 		.array(
 			z.object({
 				controlPointId: z.string().uuid(),
-				action: z.enum(["TURN_ON", "TURN_OFF", "UNLOCK"]),
+				action: z.enum(["TURN_ON", "TURN_OFF", "UNLOCK", "TOGGLE"]),
 			}),
 		)
 		.default([]),

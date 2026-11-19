@@ -14,6 +14,7 @@ import { RequirePermissions, useAuth } from "@/auth/AuthProvider";
 import { CreateGatewayDialog } from "@/components/control/create-gateway-dialog";
 import { DeleteGatewayDialog } from "@/components/control/delete-gateway-dialog";
 import { EditGatewayDialog } from "@/components/control/edit-gateway-dialog";
+import { RegenerateGatewayTokenDialog } from "@/components/control/regenerate-gateway-token-dialog";
 import { MissingPermissions } from "@/components/guards/missing-permissions";
 import {
 	Page,
@@ -165,6 +166,12 @@ function GatewaysPage() {
 				return (
 					<div className="flex items-center gap-1">
 						{canUpdate && <EditGatewayDialog gateway={row.original} />}
+						{canUpdate && (
+							<RegenerateGatewayTokenDialog
+								gateway={row.original}
+								onTokenCreated={setTokenToShow}
+							/>
+						)}
 						{canDelete && <DeleteGatewayDialog gateway={row.original} />}
 					</div>
 				);
@@ -269,7 +276,7 @@ function TokenRevealDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Gateway created</DialogTitle>
+					<DialogTitle>New access token</DialogTitle>
 					<DialogDescription>
 						Copy and store this access token in a secure location. You will not
 						be able to retrieve it again.
@@ -302,8 +309,8 @@ function TokenRevealDialog({
 				<div className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-100">
 					<AlertTriangleIcon className="size-4" />
 					<span>
-						Store this token securely. Lost tokens require creating a new
-						gateway.
+						Store this token securely. If it is lost, regenerate it from the
+						gateway list.
 					</span>
 				</div>
 			</DialogContent>
