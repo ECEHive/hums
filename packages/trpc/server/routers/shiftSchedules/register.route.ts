@@ -178,9 +178,9 @@ export async function registerHandler(options: TRegisterOptions) {
 
 		// Get all shift schedules the user is already registered for
 		const userSchedules = await getUserRegisteredSchedules(tx, userId);
-		const schedulesForOverlap = userSchedules.map(
-			({ shiftType, ...rest }) => rest,
-		);
+		const schedulesForOverlap = userSchedules
+			.filter((s) => s.shiftType?.periodId === period.id)
+			.map(({ shiftType, ...rest }) => rest);
 
 		// Validate no time overlap (throws if overlap exists)
 		try {

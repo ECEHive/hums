@@ -169,7 +169,7 @@ export async function bulkRegisterHandler(options: TBulkRegisterOptions) {
 		const userSchedulesInPeriod = userSchedules.filter(
 			(s) => s.shiftType?.periodId === periodId,
 		);
-		const schedulesForOverlap = userSchedules.map(
+		const schedulesForOverlap = userSchedulesInPeriod.map(
 			({ shiftType, ...rest }) => rest,
 		);
 
