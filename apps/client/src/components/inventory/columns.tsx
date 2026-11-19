@@ -135,33 +135,33 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 			},
 		},
 		{
-			accessorKey: "sku",
+			id: "sku",
+			accessorFn: (row) => row.sku || undefined,
 			header: "SKU",
 			cell: (info) => info.getValue() ?? "",
 		},
 		{
-			accessorKey: "location",
+			id: "location",
+			accessorFn: (row) => row.location || undefined,
 			header: "Location",
 			cell: (info) => info.getValue() ?? "",
 		},
 		{
-			accessorKey: "minQuantity",
+			id: "minQuantity",
+			accessorFn: (row) => row.minQuantity ?? undefined,
 			header: "Min Qty",
 			cell: (info) => info.getValue() ?? "",
 		},
 		{
 			id: "snapshot",
+			accessorFn: (row) => row.currentQuantity ?? undefined,
 			header: "Quantity",
-			cell: (info) => {
-				const row = info.row.original as ItemRow;
-				if (row.currentQuantity !== undefined && row.currentQuantity !== null) {
-					return row.currentQuantity;
-				}
-				return "-";
-			},
+			cell: (info) => info.getValue() ?? "-",
 		},
 		{
 			id: "created",
+			accessorFn: (row) =>
+				row.createdAt ? new Date(row.createdAt).getTime() : undefined,
 			header: "Created",
 			cell: (info) => {
 				const row = info.row.original as ItemRow;
@@ -171,6 +171,8 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 		},
 		{
 			id: "updated",
+			accessorFn: (row) =>
+				row.updatedAt ? new Date(row.updatedAt).getTime() : undefined,
 			header: "Updated",
 			cell: (info) => {
 				const row = info.row.original as ItemRow;
@@ -180,6 +182,7 @@ export function generateColumns(): ColumnDef<ItemRow>[] {
 		},
 		{
 			id: "actions",
+			enableSorting: false,
 			header: "",
 			cell: (info) => {
 				const row = info.row.original as ItemRow;
