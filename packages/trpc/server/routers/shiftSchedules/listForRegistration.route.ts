@@ -115,7 +115,10 @@ export async function listForRegistrationHandler(
 	);
 
 	// Get all schedules for balancing checks (cached for performance)
-	const allSchedulesForBalancing = await getAllSchedulesForBalancing(prisma);
+	const allSchedulesForBalancing = await getAllSchedulesForBalancing(
+		prisma,
+		period.id,
+	);
 
 	// For each schedule, calculate availability and registration eligibility
 	const requirementUnit =

@@ -116,10 +116,8 @@ function schedulesOverlap(
  * Evaluate balancing requirements for a schedule given the list of all schedules.
  * Returns true if the schedule meets balancing requirements.
  *
- * This mirrors the server-side meetsBalancingRequirement function from validation.ts
- *
- * IMPORTANT: The server checks against ALL schedules (not just same shift type).
- * This matches the server behavior exactly.
+ * This mirrors the server-side meetsBalancingRequirement function from validation.ts:
+ * only schedules of the same shift type in the period are compared.
  */
 function calculateMeetsBalancingRequirement(
 	schedule: ShiftSchedule,
@@ -135,12 +133,14 @@ function calculateMeetsBalancingRequirement(
 	}
 
 	const currentFilledSlots = schedule.users.length;
+	const sameType = allSchedules.filter(
+		(s) => s.shiftTypeId === schedule.shiftTypeId,
+	);
 
-	// Check isBalancedAcrossPeriod: ALL other schedules must have >= current filled slots
-	// Note: Server checks against all schedules, not just same shift type
+	// Check isBalancedAcrossPeriod: all other schedules must have >= current filled slots
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (schedule.isBalancedAcrossPeriod) {
-		for (const other of allSchedules) {
+		for (const other of sameType) {
 			if (other.id === schedule.id) continue;
 			if (other.slots > 0 && other.users.length >= other.slots) continue;
 			if (other.users.length < currentFilledSlots) return false;
@@ -150,7 +150,7 @@ function calculateMeetsBalancingRequirement(
 	// Check isBalancedAcrossDay: all schedules on the same day must have >= current filled slots
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (schedule.isBalancedAcrossDay) {
-		const sameDaySchedules = allSchedules.filter(
+		const sameDaySchedules = sameType.filter(
 			(s) => s.dayOfWeek === schedule.dayOfWeek && s.id !== schedule.id,
 		);
 		for (const other of sameDaySchedules) {
@@ -162,7 +162,7 @@ function calculateMeetsBalancingRequirement(
 	// Check isBalancedAcrossOverlap: all overlapping schedules must have >= current filled slots
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (schedule.isBalancedAcrossOverlap) {
-		const overlappingSchedules = allSchedules.filter((s) => {
+		const overlappingSchedules = sameType.filter((s) => {
 			if (s.id === schedule.id) return false;
 			if (s.dayOfWeek !== schedule.dayOfWeek) return false;
 			return doTimesOverlap(

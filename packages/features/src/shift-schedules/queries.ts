@@ -49,14 +49,17 @@ export async function getUserRegisteredSchedules(
 }
 
 /**
- * Fetch all shift schedules with users for balancing checks
+ * Fetch all shift schedules in a period with users for balancing checks
  */
 export async function getAllSchedulesForBalancing(
 	prisma: PrismaClient | PrismaTransaction,
+	periodId: number,
 ) {
 	return prisma.shiftSchedule.findMany({
+		where: { shiftType: { periodId } },
 		select: {
 			id: true,
+			shiftTypeId: true,
 			dayOfWeek: true,
 			startTime: true,
 			endTime: true,

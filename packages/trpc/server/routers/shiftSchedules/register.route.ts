@@ -160,7 +160,7 @@ export async function registerHandler(options: TRegisterOptions) {
 			targetSchedule.shiftType.isBalancedAcrossOverlap
 		) {
 			// Get all shift schedules for balancing validation
-			const allSchedules = await getAllSchedulesForBalancing(tx);
+			const allSchedules = await getAllSchedulesForBalancing(tx, period.id);
 
 			// Validate balancing requirements (throws if not met)
 			try {

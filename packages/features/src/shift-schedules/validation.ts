@@ -20,6 +20,10 @@ export type ShiftScheduleLite = {
 	shiftType?: ShiftTypeLite;
 };
 
+export type BalancingScheduleLite = ShiftScheduleLite & {
+	shiftTypeId: number;
+};
+
 /**
  * Check if a schedule is full (no available slots)
  */
@@ -193,11 +197,12 @@ export function validateNoTimeOverlap(
 
 /**
  * Evaluate balancing requirements for a schedule given the list of all schedules.
+ * Only schedules of the same shift type are compared.
  * Returns true if the schedule meets balancing requirements (i.e., it's allowed to accept another user).
  */
 export function meetsBalancingRequirement(
-	schedule: ShiftScheduleLite,
-	allSchedules: ShiftScheduleLite[],
+	schedule: BalancingScheduleLite,
+	allSchedules: BalancingScheduleLite[],
 ): boolean {
 	const st = schedule.shiftType;
 	if (!st) return true;
@@ -211,11 +216,14 @@ export function meetsBalancingRequirement(
 	}
 
 	const currentFilledSlots = (schedule.users ?? []).length;
+	const sameType = allSchedules.filter(
+		(s) => s.shiftTypeId === schedule.shiftTypeId,
+	);
 
 	// Check isBalancedAcrossPeriod: all schedules must have >= current filled slots
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossPeriod) {
-		for (const other of allSchedules) {
+		for (const other of sameType) {
 			if (other.id === schedule.id) continue;
 			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) return false;
@@ -225,7 +233,7 @@ export function meetsBalancingRequirement(
 	// Check isBalancedAcrossDay: all schedules on the same day must have >= current filled slots
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossDay) {
-		const sameDay = allSchedules.filter(
+		const sameDay = sameType.filter(
 			(s) => s.dayOfWeek === schedule.dayOfWeek && s.id !== schedule.id,
 		);
 		for (const other of sameDay) {
@@ -237,7 +245,7 @@ export function meetsBalancingRequirement(
 	// Check isBalancedAcrossOverlap: all overlapping schedules must have >= current filled slots
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossOverlap) {
-		const overlapping = allSchedules.filter((s) => {
+		const overlapping = sameType.filter((s) => {
 			if (s.id === schedule.id) return false;
 			if (s.dayOfWeek !== schedule.dayOfWeek) return false;
 			return doTimesOverlap(
@@ -261,8 +269,8 @@ export function meetsBalancingRequirement(
  * Validate balancing requirements and throw an error if not met
  */
 export function validateBalancingRequirement(
-	schedule: ShiftScheduleLite,
-	allSchedules: ShiftScheduleLite[],
+	schedule: BalancingScheduleLite,
+	allSchedules: BalancingScheduleLite[],
 ): void {
 	const st = schedule.shiftType;
 	if (!st) return;
@@ -276,11 +284,14 @@ export function validateBalancingRequirement(
 	}
 
 	const currentFilledSlots = (schedule.users ?? []).length;
+	const sameType = allSchedules.filter(
+		(s) => s.shiftTypeId === schedule.shiftTypeId,
+	);
 
 	// Check isBalancedAcrossPeriod
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossPeriod) {
-		for (const other of allSchedules) {
+		for (const other of sameType) {
 			if (other.id === schedule.id) continue;
 			if (isScheduleFull(other)) continue;
 			if ((other.users ?? []).length < currentFilledSlots) {
@@ -294,7 +305,7 @@ export function validateBalancingRequirement(
 	// Check isBalancedAcrossDay
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossDay) {
-		const sameDay = allSchedules.filter(
+		const sameDay = sameType.filter(
 			(s) => s.dayOfWeek === schedule.dayOfWeek && s.id !== schedule.id,
 		);
 		for (const other of sameDay) {
@@ -310,7 +321,7 @@ export function validateBalancingRequirement(
 	// Check isBalancedAcrossOverlap
 	// Skip schedules that are already full - they shouldn't block others from registering
 	if (st.isBalancedAcrossOverlap) {
-		const overlapping = allSchedules.filter((s) => {
+		const overlapping = sameType.filter((s) => {
 			if (s.id === schedule.id) return false;
 			if (s.dayOfWeek !== schedule.dayOfWeek) return false;
 			return doTimesOverlap(
