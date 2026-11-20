@@ -174,7 +174,10 @@ export async function bulkRegisterHandler(options: TBulkRegisterOptions) {
 		);
 
 		// Get all schedules for balancing checks
-		const allSchedulesForBalancing = await getAllSchedulesForBalancing(tx);
+		const allSchedulesForBalancing = await getAllSchedulesForBalancing(
+			tx,
+			periodId,
+		);
 
 		// Calculate current requirement progress
 		let currentComparable = 0;
