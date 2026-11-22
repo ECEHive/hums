@@ -7,6 +7,7 @@ import {
 	applyOptimisticRegister,
 	applyOptimisticUnregister,
 	type SchedulesData,
+	setUserRegistration,
 } from "./schedule-delta-utils";
 import { getSchedulesQueryKey } from "./use-schedule-subscription";
 
@@ -15,7 +16,7 @@ import { getSchedulesQueryKey } from "./use-schedule-subscription";
  *
  * Instead of invalidating and refetching on success, this hook:
  * 1. Applies optimistic updates immediately when mutation starts
- * 2. Rolls back on error
+ * 2. Undoes them on error
  * 3. Does NOT invalidate on success - the subscription will receive the delta from the server
  *
  * This creates a smooth UX where:
@@ -29,41 +30,63 @@ export function useShiftMutations(periodId: number) {
 	const { user } = useAuth();
 
 	const queryKey = getSchedulesQueryKey(periodId);
+	const currentUser = user
+		? { id: user.id, name: user.name ?? "Unknown" }
+		: undefined;
+
+	const applyOptimistic = (
+		update: (
+			data: SchedulesData,
+			user: { id: number; name: string },
+		) => SchedulesData,
+	) => {
+		if (!currentUser) return;
+		queryClient.setQueryData<SchedulesData>(queryKey, (data) =>
+			data ? update(data, currentUser) : data,
+		);
+	};
+
+	// Restoring a snapshot would also throw away every live update received since.
+	// A rejection (full, balancing, outside the window, ...) means nothing changed on
+	// the server, so only this user's change is undone. A timeout, network error or
+	// 5xx may have committed, so the list is reloaded instead.
+	const undoOptimistic = (
+		error: unknown,
+		shiftScheduleIds: number[],
+		registeredBefore: boolean,
+	) => {
+		const status = (error as { data?: { httpStatus?: number } } | null)?.data
+			?.httpStatus;
+		const rejected =
+			status !== undefined &&
+			status >= 400 &&
+			status < 500 &&
+			status !== 408 &&
+			status !== 499;
+		if (rejected) {
+			applyOptimistic((data, user) =>
+				setUserRegistration(data, shiftScheduleIds, user, registeredBefore),
+			);
+		} else {
+			queryClient.invalidateQueries({ queryKey });
+		}
+	};
 
 	const registerMutation = useMutation({
 		mutationFn: async (shiftScheduleId: number) => {
 			return trpc.shiftSchedules.register.mutate({ shiftScheduleId });
 		},
-		onMutate: async (shiftScheduleId) => {
-			// Cancel any outgoing refetches
-			await queryClient.cancelQueries({ queryKey });
-
-			// Snapshot the previous value
-			const previousData = queryClient.getQueryData<SchedulesData>(queryKey);
-
-			// Optimistically update to the new value
-			if (previousData && user) {
-				const optimisticData = applyOptimisticRegister(
-					previousData,
-					shiftScheduleId,
-					{ id: user.id, name: user.name ?? "Unknown" },
-				);
-				queryClient.setQueryData(queryKey, optimisticData);
-			}
-
-			// Return context with the snapshot
-			return { previousData };
+		onMutate: (shiftScheduleId) => {
+			applyOptimistic((data, user) =>
+				applyOptimisticRegister(data, shiftScheduleId, user),
+			);
 		},
-		onError: (error, _shiftScheduleId, context) => {
-			// Roll back to the previous value on error
-			if (context?.previousData) {
-				queryClient.setQueryData(queryKey, context.previousData);
-			}
+		onError: (error, shiftScheduleId) => {
+			undoOptimistic(error, [shiftScheduleId], false);
 			toast.error(error.message || "Failed to register");
 		},
 		onSuccess: () => {
 			// Don't invalidate - the subscription will apply the server delta
-			// This prevents a redundant refetch
 			toast.success("Successfully registered!");
 		},
 	});
@@ -72,36 +95,17 @@ export function useShiftMutations(periodId: number) {
 		mutationFn: async (shiftScheduleId: number) => {
 			return trpc.shiftSchedules.unregister.mutate({ shiftScheduleId });
 		},
-		onMutate: async (shiftScheduleId) => {
-			// Cancel any outgoing refetches
-			await queryClient.cancelQueries({ queryKey });
-
-			// Snapshot the previous value
-			const previousData = queryClient.getQueryData<SchedulesData>(queryKey);
-
-			// Optimistically update to the new value
-			if (previousData && user) {
-				const optimisticData = applyOptimisticUnregister(
-					previousData,
-					shiftScheduleId,
-					{ id: user.id, name: user.name ?? "Unknown" },
-				);
-				queryClient.setQueryData(queryKey, optimisticData);
-			}
-
-			// Return context with the snapshot
-			return { previousData };
+		onMutate: (shiftScheduleId) => {
+			applyOptimistic((data, user) =>
+				applyOptimisticUnregister(data, shiftScheduleId, user),
+			);
 		},
-		onError: (error, _shiftScheduleId, context) => {
-			// Roll back to the previous value on error
-			if (context?.previousData) {
-				queryClient.setQueryData(queryKey, context.previousData);
-			}
+		onError: (error, shiftScheduleId) => {
+			undoOptimistic(error, [shiftScheduleId], true);
 			toast.error(error.message || "Failed to unregister");
 		},
 		onSuccess: () => {
 			// Don't invalidate - the subscription will apply the server delta
-			// This prevents a redundant refetch
 			toast.success("Successfully unregistered");
 		},
 	});
@@ -110,26 +114,14 @@ export function useShiftMutations(periodId: number) {
 		mutationFn: async (shiftScheduleIds: number[]) => {
 			return trpc.shiftSchedules.bulkRegister.mutate({ shiftScheduleIds });
 		},
-		onMutate: async (shiftScheduleIds) => {
-			await queryClient.cancelQueries({ queryKey });
-
-			const previousData = queryClient.getQueryData<SchedulesData>(queryKey);
-
-			if (previousData && user) {
-				const optimisticData = applyOptimisticBulkRegister(
-					previousData,
-					shiftScheduleIds,
-					{ id: user.id, name: user.name ?? "Unknown" },
-				);
-				queryClient.setQueryData(queryKey, optimisticData);
-			}
-
-			return { previousData };
+		onMutate: (shiftScheduleIds) => {
+			applyOptimistic((data, user) =>
+				applyOptimisticBulkRegister(data, shiftScheduleIds, user),
+			);
 		},
-		onError: (error, _shiftScheduleIds, context) => {
-			if (context?.previousData) {
-				queryClient.setQueryData(queryKey, context.previousData);
-			}
+		onError: (error, shiftScheduleIds) => {
+			// Bulk registration is all or nothing
+			undoOptimistic(error, shiftScheduleIds, false);
 			toast.error(error.message || "Failed to register for shifts");
 		},
 		onSuccess: (_data, shiftScheduleIds) => {
