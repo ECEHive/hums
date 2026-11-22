@@ -15,97 +15,54 @@ import type { Transaction } from "../types/transaction";
  * @param tx - The database transaction to use
  * @param shiftScheduleId - The ID of the shift schedule
  * @param userId - The ID of the user to assign
- * @throws Error if the shift schedule doesn't exist or if assignment creation fails
+ * Callers load and lock the schedule first, so it isn't looked up again here.
+ *
+ * @throws Error if assignment creation fails
  */
 export async function assignUserToScheduleOccurrences(
 	tx: Transaction,
 	shiftScheduleId: number,
 	userId: number,
 ) {
-	// Verify the shift schedule exists
-	const schedule = await tx.shiftSchedule.findUnique({
-		where: { id: shiftScheduleId },
-	});
-
-	if (!schedule) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: `Shift schedule with ID ${shiftScheduleId} not found`,
-		});
-	}
-
-	// Get all occurrences for this schedule with their assigned users
+	// Users are counted here rather than with _count, which Prisma turns into a
+	// GROUP BY over every occurrence assignment in the database
 	const occurrences = await tx.shiftOccurrence.findMany({
 		where: { shiftScheduleId },
-		include: {
-			users: true,
-		},
+		select: { id: true, timestamp: true, users: { select: { id: true } } },
+		orderBy: { id: "asc" },
 	});
 
-	if (occurrences.length === 0) {
-		return;
-	}
-
-	// Group occurrences by timestamp to handle slots intelligently
-	const occurrencesByTimestamp = new Map<
-		string,
-		(typeof occurrences)[number][]
-	>();
-	for (const occ of occurrences) {
-		const tsKey = occ.timestamp.toISOString();
-		if (!occurrencesByTimestamp.has(tsKey)) {
-			occurrencesByTimestamp.set(tsKey, []);
-		}
-		occurrencesByTimestamp.get(tsKey)?.push(occ);
-	}
-
-	// Check if user is already assigned to any occurrences
-	const userAssignedOccurrenceIds = new Set(
+	// For each week, pick the slot with the fewest users, skipping weeks the
+	// user already has. Ties go to the lowest id.
+	const takenWeeks = new Set(
 		occurrences
 			.filter((occ) => occ.users.some((u) => u.id === userId))
-			.map((occ) => occ.id),
+			.map((occ) => occ.timestamp.getTime()),
 	);
-
-	// For each timestamp, assign user to the slot with fewest assignments
-	const occurrencesToAssign: number[] = [];
-	for (const [_timestamp, occs] of Array.from(
-		occurrencesByTimestamp.entries(),
-	)) {
-		// Skip if user is already assigned to any slot for this timestamp
-		if (occs.some((occ) => userAssignedOccurrenceIds.has(occ.id))) {
-			continue;
+	const best = new Map<number, { id: number; users: number }>();
+	for (const occ of occurrences) {
+		const week = occ.timestamp.getTime();
+		if (takenWeeks.has(week)) continue;
+		const current = best.get(week);
+		if (!current || occ.users.length < current.users) {
+			best.set(week, { id: occ.id, users: occ.users.length });
 		}
-
-		// Find the occurrence (slot) with the fewest assignments
-		let bestOccurrence = occs[0];
-		let minAssignments = bestOccurrence.users.length;
-
-		for (const occ of occs) {
-			const count = occ.users.length;
-			if (count < minAssignments) {
-				bestOccurrence = occ;
-				minAssignments = count;
-			}
-		}
-
-		occurrencesToAssign.push(bestOccurrence.id);
 	}
 
-	if (occurrencesToAssign.length === 0) {
+	if (best.size === 0) {
 		return;
 	}
 
-	// Create assignments for all selected occurrences using Prisma's implicit many-to-many
-	for (const occurrenceId of occurrencesToAssign) {
-		await tx.shiftOccurrence.update({
-			where: { id: occurrenceId },
-			data: {
-				users: {
-					connect: { id: userId },
-				},
+	// One connect instead of one update per week; this runs under the schedule lock
+	await tx.user.update({
+		where: { id: userId },
+		data: {
+			shiftOccurrences: {
+				connect: Array.from(best.values(), ({ id }) => ({ id })),
 			},
-		});
-	}
+		},
+		select: { id: true },
+	});
 }
 
 /**
@@ -118,28 +75,14 @@ export async function assignUserToScheduleOccurrences(
  * @param tx - The database transaction to use
  * @param shiftScheduleId - The ID of the shift schedule
  * @param userId - The ID of the user to unassign
- * @throws Error if the shift schedule doesn't exist
  */
 export async function unassignUserFromScheduleOccurrences(
 	tx: Transaction,
 	shiftScheduleId: number,
 	userId: number,
 ) {
-	// Verify the shift schedule exists
-	const schedule = await tx.shiftSchedule.findUnique({
-		where: { id: shiftScheduleId },
-	});
-
-	if (!schedule) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
-			message: `Shift schedule with ID ${shiftScheduleId} not found`,
-		});
-	}
-
-	// Get all occurrences for this schedule
 	const occurrences = await tx.shiftOccurrence.findMany({
-		where: { shiftScheduleId },
+		where: { shiftScheduleId, users: { some: { id: userId } } },
 		select: { id: true },
 	});
 
@@ -147,17 +90,15 @@ export async function unassignUserFromScheduleOccurrences(
 		return;
 	}
 
-	// Disconnect user from all occurrences using Prisma's implicit many-to-many
-	for (const occurrence of occurrences) {
-		await tx.shiftOccurrence.update({
-			where: { id: occurrence.id },
-			data: {
-				users: {
-					disconnect: { id: userId },
-				},
+	await tx.user.update({
+		where: { id: userId },
+		data: {
+			shiftOccurrences: {
+				disconnect: occurrences.map(({ id }) => ({ id })),
 			},
-		});
-	}
+		},
+		select: { id: true },
+	});
 }
 
 /**
