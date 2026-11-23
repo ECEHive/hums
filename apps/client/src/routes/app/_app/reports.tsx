@@ -281,8 +281,8 @@ function GlobalReportsPage() {
 
 	// Get columns for current report type
 	const currentColumns = useMemo(() => {
-		return currentReportConfig?.getColumns() ?? [];
-	}, [currentReportConfig]);
+		return currentReportConfig?.getColumns(reportData) ?? [];
+	}, [currentReportConfig, reportData]);
 
 	// Handle report generation
 	const handleGenerateReport = useCallback(async () => {

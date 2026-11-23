@@ -51,7 +51,9 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 			required: true,
 		},
 	],
-	getColumns: (): ColumnDef<UserAttendanceReport, unknown>[] => [
+	getColumns: (
+		data?: UserAttendanceReport[],
+	): ColumnDef<UserAttendanceReport, unknown>[] => [
 		{
 			accessorKey: "name",
 			header: "Full Name",
@@ -71,6 +73,22 @@ export const userAttendanceReportConfig: ReportConfig<UserAttendanceReport> = {
 			header: "Username",
 			cell: ({ row }) => row.original.username,
 		},
+		...(data?.some((row) => row.internalNotes !== null)
+			? [
+					{
+						accessorKey: "internalNotes",
+						header: "Internal Notes",
+						cell: ({ row }) =>
+							row.original.internalNotes
+								? createElement(
+										"div",
+										{ className: "max-w-sm whitespace-pre-wrap text-sm" },
+										row.original.internalNotes,
+									)
+								: "—",
+					} satisfies ColumnDef<UserAttendanceReport, unknown>,
+				]
+			: []),
 		{
 			accessorKey: "periodScheduledTime",
 			header: "Total Scheduled Time",

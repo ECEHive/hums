@@ -21,7 +21,7 @@ export const ZGenerateSchema = z.object({
 export type TGenerateSchema = z.infer<typeof ZGenerateSchema>;
 
 export type TGenerateOptions = {
-	ctx?: TPermissionProtectedProcedureContext;
+	ctx: TPermissionProtectedProcedureContext;
 	input: TGenerateSchema;
 };
 
@@ -32,6 +32,23 @@ function convert24HourToMS(timeStr: string): number {
 
 export async function generateHandler(options: TGenerateOptions) {
 	const { staffingRoleIds, startDate, endDate } = options.input;
+	const canViewInternalNotes =
+		options.ctx.user.isSystemUser ||
+		(await prisma.permission.findFirst({
+			where: {
+				name: "users.get",
+				roles: {
+					some: {
+						users: {
+							some: {
+								id: options.ctx.user.id,
+							},
+						},
+					},
+				},
+			},
+			select: { id: true },
+		})) !== null;
 
 	// If staffingRoleIds is undefined or an empty array, treat it as "no role
 	// filter" (i.e. return all users). Only apply a role-based filter when a
@@ -139,6 +156,7 @@ export async function generateHandler(options: TGenerateOptions) {
 		id: number;
 		username: string;
 		name: string;
+		internalNotes: string | null;
 		attendances?: Array<{
 			status: string;
 			isExcused: boolean;
@@ -162,6 +180,7 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: true,
 			username: true,
 			name: true,
+			internalNotes: canViewInternalNotes,
 			attendances: {
 				where: attendanceIncludeWhere,
 				include: {
@@ -183,6 +202,7 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: number;
 			name: string;
 			username: string;
+			internalNotes: string | null;
 			periodScheduledTime: number;
 			pastScheduledTime: number;
 			pastAttendedTime: number;
@@ -284,6 +304,7 @@ export async function generateHandler(options: TGenerateOptions) {
 			id: u.id,
 			name: u.name,
 			username: u.username,
+			internalNotes: canViewInternalNotes ? u.internalNotes : null,
 			periodScheduledTime,
 			pastScheduledTime,
 			pastAttendedTime,
