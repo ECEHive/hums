@@ -34,21 +34,38 @@ export interface ShiftScheduleUpdateEvent {
 	};
 }
 
+export const SHIFT_SCHEDULE_BATCH_MS = 250;
+
+/**
+ * Updates are sent to subscribers in batches: writing each update separately to
+ * every open subscription was the biggest cost during signup rushes. The first
+ * update starts one timer; every update lands in exactly one batch, in order.
+ */
 class ShiftScheduleEventEmitter extends EventEmitter {
+	#pending: ShiftScheduleUpdateEvent[] = [];
+	#timer: ReturnType<typeof setTimeout> | null = null;
+
 	emitUpdate(event: ShiftScheduleUpdateEvent) {
-		this.emit("update", event);
+		this.#pending.push(event);
+		if (this.#timer === null) {
+			this.#timer = setTimeout(() => this.#flush(), SHIFT_SCHEDULE_BATCH_MS);
+		}
 	}
 
-	/**
-	 * Convert EventEmitter to async iterable for use in subscriptions
-	 * This wraps Node's `on()` helper to create an async iterator
-	 */
-	toIterable<K extends string | symbol>(
-		event: K,
-		options?: { signal?: AbortSignal },
-	): AsyncIterable<unknown[]> {
-		return on(this, event, options) as AsyncIterable<unknown[]>;
+	#flush() {
+		const events = this.#pending;
+		this.#pending = [];
+		this.#timer = null;
+		this.emit("batch", events);
+	}
+
+	batches(signal?: AbortSignal): AsyncIterable<[ShiftScheduleUpdateEvent[]]> {
+		return on(this, "batch", { signal }) as AsyncIterable<
+			[ShiftScheduleUpdateEvent[]]
+		>;
 	}
 }
 
 export const shiftScheduleEvents = new ShiftScheduleEventEmitter();
+// Every open signup page holds one listener
+shiftScheduleEvents.setMaxListeners(0);

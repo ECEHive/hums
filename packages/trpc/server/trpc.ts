@@ -15,6 +15,9 @@ const logger = getLogger("trpc");
 
 const t = initTRPC.context<Context>().create({
 	transformer: superjson,
+	// Under nginx's 60s proxy_read_timeout; an idle stream that gets dropped
+	// reconnects, and every reconnect refetches the registration list
+	sse: { ping: { enabled: true, intervalMs: 20_000 } },
 });
 
 export const router = t.router;

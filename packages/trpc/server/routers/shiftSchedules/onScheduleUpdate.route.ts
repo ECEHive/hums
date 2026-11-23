@@ -6,7 +6,7 @@ import {
 	shiftScheduleEvents,
 } from "@ecehive/features";
 import { prisma } from "@ecehive/prisma";
-import { TRPCError, tracked } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TProtectedProcedureContext } from "../../trpc";
 
@@ -53,21 +53,11 @@ export async function* onScheduleUpdateHandler(opts: {
 		isSystemUser: ctx.user.isSystemUser,
 	});
 
-	// Create an async iterable from the event emitter
-	// This properly handles the EventEmitter and AbortSignal
-	const iterable = shiftScheduleEvents.toIterable("update", {
-		signal: opts.signal,
-	});
-
-	// Listen for new events and yield them with tracking
-	for await (const [data] of iterable) {
-		const event = data as ShiftScheduleUpdateEvent;
-
-		// Only send events for the requested period
-		if (event.periodId === periodId) {
-			// Use the timestamp as the event ID for tracking
-			const eventId = event.timestamp.getTime().toString();
-			yield tracked(eventId, event);
+	for await (const [batch] of shiftScheduleEvents.batches(opts.signal)) {
+		const events = batch.filter((event) => event.periodId === periodId);
+		if (events.length > 0) {
+			const result: { events: ShiftScheduleUpdateEvent[] } = { events };
+			yield result;
 		}
 	}
 }

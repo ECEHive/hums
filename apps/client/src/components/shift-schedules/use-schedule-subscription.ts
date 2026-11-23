@@ -1,11 +1,11 @@
 import { trpc } from "@ecehive/trpc/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { hashKey, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthProvider";
 import type { ConnectionState } from "./connection-status";
 import {
-	applyScheduleDelta,
+	applyScheduleDeltas,
 	type SchedulesData,
 	type ShiftScheduleUpdateEvent,
 } from "./schedule-delta-utils";
@@ -17,6 +17,11 @@ export const getSchedulesQueryKey = (periodId: number) => [
 	"schedulesForRegistration",
 	periodId,
 ];
+
+// When each list query last finished a real fetch. Module-level because a network
+// blip remounts the whole app (AuthProvider refetches auth.me on reconnect), and
+// not dataUpdatedAt, which our own setQueryData writes also move.
+const listFetchedAt = new Map<string, number>();
 
 interface UseScheduleSubscriptionOptions {
 	/**
@@ -92,10 +97,7 @@ export function useScheduleSubscription({
 	useEffect(() => {
 		const handleOnline = () => {
 			setIsOnline(true);
-			// Auto-reconnect when coming back online
-			// Note: We don't invalidate queries here to avoid triggering refetches
-			// that could cause UI disruptions. The subscription will receive any
-			// missed updates via the server's event stream.
+			// Reconnecting also reloads the list (see onStarted)
 			if (periodId && enabled) {
 				setReconnectTrigger((prev) => prev + 1);
 			}
@@ -152,13 +154,9 @@ export function useScheduleSubscription({
 	const reconnect = useCallback(() => {
 		setWsState("connecting");
 		setReconnectTrigger((prev) => prev + 1);
-		// Also invalidate to get fresh data on reconnect
-		if (periodId) {
-			queryClient.invalidateQueries({
-				queryKey: getSchedulesQueryKey(periodId),
-			});
-		}
-	}, [periodId, queryClient]);
+	}, []);
+
+	const retryAttemptRef = useRef(0);
 
 	useEffect(() => {
 		if (!periodId || !enabled) {
@@ -168,81 +166,93 @@ export function useScheduleSubscription({
 
 		setWsState("connecting");
 		const queryKey = getSchedulesQueryKey(periodId);
+		const queryHash = hashKey(queryKey);
 
 		// Track if we've received any data (indicates successful connection)
 		let hasConnected = false;
+		let retryTimer: ReturnType<typeof setTimeout> | undefined;
+		const connectingSince = Date.now();
+		let startedBefore = false;
+
+		// A list fetch may have been computed before updates that arrive while it's
+		// in flight, so those are applied again once it lands. Each update carries the
+		// schedule's full user list, so re-applying is safe. Cancelling the fetch
+		// instead left first loads empty, since nothing retried it.
+		let arrivedDuringFetch: ShiftScheduleUpdateEvent[] = [];
+
+		const applyEvents = (events: ShiftScheduleUpdateEvent[]) => {
+			const userId = currentUserIdRef.current;
+			if (!userId) {
+				queryClient.invalidateQueries({ queryKey });
+				return;
+			}
+			queryClient.setQueryData<SchedulesData | null>(queryKey, (currentData) =>
+				currentData
+					? applyScheduleDeltas(currentData, events, userId)
+					: currentData,
+			);
+		};
+
+		const unsubscribeCache = queryClient.getQueryCache().subscribe((event) => {
+			if (event.type !== "updated" || event.query.queryHash !== queryHash) {
+				return;
+			}
+			const { action } = event;
+			// Kept past a failed fetch, they'd be replayed over newer data later
+			if (action.type === "error") {
+				arrivedDuringFetch = [];
+				return;
+			}
+			// manual: our own setQueryData calls; only a finished fetch counts
+			if (action.type !== "success" || action.manual) return;
+			listFetchedAt.set(queryHash, Date.now());
+			const events = arrivedDuringFetch;
+			arrivedDuringFetch = [];
+			if (events.length > 0) applyEvents(events);
+		});
 
 		const unsubscribe = trpc.shiftSchedules.onScheduleUpdate.subscribe(
 			{ periodId },
 			{
 				onStarted: () => {
-					// Connection established
 					hasConnected = true;
 					setWsState("connected");
+					retryAttemptRef.current = 0;
+					// The server doesn't replay updates sent before a stream starts, so a list
+					// fetched before this stream may be missing some
+					const fetchedAt = listFetchedAt.get(queryHash) ?? 0;
+					if (startedBefore || (fetchedAt > 0 && fetchedAt < connectingSince)) {
+						queryClient.invalidateQueries({ queryKey });
+					}
+					startedBefore = true;
 				},
-				onData: (data) => {
-					// If we get data, we're definitely connected
+				onData: ({ events }) => {
 					if (!hasConnected) {
 						hasConnected = true;
 						setWsState("connected");
 					}
-
-					// tRPC tracked() returns data in array format: [id, eventData, null]
-					// Extract the event data from the array
-					let event: ShiftScheduleUpdateEvent | undefined;
-
-					if (Array.isArray(data) && data.length >= 2) {
-						// Array format from tracked(): [id, data, null]
-						event = data[1] as ShiftScheduleUpdateEvent | undefined;
-					} else if (data && typeof data === "object" && "data" in data) {
-						// Object format: { id, data }
-						event = (data as { id: string; data: unknown }).data as
-							| ShiftScheduleUpdateEvent
-							| undefined;
+					if (queryClient.isFetching({ queryKey }) > 0) {
+						arrivedDuringFetch.push(...events);
 					}
-
-					// Validate event data before processing
-					if (!event || typeof event.shiftScheduleId !== "number") {
-						// Invalid event data, skip processing
-						console.warn("Received invalid schedule update event:", data);
-						return;
-					}
-
-					// Get current user ID from ref
-					const userId = currentUserIdRef.current;
-
-					if (!userId) {
-						// User not authenticated, can't apply delta properly
-						// Fall back to invalidation
-						queryClient.invalidateQueries({ queryKey });
-						return;
-					}
-
-					// Cancel any in-progress queries to prevent race conditions
-					// This ensures the delta update won't be overwritten by stale data
-					// Using void to fire-and-forget the async operation
-					void queryClient.cancelQueries({ queryKey }).then(() => {
-						// Apply delta directly to the cache after cancellation
-						queryClient.setQueryData<SchedulesData | null>(
-							queryKey,
-							(currentData) => {
-								if (!currentData) {
-									// No cached data, nothing to update
-									// This shouldn't normally happen if the query was fetched
-									return currentData;
-								}
-
-								return applyScheduleDelta(currentData, event, userId);
-							},
-						);
-					});
+					applyEvents(events);
 				},
 				onError: (err) => {
 					console.error("Schedule subscription error:", err);
 					setWsState("disconnected");
-					// Note: We don't invalidate queries on error to avoid triggering
-					// refetches that could disrupt the UI (like closing open dialogs).
-					// The user can manually reconnect if needed, which will refresh data.
+					// Auth/access errors arrive after onStarted, which resets the backoff,
+					// so retrying them would loop every second
+					const status = (err as { data?: { httpStatus?: number } }).data
+						?.httpStatus;
+					if (status !== undefined && status >= 400 && status < 500) return;
+					// e.g. a 502 during a deploy, which the browser won't retry on its own.
+					// Jitter keeps every open page from reconnecting at the same moment.
+					const attempt = retryAttemptRef.current++;
+					const delay =
+						Math.min(30_000, 1000 * 2 ** attempt) * (0.5 + Math.random());
+					retryTimer = setTimeout(
+						() => setReconnectTrigger((prev) => prev + 1),
+						delay,
+					);
 				},
 				onComplete: () => {
 					// Subscription ended (server closed it or clean disconnect)
@@ -252,6 +262,8 @@ export function useScheduleSubscription({
 		);
 
 		return () => {
+			clearTimeout(retryTimer);
+			unsubscribeCache();
 			unsubscribe.unsubscribe();
 			setWsState("disconnected");
 		};

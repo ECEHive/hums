@@ -256,7 +256,9 @@ function recalculateRequirementProgress(
  */
 function recalculateScheduleComputedFields(
 	schedule: ShiftSchedule,
-	allSchedules: ShiftSchedule[],
+	// Built once per update; filtering all schedules for each one was O(n²)
+	userSchedules: ShiftSchedule[],
+	schedulesByType: Map<number, ShiftSchedule[]>,
 	currentUserId: number,
 	isWithinSignupWindow: boolean,
 	hasReachedMax: boolean,
@@ -265,9 +267,7 @@ function recalculateScheduleComputedFields(
 	const availableSlots = schedule.slots - schedule.users.length;
 
 	// Check for time overlap with user's other registered schedules (excluding this one)
-	const userOtherSchedules = allSchedules.filter(
-		(s) => s.id !== schedule.id && s.users.some((u) => u.id === currentUserId),
-	);
+	const userOtherSchedules = userSchedules.filter((s) => s.id !== schedule.id);
 	const hasOverlap = !isRegistered
 		? userOtherSchedules.some((other) => schedulesOverlap(schedule, other))
 		: false;
@@ -281,7 +281,7 @@ function recalculateScheduleComputedFields(
 	// Recalculate balancing requirement based on current state of all schedules
 	const meetsBalancingRequirement = calculateMeetsBalancingRequirement(
 		schedule,
-		allSchedules,
+		schedulesByType.get(schedule.shiftTypeId) ?? [],
 	);
 
 	// User can register if:
@@ -331,31 +331,41 @@ export function applyScheduleDelta(
 	event: ShiftScheduleUpdateEvent,
 	currentUserId: number,
 ): SchedulesData {
-	// Find the schedule that was updated
-	const scheduleIndex = currentData.schedules.findIndex(
-		(s) => s.id === event.shiftScheduleId,
-	);
+	return applyScheduleDeltas(currentData, [event], currentUserId);
+}
 
-	// If schedule not found in current data, return unchanged
-	// This could happen if we're viewing filtered data
-	if (scheduleIndex === -1) {
-		return currentData;
+/**
+ * Apply a batch of delta updates with a single recalculation.
+ * Each event carries the schedule's full user list, so the last event per schedule wins.
+ */
+export function applyScheduleDeltas(
+	currentData: SchedulesData,
+	events: ShiftScheduleUpdateEvent[],
+	currentUserId: number,
+): SchedulesData {
+	const latest = new Map<number, ShiftScheduleUpdateEvent>();
+	for (const event of events) {
+		latest.set(event.shiftScheduleId, event);
 	}
 
-	const schedule = currentData.schedules[scheduleIndex];
+	let changed = false;
+	const newSchedules = currentData.schedules.map((schedule) => {
+		const event = latest.get(schedule.id);
+		if (!event) return schedule;
+		changed = true;
+		// Update isRegistered first so requirement progress is calculated correctly
+		return {
+			...schedule,
+			users: event.delta.users,
+			availableSlots: event.delta.availableSlots,
+			isRegistered: event.delta.users.some((u) => u.id === currentUserId),
+		};
+	});
 
-	// Create updated schedule with new users list from delta
-	// IMPORTANT: Update isRegistered immediately so requirement progress calculation is correct
-	const updatedSchedule: ShiftSchedule = {
-		...schedule,
-		users: event.delta.users,
-		availableSlots: event.delta.availableSlots,
-		isRegistered: event.delta.users.some((u) => u.id === currentUserId),
-	};
-
-	// Create new schedules array with the updated schedule
-	const newSchedules = [...currentData.schedules];
-	newSchedules[scheduleIndex] = updatedSchedule;
+	// None of the schedules are in this data (e.g. a filtered view)
+	if (!changed) {
+		return currentData;
+	}
 
 	// Recalculate requirement progress first (needed for hasReachedMax)
 	// This now uses the correct isRegistered value from updatedSchedule
@@ -372,10 +382,20 @@ export function applyScheduleDelta(
 	// 2. Other schedules' hasTimeOverlap may change (if user registered/unregistered)
 	// 3. Other schedules' canRegister may change due to max requirement
 	// 4. Other schedules' canRegister may change due to max requirement or balancing requirements
+	const userSchedules = newSchedules.filter((s) =>
+		s.users.some((u) => u.id === currentUserId),
+	);
+	const schedulesByType = new Map<number, ShiftSchedule[]>();
+	for (const s of newSchedules) {
+		const group = schedulesByType.get(s.shiftTypeId);
+		if (group) group.push(s);
+		else schedulesByType.set(s.shiftTypeId, [s]);
+	}
 	const recalculatedSchedules = newSchedules.map((s) =>
 		recalculateScheduleComputedFields(
 			s,
-			newSchedules,
+			userSchedules,
+			schedulesByType,
 			currentUserId,
 			currentData.isWithinSignupWindow,
 			hasReachedMax,
@@ -461,6 +481,46 @@ export function applyOptimisticUnregister(
 	};
 
 	return applyScheduleDelta(currentData, optimisticEvent, currentUser.id);
+}
+
+/**
+ * Set whether the user is on each schedule, keeping every other change in the data.
+ * Schedules already in the requested state are left alone.
+ */
+export function setUserRegistration(
+	currentData: SchedulesData,
+	shiftScheduleIds: number[],
+	currentUser: DeltaUser,
+	registered: boolean,
+): SchedulesData {
+	const events: ShiftScheduleUpdateEvent[] = [];
+	for (const shiftScheduleId of shiftScheduleIds) {
+		const schedule = currentData.schedules.find(
+			(s) => s.id === shiftScheduleId,
+		);
+		if (!schedule) continue;
+		const isOn = schedule.users.some((u) => u.id === currentUser.id);
+		if (isOn === registered) continue;
+		const users = registered
+			? [...schedule.users, currentUser]
+			: schedule.users.filter((u) => u.id !== currentUser.id);
+		events.push({
+			type: registered ? "register" : "unregister",
+			shiftScheduleId,
+			userId: currentUser.id,
+			periodId: currentData.period.id,
+			timestamp: new Date(),
+			delta: {
+				user: currentUser,
+				availableSlots: schedule.slots - users.length,
+				totalSlots: schedule.slots,
+				users,
+			},
+		});
+	}
+	return events.length > 0
+		? applyScheduleDeltas(currentData, events, currentUser.id)
+		: currentData;
 }
 
 /**
