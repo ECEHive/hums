@@ -25,4 +25,18 @@ describe("getAllSchedulesForBalancing", () => {
 			},
 		});
 	});
+
+	it("can also narrow to the shift types being registered for", async () => {
+		const findMany = vi.fn().mockResolvedValue([]);
+		const prisma = {
+			shiftSchedule: { findMany },
+		} as unknown as PrismaTransaction;
+
+		await getAllSchedulesForBalancing(prisma, 7, [2, 3]);
+
+		expect(findMany.mock.calls[0][0].where).toEqual({
+			shiftType: { periodId: 7 },
+			shiftTypeId: { in: [2, 3] },
+		});
+	});
 });

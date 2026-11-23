@@ -3,16 +3,15 @@ import {
 	calculateRequirementComparableValue,
 	convertComparableValueToUnit,
 	convertRequirementThresholdToComparable,
-	getAllSchedulesForBalancing,
 	getPeriodById,
-	getShiftSchedulesForListing,
-	getUserRegisteredSchedules,
+	getSchedulesForRegistration,
+	getShiftTypesForRegistration,
 	getUserWithRoles,
 	hasTimeOverlap,
-	meetsBalancingRequirement,
+	meetsBalancingRequirementForAll,
 	meetsRoleRequirement,
 } from "@ecehive/features";
-import { type Prisma, prisma } from "@ecehive/prisma";
+import { prisma } from "@ecehive/prisma";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import type { TProtectedProcedureContext } from "../../trpc";
@@ -29,7 +28,21 @@ export type TListForRegistrationSchema = z.infer<
 export type TListForRegistrationOptions = {
 	ctx: TProtectedProcedureContext;
 	input: TListForRegistrationSchema;
+	signal?: AbortSignal;
 };
+
+/**
+ * During a signup rush people refresh when the page is slow, and the server would
+ * otherwise finish every abandoned list before getting to live ones.
+ */
+function throwIfClientGone(signal: AbortSignal | undefined) {
+	if (signal?.aborted) {
+		throw new TRPCError({
+			code: "CLIENT_CLOSED_REQUEST",
+			message: "Client closed the request",
+		});
+	}
+}
 
 /**
  * List shift schedules with availability and registration information for a specific period.
@@ -40,9 +53,18 @@ export async function listForRegistrationHandler(
 ) {
 	const { periodId, dayOfWeek } = options.input;
 	const userId = options.ctx.user.id;
+	const { signal } = options;
 
-	// Get period to check visibility window
-	const period = await getPeriodById(prisma, periodId);
+	throwIfClientGone(signal);
+
+	// Two stages rather than all at once: one list can't take most of the
+	// connection pool, and abandoned lists skip the big schedules query.
+	const [period, user] = await Promise.all([
+		getPeriodById(prisma, periodId),
+		getUserWithRoles(prisma, userId),
+	]);
+
+	throwIfClientGone(signal);
 
 	if (!period) {
 		throw new TRPCError({
@@ -64,9 +86,6 @@ export async function listForRegistrationHandler(
 			message: "Period is not currently visible",
 		});
 	}
-
-	// Get user's roles to check role requirements & period access
-	const user = await getUserWithRoles(prisma, userId);
 
 	if (!user) {
 		throw new TRPCError({
@@ -90,35 +109,40 @@ export async function listForRegistrationHandler(
 	const isModifyByEnd = period.scheduleModifyEnd.getTime() >= nowTime;
 	const isWithinModifyWindow = isModifyByStart && isModifyByEnd;
 
-	// Build where clause
-	const where: Prisma.ShiftScheduleWhereInput = {
-		shiftType: { periodId },
-	};
+	const [shiftTypes, periodSchedules] = await Promise.all([
+		getShiftTypesForRegistration(prisma, periodId),
+		// Always the whole period: balancing compares across days
+		getSchedulesForRegistration(prisma, periodId),
+	]);
 
-	if (dayOfWeek !== undefined) {
-		where.dayOfWeek = dayOfWeek;
-	}
+	throwIfClientGone(signal);
 
-	// Fetch shift schedules with related data
-	const schedules = await getShiftSchedulesForListing(prisma, where);
-
-	// Get all shift schedules the user is already registered for
-	const userRegisteredSchedules = await getUserRegisteredSchedules(
-		prisma,
-		userId,
-	);
-	const userSchedulesInPeriod = userRegisteredSchedules.filter(
-		(schedule) => schedule.shiftType?.periodId === period.id,
-	);
-	const schedulesForOverlap = userSchedulesInPeriod.map(
-		({ shiftType, ...rest }) => rest,
+	const shiftTypesById = new Map(shiftTypes.map((type) => [type.id, type]));
+	// The two reads aren't one snapshot, so a shift type added between them is
+	// left out until the next refresh instead of failing the whole list
+	const allSchedules = periodSchedules.filter((schedule) =>
+		shiftTypesById.has(schedule.shiftTypeId),
 	);
 
-	// Get all schedules for balancing checks (cached for performance)
-	const allSchedulesForBalancing = await getAllSchedulesForBalancing(
-		prisma,
-		period.id,
+	// The period's schedules already carry their users, so no separate query
+	const userSchedulesInPeriod = allSchedules.filter((schedule) =>
+		schedule.users.some((u) => u.id === userId),
 	);
+
+	const meetsRoleByShiftType = new Map(
+		shiftTypes.map((type) => [
+			type.id,
+			meetsRoleRequirement(type, userRoleIds),
+		]),
+	);
+	const meetsBalancingById = meetsBalancingRequirementForAll(
+		allSchedules,
+		shiftTypesById,
+	);
+	const schedules =
+		dayOfWeek === undefined
+			? allSchedules
+			: allSchedules.filter((schedule) => schedule.dayOfWeek === dayOfWeek);
 
 	// For each schedule, calculate availability and registration eligibility
 	const requirementUnit =
@@ -169,24 +193,30 @@ export async function listForRegistrationHandler(
 	}
 
 	const schedulesWithAvailability = schedules.map((schedule) => {
+		// Every schedule's shift type is in its period, which is what both queries filter on
+		const shiftType = shiftTypesById.get(schedule.shiftTypeId);
+		if (!shiftType) {
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: `Shift type ${schedule.shiftTypeId} not found`,
+			});
+		}
+
 		const isRegistered = schedule.users.some((u) => u.id === userId);
 
 		// Check if user can self-assign
-		const canSelfAssign = schedule.shiftType.canSelfAssign;
+		const canSelfAssign = shiftType.canSelfAssign;
 
 		// Check role requirements
-		const meetsRole = meetsRoleRequirement(schedule.shiftType, userRoleIds);
+		const meetsRole = meetsRoleByShiftType.get(schedule.shiftTypeId) ?? false;
 
 		// Check for time overlap with existing registrations
 		const hasOverlap = !isRegistered
-			? hasTimeOverlap(schedule, schedulesForOverlap)
+			? hasTimeOverlap(schedule, userSchedulesInPeriod)
 			: false;
 
 		// Check balancing restrictions
-		const meetsBalancing = meetsBalancingRequirement(
-			schedule,
-			allSchedulesForBalancing,
-		);
+		const meetsBalancing = meetsBalancingById.get(schedule.id) ?? true;
 
 		// Calculate available slots (total slots minus registered users)
 		const availableSlots = schedule.slots - schedule.users.length;
@@ -221,9 +251,9 @@ export async function listForRegistrationHandler(
 		return {
 			id: schedule.id,
 			shiftTypeId: schedule.shiftTypeId,
-			shiftTypeName: schedule.shiftType.name,
-			shiftTypeColor: schedule.shiftType.color,
-			shiftTypeLocation: schedule.shiftType.location,
+			shiftTypeName: shiftType.name,
+			shiftTypeColor: shiftType.color,
+			shiftTypeLocation: shiftType.location,
 			slots: schedule.slots,
 			dayOfWeek: schedule.dayOfWeek,
 			startTime: schedule.startTime,
@@ -239,9 +269,9 @@ export async function listForRegistrationHandler(
 			hasTimeOverlap: hasOverlap,
 			blockedByMaxRequirement,
 			// Balancing config for client-side recalculation
-			isBalancedAcrossPeriod: schedule.shiftType.isBalancedAcrossPeriod,
-			isBalancedAcrossDay: schedule.shiftType.isBalancedAcrossDay,
-			isBalancedAcrossOverlap: schedule.shiftType.isBalancedAcrossOverlap,
+			isBalancedAcrossPeriod: shiftType.isBalancedAcrossPeriod,
+			isBalancedAcrossDay: shiftType.isBalancedAcrossDay,
+			isBalancedAcrossOverlap: shiftType.isBalancedAcrossOverlap,
 		};
 	});
 

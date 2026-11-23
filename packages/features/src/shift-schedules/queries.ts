@@ -54,9 +54,15 @@ export async function getUserRegisteredSchedules(
 export async function getAllSchedulesForBalancing(
 	prisma: PrismaClient | PrismaTransaction,
 	periodId: number,
+	// Balancing only compares schedules of the same type, so callers that know
+	// the types involved can skip the rest of the period
+	shiftTypeIds?: number[],
 ) {
 	return prisma.shiftSchedule.findMany({
-		where: { shiftType: { periodId } },
+		where: {
+			shiftType: { periodId },
+			...(shiftTypeIds && { shiftTypeId: { in: shiftTypeIds } }),
+		},
 		select: {
 			id: true,
 			shiftTypeId: true,
@@ -89,6 +95,13 @@ export async function getShiftScheduleForRegistration(
 	});
 }
 
+const SCHEDULE_LISTING_ORDER = [
+	{ shiftType: { name: "asc" } },
+	{ shiftType: { location: "asc" } },
+	{ dayOfWeek: "asc" },
+	{ startTime: "asc" },
+] satisfies Prisma.ShiftScheduleOrderByWithRelationInput[];
+
 /**
  * Fetch shift schedules with availability data for listing
  */
@@ -108,12 +121,40 @@ export async function getShiftSchedulesForListing(
 				select: { id: true, name: true },
 			},
 		},
-		orderBy: [
-			{ shiftType: { name: "asc" } },
-			{ shiftType: { location: "asc" } },
-			{ dayOfWeek: "asc" },
-			{ startTime: "asc" },
-		],
+		orderBy: SCHEDULE_LISTING_ORDER,
+	});
+}
+
+/**
+ * Fetch a period's schedules for the registration list. Shift types come from
+ * getShiftTypesForRegistration instead of being included on every row.
+ */
+export async function getSchedulesForRegistration(
+	prisma: PrismaClient | PrismaTransaction,
+	periodId: number,
+) {
+	return prisma.shiftSchedule.findMany({
+		where: { shiftType: { periodId } },
+		select: {
+			id: true,
+			shiftTypeId: true,
+			slots: true,
+			dayOfWeek: true,
+			startTime: true,
+			endTime: true,
+			users: { select: { id: true, name: true } },
+		},
+		orderBy: SCHEDULE_LISTING_ORDER,
+	});
+}
+
+export async function getShiftTypesForRegistration(
+	prisma: PrismaClient | PrismaTransaction,
+	periodId: number,
+) {
+	return prisma.shiftType.findMany({
+		where: { periodId },
+		include: { roles: { select: { id: true } } },
 	});
 }
 

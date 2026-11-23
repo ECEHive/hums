@@ -342,3 +342,113 @@ export function validateBalancingRequirement(
 		}
 	}
 }
+
+type BalancingFlags = Pick<
+	ShiftTypeLite,
+	"isBalancedAcrossPeriod" | "isBalancedAcrossDay" | "isBalancedAcrossOverlap"
+>;
+
+function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
+	const groups = new Map<K, T[]>();
+	for (const item of items) {
+		const k = key(item);
+		const group = groups.get(k);
+		if (group) group.push(item);
+		else groups.set(k, [item]);
+	}
+	return groups;
+}
+
+/**
+ * Returns, for any schedule id, the fewest users among the group's other not-full schedules.
+ */
+function fewestUsersExcluding(group: BalancingScheduleLite[]) {
+	let fewest = Number.POSITIVE_INFINITY;
+	let secondFewest = Number.POSITIVE_INFINITY;
+	let fewestId = -1;
+	for (const schedule of group) {
+		if (isScheduleFull(schedule)) continue;
+		const users = (schedule.users ?? []).length;
+		if (users < fewest) {
+			secondFewest = fewest;
+			fewest = users;
+			fewestId = schedule.id;
+		} else if (users < secondFewest) {
+			secondFewest = users;
+		}
+	}
+	return (id: number) => (id === fewestId ? secondFewest : fewest);
+}
+
+/**
+ * meetsBalancingRequirement for every schedule at once, for the registration list.
+ * Checking each schedule against every other one was O(n²) per list request.
+ */
+export function meetsBalancingRequirementForAll(
+	schedules: BalancingScheduleLite[],
+	flagsByShiftType: Map<number, BalancingFlags>,
+): Map<number, boolean> {
+	const result = new Map<number, boolean>();
+
+	for (const [shiftTypeId, group] of groupBy(schedules, (s) => s.shiftTypeId)) {
+		const flags = flagsByShiftType.get(shiftTypeId);
+		if (
+			!flags?.isBalancedAcrossPeriod &&
+			!flags?.isBalancedAcrossDay &&
+			!flags?.isBalancedAcrossOverlap
+		) {
+			for (const schedule of group) result.set(schedule.id, true);
+			continue;
+		}
+
+		const fewestInPeriod = fewestUsersExcluding(group);
+		const byDay = groupBy(group, (s) => s.dayOfWeek);
+		const fewestInDay = new Map(
+			Array.from(byDay, ([day, daySchedules]) => [
+				day,
+				fewestUsersExcluding(daySchedules),
+			]),
+		);
+		const minutes = new Map(
+			group.map((s) => [
+				s.id,
+				[parseTimeToMinutes(s.startTime), parseTimeToMinutes(s.endTime)],
+			]),
+		);
+
+		for (const schedule of group) {
+			const filled = (schedule.users ?? []).length;
+			let meets = true;
+
+			if (
+				flags.isBalancedAcrossPeriod &&
+				fewestInPeriod(schedule.id) < filled
+			) {
+				meets = false;
+			}
+			if (
+				meets &&
+				flags.isBalancedAcrossDay &&
+				(fewestInDay.get(schedule.dayOfWeek)?.(schedule.id) ?? filled) < filled
+			) {
+				meets = false;
+			}
+			if (meets && flags.isBalancedAcrossOverlap) {
+				const [start, end] = minutes.get(schedule.id) ?? [0, 0];
+				for (const other of byDay.get(schedule.dayOfWeek) ?? []) {
+					if (other.id === schedule.id || isScheduleFull(other)) continue;
+					if ((other.users ?? []).length >= filled) continue;
+					const [otherStart, otherEnd] = minutes.get(other.id) ?? [0, 0];
+					if (otherStart < end && otherEnd > start) {
+						meets = false;
+						break;
+					}
+				}
+			}
+
+			result.set(schedule.id, meets);
+		}
+	}
+
+	return result;
+}
