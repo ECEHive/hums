@@ -58,7 +58,7 @@ export interface ReportConfig<TData = Record<string, unknown>> {
 	// Whether this report requires a period selection
 	requiresPeriod?: boolean;
 	// Column definitions for the data table
-	getColumns: () => ColumnDef<TData, unknown>[];
+	getColumns: (data?: TData[]) => ColumnDef<TData, unknown>[];
 	// Available export formats
 	exportFormats: ExportFormat[];
 }

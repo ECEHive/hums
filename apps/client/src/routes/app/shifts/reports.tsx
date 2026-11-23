@@ -540,8 +540,13 @@ function ReportsPage() {
 				ReportConfig<Record<string, unknown>>["getColumns"]
 			>;
 		}
-		return currentReportConfig?.getColumns() ?? [];
-	}, [selectedReportId, scheduleExportColumns, currentReportConfig]);
+		return currentReportConfig?.getColumns(reportData) ?? [];
+	}, [
+		selectedReportId,
+		scheduleExportColumns,
+		currentReportConfig,
+		reportData,
+	]);
 
 	// Handle report generation
 	const handleGenerateReport = useCallback(async () => {
