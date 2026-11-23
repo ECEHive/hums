@@ -177,6 +177,7 @@ export async function bulkRegisterHandler(options: TBulkRegisterOptions) {
 		const allSchedulesForBalancing = await getAllSchedulesForBalancing(
 			tx,
 			periodId,
+			[...new Set(validatedSchedules.map((s) => s.shiftTypeId))],
 		);
 
 		// Calculate current requirement progress

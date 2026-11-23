@@ -3,6 +3,7 @@ import {
 	type BalancingScheduleLite,
 	hasTimeOverlap,
 	meetsBalancingRequirement,
+	meetsBalancingRequirementForAll,
 	type ShiftScheduleLite,
 	type ShiftTypeLite,
 	validateBalancingRequirement,
@@ -164,6 +165,66 @@ describe("balancing: scope of each mode", () => {
 		const target = schedule({ id: 1, users: users(2), shiftType });
 		const staleCopy = schedule({ id: 1, shiftType });
 		expectBalancing(target, [staleCopy], true);
+	});
+});
+
+describe("meetsBalancingRequirementForAll", () => {
+	// Deterministic so a failure reproduces
+	function random(seed: number) {
+		let state = seed;
+		return (n: number) => {
+			// Math.imul: a plain multiply overflows 2^53 and the low bits collapse
+			state = (Math.imul(state, 1103515245) + 12345) >>> 0;
+			return (state >>> 16) % n;
+		};
+	}
+
+	it("matches meetsBalancingRequirement on random layouts", () => {
+		const pick = random(454);
+		let compared = 0;
+		let blocked = 0;
+
+		for (let layout = 0; layout < 300; layout++) {
+			const flags = new Map<number, ShiftTypeLite>();
+			for (let typeId = 1; typeId <= 3; typeId++) {
+				flags.set(typeId, {
+					isBalancedAcrossPeriod: pick(2) === 0,
+					isBalancedAcrossDay: pick(2) === 0,
+					isBalancedAcrossOverlap: pick(2) === 0,
+				});
+			}
+
+			const schedules = Array.from({ length: 2 + pick(30) }, (_, i) => {
+				const start = 8 * 60 + pick(16) * 30;
+				const time = (minutes: number) =>
+					`${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+				const slots = pick(4);
+				return schedule({
+					id: i + 1,
+					shiftTypeId: 1 + pick(3),
+					dayOfWeek: pick(3),
+					startTime: time(start),
+					endTime: time(start + 30 * (1 + pick(4))),
+					slots,
+					users: users(pick(slots + 2)),
+				});
+			});
+			for (const s of schedules) s.shiftType = flags.get(s.shiftTypeId);
+
+			const all = meetsBalancingRequirementForAll(schedules, flags);
+			for (const s of schedules) {
+				const expected = meetsBalancingRequirement(s, schedules);
+				expect(all.get(s.id), `layout ${layout}, schedule ${s.id}`).toBe(
+					expected,
+				);
+				compared++;
+				if (!expected) blocked++;
+			}
+		}
+
+		expect(compared).toBeGreaterThan(4000);
+		// Guards the generator: mostly-empty layouts would pass trivially
+		expect(blocked / compared).toBeGreaterThan(0.2);
 	});
 });
 
