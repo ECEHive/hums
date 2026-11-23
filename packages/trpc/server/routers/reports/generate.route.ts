@@ -21,7 +21,7 @@ export const ZGenerateSchema = z.object({
 export type TGenerateSchema = z.infer<typeof ZGenerateSchema>;
 
 export type TGenerateOptions = {
-	ctx?: TPermissionProtectedProcedureContext;
+	ctx: TPermissionProtectedProcedureContext;
 	input: TGenerateSchema;
 };
 
@@ -33,7 +33,7 @@ function convert24HourToMS(timeStr: string): number {
 export async function generateHandler(options: TGenerateOptions) {
 	const { staffingRoleIds, startDate, endDate } = options.input;
 	const canViewInternalNotes =
-		options.ctx?.user.isSystemUser ||
+		options.ctx.user.isSystemUser ||
 		(await prisma.permission.findFirst({
 			where: {
 				name: "users.get",
@@ -41,7 +41,7 @@ export async function generateHandler(options: TGenerateOptions) {
 					some: {
 						users: {
 							some: {
-								id: options.ctx?.user.id,
+								id: options.ctx.user.id,
 							},
 						},
 					},
